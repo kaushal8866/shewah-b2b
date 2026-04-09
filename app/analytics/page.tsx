@@ -7,15 +7,24 @@ import { BarChart2, TrendingUp, Users, ShoppingBag } from 'lucide-react'
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState({
-    revenueByMonth: [] as { month: string; revenue: number; orders: number }[],
-    partnersByStage: [] as { stage: string; count: number }[],
-    partnersByCircuit: [] as { circuit: string; count: number }[],
-    ordersByStatus: [] as { status: string; count: number; value: number }[],
-    topPartners: [] as { store_name: string; city: string; orders: number; revenue: number }[],
-    conversionFunnel: { visited: number; contacted: number; sample: number; active: number },
-    modelSplit: [] as { model: string; count: number; revenue: number }[],
-    cadStats: { total: number; avgTurnaround: number; approvalRate: number },
+  const [data, setData] = useState<{
+    revenueByMonth: { month: string; revenue: number; orders: number }[]
+    partnersByStage: { stage: string; count: number }[]
+    partnersByCircuit: { circuit: string; count: number }[]
+    ordersByStatus: { status: string; count: number; value: number }[]
+    topPartners: { store_name: string; city: string; orders: number; revenue: number }[]
+    conversionFunnel: { visited: number; contacted: number; sample: number; active: number }
+    modelSplit: { model: string; count: number; revenue: number }[]
+    cadStats: { total: number; avgTurnaround: number; approvalRate: number }
+  }>({
+    revenueByMonth: [],
+    partnersByStage: [],
+    partnersByCircuit: [],
+    ordersByStatus: [],
+    topPartners: [],
+    conversionFunnel: { visited: 0, contacted: 0, sample: 0, active: 0 },
+    modelSplit: [],
+    cadStats: { total: 0, avgTurnaround: 0, approvalRate: 0 },
   })
 
   useEffect(() => { loadAnalytics() }, [])
