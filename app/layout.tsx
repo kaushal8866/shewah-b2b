@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+export const dynamic = 'force-dynamic'
+
 const nav = [
   { href: '/',              icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/partners',      icon: Users,           label: 'Partners' },
