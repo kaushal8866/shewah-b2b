@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gold: #C49C64;
+  --gold-dark: #9B7A40;
+  --charcoal: #1C1A17;
+  --cream: #F7F2EA;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #F7F5F2;
+  color: #1C1A17;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #F7F5F2; }
+::-webkit-scrollbar-thumb { background: #D3D1C7; border-radius: 3px; }
+
+/* Gold focus ring */
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid #C49C64;
+  outline-offset: 1px;
+}
+
+/* Table styles */
+.table-row-hover:hover { background-color: #FAF8F5; }
+
+/* Status pill */
+.status-pill {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* Card */
+.card {
+  @apply bg-white rounded-xl border border-stone-200 p-5;
+}
+
+/* Metric card */
+.metric-card {
+  @apply bg-white rounded-xl border border-stone-200 p-5 flex flex-col gap-1;
+}
