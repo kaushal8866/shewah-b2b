@@ -42,3 +42,8 @@ NEXTAUTH_SECRET = "5MFMcxms/iszHMVataLPvwVN5IK6p+4CdhjJ9ZS8Mlo="
 NEXTAUTH_URL = "https://1bdec863-e37c-4c91-a409-c37c1c0d7850-00-38yb962rkdj5q.picard.replit.dev"
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME = "ddnlacdta"
 NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET = "shewah-b2b"
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["npm", "start"]
+build = ["npm", "run", "build"]
