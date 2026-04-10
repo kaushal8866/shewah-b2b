@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/utils'
 import { ArrowLeft, Save, Upload, X, Printer, Package } from 'lucide-react'
 import Link from 'next/link'
 
-export default function NewMfgOrderPage() {
+function NewMfgOrderForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const printRef = useRef<HTMLDivElement>(null)
@@ -409,5 +409,13 @@ export default function NewMfgOrderPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function NewMfgOrderPage() {
+  return (
+    <Suspense fallback={<div className="p-7 text-stone-400">Loading...</div>}>
+      <NewMfgOrderForm />
+    </Suspense>
   )
 }
