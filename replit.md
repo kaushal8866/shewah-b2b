@@ -39,6 +39,14 @@ A Next.js 14 B2B admin panel for Shewah jewelry, built with Supabase as the data
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 
+## Pages
+
+All routes are now complete with no 404s:
+- List pages: `/partners`, `/orders`, `/cad-requests`, `/manufacturing`, `/catalog`, `/gold-rates`, `/vendors`, `/circuits`, `/analytics`, `/settings`
+- Create forms: `/partners/new`, `/orders/new`, `/cad-requests/new`, `/catalog/new`, `/circuits/new`, `/manufacturing/orders/new`, `/manufacturing/partners/new`, `/vendors/new`, `/vendors/inventory/new`
+- Detail pages: `/partners/[id]`, `/orders/[id]`, `/cad-requests/[id]`, `/circuits/[id]`, `/manufacturing/orders/[id]`, `/manufacturing/partners/[id]`, `/vendors/[id]`
+- Sub-pages: `/manufacturing/partners/[id]/float`
+
 ## Notes
 
 - Migrated from Vercel to Replit
