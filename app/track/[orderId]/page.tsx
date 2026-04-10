@@ -126,7 +126,7 @@ export default async function TrackOrderPage({ params }: { params: { orderId: st
                     )}
                   </div>
                   {/* Label column */}
-                  <div className={`pb-${isLast ? '0' : '4'} pt-1 flex-1`}>
+                  <div className={`${isLast ? 'pb-0' : 'pb-4'} pt-1 flex-1`}>
                     <p className={`text-sm font-medium ${
                       isActive ? 'text-[#C49C64]' : isDone ? 'text-stone-400' : 'text-stone-600'
                     }`}>
