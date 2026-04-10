@@ -253,29 +253,24 @@ function CollectionsTab() {
 
   async function load() {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('design_collections')
-      .select(`
-        *,
-        design_collection_products(count),
-        design_interests(count)
-      `)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      if (error.code === '42P01' || error.message?.includes('does not exist')) {
-        setNeedsSetup(true)
+    try {
+      const res = await fetch('/api/collections')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        if (err?.error?.includes('does not exist') || res.status === 500) setNeedsSetup(true)
+        setLoading(false)
+        return
       }
-      setLoading(false)
-      return
+      const data: RawCollectionRow[] = await res.json()
+      const mapped = data.map(c => ({
+        ...c,
+        product_count: c.design_collection_products?.[0]?.count ?? 0,
+        response_count: c.design_interests?.[0]?.count ?? 0,
+      }))
+      setCollections(mapped)
+    } catch {
+      setNeedsSetup(true)
     }
-
-    const mapped = (data as RawCollectionRow[]).map(c => ({
-      ...c,
-      product_count: c.design_collection_products?.[0]?.count ?? 0,
-      response_count: c.design_interests?.[0]?.count ?? 0,
-    }))
-    setCollections(mapped)
     setLoading(false)
   }
 
@@ -407,22 +402,18 @@ function InterestTab() {
 
   async function loadInterests() {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('design_interests')
-      .select(`
-        *,
-        partners(store_name, city, phone),
-        products(code, name),
-        design_collections(name)
-      `)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      if (error.code === '42P01' || error.message?.includes('does not exist')) setNeedsSetup(true)
-      setLoading(false)
-      return
+    try {
+      const res = await fetch('/api/interests')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        if (err?.error?.includes('does not exist') || res.status === 500) setNeedsSetup(true)
+        setLoading(false)
+        return
+      }
+      setInterests(await res.json())
+    } catch {
+      setNeedsSetup(true)
     }
-    setInterests(data || [])
     setLoading(false)
   }
 

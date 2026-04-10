@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
+// GET — return interests scoped to a specific collection+partner (for public showcase page)
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const collection_id = searchParams.get('collection_id')
+  const partner_id = searchParams.get('partner_id')
+  if (!collection_id || !partner_id) {
+    return NextResponse.json({ error: 'Missing collection_id or partner_id' }, { status: 400 })
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('design_interests')
+    .select('id, product_id, note, quantity_hint')
+    .eq('collection_id', collection_id)
+    .eq('partner_id', partner_id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data ?? [])
+}
+
 // Validate that a collection is published and a partner exists.
 async function validate(collectionId: string, partnerId: string): Promise<{ ok: boolean; error?: string }> {
   const [{ data: coll }, { data: partner }] = await Promise.all([

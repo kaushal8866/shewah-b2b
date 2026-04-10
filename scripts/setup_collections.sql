@@ -72,13 +72,15 @@ CREATE POLICY "write_service_role" ON design_collection_products
   FOR ALL USING (auth.role() = 'service_role')
   WITH CHECK (auth.role() = 'service_role');
 
--- design_interests: showcase reads its own rows, writes go through server-side API (service_role)
+-- design_interests: all access (read + write) through service_role only.
+-- Showcase reads go through /api/showcase/interests (server-side service_role).
+-- Admin reads go through /api/interests (server-side service_role).
 DROP POLICY IF EXISTS "Allow all"          ON design_interests;
 DROP POLICY IF EXISTS "select_all"         ON design_interests;
 DROP POLICY IF EXISTS "write_service_role" ON design_interests;
+DROP POLICY IF EXISTS "service_role_all"   ON design_interests;
 
-CREATE POLICY "select_all"         ON design_interests FOR SELECT USING (true);
-CREATE POLICY "write_service_role" ON design_interests
+CREATE POLICY "service_role_all" ON design_interests
   FOR ALL USING (auth.role() = 'service_role')
   WITH CHECK (auth.role() = 'service_role');
 
@@ -96,8 +98,11 @@ DROP POLICY IF EXISTS "Allow all"          ON showcase_views;
 DROP POLICY IF EXISTS "select_all"         ON showcase_views;
 DROP POLICY IF EXISTS "write_service_role" ON showcase_views;
 
--- showcase_views: public read, writes go through /api/showcase/track server endpoint
-CREATE POLICY "select_all"         ON showcase_views FOR SELECT USING (true);
-CREATE POLICY "write_service_role" ON showcase_views
+-- showcase_views: all access through service_role only.
+-- Reads go through /api/collections/[id]/views (server-side, admin-authenticated).
+-- Writes go through /api/showcase/track (server-side service_role).
+DROP POLICY IF EXISTS "service_role_all" ON showcase_views;
+
+CREATE POLICY "service_role_all" ON showcase_views
   FOR ALL USING (auth.role() = 'service_role')
   WITH CHECK (auth.role() = 'service_role');

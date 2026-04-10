@@ -378,12 +378,13 @@ create table design_interests (
 );
 
 alter table design_interests enable row level security;
-create policy "select_all"         on design_interests for select using (true);
-create policy "write_service_role" on design_interests
+-- All access (read + write) via service_role only.
+-- Showcase reads: /api/showcase/interests; Admin reads: /api/interests (both server-side).
+create policy "service_role_all" on design_interests
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
 -- ── SHOWCASE VIEWS (visit tracking) ──────────────────────────────────
--- Writes go through /api/showcase/track (service_role); reads are open.
+-- All access via service_role only (reads and writes through server API routes).
 create table showcase_views (
   id            uuid        primary key default gen_random_uuid(),
   created_at    timestamptz default now(),
@@ -393,6 +394,7 @@ create table showcase_views (
 );
 
 alter table showcase_views enable row level security;
-create policy "select_all"         on showcase_views for select using (true);
-create policy "write_service_role" on showcase_views
+-- All access via service_role only.
+-- Reads: /api/collections/[id]/views; Writes: /api/showcase/track (both server-side).
+create policy "service_role_all" on showcase_views
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');

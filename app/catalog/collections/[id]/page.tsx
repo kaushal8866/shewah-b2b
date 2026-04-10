@@ -60,12 +60,12 @@ export default function CollectionDetailPage() {
 
   async function load() {
     setLoading(true)
-    const [{ data: coll }, { data: prods }, { data: collProds }, { data: parts }, { data: views }] = await Promise.all([
+    const [{ data: coll }, { data: prods }, { data: collProds }, { data: parts }, viewsRes] = await Promise.all([
       supabase.from('design_collections').select('*').eq('id', id).single(),
       supabase.from('products').select('id, code, name, gold_karat, diamond_shape, trade_price, photo_urls, is_active').order('code'),
       supabase.from('design_collection_products').select('product_id').eq('collection_id', id),
       supabase.from('partners').select('id, store_name, owner_name, city, circuit, stage').order('store_name'),
-      supabase.from('showcase_views').select('partner_id').eq('collection_id', id),
+      fetch(`/api/collections/${id}/views`).then(r => r.ok ? r.json() as Promise<{ partner_id: string | null }[]> : Promise.resolve([])),
     ])
     if (!coll) { router.push('/catalog?tab=collections'); return }
     setCollection(coll)
@@ -73,10 +73,10 @@ export default function CollectionDetailPage() {
     setAllProducts(prods || [])
     setSelectedIds(new Set((collProds || []).map((p: { product_id: string }) => p.product_id)))
     setPartners(parts || [])
-    // Aggregate view counts per partner (graceful if table doesn't exist yet)
-    if (views) {
+    const views = Array.isArray(viewsRes) ? viewsRes : []
+    if (views.length) {
       const counts = new Map<string, number>()
-      ;(views as { partner_id: string | null }[]).forEach(v => {
+      views.forEach((v: { partner_id: string | null }) => {
         if (v.partner_id) counts.set(v.partner_id, (counts.get(v.partner_id) || 0) + 1)
       })
       setViewCounts(counts)

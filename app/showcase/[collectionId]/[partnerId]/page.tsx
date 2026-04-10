@@ -95,16 +95,15 @@ export default function ShowcasePage() {
       setProducts(sorted)
     }
 
-    // Load existing interests (read-only via anon key — SELECT is open)
-    const { data: existingInterests } = await supabase
-      .from('design_interests')
-      .select('id, product_id, note, quantity_hint')
-      .eq('collection_id', collectionId)
-      .eq('partner_id', partnerId)
+    // Load existing interests via server API (service_role — RLS does not allow anon reads)
+    const interestsRes = await fetch(
+      `/api/showcase/interests?collection_id=${encodeURIComponent(collectionId)}&partner_id=${encodeURIComponent(partnerId)}`
+    ).then(r => r.ok ? r.json() as Promise<RawInterestRow[]> : Promise.resolve([]))
 
-    if (existingInterests) {
+    const existingInterests: RawInterestRow[] = Array.isArray(interestsRes) ? interestsRes : []
+    if (existingInterests.length) {
       const map = new Map<string, InterestRow>()
-      ;(existingInterests as RawInterestRow[]).forEach(row => {
+      existingInterests.forEach(row => {
         map.set(row.product_id, {
           id: row.id,
           product_id: row.product_id,
