@@ -2,16 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, ORDER_STATUSES } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
-import { ArrowLeft, Save, Trash2, Edit2, X } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package } from 'lucide-react'
 import Link from 'next/link'
-
-const ORDER_STATUSES = [
-  'brief_received', 'design_in_progress', 'design_approved',
-  'manufacturing', 'quality_check', 'ready_to_dispatch',
-  'dispatched', 'delivered', 'cancelled',
-]
 
 export default function OrderDetailPage() {
   const params = useParams()
@@ -22,6 +16,7 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [advancing, setAdvancing] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [form, setForm] = useState<any>({})
 
@@ -42,6 +37,25 @@ export default function OrderDetailPage() {
 
   function set(k: string, v: string) { setForm((prev: any) => ({ ...prev, [k]: v })) }
 
+  const currentStageIdx = ORDER_STATUSES.findIndex(s => s.value === order?.status)
+  const nextStage = currentStageIdx < ORDER_STATUSES.length - 1 ? ORDER_STATUSES[currentStageIdx + 1] : null
+
+  async function advanceStage() {
+    if (!nextStage) return
+    setAdvancing(true)
+    const update: any = { status: nextStage.value }
+    if (nextStage.value === 'dispatched') {
+      update.dispatch_date = new Date().toISOString().split('T')[0]
+    }
+    if (nextStage.value === 'delivered') {
+      update.actual_delivery = new Date().toISOString().split('T')[0]
+    }
+    const { error } = await supabase.from('orders').update(update).eq('id', id)
+    setAdvancing(false)
+    if (error) { alert('Error: ' + error.message); return }
+    load()
+  }
+
   async function handleSave() {
     setSaving(true)
     const balanceDue = (parseFloat(form.total_amount) || 0) - (parseFloat(form.advance_paid) || 0)
@@ -56,6 +70,8 @@ export default function OrderDetailPage() {
       balance_due: balanceDue,
       expected_delivery: form.expected_delivery || null,
       internal_notes: form.internal_notes || null,
+      tracking_number: form.tracking_number || null,
+      courier: form.courier || null,
     }).eq('id', id)
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }
@@ -74,8 +90,12 @@ export default function OrderDetailPage() {
 
   if (loading) return <div className="p-7 text-stone-400 text-sm">Loading...</div>
 
+  const isDelivered = order.status === 'delivered'
+  const isCancelled = order.status === 'cancelled'
+
   return (
     <div className="p-4 lg:p-7 max-w-3xl">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link href="/orders" className="text-stone-400 hover:text-stone-600">
           <ArrowLeft className="w-5 h-5" />
@@ -111,6 +131,7 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
+      {/* Delete confirm */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
@@ -120,13 +141,9 @@ export default function OrderDetailPage() {
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50">
-                Cancel
-              </button>
+                className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50">Cancel</button>
               <button onClick={handleDelete}
-                className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-red-600">
-                Delete
-              </button>
+                className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-red-600">Delete</button>
             </div>
           </div>
         </div>
@@ -134,14 +151,58 @@ export default function OrderDetailPage() {
 
       {!editing ? (
         <div className="space-y-4">
-          <div className="flex gap-2 mb-2">
-            <span className={`status-pill ${getStatusColor(order.status)}`}>
-              {order.status?.replace(/_/g, ' ')}
-            </span>
-            <span className="status-pill bg-stone-100 text-stone-600 capitalize">{order.type}</span>
-            <span className="status-pill bg-stone-100 text-stone-600 capitalize">{order.model?.replace(/_/g, ' ')}</span>
+          {/* ── Pipeline stepper ── */}
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-medium text-stone-900">Pipeline stage</h2>
+              {nextStage && !isCancelled && (
+                <button onClick={advanceStage} disabled={advancing}
+                  className="flex items-center gap-1.5 bg-[#C49C64] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+                  {advancing ? 'Moving...' : `Move to ${nextStage.label}`}
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {isDelivered && (
+                <span className="text-xs text-green-600 font-medium bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
+                  Order complete
+                </span>
+              )}
+            </div>
+
+            {/* Step indicators */}
+            <div className="flex items-center gap-0">
+              {ORDER_STATUSES.map((stage, idx) => {
+                const isDone = currentStageIdx > idx
+                const isActive = currentStageIdx === idx
+                const isLast = idx === ORDER_STATUSES.length - 1
+                return (
+                  <div key={stage.value} className="flex items-center flex-1 min-w-0">
+                    <div className="flex flex-col items-center flex-1 min-w-0">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 border-2 transition-colors ${
+                        isDone ? 'bg-[#C49C64] border-[#C49C64] text-white'
+                        : isActive ? 'bg-white border-[#C49C64] text-[#C49C64]'
+                        : 'bg-white border-stone-200 text-stone-300'
+                      }`}>
+                        {isDone ? <Check className="w-3 h-3" /> : idx + 1}
+                      </div>
+                      <p className={`text-center mt-1 leading-tight text-[10px] hidden sm:block truncate max-w-full px-0.5 ${
+                        isActive ? 'text-[#C49C64] font-semibold'
+                        : isDone ? 'text-stone-400'
+                        : 'text-stone-300'
+                      }`}>{stage.label}</p>
+                    </div>
+                    {!isLast && (
+                      <div className={`h-0.5 flex-shrink-0 w-full max-w-6 mt-0 mb-4 sm:mb-5 transition-colors ${
+                        isDone ? 'bg-[#C49C64]' : 'bg-stone-200'
+                      }`} />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
+          {/* Order details */}
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-4">Order details</h2>
             <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
@@ -149,7 +210,9 @@ export default function OrderDetailPage() {
                 ['Partner', order.partners?.store_name],
                 ['Owner', order.partners?.owner_name],
                 ['Phone', order.partners?.phone],
-                ['Product', order.products ? `${order.products.code} — ${order.products.name}` : '—'],
+                ['Product', order.products ? `${order.products.code} — ${order.products.name}` : 'Custom design'],
+                ['Type', order.type],
+                ['Model', order.model?.replace(/_/g, ' ')],
                 ['Quantity', order.quantity],
                 ['Ring size', order.ring_size || '—'],
                 ['Order date', formatDate(order.order_date)],
@@ -157,7 +220,7 @@ export default function OrderDetailPage() {
               ].map(([k, v]) => (
                 <div key={String(k)}>
                   <p className="text-xs text-stone-400">{k}</p>
-                  <p className="text-stone-800 mt-0.5">{v}</p>
+                  <p className="text-stone-800 mt-0.5 capitalize">{String(v || '—')}</p>
                 </div>
               ))}
               {order.special_notes && (
@@ -169,28 +232,60 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
+          {/* Pricing */}
           <div className="bg-white rounded-xl border border-stone-200 p-5">
-            <h2 className="font-medium text-stone-900 mb-4">Pricing</h2>
-            <div className="grid grid-cols-3 gap-4 text-sm">
+            <h2 className="font-medium text-stone-900 mb-4">Pricing & payment</h2>
+            <div className="grid grid-cols-3 gap-4 text-sm mb-3">
               {[
                 ['Trade price', `₹${order.trade_price?.toLocaleString('en-IN') || '—'}`],
                 ['Total amount', `₹${order.total_amount?.toLocaleString('en-IN') || '—'}`],
-                ['Advance paid', `₹${order.advance_paid?.toLocaleString('en-IN') || 0}`],
+                ['Advance paid', `₹${(order.advance_paid || 0).toLocaleString('en-IN')}`],
               ].map(([k, v]) => (
                 <div key={String(k)}>
                   <p className="text-xs text-stone-400">{k}</p>
-                  <p className="text-stone-800 font-medium mt-0.5">{v}</p>
+                  <p className="text-stone-800 font-medium mt-0.5">{String(v)}</p>
                 </div>
               ))}
             </div>
-            {order.balance_due > 0 && (
-              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex justify-between items-center">
-                <span className="text-amber-700 text-sm">Balance due</span>
+            {(order.balance_due || 0) > 0 ? (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex justify-between items-center">
+                <span className="text-amber-700 text-sm">Balance due at delivery</span>
                 <span className="font-semibold text-amber-800">₹{order.balance_due?.toLocaleString('en-IN')}</span>
               </div>
+            ) : (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex justify-between items-center">
+                <span className="text-green-700 text-sm">Fully paid</span>
+                <Check className="w-4 h-4 text-green-600" />
+              </div>
+            )}
+            {order.gold_rate_at_order > 0 && (
+              <p className="text-xs text-stone-400 mt-2">Gold rate locked: ₹{order.gold_rate_at_order?.toLocaleString('en-IN')}/g (24K)</p>
             )}
           </div>
 
+          {/* Dispatch info (shown once dispatched or beyond) */}
+          {(currentStageIdx >= ORDER_STATUSES.findIndex(s => s.value === 'dispatched')) && (
+            <div className="bg-white rounded-xl border border-stone-200 p-5">
+              <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
+                <Package className="w-4 h-4 text-teal-600" /> Dispatch details
+              </h2>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
+                {[
+                  ['Dispatch date', order.dispatch_date ? formatDate(order.dispatch_date) : '—'],
+                  ['Actual delivery', order.actual_delivery ? formatDate(order.actual_delivery) : '—'],
+                  ['Courier', order.courier || '—'],
+                  ['Tracking number', order.tracking_number || '—'],
+                ].map(([k, v]) => (
+                  <div key={String(k)}>
+                    <p className="text-xs text-stone-400">{k}</p>
+                    <p className="text-stone-800 mt-0.5">{String(v)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Internal notes */}
           {order.internal_notes && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <h2 className="font-medium text-stone-900 mb-2">Internal notes</h2>
@@ -198,17 +293,20 @@ export default function OrderDetailPage() {
             </div>
           )}
         </div>
+
       ) : (
+        /* Edit mode */
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-4">Update order</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
-                <label className={lbl}>Status</label>
+                <label className={lbl}>Pipeline stage</label>
                 <select className={inp} value={form.status || ''} onChange={e => set('status', e.target.value)}>
                   {ORDER_STATUSES.map(s => (
-                    <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                    <option key={s.value} value={s.value}>{s.label}</option>
                   ))}
+                  <option value="cancelled">Cancelled</option>
                 </select>
               </div>
               <div>
@@ -234,6 +332,14 @@ export default function OrderDetailPage() {
               <div>
                 <label className={lbl}>Expected delivery</label>
                 <input type="date" className={inp} value={form.expected_delivery || ''} onChange={e => set('expected_delivery', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Courier</label>
+                <input className={inp} value={form.courier || ''} onChange={e => set('courier', e.target.value)} placeholder="e.g. Blue Dart, DTDC" />
+              </div>
+              <div>
+                <label className={lbl}>Tracking number</label>
+                <input className={inp} value={form.tracking_number || ''} onChange={e => set('tracking_number', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Special notes</label>
