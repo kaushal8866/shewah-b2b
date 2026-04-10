@@ -74,8 +74,8 @@ export default function NewCircuitPage() {
       <div className="space-y-5">
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Trip details</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="col-span-1 sm:col-span-2">
               <label className={label}>Circuit name *</label>
               <input className={input} value={form.name} onChange={e => set('name', e.target.value)}
                 placeholder="e.g. Gujarat Circuit — Apr 2025" />
@@ -154,7 +154,7 @@ export default function NewCircuitPage() {
 
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Targets</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={label}>Store visits target</label>
               <input type="number" className={input} value={form.target_visits}

@@ -136,8 +136,8 @@ function NewOrderForm() {
       <div className="space-y-5">
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Order details</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="col-span-1 sm:col-span-2">
               <label className={label}>Partner *</label>
               <select className={input} value={form.partner_id} onChange={e => set('partner_id', e.target.value)}>
                 <option value="">Select partner...</option>
@@ -160,7 +160,7 @@ function NewOrderForm() {
               </select>
             </div>
             {form.type === 'catalog' && (
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <label className={label}>Product</label>
                 <select className={input} value={form.product_id} onChange={e => onProductSelect(e.target.value)}>
                   <option value="">Select product (optional)...</option>
@@ -169,7 +169,7 @@ function NewOrderForm() {
               </div>
             )}
             {form.type === 'custom' && (
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <label className={label}>Design brief</label>
                 <textarea className={`${input} resize-none`} rows={3}
                   value={form.brief_text} onChange={e => set('brief_text', e.target.value)}
@@ -184,7 +184,7 @@ function NewOrderForm() {
               <label className={label}>Ring size</label>
               <input className={input} value={form.ring_size} onChange={e => set('ring_size', e.target.value)} placeholder="e.g. 16, 17, 18" />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <label className={label}>Special notes</label>
               <input className={input} value={form.special_notes} onChange={e => set('special_notes', e.target.value)}
                 placeholder="Any specific instructions..." />
@@ -223,7 +223,7 @@ function NewOrderForm() {
 
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Dates</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={label}>Order date</label>
               <input type="date" className={input} value={form.order_date} onChange={e => set('order_date', e.target.value)} />
@@ -232,7 +232,7 @@ function NewOrderForm() {
               <label className={label}>Expected delivery</label>
               <input type="date" className={input} value={form.expected_delivery} onChange={e => set('expected_delivery', e.target.value)} />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <label className={label}>Internal notes</label>
               <input className={input} value={form.internal_notes} onChange={e => set('internal_notes', e.target.value)}
                 placeholder="Production notes, special instructions for workshop..." />
