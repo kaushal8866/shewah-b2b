@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Reads the non-prefixed secrets first (CLOUDINARY_CLOUD_NAME / CLOUDINARY_UPLOAD_PRESET),
-// then falls back to the NEXT_PUBLIC_ variants for backwards compatibility.
-const CLOUD_NAME =
-  process.env.CLOUDINARY_CLOUD_NAME ||
-  process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-
-const UPLOAD_PRESET =
-  process.env.CLOUDINARY_UPLOAD_PRESET ||
-  process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
-
 export async function POST(req: NextRequest) {
+  const CLOUD_NAME =
+    process.env.CLOUDINARY_CLOUD_NAME ||
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+
+  const UPLOAD_PRESET =
+    process.env.CLOUDINARY_UPLOAD_PRESET ||
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+
   if (!CLOUD_NAME || !UPLOAD_PRESET) {
     return NextResponse.json(
-      { error: 'Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET.' },
+      { error: 'Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET.' },
       { status: 500 }
     )
   }
