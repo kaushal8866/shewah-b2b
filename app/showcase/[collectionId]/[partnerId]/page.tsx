@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Heart, CheckCircle2, Loader2, AlertTriangle, Package, MessageSquare, Hash } from 'lucide-react'
+import { Heart, CheckCircle2, Loader2, AlertTriangle, Package, MessageSquare, Hash, Send, Sparkles } from 'lucide-react'
 
 type Collection = {
   id: string
@@ -50,7 +50,7 @@ type RawCollectionProduct = {
   sort_order: number
 }
 
-type Status = 'loading' | 'not_found' | 'unpublished' | 'ready'
+type Status = 'loading' | 'not_found' | 'unpublished' | 'ready' | 'submitted'
 
 export default function ShowcasePage() {
   const params = useParams()
@@ -64,6 +64,7 @@ export default function ShowcasePage() {
   const [interests, setInterests] = useState<Map<string, InterestRow>>(new Map())
   const [activeNote, setActiveNote] = useState<string | null>(null)
   const [saving, setSaving] = useState<Set<string>>(new Set())
+  const [submitting, setSubmitting] = useState(false)
 
   const load = useCallback(async () => {
     const [{ data: coll }, { data: part }] = await Promise.all([
@@ -77,7 +78,6 @@ export default function ShowcasePage() {
     setCollection(coll as Collection)
     setPartner(part as Partner)
 
-    // Load products in this collection
     const { data: collProds } = await supabase
       .from('design_collection_products')
       .select('product_id, sort_order')
@@ -95,7 +95,6 @@ export default function ShowcasePage() {
       setProducts(sorted)
     }
 
-    // Load existing interests via server API (service_role — RLS does not allow anon reads)
     const interestsRes = await fetch(
       `/api/showcase/interests?collection_id=${encodeURIComponent(collectionId)}&partner_id=${encodeURIComponent(partnerId)}`
     ).then(r => r.ok ? r.json() as Promise<RawInterestRow[]> : Promise.resolve([]))
@@ -116,7 +115,6 @@ export default function ShowcasePage() {
 
     setStatus('ready')
 
-    // Track visit via server-side API (non-blocking)
     fetch('/api/showcase/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -144,6 +142,7 @@ export default function ShowcasePage() {
         next.delete(product.id)
         return next
       })
+      if (activeNote === product.id) setActiveNote(null)
     } else {
       const res = await fetch('/api/showcase/interests', {
         method: 'POST',
@@ -175,7 +174,6 @@ export default function ShowcasePage() {
     if (field === 'note') update.note = value === '' ? null : (value as string)
     if (field === 'quantity_hint') update.quantity_hint = value === '' ? null : (value as number | null)
 
-    // Optimistic update
     setInterests(prev => {
       const next = new Map(prev)
       const existing = next.get(productId)!
@@ -189,6 +187,14 @@ export default function ShowcasePage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: row.id, partner_id: partnerId, ...update }),
     }).catch(() => {})
+  }
+
+  async function handleSubmit() {
+    if (interests.size === 0) return
+    setSubmitting(true)
+    await new Promise(r => setTimeout(r, 600))
+    setSubmitting(false)
+    setStatus('submitted')
   }
 
   const shortlistedCount = interests.size
@@ -228,8 +234,47 @@ export default function ShowcasePage() {
     )
   }
 
+  if (status === 'submitted') {
+    return (
+      <div className="min-h-screen bg-stone-950 flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <div className="w-20 h-20 rounded-full bg-[#C49C64]/20 border-2 border-[#C49C64]/40 flex items-center justify-center mx-auto mb-6">
+            <Sparkles className="w-9 h-9 text-[#C49C64]" />
+          </div>
+          <h1 className="text-white text-2xl font-semibold mb-3">Shortlist submitted!</h1>
+          <p className="text-stone-400 text-sm leading-relaxed mb-2">
+            Thank you, <span className="text-white font-medium">{partner?.store_name}</span>. 
+            Your shortlist of <span className="text-[#C49C64] font-semibold">{shortlistedCount} design{shortlistedCount !== 1 ? 's' : ''}</span> has been received.
+          </p>
+          <p className="text-stone-500 text-sm leading-relaxed mb-8">
+            Our team will review your preferences and follow up with you shortly.
+          </p>
+          <div className="bg-stone-900 border border-stone-800 rounded-2xl p-4 text-left">
+            <p className="text-stone-400 text-xs mb-3 uppercase tracking-wider">Your shortlisted designs</p>
+            <ul className="space-y-2">
+              {products.filter(p => interests.has(p.id)).map(p => {
+                const row = interests.get(p.id)
+                return (
+                  <li key={p.id} className="flex items-start gap-2">
+                    <Heart className="w-3.5 h-3.5 text-[#C49C64] fill-[#C49C64] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-white text-sm">{p.name}</span>
+                      {row?.quantity_hint && <span className="text-stone-500 text-xs ml-2">× {row.quantity_hint}</span>}
+                      {row?.note && <p className="text-stone-500 text-xs mt-0.5 italic">&ldquo;{row.note}&rdquo;</p>}
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+          <p className="text-stone-600 text-xs mt-6">You may close this page. You can revisit this link at any time to update your selections.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-stone-950 pb-28">
+    <div className="min-h-screen bg-stone-950 pb-32">
       {/* Header */}
       <div className="bg-stone-900 border-b border-stone-800">
         <div className="max-w-4xl mx-auto px-4 py-5">
@@ -260,7 +305,8 @@ export default function ShowcasePage() {
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-2">
         <div className="bg-[#C49C64]/10 border border-[#C49C64]/20 rounded-xl px-4 py-3 text-[#C49C64] text-xs">
           Tap the <span className="font-semibold">heart button</span> on any design to add it to your shortlist.
-          You can add notes or quantity for each item. Your selections are saved automatically.
+          Add notes or quantity for each item — your selections are saved automatically.
+          Tap <span className="font-semibold">Submit shortlist</span> when you&apos;re done.
         </div>
       </div>
 
@@ -292,6 +338,7 @@ export default function ShowcasePage() {
                       <img
                         src={product.photo_urls[0]}
                         alt={product.name}
+                        loading="lazy"
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -341,7 +388,7 @@ export default function ShowcasePage() {
                         <div className="flex items-start gap-1.5">
                           <MessageSquare className="w-3.5 h-3.5 text-stone-500 shrink-0 mt-1.5" />
                           <textarea
-                            placeholder="Note (size, variant, query…)"
+                            placeholder="Any specifics? karat, quantity, occasion…"
                             value={interestRow?.note ?? ''}
                             onChange={e => updateNote(product.id, 'note', e.target.value)}
                             rows={2}
@@ -356,7 +403,7 @@ export default function ShowcasePage() {
                       <button
                         onClick={() => toggleInterest(product)}
                         disabled={isSaving}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
                           isShortlisted
                             ? 'bg-[#C49C64] text-white hover:bg-[#9B7A40]'
                             : 'bg-stone-800 text-stone-400 hover:text-white hover:bg-stone-700'
@@ -371,7 +418,7 @@ export default function ShowcasePage() {
                       {isShortlisted && (
                         <button
                           onClick={() => setActiveNote(activeNote === product.id ? null : product.id)}
-                          className={`p-2 rounded-xl text-xs transition-colors ${
+                          className={`p-2.5 rounded-xl text-xs transition-colors ${
                             showNote
                               ? 'bg-stone-700 text-white'
                               : 'bg-stone-800 text-stone-500 hover:text-white hover:bg-stone-700'
@@ -391,27 +438,34 @@ export default function ShowcasePage() {
 
       {/* Sticky bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-stone-900/95 backdrop-blur-sm border-t border-stone-800 px-4 py-4 z-20">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-4xl mx-auto">
           {shortlistedCount === 0 ? (
-            <div className="text-stone-500 text-sm">
-              Tap the <Heart className="w-3.5 h-3.5 inline mx-0.5" /> to shortlist designs you're interested in
+            <div className="text-stone-500 text-sm text-center py-1">
+              Tap the <Heart className="w-3.5 h-3.5 inline mx-0.5" /> to shortlist designs you&apos;re interested in
             </div>
           ) : (
-            <>
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-[#C49C64] flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-[#C49C64] flex items-center justify-center shrink-0">
                   <span className="text-white text-xs font-bold">{shortlistedCount}</span>
                 </div>
-                <div>
-                  <p className="text-white text-sm font-medium">{shortlistedCount} design{shortlistedCount !== 1 ? 's' : ''} shortlisted</p>
+                <div className="min-w-0">
+                  <p className="text-white text-sm font-medium truncate">{shortlistedCount} design{shortlistedCount !== 1 ? 's' : ''} shortlisted</p>
                   <p className="text-stone-500 text-xs">Saved automatically</p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-green-400 text-xs font-medium bg-green-900/30 border border-green-800/50 px-3 py-2 rounded-xl">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Saved
-              </div>
-            </>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="flex items-center gap-2 bg-[#C49C64] hover:bg-[#9B7A40] disabled:opacity-60 text-white px-5 py-3 rounded-xl text-sm font-semibold transition-all shrink-0 active:scale-95">
+                {submitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                Submit shortlist ({shortlistedCount})
+              </button>
+            </div>
           )}
         </div>
       </div>
