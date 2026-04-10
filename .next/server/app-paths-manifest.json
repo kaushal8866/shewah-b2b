@@ -1,5 +1,10 @@
 {
-  "/page": "app/page.js",
+  "/partners/[id]/page": "app/partners/[id]/page.js",
+  "/orders/page": "app/orders/page.js",
+  "/catalog/page": "app/catalog/page.js",
+  "/partners/page": "app/partners/page.js",
   "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/partners/page": "app/partners/page.js"
+  "/showcase/[collectionId]/[partnerId]/page": "app/showcase/[collectionId]/[partnerId]/page.js",
+  "/api/showcase/[collectionId]/[partnerId]/route": "app/api/showcase/[collectionId]/[partnerId]/route.js",
+  "/orders/new/page": "app/orders/new/page.js"
 }
