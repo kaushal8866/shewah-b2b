@@ -77,13 +77,12 @@ export default function ShowcasePage() {
     setPartner(data.partner)
     setProducts(data.products)
 
-    if (data.interests.length) {
-      const map = new Map<string, InterestRow>()
-      data.interests.forEach(row => {
-        map.set(row.product_id, { note: row.note ?? '', quantity_hint: row.quantity_hint ?? undefined })
-      })
-      setInterests(map)
-    }
+    // Explicitly reset and rebuild interest map from server data
+    const map = new Map<string, InterestRow>()
+    data.interests.forEach(row => {
+      map.set(row.product_id, { note: row.note ?? '', quantity_hint: row.quantity_hint ?? undefined })
+    })
+    setInterests(map)
 
     setStatus('ready')
   }, [collectionId, partnerId])
