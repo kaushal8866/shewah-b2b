@@ -46,19 +46,35 @@ CREATE TABLE IF NOT EXISTS design_interests (
   UNIQUE(partner_id, product_id, collection_id)
 );
 
--- ── RLS: open access (same pattern as other tables) ──────
+-- ── RLS ──────────────────────────────────────────────────
 ALTER TABLE design_collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE design_collection_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE design_interests ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Allow all" ON design_collections;
-DROP POLICY IF EXISTS "Allow all" ON design_collection_products;
-DROP POLICY IF EXISTS "Allow all" ON design_interests;
+-- Admin tables: public SELECT (showcase reads them), writes restricted to service_role
+-- (The Next.js admin panel writes to these tables only through server-side API routes
+--  that authenticate with the service role key.)
+DROP POLICY IF EXISTS "Allow all"          ON design_collections;
+DROP POLICY IF EXISTS "select_published"   ON design_collections;
+DROP POLICY IF EXISTS "write_service_role" ON design_collections;
 
-CREATE POLICY "Allow all" ON design_collections         FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all" ON design_collection_products FOR ALL USING (true) WITH CHECK (true);
--- design_interests also needs public access for the showcase portal
-CREATE POLICY "Allow all" ON design_interests           FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "select_all"         ON design_collections FOR SELECT USING (true);
+CREATE POLICY "write_service_role" ON design_collections
+  FOR ALL USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
+
+DROP POLICY IF EXISTS "Allow all"          ON design_collection_products;
+DROP POLICY IF EXISTS "select_all"         ON design_collection_products;
+DROP POLICY IF EXISTS "write_service_role" ON design_collection_products;
+
+CREATE POLICY "select_all"         ON design_collection_products FOR SELECT USING (true);
+CREATE POLICY "write_service_role" ON design_collection_products
+  FOR ALL USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
+
+-- design_interests: public write needed — partner shortlists come from the public showcase portal
+DROP POLICY IF EXISTS "Allow all" ON design_interests;
+CREATE POLICY "Allow all" ON design_interests FOR ALL USING (true) WITH CHECK (true);
 
 -- ── SHOWCASE VIEWS (visit tracking) ──────────────────────
 CREATE TABLE IF NOT EXISTS showcase_views (

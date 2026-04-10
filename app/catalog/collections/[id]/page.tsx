@@ -89,21 +89,26 @@ export default function CollectionDetailPage() {
   async function handleSave() {
     if (!form.name.trim()) { alert('Name is required'); return }
     setSaving(true)
-    const { error } = await supabase.from('design_collections').update({
-      name: form.name.trim(),
-      description: form.description || null,
-      circuit_target: form.circuit_target || null,
-    }).eq('id', id)
+    const res = await fetch(`/api/collections/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: form.name.trim(), description: form.description || null, circuit_target: form.circuit_target || null }),
+    })
+    const json = await res.json()
     setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
+    if (!res.ok) { alert('Error: ' + (json.error || res.statusText)); return }
     load()
   }
 
   async function handlePublishToggle() {
     if (!collection) return
     const newVal = !collection.is_published
-    const { error } = await supabase.from('design_collections').update({ is_published: newVal }).eq('id', id)
-    if (error) { alert('Error: ' + error.message); return }
+    const res = await fetch(`/api/collections/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_published: newVal }),
+    })
+    if (!res.ok) { const j = await res.json(); alert('Error: ' + (j.error || res.statusText)); return }
     load()
     if (newVal) setShowPartnerLinks(true)
   }
@@ -111,10 +116,9 @@ export default function CollectionDetailPage() {
   async function handleDelete() {
     if (!confirm('Delete this collection permanently? This cannot be undone.')) return
     setDeleting(true)
-    await supabase.from('design_collection_products').delete().eq('collection_id', id)
-    const { error } = await supabase.from('design_collections').delete().eq('id', id)
+    const res = await fetch(`/api/collections/${id}`, { method: 'DELETE' })
     setDeleting(false)
-    if (error) { alert('Error: ' + error.message); return }
+    if (!res.ok) { const j = await res.json(); alert('Error: ' + (j.error || res.statusText)); return }
     router.push('/catalog?tab=collections')
   }
 
@@ -129,17 +133,13 @@ export default function CollectionDetailPage() {
 
   async function saveProducts() {
     setSavingProducts(true)
-    await supabase.from('design_collection_products').delete().eq('collection_id', id)
-    if (selectedIds.size > 0) {
-      const rows = Array.from(selectedIds).map((pid, idx) => ({
-        collection_id: id,
-        product_id: pid,
-        sort_order: idx,
-      }))
-      const { error } = await supabase.from('design_collection_products').insert(rows)
-      if (error) { alert('Error saving products: ' + error.message); setSavingProducts(false); return }
-    }
+    const res = await fetch(`/api/collections/${id}/products`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+    })
     setSavingProducts(false)
+    if (!res.ok) { const j = await res.json(); alert('Error saving products: ' + (j.error || res.statusText)); return }
     load()
   }
 

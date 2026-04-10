@@ -502,7 +502,7 @@ function InterestTab() {
                         → Order
                       </Link>
                       <Link
-                        href={`/cad-requests/new${i.partner_id ? `?partner_id=${i.partner_id}` : ''}`}
+                        href={`/cad-requests/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
                         className="text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 transition-colors whitespace-nowrap">
                         → CAD
                       </Link>

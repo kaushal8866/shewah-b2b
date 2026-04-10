@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 
@@ -18,13 +17,14 @@ export default function NewCollectionPage() {
   async function handleSave() {
     if (!form.name.trim()) { alert('Collection name is required'); return }
     setSaving(true)
-    const { data, error } = await supabase
-      .from('design_collections')
-      .insert([{ name: form.name.trim(), description: form.description || null, circuit_target: form.circuit_target || null }])
-      .select()
-      .single()
+    const res = await fetch('/api/collections', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: form.name.trim(), description: form.description || null, circuit_target: form.circuit_target || null }),
+    })
+    const data = await res.json()
     setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
+    if (!res.ok) { alert('Error: ' + (data.error || res.statusText)); return }
     router.push(`/catalog/collections/${data.id}`)
   }
 

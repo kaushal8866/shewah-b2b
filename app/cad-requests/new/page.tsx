@@ -10,16 +10,22 @@ function NewCADRequestForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const prePartner = searchParams.get('partner_id') || ''
+  const preProduct = searchParams.get('product_id') || ''
 
   const [saving, setSaving] = useState(false)
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
+  const [productRef, setProductRef] = useState<{ code: string; name: string; gold_karat?: number; diamond_shape?: string } | null>(null)
   const fromInterest = !!prePartner
 
   const [form, setForm] = useState({
     partner_id: prePartner,
-    brief_text: '', diamond_shape: 'round',
-    diamond_weight: '', gold_karat: '18', setting_type: '',
-    special_requests: '', priority: 'normal',
+    brief_text: '',
+    diamond_shape: 'round',
+    diamond_weight: '',
+    gold_karat: '18',
+    setting_type: '',
+    special_requests: '',
+    priority: 'normal',
     due_date: new Date(Date.now() + 48 * 3600000).toISOString().split('T')[0],
   })
 
@@ -27,6 +33,25 @@ function NewCADRequestForm() {
     supabase.from('partners').select('id, store_name, city').eq('stage', 'active')
       .order('store_name').then(({ data }) => setPartners(data || []))
   }, [])
+
+  useEffect(() => {
+    if (!preProduct) return
+    supabase
+      .from('products')
+      .select('id, code, name, gold_karat, diamond_shape')
+      .eq('id', preProduct)
+      .single()
+      .then(({ data }) => {
+        if (!data) return
+        setProductRef(data)
+        setForm(prev => ({
+          ...prev,
+          brief_text: prev.brief_text || `Reference product: ${data.code} — ${data.name}`,
+          diamond_shape: data.diamond_shape || prev.diamond_shape,
+          gold_karat: data.gold_karat ? String(data.gold_karat) : prev.gold_karat,
+        }))
+      })
+  }, [preProduct])
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
 
@@ -70,7 +95,9 @@ function NewCADRequestForm() {
       {fromInterest && (
         <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 text-sm text-amber-800">
           <Heart className="w-4 h-4 text-amber-600 shrink-0" />
-          Partner pre-filled from their design interest.
+          <span>
+            Partner {productRef ? <span>and product <strong>{productRef.code} — {productRef.name}</strong> were</span> : 'was'} pre-filled from their design interest.
+          </span>
         </div>
       )}
 
