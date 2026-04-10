@@ -103,14 +103,16 @@ export default function CircuitsPage() {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-stone-400">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-400">
                     {c.start_date && <span>{formatDate(c.start_date)}</span>}
                     {c.start_date && c.end_date && <span>→</span>}
                     {c.end_date && <span>{formatDate(c.end_date)}</span>}
                     {c.cities && c.cities.length > 0 && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {c.cities.join(' → ')}
+                      <span className="flex items-center gap-1 truncate max-w-[200px]">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        <span className="truncate">
+                          {c.cities.slice(0, 4).join(' → ')}{c.cities.length > 4 ? ` +${c.cities.length - 4}` : ''}
+                        </span>
                       </span>
                     )}
                   </div>
@@ -136,7 +138,7 @@ export default function CircuitsPage() {
               </div>
 
               {/* Progress bars */}
-              <div className="grid grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-5">
                 <div>
                   <div className="flex justify-between text-xs mb-1.5">
                     <span className="text-stone-500 flex items-center gap-1">

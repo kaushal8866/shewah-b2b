@@ -118,7 +118,7 @@ export default function Dashboard() {
     <div className="p-4 lg:p-7">
       {/* Header */}
       <div className="mb-5 lg:mb-7">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Dashboard</h1>
             <p className="text-stone-500 text-xs lg:text-sm mt-0.5">
@@ -126,7 +126,7 @@ export default function Dashboard() {
             </p>
           </div>
           {stats.goldRate24k > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 px-3 py-1.5 lg:px-4 lg:py-2 rounded-lg shrink-0">
+            <div className="bg-yellow-50 border border-yellow-200 px-3 py-1.5 lg:px-4 lg:py-2 rounded-lg sm:shrink-0 self-start">
               <p className="text-xs text-yellow-600 font-medium">Gold 24K</p>
               <p className="text-sm lg:text-lg font-semibold text-yellow-800">₹{stats.goldRate24k.toLocaleString('en-IN')}/g</p>
             </div>
