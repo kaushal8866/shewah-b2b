@@ -72,9 +72,15 @@ CREATE POLICY "write_service_role" ON design_collection_products
   FOR ALL USING (auth.role() = 'service_role')
   WITH CHECK (auth.role() = 'service_role');
 
--- design_interests: public write needed — partner shortlists come from the public showcase portal
-DROP POLICY IF EXISTS "Allow all" ON design_interests;
-CREATE POLICY "Allow all" ON design_interests FOR ALL USING (true) WITH CHECK (true);
+-- design_interests: showcase reads its own rows, writes go through server-side API (service_role)
+DROP POLICY IF EXISTS "Allow all"          ON design_interests;
+DROP POLICY IF EXISTS "select_all"         ON design_interests;
+DROP POLICY IF EXISTS "write_service_role" ON design_interests;
+
+CREATE POLICY "select_all"         ON design_interests FOR SELECT USING (true);
+CREATE POLICY "write_service_role" ON design_interests
+  FOR ALL USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
 
 -- ── SHOWCASE VIEWS (visit tracking) ──────────────────────
 CREATE TABLE IF NOT EXISTS showcase_views (
@@ -86,5 +92,12 @@ CREATE TABLE IF NOT EXISTS showcase_views (
 );
 
 ALTER TABLE showcase_views ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow all" ON showcase_views;
-CREATE POLICY "Allow all" ON showcase_views FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow all"          ON showcase_views;
+DROP POLICY IF EXISTS "select_all"         ON showcase_views;
+DROP POLICY IF EXISTS "write_service_role" ON showcase_views;
+
+-- showcase_views: public read, writes go through /api/showcase/track server endpoint
+CREATE POLICY "select_all"         ON showcase_views FOR SELECT USING (true);
+CREATE POLICY "write_service_role" ON showcase_views
+  FOR ALL USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');

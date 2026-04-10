@@ -38,7 +38,19 @@ type InterestRow = {
   quantity_hint?: number
 }
 
-type Status = 'loading' | 'not_found' | 'unpublished' | 'ready' | 'submitted'
+type RawInterestRow = {
+  id: string
+  product_id: string
+  note: string | null
+  quantity_hint: number | null
+}
+
+type RawCollectionProduct = {
+  product_id: string
+  sort_order: number
+}
+
+type Status = 'loading' | 'not_found' | 'unpublished' | 'ready'
 
 export default function ShowcasePage() {
   const params = useParams()
@@ -62,8 +74,8 @@ export default function ShowcasePage() {
     if (!coll || !part) { setStatus('not_found'); return }
     if (!coll.is_published) { setStatus('unpublished'); return }
 
-    setCollection(coll)
-    setPartner(part)
+    setCollection(coll as Collection)
+    setPartner(part as Partner)
 
     // Load products in this collection
     const { data: collProds } = await supabase
@@ -73,19 +85,17 @@ export default function ShowcasePage() {
       .order('sort_order')
 
     if (collProds && collProds.length > 0) {
-      const ids = collProds.map((r: any) => r.product_id)
+      const typedProds = collProds as RawCollectionProduct[]
+      const ids = typedProds.map(r => r.product_id)
       const { data: prods } = await supabase
         .from('products')
         .select('id, code, name, gold_karat, diamond_shape, trade_price, photo_urls, is_active')
         .in('id', ids)
-      // Preserve sort order from collection
-      const sorted = (prods || []).sort((a: Product, b: Product) => {
-        return ids.indexOf(a.id) - ids.indexOf(b.id)
-      })
+      const sorted = (prods as Product[] || []).sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))
       setProducts(sorted)
     }
 
-    // Load existing interests
+    // Load existing interests (read-only via anon key — SELECT is open)
     const { data: existingInterests } = await supabase
       .from('design_interests')
       .select('id, product_id, note, quantity_hint')
@@ -94,20 +104,25 @@ export default function ShowcasePage() {
 
     if (existingInterests) {
       const map = new Map<string, InterestRow>()
-      existingInterests.forEach((row: any) => {
-        map.set(row.product_id, { id: row.id, product_id: row.product_id, note: row.note || '', quantity_hint: row.quantity_hint })
+      ;(existingInterests as RawInterestRow[]).forEach(row => {
+        map.set(row.product_id, {
+          id: row.id,
+          product_id: row.product_id,
+          note: row.note ?? '',
+          quantity_hint: row.quantity_hint ?? undefined,
+        })
       })
       setInterests(map)
     }
 
     setStatus('ready')
 
-    // Track visit (non-blocking, gracefully fails if table doesn't exist yet)
-    supabase.from('showcase_views').insert({
-      collection_id: collectionId,
-      partner_id: partnerId,
-      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 200) : null,
-    }).then(() => {})
+    // Track visit via server-side API (non-blocking)
+    fetch('/api/showcase/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ collection_id: collectionId, partner_id: partnerId }),
+    }).catch(() => {})
   }, [collectionId, partnerId])
 
   useEffect(() => { load() }, [load])
@@ -119,7 +134,11 @@ export default function ShowcasePage() {
     if (hasInterest) {
       const row = interests.get(product.id)!
       if (row.id) {
-        await supabase.from('design_interests').delete().eq('id', row.id)
+        await fetch('/api/showcase/interests', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: row.id, partner_id: partnerId }),
+        })
       }
       setInterests(prev => {
         const next = new Map(prev)
@@ -127,23 +146,19 @@ export default function ShowcasePage() {
         return next
       })
     } else {
-      const { data } = await supabase
-        .from('design_interests')
-        .upsert({
-          collection_id: collectionId,
-          partner_id: partnerId,
-          product_id: product.id,
-          note: '',
-          quantity_hint: null,
-        }, { onConflict: 'partner_id,product_id,collection_id' })
-        .select('id')
-        .single()
-
-      setInterests(prev => {
-        const next = new Map(prev)
-        next.set(product.id, { id: data?.id, product_id: product.id, note: '', quantity_hint: undefined })
-        return next
+      const res = await fetch('/api/showcase/interests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection_id: collectionId, partner_id: partnerId, product_id: product.id }),
       })
+      const data = await res.json()
+      if (res.ok) {
+        setInterests(prev => {
+          const next = new Map(prev)
+          next.set(product.id, { id: data.id, product_id: product.id, note: '', quantity_hint: undefined })
+          return next
+        })
+      }
     }
 
     setSaving(prev => {
@@ -155,25 +170,29 @@ export default function ShowcasePage() {
 
   async function updateNote(productId: string, field: 'note' | 'quantity_hint', value: string | number | null) {
     const row = interests.get(productId)
-    if (!row) return
+    if (!row?.id) return
 
-    const update: any = {}
-    update[field] = value === '' ? null : value
+    const update: { note?: string | null; quantity_hint?: number | null } = {}
+    if (field === 'note') update.note = value === '' ? null : (value as string)
+    if (field === 'quantity_hint') update.quantity_hint = value === '' ? null : (value as number | null)
 
     // Optimistic update
     setInterests(prev => {
       const next = new Map(prev)
-      next.set(productId, { ...row, [field]: value === '' ? undefined : value })
+      const existing = next.get(productId)!
+      if (field === 'note') next.set(productId, { ...existing, note: (value ?? '') as string })
+      else next.set(productId, { ...existing, quantity_hint: value === '' ? undefined : (value as number | undefined) })
       return next
     })
 
-    if (row.id) {
-      await supabase.from('design_interests').update(update).eq('id', row.id)
-    }
+    fetch('/api/showcase/interests', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: row.id, partner_id: partnerId, ...update }),
+    }).catch(() => {})
   }
 
-  const shortlisted = Array.from(interests.keys())
-  const shortlistedCount = shortlisted.length
+  const shortlistedCount = interests.size
 
   if (status === 'loading') {
     return (
@@ -281,7 +300,6 @@ export default function ShowcasePage() {
                         <span className="text-3xl">◆</span>
                       </div>
                     )}
-                    {/* Shortlist badge */}
                     {isShortlisted && (
                       <div className="absolute top-2 left-2 bg-[#C49C64] text-white text-xs px-2 py-0.5 rounded-full font-medium">
                         Shortlisted
@@ -307,7 +325,7 @@ export default function ShowcasePage() {
                       )}
                     </div>
 
-                    {/* Shortlist note (shown when shortlisted and expanded) */}
+                    {/* Note fields (shown when shortlisted and expanded) */}
                     {isShortlisted && showNote && (
                       <div className="mb-2 space-y-2">
                         <div className="flex items-center gap-1.5">
@@ -316,7 +334,7 @@ export default function ShowcasePage() {
                             type="number"
                             placeholder="Qty"
                             min={1}
-                            value={interestRow?.quantity_hint || ''}
+                            value={interestRow?.quantity_hint ?? ''}
                             onChange={e => updateNote(product.id, 'quantity_hint', e.target.value ? parseInt(e.target.value) : null)}
                             className="w-full bg-stone-800 text-white text-xs px-2 py-1.5 rounded-lg border border-stone-700 outline-none focus:border-[#C49C64] placeholder-stone-600"
                           />
@@ -325,7 +343,7 @@ export default function ShowcasePage() {
                           <MessageSquare className="w-3.5 h-3.5 text-stone-500 shrink-0 mt-1.5" />
                           <textarea
                             placeholder="Note (size, variant, query…)"
-                            value={interestRow?.note || ''}
+                            value={interestRow?.note ?? ''}
                             onChange={e => updateNote(product.id, 'note', e.target.value)}
                             rows={2}
                             className="w-full bg-stone-800 text-white text-xs px-2 py-1.5 rounded-lg border border-stone-700 outline-none focus:border-[#C49C64] placeholder-stone-600 resize-none"

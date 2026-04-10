@@ -324,3 +324,75 @@ from partners p
 left join orders o on o.partner_id = p.id
 left join visits v on v.partner_id = p.id
 group by p.id;
+
+-- ── DESIGN COLLECTIONS (Partner Design Portal) ───────────────────────
+create table design_collections (
+  id             uuid        primary key default gen_random_uuid(),
+  created_at     timestamptz default now(),
+  updated_at     timestamptz default now(),
+  name           text        not null,
+  description    text,
+  circuit_target text,
+  is_published   boolean     default false
+);
+
+create or replace function update_design_collections_updated_at()
+returns trigger as $$
+begin new.updated_at = now(); return new; end;
+$$ language plpgsql;
+
+create trigger design_collections_updated_at
+  before update on design_collections
+  for each row execute function update_design_collections_updated_at();
+
+alter table design_collections enable row level security;
+create policy "select_all"         on design_collections for select using (true);
+create policy "write_service_role" on design_collections
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- ── DESIGN COLLECTION PRODUCTS (junction) ────────────────────────────
+create table design_collection_products (
+  id            uuid primary key default gen_random_uuid(),
+  collection_id uuid not null references design_collections(id) on delete cascade,
+  product_id    uuid not null references products(id) on delete cascade,
+  sort_order    integer default 0,
+  unique(collection_id, product_id)
+);
+
+alter table design_collection_products enable row level security;
+create policy "select_all"         on design_collection_products for select using (true);
+create policy "write_service_role" on design_collection_products
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- ── DESIGN INTERESTS (partner shortlists) ────────────────────────────
+-- Writes go through /api/showcase/interests (service_role); reads are open.
+create table design_interests (
+  id            uuid        primary key default gen_random_uuid(),
+  created_at    timestamptz default now(),
+  partner_id    uuid        references partners(id) on delete set null,
+  product_id    uuid        references products(id) on delete set null,
+  collection_id uuid        references design_collections(id) on delete set null,
+  note          text,
+  quantity_hint integer,
+  unique(partner_id, product_id, collection_id)
+);
+
+alter table design_interests enable row level security;
+create policy "select_all"         on design_interests for select using (true);
+create policy "write_service_role" on design_interests
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- ── SHOWCASE VIEWS (visit tracking) ──────────────────────────────────
+-- Writes go through /api/showcase/track (service_role); reads are open.
+create table showcase_views (
+  id            uuid        primary key default gen_random_uuid(),
+  created_at    timestamptz default now(),
+  collection_id uuid        references design_collections(id) on delete set null,
+  partner_id    uuid        references partners(id) on delete set null,
+  user_agent    text
+);
+
+alter table showcase_views enable row level security;
+create policy "select_all"         on showcase_views for select using (true);
+create policy "write_service_role" on showcase_views
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');

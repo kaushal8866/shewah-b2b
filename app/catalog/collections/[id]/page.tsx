@@ -71,12 +71,12 @@ export default function CollectionDetailPage() {
     setCollection(coll)
     setForm({ name: coll.name, description: coll.description || '', circuit_target: coll.circuit_target || '' })
     setAllProducts(prods || [])
-    setSelectedIds(new Set((collProds || []).map((p: any) => p.product_id)))
+    setSelectedIds(new Set((collProds || []).map((p: { product_id: string }) => p.product_id)))
     setPartners(parts || [])
     // Aggregate view counts per partner (graceful if table doesn't exist yet)
     if (views) {
       const counts = new Map<string, number>()
-      views.forEach((v: any) => {
+      ;(views as { partner_id: string | null }[]).forEach(v => {
         if (v.partner_id) counts.set(v.partner_id, (counts.get(v.partner_id) || 0) + 1)
       })
       setViewCounts(counts)

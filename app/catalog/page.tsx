@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase, Product } from '@/lib/supabase'
 import { Plus, Search, Package, Edit2, Eye, EyeOff, Library, Heart, Trash2, Copy, Check, Globe, Lock, ChevronRight, Terminal, RefreshCw } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 
 type Collection = {
@@ -53,7 +54,7 @@ function CatalogContent() {
             { key: 'products', label: 'Products', icon: Package },
             { key: 'collections', label: 'Collections', icon: Library },
             { key: 'interest', label: 'Interest', icon: Heart },
-          ] as { key: TabKey; label: string; icon: any }[]).map(({ key, label, icon: Icon }) => (
+          ] as { key: TabKey; label: string; icon: LucideIcon }[]).map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => goTab(key)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === key ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}>
               <Icon className="w-4 h-4" />
@@ -236,6 +237,11 @@ function ProductsTab() {
   )
 }
 
+type RawCollectionRow = Omit<Collection, 'product_count' | 'response_count'> & {
+  design_collection_products: { count: number }[]
+  design_interests: { count: number }[]
+}
+
 /* ─── Collections Tab ──────────────────────────────────────────────── */
 function CollectionsTab() {
   const [collections, setCollections] = useState<Collection[]>([])
@@ -264,7 +270,7 @@ function CollectionsTab() {
       return
     }
 
-    const mapped = (data || []).map((c: any) => ({
+    const mapped = (data as RawCollectionRow[]).map(c => ({
       ...c,
       product_count: c.design_collection_products?.[0]?.count ?? 0,
       response_count: c.design_interests?.[0]?.count ?? 0,
@@ -274,15 +280,18 @@ function CollectionsTab() {
   }
 
   async function togglePublish(id: string, current: boolean) {
-    await supabase.from('design_collections').update({ is_published: !current }).eq('id', id)
+    await fetch(`/api/collections/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_published: !current }),
+    })
     load()
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this collection? Partner interest data for this collection will be unlinked.')) return
     setDeleting(id)
-    await supabase.from('design_collection_products').delete().eq('collection_id', id)
-    await supabase.from('design_collections').delete().eq('id', id)
+    await fetch(`/api/collections/${id}`, { method: 'DELETE' })
     setDeleting(null)
     load()
   }
