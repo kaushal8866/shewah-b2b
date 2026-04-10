@@ -89,13 +89,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const validProductIds = new Set((collProds ?? []).map(r => r.product_id))
   const validSelections = selections.filter(s => validProductIds.has(s.product_id))
 
-  // Delete all previous interests for this partner+collection, then insert fresh
-  await supabaseAdmin
-    .from('design_interests')
-    .delete()
-    .eq('collection_id', collectionId)
-    .eq('partner_id', partnerId)
-
+  // Upsert submitted selections (conflict on collection_id,partner_id,product_id)
   if (validSelections.length > 0) {
     const rows = validSelections.map(s => ({
       collection_id: collectionId,
@@ -104,9 +98,28 @@ export async function POST(req: NextRequest, { params }: Params) {
       note: s.note ?? null,
       quantity_hint: s.quantity_hint ?? null,
     }))
-    const { error } = await supabaseAdmin.from('design_interests').insert(rows)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const { error: upsertError } = await supabaseAdmin
+      .from('design_interests')
+      .upsert(rows, { onConflict: 'partner_id,product_id,collection_id' })
+    if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 500 })
   }
+
+  // Remove de-selected products (rows NOT in the submitted set)
+  const submittedIds = validSelections.map(s => s.product_id)
+  const { error: deleteError } = submittedIds.length > 0
+    ? await supabaseAdmin
+        .from('design_interests')
+        .delete()
+        .eq('collection_id', collectionId)
+        .eq('partner_id', partnerId)
+        .not('product_id', 'in', `(${submittedIds.join(',')})`)
+    : await supabaseAdmin
+        .from('design_interests')
+        .delete()
+        .eq('collection_id', collectionId)
+        .eq('partner_id', partnerId)
+
+  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
 
   return NextResponse.json({ ok: true, count: validSelections.length })
 }

@@ -95,9 +95,11 @@ export default function ShowcasePage() {
       const next = new Map(prev)
       if (next.has(product.id)) {
         next.delete(product.id)
-        if (activeNote === product.id) setActiveNote(null)
+        setActiveNote(a => a === product.id ? null : a)
       } else {
         next.set(product.id, { note: '', quantity_hint: undefined })
+        // Auto-open the note field so the partner can add specifics right away
+        setActiveNote(product.id)
       }
       return next
     })
