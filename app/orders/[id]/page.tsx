@@ -80,6 +80,11 @@ export default function OrderDetailPage() {
   }
 
   async function handleDelete() {
+    // Clear FK references first to avoid constraint violations
+    await Promise.all([
+      supabase.from('manufacturing_orders').update({ customer_order_id: null }).eq('customer_order_id', id),
+      supabase.from('cad_requests').update({ order_id: null }).eq('order_id', id),
+    ])
     const { error } = await supabase.from('orders').delete().eq('id', id)
     if (error) { alert('Error: ' + error.message); return }
     router.push('/orders')

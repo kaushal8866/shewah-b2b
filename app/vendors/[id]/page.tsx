@@ -60,6 +60,8 @@ export default function VendorDetailPage() {
   }
 
   async function handleDelete() {
+    // Unlink inventory items before deleting the vendor
+    await supabase.from('inventory').update({ vendor_id: null }).eq('vendor_id', id)
     const { error } = await supabase.from('vendors').delete().eq('id', id)
     if (error) { alert('Error: ' + error.message); return }
     router.push('/vendors')

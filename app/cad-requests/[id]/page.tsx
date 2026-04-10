@@ -74,6 +74,8 @@ export default function CadRequestDetailPage() {
   }
 
   async function handleDelete() {
+    // Unlink any orders that reference this CAD request before deleting
+    await supabase.from('orders').update({ cad_request_id: null }).eq('cad_request_id', id)
     const { error } = await supabase.from('cad_requests').delete().eq('id', id)
     if (error) { alert('Error: ' + error.message); return }
     router.push('/cad-requests')

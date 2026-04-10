@@ -75,6 +75,22 @@ export default function PartnerDetailPage() {
 
   async function handleDelete() {
     setDeleting(true)
+    // Block deletion if partner has orders — data would be lost
+    const { count: orderCount } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('partner_id', id)
+    if (orderCount && orderCount > 0) {
+      setDeleting(false)
+      alert(`Cannot delete: this partner has ${orderCount} order(s). Move or delete their orders first.`)
+      setShowDeleteConfirm(false)
+      return
+    }
+    // Clean up FK references in tables that allow nulls
+    await Promise.all([
+      supabase.from('cad_requests').update({ partner_id: null }).eq('partner_id', id),
+      supabase.from('visits').delete().eq('partner_id', id),
+    ])
     const { error } = await supabase.from('partners').delete().eq('id', id)
     setDeleting(false)
     if (error) { alert('Error: ' + error.message); return }
