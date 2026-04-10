@@ -75,7 +75,7 @@ export default function CircuitDetailPage() {
   const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
-  if (loading) return <div className="p-7 text-stone-400 text-sm">Loading...</div>
+  if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
 
   return (
     <div className="p-4 lg:p-7 max-w-3xl">

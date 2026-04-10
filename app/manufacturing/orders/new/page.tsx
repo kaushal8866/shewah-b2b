@@ -412,7 +412,7 @@ function NewMfgOrderForm() {
 
 export default function NewMfgOrderPage() {
   return (
-    <Suspense fallback={<div className="p-7 text-stone-400">Loading...</div>}>
+    <Suspense fallback={<div className="p-4 lg:p-7 text-stone-400">Loading...</div>}>
       <NewMfgOrderForm />
     </Suspense>
   )

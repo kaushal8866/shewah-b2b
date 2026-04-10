@@ -99,7 +99,7 @@ function NewCADRequestForm() {
   const label = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
-    <div className="p-7 max-w-2xl">
+    <div className="p-4 lg:p-7 max-w-2xl">
       <div className="flex items-center gap-3 mb-7">
         <Link href="/cad-requests" className="text-stone-400 hover:text-stone-600">
           <ArrowLeft className="w-5 h-5" />
@@ -249,7 +249,7 @@ function NewCADRequestForm() {
 
 export default function NewCADRequestPage() {
   return (
-    <Suspense fallback={<div className="p-7 text-stone-400 text-sm">Loading...</div>}>
+    <Suspense fallback={<div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>}>
       <NewCADRequestForm />
     </Suspense>
   )

@@ -60,7 +60,7 @@ export default function NewCircuitPage() {
   const suggestedForRegion = form.region ? (SUGGESTED_CITIES as any)[form.region] || [] : []
 
   return (
-    <div className="p-7 max-w-2xl">
+    <div className="p-4 lg:p-7 max-w-2xl">
       <div className="flex items-center gap-3 mb-7">
         <Link href="/circuits" className="text-stone-400 hover:text-stone-600">
           <ArrowLeft className="w-5 h-5" />

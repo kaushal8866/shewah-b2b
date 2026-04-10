@@ -59,7 +59,7 @@ export default function NewVendorPage() {
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
-    <div className="p-7 max-w-2xl">
+    <div className="p-4 lg:p-7 max-w-2xl">
       <div className="flex items-center gap-3 mb-7">
         <Link href="/vendors" className="text-stone-400 hover:text-stone-600">
           <ArrowLeft className="w-5 h-5" />

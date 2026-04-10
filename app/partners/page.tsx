@@ -207,8 +207,8 @@ export default function PartnersPage() {
                     <p className="text-sm font-medium text-stone-900">{p.store_name}</p>
                     <span className={`status-pill text-xs ${getStatusColor(p.status)}`}>{p.status}</span>
                   </div>
-                  <p className="text-xs text-stone-500">{p.owner_name}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-stone-400">
+                  <p className="text-xs text-stone-500">{p.owner_name}{p.phone ? ` · ${p.phone}` : ''}</p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-stone-400 flex-wrap">
                     <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{p.city}</span>
                     {p.circuit && <span>{p.circuit} circuit</span>}
                     <span className={`status-pill ${getStatusColor(p.stage)}`}>{p.stage.replace(/_/g, ' ')}</span>
