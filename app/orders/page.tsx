@@ -66,21 +66,22 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="p-7">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 lg:p-7">
+      <div className="flex items-center justify-between mb-5 lg:mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Orders</h1>
+          <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Orders</h1>
           <p className="text-stone-500 text-sm mt-0.5">Pipeline tracker — {orders.length} orders</p>
         </div>
         <Link href="/orders/new"
-          className="flex items-center gap-2 bg-[#C49C64] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors">
+          className="flex items-center gap-2 bg-[#C49C64] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors">
           <Plus className="w-4 h-4" />
-          New order
+          <span className="hidden sm:inline">New order</span>
+          <span className="sm:hidden">New</span>
         </Link>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {[
           { label: 'Total orders', value: stats.total },
           { label: 'Open orders', value: stats.open },
@@ -97,7 +98,7 @@ export default function OrdersPage() {
       {/* Kanban quick view */}
       <div className="bg-white rounded-xl border border-stone-200 p-4 mb-4">
         <p className="text-xs text-stone-400 mb-3 font-medium">Pipeline overview</p>
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           {ORDER_STATUSES.filter(s => s.value !== 'delivered').map(stage => {
             const count = orders.filter(o => o.status === stage.value).length
             return (
@@ -136,8 +137,8 @@ export default function OrdersPage() {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      {/* Table — hidden on mobile */}
+      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden hidden lg:block">
         <table className="w-full">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50">
@@ -206,6 +207,51 @@ export default function OrdersPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile card list — shown only on mobile */}
+      <div className="lg:hidden bg-white rounded-xl border border-stone-200 overflow-hidden">
+        {loading ? (
+          <div className="text-center py-8 text-stone-400 text-sm">Loading...</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-8 text-stone-400 text-sm">
+            {orders.length === 0 ? 'No orders yet — create your first order' : 'No orders match filters'}
+          </div>
+        ) : (
+          <div className="divide-y divide-stone-50">
+            {filtered.map(o => {
+              const daysLeft = getDaysLeft(o.expected_delivery)
+              const isOverdue = daysLeft !== null && daysLeft < 0 && o.status !== 'delivered'
+              return (
+                <a key={o.id} href={`/orders/${o.id}`}
+                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-stone-50 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <p className="text-sm font-medium text-stone-900">{o.order_number}</p>
+                      <span className={`status-pill text-xs ${getStatusColor(o.status)}`}>
+                        {o.status?.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-500 truncate">{o.partner_name || '—'} · {o.product_name || 'Custom design'}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <p className="text-xs font-medium text-stone-700">{formatCurrency(o.total_amount)}</p>
+                      {(o.balance_due || 0) > 0 && (
+                        <p className="text-xs text-red-500">₹{o.balance_due?.toLocaleString('en-IN')} due</p>
+                      )}
+                      {o.expected_delivery && (
+                        <span className={`flex items-center gap-0.5 text-xs ${isOverdue ? 'text-red-500 font-medium' : 'text-stone-400'}`}>
+                          {isOverdue && <AlertCircle className="w-3 h-3" />}
+                          {formatDate(o.expected_delivery)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-stone-300 shrink-0" />
+                </a>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

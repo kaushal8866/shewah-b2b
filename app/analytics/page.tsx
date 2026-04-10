@@ -143,14 +143,14 @@ export default function AnalyticsPage() {
   const totalOrders = data.revenueByMonth.reduce((s, m) => s + m.orders, 0)
 
   return (
-    <div className="p-7">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-stone-900">Analytics</h1>
+    <div className="p-4 lg:p-7">
+      <div className="mb-5 lg:mb-6">
+        <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Analytics</h1>
         <p className="text-stone-500 text-sm mt-0.5">Business performance overview</p>
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-4 gap-4 mb-7">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-5 lg:mb-7">
         {[
           { label: '6-month revenue', value: formatCurrency(totalRevenue), icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Total orders', value: totalOrders, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-5 lg:mb-6">
         {/* Revenue chart */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Monthly revenue</h2>
@@ -218,7 +218,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Top partners */}
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="px-5 py-4 border-b border-stone-100">

@@ -115,7 +115,7 @@ function NewOrderForm() {
   const balanceDue = (parseFloat(form.total_amount) || 0) - (parseFloat(form.advance_paid) || 0)
 
   return (
-    <div className="p-7 max-w-3xl">
+    <div className="p-4 lg:p-7 max-w-3xl">
       <div className="flex items-center gap-3 mb-7">
         <Link href="/orders" className="text-stone-400 hover:text-stone-600">
           <ArrowLeft className="w-5 h-5" />
@@ -199,7 +199,7 @@ function NewOrderForm() {
               Gold rate locked at: ₹{goldRate.toLocaleString('en-IN')}/g (24K)
             </p>
           )}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={label}>Trade price (₹) *</label>
               <input type="number" className={input} value={form.trade_price} onChange={e => set('trade_price', e.target.value)} />

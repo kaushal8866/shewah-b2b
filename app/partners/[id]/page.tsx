@@ -200,7 +200,7 @@ export default function PartnerDetailPage() {
 
       {/* Quick actions (view mode only) */}
       {!editing && (
-        <div className="flex gap-2 mb-5">
+        <div className="flex flex-wrap gap-2 mb-5">
           <a href={`tel:${partner.phone}`}
             className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
             <Phone className="w-4 h-4" /> Call

@@ -103,16 +103,17 @@ export default function CADRequestsPage() {
   ]
 
   return (
-    <div className="p-7">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 lg:p-7">
+      <div className="flex items-center justify-between mb-5 lg:mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">CAD Requests</h1>
+          <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">CAD Requests</h1>
           <p className="text-stone-500 text-sm mt-0.5">Custom design tracker — 48h SLA</p>
         </div>
         <Link href="/cad-requests/new"
-          className="flex items-center gap-2 bg-[#C49C64] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors">
+          className="flex items-center gap-2 bg-[#C49C64] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors">
           <Plus className="w-4 h-4" />
-          New request
+          <span className="hidden sm:inline">New request</span>
+          <span className="sm:hidden">New</span>
         </Link>
       </div>
 
@@ -128,7 +129,7 @@ export default function CADRequestsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-3 mb-5">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-5">
         {statsBar.map(s => (
           <button key={s.label}
             onClick={() => setStatusFilter(s.label.toLowerCase().replace(' ', '_') === statusFilter ? 'all' : s.label.toLowerCase().replace(' ', '_'))}
@@ -155,8 +156,8 @@ export default function CADRequestsPage() {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      {/* Table — hidden on mobile */}
+      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden hidden lg:block">
         <table className="w-full">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50">
@@ -253,6 +254,37 @@ export default function CADRequestsPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile card list */}
+      <div className="lg:hidden bg-white rounded-xl border border-stone-200 overflow-hidden">
+        {loading ? (
+          <div className="text-center py-8 text-stone-400 text-sm">Loading...</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-8 text-stone-400 text-sm">
+            {requests.length === 0 ? 'No CAD requests yet' : 'No requests match filters'}
+          </div>
+        ) : (
+          <div className="divide-y divide-stone-50">
+            {filtered.map(r => (
+              <Link key={r.id} href={`/cad-requests/${r.id}`}
+                className="flex items-center gap-3 px-4 py-3.5 hover:bg-stone-50 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <p className="text-sm font-medium text-stone-900">{r.request_number}</p>
+                    <span className={`status-pill text-xs ${getStatusColor(r.status)}`}>{r.status.replace(/_/g, ' ')}</span>
+                    {r.priority === 'urgent' && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">urgent</span>}
+                  </div>
+                  <p className="text-xs text-stone-500 truncate">{r.partner_name || '—'} · {r.brief_text?.substring(0, 50) || '—'}</p>
+                  <div className="mt-1">
+                    <HoursChip received={r.received_date} due={r.due_date} status={r.status} />
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-stone-300 shrink-0" />
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

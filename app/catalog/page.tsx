@@ -131,7 +131,7 @@ function ProductsTab() {
         <h1 className="text-xl font-semibold text-stone-900">Catalog</h1>
         <p className="text-stone-500 text-sm">{stats.active} active designs</p>
       </div>
-      <div className="grid grid-cols-4 gap-3 my-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 my-5">
         {[
           { label: 'Total designs', value: stats.total },
           { label: 'Active', value: stats.active },
@@ -177,7 +177,7 @@ function ProductsTab() {
           {products.length === 0 && <Link href="/catalog/new" className="inline-block mt-3 text-sm text-[#C49C64] hover:underline">Add first product →</Link>}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(p => (
             <div key={p.id} className={`bg-white rounded-xl border overflow-hidden transition-all ${p.is_active ? 'border-stone-200' : 'border-stone-100 opacity-60'}`}>
               <div className="aspect-square bg-gradient-to-br from-stone-50 to-yellow-50 flex items-center justify-center relative">

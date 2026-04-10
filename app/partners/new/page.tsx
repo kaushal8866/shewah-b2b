@@ -38,14 +38,14 @@ export default function NewPartnerPage() {
   const label = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
-    <div className="p-7 max-w-3xl">
+    <div className="p-4 lg:p-7 max-w-3xl">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-7">
+      <div className="flex items-center gap-3 mb-6 lg:mb-7">
         <Link href="/partners" className="text-stone-400 hover:text-stone-600">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Add partner</h1>
+          <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Add partner</h1>
           <p className="text-stone-500 text-sm">New jeweler contact</p>
         </div>
       </div>
@@ -54,7 +54,7 @@ export default function NewPartnerPage() {
         {/* Store info */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Store information</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={label}>Store name *</label>
               <input className={input} value={form.store_name} onChange={e => set('store_name', e.target.value)} placeholder="e.g. Shri Ram Jewellers" />
@@ -95,7 +95,7 @@ export default function NewPartnerPage() {
         {/* Location */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Location</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={label}>City *</label>
               <input className={input} value={form.city} onChange={e => set('city', e.target.value)} placeholder="e.g. Nashik" />
@@ -123,7 +123,7 @@ export default function NewPartnerPage() {
               <label className={label}>Sarafa Bazaar / Market</label>
               <input className={input} value={form.sarafa_bazaar} onChange={e => set('sarafa_bazaar', e.target.value)} placeholder="e.g. Main Sarafa Bazaar" />
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className={label}>Full address</label>
               <input className={input} value={form.address} onChange={e => set('address', e.target.value)} placeholder="Shop no., street, landmark" />
             </div>
@@ -133,7 +133,7 @@ export default function NewPartnerPage() {
         {/* CRM */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">CRM details</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={label}>Lead status</label>
               <select className={select} value={form.status} onChange={e => set('status', e.target.value)}>
@@ -172,7 +172,7 @@ export default function NewPartnerPage() {
                 <option value="all">All models</option>
               </select>
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className={label}>Notes (from visit / call)</label>
               <textarea className={`${input} resize-none`} rows={3}
                 value={form.notes} onChange={e => set('notes', e.target.value)}

@@ -115,25 +115,25 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="p-7">
+    <div className="p-4 lg:p-7">
       {/* Header */}
-      <div className="mb-7 flex items-center justify-between">
+      <div className="mb-5 lg:mb-7 flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Dashboard</h1>
-          <p className="text-stone-500 text-sm mt-0.5">
+          <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Dashboard</h1>
+          <p className="text-stone-500 text-xs lg:text-sm mt-0.5">
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
         {stats.goldRate24k > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg">
-            <p className="text-xs text-yellow-600 font-medium">Gold 24K today</p>
-            <p className="text-lg font-semibold text-yellow-800">₹{stats.goldRate24k.toLocaleString('en-IN')}/g</p>
+          <div className="bg-yellow-50 border border-yellow-200 px-3 py-1.5 lg:px-4 lg:py-2 rounded-lg shrink-0">
+            <p className="text-xs text-yellow-600 font-medium">Gold 24K</p>
+            <p className="text-sm lg:text-lg font-semibold text-yellow-800">₹{stats.goldRate24k.toLocaleString('en-IN')}/g</p>
           </div>
         )}
       </div>
 
       {/* Metrics grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-7">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-5 lg:mb-7">
         {metrics.map((m) => (
           <div key={m.label} className="bg-white rounded-xl border border-stone-200 p-5">
             <div className="flex items-start justify-between mb-3">
@@ -148,17 +148,17 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Order pipeline */}
-        <div className="col-span-2 bg-white rounded-xl border border-stone-200">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-stone-200">
           <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
             <h2 className="font-medium text-stone-900">Order pipeline</h2>
             <Link href="/orders" className="text-xs text-[#C49C64] hover:underline">View all</Link>
           </div>
 
           {/* Pipeline funnel */}
-          <div className="px-5 py-4 border-b border-stone-100">
-            <div className="flex gap-1">
+          <div className="px-3 lg:px-5 py-4 border-b border-stone-100 overflow-x-auto">
+            <div className="flex gap-1 min-w-max lg:min-w-0">
               {pipelineStages.map((stage) => {
                 const count = recentOrders.filter(o => o.status === stage.status).length
                 return (
