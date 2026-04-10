@@ -43,3 +43,28 @@ input:focus, textarea:focus, select:focus {
 .metric-card {
   @apply bg-white rounded-xl border border-stone-200 p-5 flex flex-col gap-1;
 }
+
+/* Mobile touch improvements */
+@media (max-width: 1023px) {
+  .metric-card, .card { @apply p-4; }
+  input, select, textarea { font-size: 16px !important; } /* prevents iOS zoom */
+}
+
+/* Safe area for iPhone notch/home indicator */
+.safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0); }
+
+/* Print styles */
+@media print {
+  nav, header, aside, .print\:hidden { display: none !important; }
+  body { background: white; }
+  .print\:block { display: block !important; }
+}
+
+/* Responsive padding utility */
+.page-pad { @apply p-4 lg:p-7; }
+
+/* Touch-friendly tap targets */
+@media (max-width: 1023px) {
+  a, button { min-height: 44px; }
+  .status-pill { padding: 4px 10px; font-size: 12px; }
+}
