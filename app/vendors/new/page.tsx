@@ -16,11 +16,13 @@ export default function NewVendorPage() {
     phone: '',
     email: '',
     city: '',
-    state: '',
+    address: '',
+    gstin: '',
     category: '',
     payment_terms: 'cash',
     credit_limit: '',
     outstanding: '0',
+    status: 'active',
     notes: '',
   })
 
@@ -38,11 +40,13 @@ export default function NewVendorPage() {
       phone: form.phone,
       email: form.email || null,
       city: form.city || null,
-      state: form.state || null,
-      category: form.category ? form.category.split(',').map(s => s.trim()).filter(Boolean) : [],
+      address: form.address || null,
+      gstin: form.gstin || null,
+      category: form.category || null,
       payment_terms: form.payment_terms,
-      credit_limit: parseFloat(form.credit_limit) || null,
+      credit_limit: parseFloat(form.credit_limit) || 0,
       outstanding: parseFloat(form.outstanding) || 0,
+      status: form.status,
       notes: form.notes || null,
     }
     const { error } = await supabase.from('vendors').insert([payload])
@@ -90,19 +94,26 @@ export default function NewVendorPage() {
               <label className={lbl}>City</label>
               <input className={inp} value={form.city} onChange={e => set('city', e.target.value)} placeholder="e.g. Mumbai" />
             </div>
-            <div>
-              <label className={lbl}>State</label>
-              <select className={inp} value={form.state} onChange={e => set('state', e.target.value)}>
-                <option value="">Select state</option>
-                {['Gujarat','Maharashtra','Madhya Pradesh','Rajasthan','Karnataka','Tamil Nadu','Delhi','Uttar Pradesh','Punjab','Haryana'].map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
             <div className="sm:col-span-2">
-              <label className={lbl}>Categories supplied (comma separated)</label>
+              <label className={lbl}>Address</label>
+              <input className={inp} value={form.address} onChange={e => set('address', e.target.value)} placeholder="Shop / office address" />
+            </div>
+            <div>
+              <label className={lbl}>GSTIN</label>
+              <input className={inp} value={form.gstin} onChange={e => set('gstin', e.target.value)} placeholder="GST registration number" />
+            </div>
+            <div>
+              <label className={lbl}>Category supplied</label>
               <input className={inp} value={form.category} onChange={e => set('category', e.target.value)}
                 placeholder="e.g. diamonds, gemstones, findings" />
+            </div>
+            <div>
+              <label className={lbl}>Status</label>
+              <select className={inp} value={form.status} onChange={e => set('status', e.target.value)}>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="blocked">Blocked</option>
+              </select>
             </div>
           </div>
         </div>
@@ -123,7 +134,7 @@ export default function NewVendorPage() {
             </div>
             <div>
               <label className={lbl}>Credit limit (₹)</label>
-              <input type="number" className={inp} value={form.credit_limit} onChange={e => set('credit_limit', e.target.value)} placeholder="0 for no limit" />
+              <input type="number" className={inp} value={form.credit_limit} onChange={e => set('credit_limit', e.target.value)} placeholder="0" />
             </div>
             <div>
               <label className={lbl}>Current outstanding (₹)</label>

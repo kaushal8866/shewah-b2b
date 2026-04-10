@@ -46,10 +46,19 @@ export default function ManufacturingPartnerDetailPage() {
       name: form.name,
       owner_name: form.owner_name || null,
       phone: form.phone,
+      email: form.email || null,
       city: form.city,
-      speciality: form.speciality ? (typeof form.speciality === 'string' ? form.speciality.split(',').map((s: string) => s.trim()).filter(Boolean) : form.speciality) : [],
+      address: form.address || null,
+      speciality: form.speciality
+        ? (typeof form.speciality === 'string'
+            ? form.speciality.split(',').map((s: string) => s.trim()).filter(Boolean)
+            : form.speciality)
+        : null,
       material_policy: form.material_policy,
+      labour_rate_14k: parseFloat(form.labour_rate_14k) || null,
       labour_rate_18k: parseFloat(form.labour_rate_18k) || null,
+      labour_rate_22k: parseFloat(form.labour_rate_22k) || null,
+      min_labour_grams: parseFloat(form.min_labour_grams) || 1,
       status: form.status,
       notes: form.notes || null,
     }).eq('id', id)
@@ -82,7 +91,7 @@ export default function ManufacturingPartnerDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-semibold text-stone-900 truncate">{partner.name}</h1>
-          <p className="text-stone-400 text-sm">{partner.owner_name} · {partner.city}</p>
+          <p className="text-stone-400 text-sm">{partner.owner_name || '—'} · {partner.city}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!editing ? (
@@ -134,12 +143,13 @@ export default function ManufacturingPartnerDetailPage() {
             <span className={`status-pill ${getStatusColor(partner.status)}`}>{partner.status}</span>
           </div>
 
-          {/* Quick actions */}
-          <div className="flex gap-2 mb-3">
-            <a href={`tel:${partner.phone}`}
-              className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
-              <Phone className="w-4 h-4" /> Call
-            </a>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {partner.phone && (
+              <a href={`tel:${partner.phone}`}
+                className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
+                <Phone className="w-4 h-4" /> Call
+              </a>
+            )}
             <Link href={`/manufacturing/orders/new?partner=${id}`}
               className="flex items-center gap-2 bg-[#C49C64] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#9B7A40]">
               <Package className="w-4 h-4" /> New order
@@ -150,7 +160,6 @@ export default function ManufacturingPartnerDetailPage() {
             </Link>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: 'Total orders', value: totalOrders },
@@ -171,9 +180,14 @@ export default function ManufacturingPartnerDetailPage() {
                 ['Name', partner.name],
                 ['Owner', partner.owner_name || '—'],
                 ['Phone', partner.phone],
+                ['Email', partner.email || '—'],
                 ['City', partner.city],
+                ['Address', partner.address || '—'],
                 ['Material policy', partner.material_policy?.replace(/_/g, ' ') || '—'],
+                ['Min charge weight', `${partner.min_labour_grams || 1}g`],
+                ['Labour rate 14K', partner.labour_rate_14k ? `₹${partner.labour_rate_14k}/g` : '—'],
                 ['Labour rate 18K', partner.labour_rate_18k ? `₹${partner.labour_rate_18k}/g` : '—'],
+                ['Labour rate 22K', partner.labour_rate_22k ? `₹${partner.labour_rate_22k}/g` : '—'],
                 ['Specialities', Array.isArray(partner.speciality) ? partner.speciality.join(', ') || '—' : partner.speciality || '—'],
               ].map(([k, v]) => (
                 <div key={String(k)}>
@@ -190,13 +204,11 @@ export default function ManufacturingPartnerDetailPage() {
             )}
           </div>
 
-          {/* Material float summary */}
           {floats.length > 0 && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-medium text-stone-900">Material float balance</h2>
-                <Link href={`/manufacturing/partners/${id}/float`}
-                  className="text-xs text-[#C49C64] hover:underline">View all</Link>
+                <Link href={`/manufacturing/partners/${id}/float`} className="text-xs text-[#C49C64] hover:underline">Manage</Link>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {floats.map(f => (
@@ -211,7 +223,6 @@ export default function ManufacturingPartnerDetailPage() {
             </div>
           )}
 
-          {/* Recent orders */}
           {orders.length > 0 && (
             <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
               <div className="px-5 py-4 border-b border-stone-100">
@@ -257,8 +268,16 @@ export default function ManufacturingPartnerDetailPage() {
                 <input className={inp} value={form.phone || ''} onChange={e => set('phone', e.target.value)} />
               </div>
               <div>
+                <label className={lbl}>Email</label>
+                <input type="email" className={inp} value={form.email || ''} onChange={e => set('email', e.target.value)} />
+              </div>
+              <div>
                 <label className={lbl}>City</label>
                 <input className={inp} value={form.city || ''} onChange={e => set('city', e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className={lbl}>Address</label>
+                <input className={inp} value={form.address || ''} onChange={e => set('address', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Status</label>
@@ -270,15 +289,27 @@ export default function ManufacturingPartnerDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Material policy</label>
-                <select className={inp} value={form.material_policy || 'owner_material'} onChange={e => set('material_policy', e.target.value)}>
-                  <option value="owner_material">We supply material (float)</option>
-                  <option value="karigars_material">Karigar supplies own material</option>
+                <select className={inp} value={form.material_policy || 'client_material'} onChange={e => set('material_policy', e.target.value)}>
+                  <option value="client_material">Karigar supplies own material</option>
+                  <option value="owner_material">We supply via float</option>
                   <option value="both">Both options</option>
                 </select>
               </div>
               <div>
+                <label className={lbl}>Labour rate 14K (₹/g)</label>
+                <input type="number" className={inp} value={form.labour_rate_14k || ''} onChange={e => set('labour_rate_14k', e.target.value)} />
+              </div>
+              <div>
                 <label className={lbl}>Labour rate 18K (₹/g)</label>
                 <input type="number" className={inp} value={form.labour_rate_18k || ''} onChange={e => set('labour_rate_18k', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Labour rate 22K (₹/g)</label>
+                <input type="number" className={inp} value={form.labour_rate_22k || ''} onChange={e => set('labour_rate_22k', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Min chargeable weight (g)</label>
+                <input type="number" step="0.1" className={inp} value={form.min_labour_grams || '1'} onChange={e => set('min_labour_grams', e.target.value)} />
               </div>
               <div className="sm:col-span-2">
                 <label className={lbl}>Specialities (comma separated)</label>

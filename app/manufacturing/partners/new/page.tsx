@@ -14,10 +14,15 @@ export default function NewManufacturingPartnerPage() {
     name: '',
     owner_name: '',
     phone: '',
+    email: '',
     city: '',
+    address: '',
     speciality: '',
-    material_policy: 'owner_material',
+    material_policy: 'client_material',
+    labour_rate_14k: '',
     labour_rate_18k: '',
+    labour_rate_22k: '',
+    min_labour_grams: '1',
     status: 'active',
     notes: '',
   })
@@ -34,10 +39,15 @@ export default function NewManufacturingPartnerPage() {
       name: form.name,
       owner_name: form.owner_name || null,
       phone: form.phone,
+      email: form.email || null,
       city: form.city,
-      speciality: form.speciality ? form.speciality.split(',').map(s => s.trim()).filter(Boolean) : [],
+      address: form.address || null,
+      speciality: form.speciality ? form.speciality.split(',').map(s => s.trim()).filter(Boolean) : null,
       material_policy: form.material_policy,
+      labour_rate_14k: parseFloat(form.labour_rate_14k) || null,
       labour_rate_18k: parseFloat(form.labour_rate_18k) || null,
+      labour_rate_22k: parseFloat(form.labour_rate_22k) || null,
+      min_labour_grams: parseFloat(form.min_labour_grams) || 1,
       status: form.status,
       notes: form.notes || null,
     }
@@ -79,8 +89,16 @@ export default function NewManufacturingPartnerPage() {
               <input className={inp} value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="e.g. 9876543210" />
             </div>
             <div>
+              <label className={lbl}>Email</label>
+              <input type="email" className={inp} value={form.email} onChange={e => set('email', e.target.value)} />
+            </div>
+            <div>
               <label className={lbl}>City *</label>
               <input className={inp} value={form.city} onChange={e => set('city', e.target.value)} placeholder="e.g. Surat" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className={lbl}>Address</label>
+              <input className={inp} value={form.address} onChange={e => set('address', e.target.value)} placeholder="Workshop address" />
             </div>
             <div>
               <label className={lbl}>Status</label>
@@ -101,18 +119,29 @@ export default function NewManufacturingPartnerPage() {
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Manufacturing terms</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+            <div className="sm:col-span-2">
               <label className={lbl}>Material policy</label>
               <select className={inp} value={form.material_policy} onChange={e => set('material_policy', e.target.value)}>
-                <option value="owner_material">We supply material (float)</option>
-                <option value="karigars_material">Karigar supplies own material</option>
-                <option value="both">Both options</option>
+                <option value="client_material">Karigar supplies own material</option>
+                <option value="owner_material">We supply material (via float deposit)</option>
+                <option value="both">Both options available</option>
               </select>
             </div>
             <div>
-              <label className={lbl}>Default labour rate 18K (₹/gram)</label>
-              <input type="number" className={inp} value={form.labour_rate_18k} onChange={e => set('labour_rate_18k', e.target.value)}
-                placeholder="e.g. 1200" />
+              <label className={lbl}>Labour rate 14K (₹/gram)</label>
+              <input type="number" className={inp} value={form.labour_rate_14k} onChange={e => set('labour_rate_14k', e.target.value)} placeholder="e.g. 900" />
+            </div>
+            <div>
+              <label className={lbl}>Labour rate 18K (₹/gram)</label>
+              <input type="number" className={inp} value={form.labour_rate_18k} onChange={e => set('labour_rate_18k', e.target.value)} placeholder="e.g. 1200" />
+            </div>
+            <div>
+              <label className={lbl}>Labour rate 22K (₹/gram)</label>
+              <input type="number" className={inp} value={form.labour_rate_22k} onChange={e => set('labour_rate_22k', e.target.value)} placeholder="e.g. 1500" />
+            </div>
+            <div>
+              <label className={lbl}>Minimum chargeable weight (grams)</label>
+              <input type="number" step="0.1" className={inp} value={form.min_labour_grams} onChange={e => set('min_labour_grams', e.target.value)} />
             </div>
             <div className="sm:col-span-2">
               <label className={lbl}>Notes</label>

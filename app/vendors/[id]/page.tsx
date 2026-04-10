@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { formatDate } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, Phone, Plus } from 'lucide-react'
 import Link from 'next/link'
 
@@ -45,11 +44,13 @@ export default function VendorDetailPage() {
       phone: form.phone,
       email: form.email || null,
       city: form.city || null,
-      state: form.state || null,
-      category: form.category ? (typeof form.category === 'string' ? form.category.split(',').map((s: string) => s.trim()).filter(Boolean) : form.category) : [],
+      address: form.address || null,
+      gstin: form.gstin || null,
+      category: form.category || null,
       payment_terms: form.payment_terms,
-      credit_limit: parseFloat(form.credit_limit) || null,
+      credit_limit: parseFloat(form.credit_limit) || 0,
       outstanding: parseFloat(form.outstanding) || 0,
+      status: form.status,
       notes: form.notes || null,
     }).eq('id', id)
     setSaving(false)
@@ -79,7 +80,7 @@ export default function VendorDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-semibold text-stone-900 truncate">{vendor.name}</h1>
-          <p className="text-stone-400 text-sm">{vendor.owner_name} · {vendor.city}</p>
+          <p className="text-stone-400 text-sm">{vendor.owner_name || '—'} · {vendor.city || '—'}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!editing ? (
@@ -128,10 +129,12 @@ export default function VendorDetailPage() {
       {!editing ? (
         <div className="space-y-4">
           <div className="flex gap-2 mb-3">
-            <a href={`tel:${vendor.phone}`}
-              className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
-              <Phone className="w-4 h-4" /> Call
-            </a>
+            {vendor.phone && (
+              <a href={`tel:${vendor.phone}`}
+                className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
+                <Phone className="w-4 h-4" /> Call
+              </a>
+            )}
             <Link href="/vendors/inventory/new"
               className="flex items-center gap-2 bg-[#C49C64] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#9B7A40]">
               <Plus className="w-4 h-4" /> Add inventory
@@ -140,7 +143,7 @@ export default function VendorDetailPage() {
 
           {lowStockItems.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-sm font-medium text-amber-800 mb-2">Low stock alert — {lowStockItems.length} items</p>
+              <p className="text-sm font-medium text-amber-800 mb-2">Low stock — {lowStockItems.length} items</p>
               <div className="flex flex-wrap gap-2">
                 {lowStockItems.map(i => (
                   <span key={i.id} className="text-xs bg-white border border-amber-300 text-amber-700 px-2 py-1 rounded-lg">
@@ -157,18 +160,20 @@ export default function VendorDetailPage() {
               {[
                 ['Name', vendor.name],
                 ['Owner', vendor.owner_name || '—'],
-                ['Phone', vendor.phone],
+                ['Phone', vendor.phone || '—'],
                 ['Email', vendor.email || '—'],
                 ['City', vendor.city || '—'],
-                ['State', vendor.state || '—'],
-                ['Categories', Array.isArray(vendor.category) ? vendor.category.join(', ') || '—' : vendor.category || '—'],
+                ['Address', vendor.address || '—'],
+                ['GSTIN', vendor.gstin || '—'],
+                ['Category', vendor.category || '—'],
+                ['Status', vendor.status || 'active'],
                 ['Payment terms', vendor.payment_terms?.replace(/_/g, ' ') || '—'],
-                ['Credit limit', vendor.credit_limit ? `₹${vendor.credit_limit?.toLocaleString('en-IN')}` : 'No limit'],
-                ['Outstanding', `₹${vendor.outstanding?.toLocaleString('en-IN') || 0}`],
+                ['Credit limit', vendor.credit_limit ? `₹${vendor.credit_limit?.toLocaleString('en-IN')}` : '₹0'],
+                ['Outstanding', `₹${(vendor.outstanding || 0).toLocaleString('en-IN')}`],
               ].map(([k, v]) => (
                 <div key={String(k)}>
                   <p className="text-xs text-stone-400">{k}</p>
-                  <p className="text-stone-800 mt-0.5">{String(v)}</p>
+                  <p className="text-stone-800 mt-0.5 capitalize">{String(v)}</p>
                 </div>
               ))}
             </div>
@@ -232,20 +237,25 @@ export default function VendorDetailPage() {
                 <label className={lbl}>City</label>
                 <input className={inp} value={form.city || ''} onChange={e => set('city', e.target.value)} />
               </div>
-              <div>
-                <label className={lbl}>State</label>
-                <select className={inp} value={form.state || ''} onChange={e => set('state', e.target.value)}>
-                  <option value="">Select state</option>
-                  {['Gujarat','Maharashtra','Madhya Pradesh','Rajasthan','Karnataka','Tamil Nadu','Delhi','Uttar Pradesh','Punjab','Haryana'].map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
               <div className="sm:col-span-2">
-                <label className={lbl}>Categories (comma separated)</label>
-                <input className={inp}
-                  value={Array.isArray(form.category) ? form.category.join(', ') : form.category || ''}
-                  onChange={e => set('category', e.target.value)} />
+                <label className={lbl}>Address</label>
+                <input className={inp} value={form.address || ''} onChange={e => set('address', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>GSTIN</label>
+                <input className={inp} value={form.gstin || ''} onChange={e => set('gstin', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Category</label>
+                <input className={inp} value={form.category || ''} onChange={e => set('category', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Status</label>
+                <select className={inp} value={form.status || 'active'} onChange={e => set('status', e.target.value)}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="blocked">Blocked</option>
+                </select>
               </div>
               <div>
                 <label className={lbl}>Payment terms</label>
@@ -260,7 +270,7 @@ export default function VendorDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Credit limit (₹)</label>
-                <input type="number" className={inp} value={form.credit_limit || ''} onChange={e => set('credit_limit', e.target.value)} />
+                <input type="number" className={inp} value={form.credit_limit || '0'} onChange={e => set('credit_limit', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Outstanding (₹)</label>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
-import { ArrowLeft, Save, Edit2, X, MapPin } from 'lucide-react'
+import { ArrowLeft, Save, Edit2, X } from 'lucide-react'
 import Link from 'next/link'
 
 export default function CircuitDetailPage() {
@@ -51,9 +51,19 @@ export default function CircuitDetailPage() {
     setSaving(true)
     const { error } = await supabase.from('circuits').update({
       name: form.name,
-      states: form.states ? form.states.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-      cities: form.cities ? form.cities.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+      region: form.region || null,
+      cities: form.cities
+        ? (typeof form.cities === 'string'
+            ? form.cities.split(',').map((s: string) => s.trim()).filter(Boolean)
+            : form.cities)
+        : [],
       status: form.status,
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
+      target_visits: parseInt(form.target_visits) || null,
+      target_samples: parseInt(form.target_samples) || null,
+      target_partners: parseInt(form.target_partners) || null,
+      budget_inr: parseFloat(form.budget_inr) || null,
       notes: form.notes || null,
     }).eq('id', id)
     setSaving(false)
@@ -76,7 +86,7 @@ export default function CircuitDetailPage() {
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-semibold text-stone-900">{circuit.name} Circuit</h1>
           <p className="text-stone-400 text-sm">
-            {circuit.states?.join(', ')} · {partners.length} partners
+            {circuit.region} · {partners.length} partners
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -102,16 +112,36 @@ export default function CircuitDetailPage() {
 
       {!editing ? (
         <div className="space-y-4">
+          <div className="flex gap-2 mb-2">
+            <span className={`status-pill ${getStatusColor(circuit.status)}`}>{circuit.status}</span>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'Partners', value: `${circuit.actual_partners || 0} / ${circuit.target_partners || '—'}` },
+              { label: 'Store visits', value: `${circuit.actual_visits || 0} / ${circuit.target_visits || '—'}` },
+              { label: 'Sample orders', value: `${circuit.actual_samples || 0} / ${circuit.target_samples || '—'}` },
+            ].map(s => (
+              <div key={s.label} className="bg-white rounded-xl border border-stone-200 p-4">
+                <p className="text-xs text-stone-400">{s.label}</p>
+                <p className="text-lg font-semibold text-stone-900 mt-1">{s.value}</p>
+              </div>
+            ))}
+          </div>
+
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-4">Circuit details</h2>
             <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
               {[
                 ['Circuit name', circuit.name],
+                ['Region', circuit.region || '—'],
                 ['Status', circuit.status],
-                ['States covered', circuit.states?.join(', ') || '—'],
-                ['Cities', circuit.cities?.join(', ') || '—'],
-                ['Total partners', partners.length],
-                ['Recent visits', visits.length],
+                ['Cities', Array.isArray(circuit.cities) ? circuit.cities.join(', ') || '—' : circuit.cities || '—'],
+                ['Start date', circuit.start_date ? formatDate(circuit.start_date) : '—'],
+                ['End date', circuit.end_date ? formatDate(circuit.end_date) : '—'],
+                ['Budget', circuit.budget_inr ? `₹${circuit.budget_inr.toLocaleString('en-IN')}` : '—'],
+                ['Spent', `₹${(circuit.spent_inr || 0).toLocaleString('en-IN')}`],
               ].map(([k, v]) => (
                 <div key={String(k)}>
                   <p className="text-xs text-stone-400">{k}</p>
@@ -142,9 +172,7 @@ export default function CircuitDetailPage() {
                       <p className="text-sm font-medium text-stone-800">{p.store_name}</p>
                       <p className="text-xs text-stone-400">{p.owner_name} · {p.city}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <span className={`status-pill ${getStatusColor(p.status)}`}>{p.status}</span>
-                    </div>
+                    <span className={`status-pill ${getStatusColor(p.status)}`}>{p.status}</span>
                   </Link>
                 ))}
               </div>
@@ -181,21 +209,46 @@ export default function CircuitDetailPage() {
                 <input className={inp} value={form.name || ''} onChange={e => set('name', e.target.value)} />
               </div>
               <div>
+                <label className={lbl}>Region</label>
+                <input className={inp} value={form.region || ''} onChange={e => set('region', e.target.value)} placeholder="e.g. Gujarat, Maharashtra" />
+              </div>
+              <div>
                 <label className={lbl}>Status</label>
-                <select className={inp} value={form.status || 'active'} onChange={e => set('status', e.target.value)}>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                <select className={inp} value={form.status || 'planned'} onChange={e => set('status', e.target.value)}>
+                  <option value="planned">Planned</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="completed">Completed</option>
                 </select>
               </div>
               <div>
-                <label className={lbl}>States (comma separated)</label>
-                <input className={inp} value={form.states ? (Array.isArray(form.states) ? form.states.join(', ') : form.states) : ''}
-                  onChange={e => set('states', e.target.value)} />
+                <label className={lbl}>Cities (comma separated)</label>
+                <input className={inp}
+                  value={Array.isArray(form.cities) ? form.cities.join(', ') : form.cities || ''}
+                  onChange={e => set('cities', e.target.value)} />
               </div>
               <div>
-                <label className={lbl}>Cities (comma separated)</label>
-                <input className={inp} value={form.cities ? (Array.isArray(form.cities) ? form.cities.join(', ') : form.cities) : ''}
-                  onChange={e => set('cities', e.target.value)} />
+                <label className={lbl}>Start date</label>
+                <input type="date" className={inp} value={form.start_date || ''} onChange={e => set('start_date', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>End date</label>
+                <input type="date" className={inp} value={form.end_date || ''} onChange={e => set('end_date', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Target visits</label>
+                <input type="number" className={inp} value={form.target_visits || ''} onChange={e => set('target_visits', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Target samples</label>
+                <input type="number" className={inp} value={form.target_samples || ''} onChange={e => set('target_samples', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Target partners</label>
+                <input type="number" className={inp} value={form.target_partners || ''} onChange={e => set('target_partners', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Budget (₹)</label>
+                <input type="number" className={inp} value={form.budget_inr || ''} onChange={e => set('budget_inr', e.target.value)} />
               </div>
               <div className="sm:col-span-2">
                 <label className={lbl}>Notes</label>
