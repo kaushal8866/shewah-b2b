@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Save, Heart } from 'lucide-react'
+import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
+import { ArrowLeft, Save, Heart, Upload, X } from 'lucide-react'
 import Link from 'next/link'
 
 function NewCADRequestForm() {
@@ -13,6 +14,8 @@ function NewCADRequestForm() {
   const preProduct = searchParams.get('product_id') || ''
 
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [referenceImages, setReferenceImages] = useState<string[]>([])
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
   const [productRef, setProductRef] = useState<{ code: string; name: string; gold_karat?: number; diamond_shape?: string } | null>(null)
   const fromInterest = !!prePartner
@@ -55,6 +58,20 @@ function NewCADRequestForm() {
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
 
+  async function handleImageUpload(files: FileList | null) {
+    if (!files) return
+    setUploading(true)
+    for (const file of Array.from(files)) {
+      try {
+        const url = await uploadToCloudinary(file)
+        setReferenceImages(prev => [...prev, url])
+      } catch (err) {
+        alert('Image upload failed: ' + (err instanceof Error ? err.message : String(err)))
+      }
+    }
+    setUploading(false)
+  }
+
   async function handleSave() {
     if (!form.partner_id || !form.brief_text) {
       alert('Partner and brief are required')
@@ -69,6 +86,7 @@ function NewCADRequestForm() {
       ...form,
       request_number: num,
       gold_karat: parseInt(form.gold_karat),
+      reference_images: referenceImages,
       received_date: new Date().toISOString().split('T')[0],
     }]).select().single()
 
@@ -173,13 +191,44 @@ function NewCADRequestForm() {
           </div>
         </div>
 
+        {/* Reference images */}
+        <div className="bg-white rounded-xl border border-stone-200 p-5">
+          <h2 className="font-medium text-stone-900 mb-1">Reference images</h2>
+          <p className="text-xs text-stone-400 mb-4">Upload customer inspiration photos, sketches, or reference pieces.</p>
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+            {referenceImages.map((url, i) => (
+              <div key={url} className="relative aspect-square rounded-lg overflow-hidden border border-stone-200 group">
+                <img src={url} alt="" className="w-full h-full object-cover" />
+                <button
+                  onClick={() => setReferenceImages(prev => prev.filter((_, idx) => idx !== i))}
+                  className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            <label className="aspect-square border-2 border-dashed border-stone-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#C49C64] hover:bg-yellow-50 transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={e => { handleImageUpload(e.target.files); e.currentTarget.value = '' }}
+                disabled={uploading}
+              />
+              <Upload className={`w-5 h-5 mb-1 ${uploading ? 'text-stone-200 animate-pulse' : 'text-stone-300'}`} />
+              <span className="text-xs text-stone-300">{uploading ? 'Uploading...' : 'Add images'}</span>
+            </label>
+          </div>
+        </div>
+
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
           <p className="font-medium mb-1">After saving this request:</p>
           <ol className="list-decimal list-inside space-y-1 text-xs text-amber-700">
             <li>Go to your CAD software and create the design</li>
             <li>Upload render images to the request detail page</li>
-            <li>Mark status as "Sent" when you WhatsApp the CAD to the partner</li>
-            <li>Update to "Approved" or "Revision requested" based on partner response</li>
+            <li>Mark status as &quot;Sent&quot; when you WhatsApp the CAD to the partner</li>
+            <li>Update to &quot;Approved&quot; or &quot;Revision requested&quot; based on partner response</li>
           </ol>
         </div>
 
