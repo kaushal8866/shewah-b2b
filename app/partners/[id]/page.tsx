@@ -118,7 +118,7 @@ export default function PartnerDetailPage() {
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return (
-    <div className="p-7 text-stone-400 text-sm">Loading...</div>
+    <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
   )
 
   return (

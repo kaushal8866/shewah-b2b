@@ -136,7 +136,7 @@ export default function AnalyticsPage() {
   }
 
   if (loading) return (
-    <div className="p-7 text-center text-stone-400 pt-20">Loading analytics...</div>
+    <div className="p-4 lg:p-7 text-center text-stone-400 pt-20">Loading analytics...</div>
   )
 
   const totalRevenue = data.revenueByMonth.reduce((s, m) => s + m.revenue, 0)

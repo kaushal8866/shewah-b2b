@@ -122,8 +122,8 @@ function NewCADRequestForm() {
       <div className="space-y-5">
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Request details</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="col-span-1 sm:col-span-2">
               <label className={label}>Partner (jeweler) *</label>
               <select className={input} value={form.partner_id} onChange={e => set('partner_id', e.target.value)}>
                 <option value="">Select partner...</option>
@@ -151,8 +151,8 @@ function NewCADRequestForm() {
 
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Design brief</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="col-span-1 sm:col-span-2">
               <label className={label}>Brief description *</label>
               <textarea className={`${input} resize-none`} rows={4}
                 value={form.brief_text} onChange={e => set('brief_text', e.target.value)}
@@ -182,7 +182,7 @@ function NewCADRequestForm() {
               <label className={label}>Setting type</label>
               <input className={input} value={form.setting_type} onChange={e => set('setting_type', e.target.value)} placeholder="e.g. prong, bezel, pavé, halo" />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <label className={label}>Special requests / notes</label>
               <textarea className={`${input} resize-none`} rows={2}
                 value={form.special_requests} onChange={e => set('special_requests', e.target.value)}

@@ -48,15 +48,15 @@ function CatalogContent() {
   return (
     <div className="p-4 lg:p-7">
       {/* Tab bar */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex gap-1 bg-stone-100 rounded-xl p-1">
+      <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+        <div className="flex gap-1 bg-stone-100 rounded-xl p-1 overflow-x-auto">
           {([
             { key: 'products', label: 'Products', icon: Package },
             { key: 'collections', label: 'Collections', icon: Library },
             { key: 'interest', label: 'Interest', icon: Heart },
           ] as { key: TabKey; label: string; icon: LucideIcon }[]).map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => goTab(key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === key ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}>
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === key ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}>
               <Icon className="w-4 h-4" />
               {label}
             </button>
@@ -64,14 +64,14 @@ function CatalogContent() {
         </div>
         {activeTab === 'products' && (
           <Link href="/catalog/new"
-            className="flex items-center gap-2 bg-[#C49C64] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors">
-            <Plus className="w-4 h-4" /> Add product
+            className="flex items-center gap-2 bg-[#C49C64] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors shrink-0">
+            <Plus className="w-4 h-4" /><span className="hidden sm:inline">Add product</span><span className="sm:hidden">Add</span>
           </Link>
         )}
         {activeTab === 'collections' && (
           <Link href="/catalog/collections/new"
-            className="flex items-center gap-2 bg-[#C49C64] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors">
-            <Plus className="w-4 h-4" /> New collection
+            className="flex items-center gap-2 bg-[#C49C64] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors shrink-0">
+            <Plus className="w-4 h-4" /><span className="hidden sm:inline">New collection</span><span className="sm:hidden">New</span>
           </Link>
         )}
       </div>
@@ -560,7 +560,7 @@ function InterestTab() {
 /* ─── Page wrapper (Suspense for useSearchParams) ──────────────────── */
 export default function CatalogPage() {
   return (
-    <Suspense fallback={<div className="p-7 text-stone-400 text-sm">Loading...</div>}>
+    <Suspense fallback={<div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>}>
       <CatalogContent />
     </Suspense>
   )
