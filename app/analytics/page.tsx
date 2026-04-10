@@ -173,42 +173,46 @@ export default function AnalyticsPage() {
         {/* Revenue chart */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Monthly revenue</h2>
-          <div className="flex items-end gap-2 h-32">
-            {data.revenueByMonth.map(m => (
-              <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                <p className="text-xs text-stone-400">{m.revenue > 0 ? `₹${(m.revenue/1000).toFixed(0)}K` : ''}</p>
-                <div className="w-full bg-stone-100 rounded-t overflow-hidden" style={{ height: '80px' }}>
-                  <div className="w-full bg-[#C49C64] rounded-t transition-all"
-                    style={{ height: `${(m.revenue / maxRevenue) * 100}%`, marginTop: 'auto' }} />
+          <div className="overflow-x-auto">
+            <div className="flex items-end gap-2 h-32 min-w-64">
+              {data.revenueByMonth.map(m => (
+                <div key={m.month} className="flex-1 flex flex-col items-center gap-1 min-w-6">
+                  <p className="text-xs text-stone-400">{m.revenue > 0 ? `₹${(m.revenue/1000).toFixed(0)}K` : ''}</p>
+                  <div className="w-full bg-stone-100 rounded-t overflow-hidden" style={{ height: '80px' }}>
+                    <div className="w-full bg-[#C49C64] rounded-t transition-all"
+                      style={{ height: `${(m.revenue / maxRevenue) * 100}%`, marginTop: 'auto' }} />
+                  </div>
+                  <p className="text-xs text-stone-400">{m.month}</p>
                 </div>
-                <p className="text-xs text-stone-400">{m.month}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Conversion funnel */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Partner conversion funnel</h2>
-          <div className="space-y-2">
-            {[
-              { label: 'Total partners added', value: data.conversionFunnel.visited, color: 'bg-blue-200' },
-              { label: 'Contacted / met', value: data.conversionFunnel.contacted, color: 'bg-blue-400' },
-              { label: 'Sample sent', value: data.conversionFunnel.sample, color: 'bg-yellow-400' },
-              { label: 'Active partners', value: data.conversionFunnel.active, color: 'bg-green-500' },
-            ].map((step, i) => (
-              <div key={step.label} className="flex items-center gap-3">
-                <div className="w-32 text-right">
-                  <p className="text-xs text-stone-500">{step.label}</p>
-                </div>
-                <div className="flex-1 h-7 bg-stone-50 rounded overflow-hidden">
-                  <div className={`h-full ${step.color} rounded flex items-center px-2`}
-                    style={{ width: `${data.conversionFunnel.visited > 0 ? (step.value / data.conversionFunnel.visited) * 100 : 0}%`, minWidth: step.value > 0 ? '32px' : '0' }}>
-                    <span className="text-xs font-medium text-white">{step.value}</span>
+          <div className="overflow-x-auto">
+            <div className="space-y-2 min-w-64">
+              {[
+                { label: 'Total partners added', value: data.conversionFunnel.visited, color: 'bg-blue-200' },
+                { label: 'Contacted / met', value: data.conversionFunnel.contacted, color: 'bg-blue-400' },
+                { label: 'Sample sent', value: data.conversionFunnel.sample, color: 'bg-yellow-400' },
+                { label: 'Active partners', value: data.conversionFunnel.active, color: 'bg-green-500' },
+              ].map((step, i) => (
+                <div key={step.label} className="flex items-center gap-3">
+                  <div className="w-28 shrink-0 text-right">
+                    <p className="text-xs text-stone-500">{step.label}</p>
+                  </div>
+                  <div className="flex-1 h-7 bg-stone-50 rounded overflow-hidden">
+                    <div className={`h-full ${step.color} rounded flex items-center px-2`}
+                      style={{ width: `${data.conversionFunnel.visited > 0 ? (step.value / data.conversionFunnel.visited) * 100 : 0}%`, minWidth: step.value > 0 ? '32px' : '0' }}>
+                      <span className="text-xs font-medium text-white">{step.value}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
           {data.conversionFunnel.visited > 0 && (
             <p className="text-xs text-stone-400 mt-3">
