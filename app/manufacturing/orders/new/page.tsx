@@ -323,7 +323,7 @@ function NewMfgOrderForm() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label className={lbl}>Gold karat</label>
                 <select className={inp} value={form.gold_karat} onChange={e => set('gold_karat', e.target.value)}>
@@ -338,7 +338,7 @@ function NewMfgOrderForm() {
                 <label className={lbl}>Diamond weight (ct)</label>
                 <input type="number" step="0.01" className={inp} value={form.diamond_weight} onChange={e => set('diamond_weight', e.target.value)} placeholder="e.g. 0.5" />
               </div>
-              <div className="sm:col-span-4">
+              <div className="col-span-1 sm:col-span-2 lg:col-span-4">
                 <label className={lbl}>Material notes</label>
                 <input className={inp} value={form.material_notes} onChange={e => set('material_notes', e.target.value)} placeholder="e.g. Using 3g from deposited float + 0.5g from our stock" />
               </div>
@@ -348,7 +348,7 @@ function NewMfgOrderForm() {
           {/* Labour */}
           <div className="bg-white rounded-xl border border-stone-200 p-4">
             <h2 className="font-medium text-stone-900 mb-4">Labour charges</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
               <div>
                 <label className={lbl}>Labour rate (₹/gram)</label>
                 <input type="number" className={inp} value={form.labour_per_gram} onChange={e => set('labour_per_gram', e.target.value)}

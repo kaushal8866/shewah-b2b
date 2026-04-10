@@ -175,13 +175,13 @@ export default function NewCircuitPage() {
 
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Budget & notes</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={label}>Budget (₹)</label>
               <input type="number" className={input} value={form.budget_inr}
                 onChange={e => set('budget_inr', e.target.value)} placeholder="e.g. 12000" />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <label className={label}>Notes / preparation checklist</label>
               <textarea className={`${input} resize-none`} rows={3} value={form.notes}
                 onChange={e => set('notes', e.target.value)}
