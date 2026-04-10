@@ -338,22 +338,28 @@ function CollectionsTab() {
       ) : (
         <div className="space-y-3">
           {collections.map(c => (
-            <div key={c.id} className="bg-white rounded-xl border border-stone-200 p-4 flex items-center gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="font-medium text-stone-900 text-sm">{c.name}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.is_published ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'}`}>
-                    {c.is_published ? 'Published' : 'Draft'}
-                  </span>
+            <div key={c.id} className="bg-white rounded-xl border border-stone-200 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <p className="font-medium text-stone-900 text-sm">{c.name}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.is_published ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'}`}>
+                      {c.is_published ? 'Published' : 'Draft'}
+                    </span>
+                  </div>
+                  {c.description && <p className="text-xs text-stone-400 mb-1 truncate">{c.description}</p>}
+                  <div className="flex items-center gap-3 text-xs text-stone-400 flex-wrap">
+                    {c.circuit_target && <span>📍 {c.circuit_target}</span>}
+                    <span>{c.product_count} product{c.product_count !== 1 ? 's' : ''}</span>
+                    <span className="text-[#C49C64] font-medium">{c.response_count} response{c.response_count !== 1 ? 's' : ''}</span>
+                  </div>
                 </div>
-                {c.description && <p className="text-xs text-stone-400 mb-1 truncate">{c.description}</p>}
-                <div className="flex items-center gap-3 text-xs text-stone-400">
-                  {c.circuit_target && <span>📍 {c.circuit_target}</span>}
-                  <span>{c.product_count} product{c.product_count !== 1 ? 's' : ''}</span>
-                  <span className="text-[#C49C64] font-medium">{c.response_count} response{c.response_count !== 1 ? 's' : ''}</span>
-                </div>
+                <button onClick={() => handleDelete(c.id)} disabled={deleting === c.id}
+                  className="p-1.5 rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
                 <button onClick={() => togglePublish(c.id, c.is_published)}
                   className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${c.is_published ? 'border-green-200 text-green-700 hover:bg-green-50' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}
                   title={c.is_published ? 'Unpublish' : 'Publish'}>
@@ -364,10 +370,6 @@ function CollectionsTab() {
                   className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50">
                   Manage <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
-                <button onClick={() => handleDelete(c.id)} disabled={deleting === c.id}
-                  className="p-1.5 rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
               </div>
             </div>
           ))}
@@ -435,22 +437,24 @@ function InterestTab() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-semibold text-stone-900">Partner Interest</h2>
-          <p className="text-stone-500 text-sm">{interests.length} total shortlists from partners</p>
-        </div>
-        <div className="flex gap-2">
-          <select value={collFilter} onChange={e => setCollFilter(e.target.value)}
-            className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-            <option value="all">All collections</option>
-            {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <select value={prodFilter} onChange={e => setProdFilter(e.target.value)}
-            className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-            <option value="all">All products</option>
-            {products.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
-          </select>
+      <div className="mb-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="text-lg font-semibold text-stone-900">Partner Interest</h2>
+            <p className="text-stone-500 text-sm">{interests.length} total shortlists from partners</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <select value={collFilter} onChange={e => setCollFilter(e.target.value)}
+              className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
+              <option value="all">All collections</option>
+              {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <select value={prodFilter} onChange={e => setProdFilter(e.target.value)}
+              className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
+              <option value="all">All products</option>
+              {products.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -464,55 +468,90 @@ function InterestTab() {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-stone-100 bg-stone-50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Partner</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Design</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Collection</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Note / Qty</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Date</th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {filtered.map(i => (
-                <tr key={i.id} className="hover:bg-stone-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-stone-900">{i.partners?.store_name || '—'}</p>
-                    <p className="text-xs text-stone-400">{i.partners?.city}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-stone-700">{i.products?.name || '—'}</p>
-                    <p className="text-xs text-stone-400">{i.products?.code}</p>
-                  </td>
-                  <td className="px-4 py-3 text-stone-500 text-xs">{i.design_collections?.name || '—'}</td>
-                  <td className="px-4 py-3">
-                    {i.note && <p className="text-stone-600 text-xs italic">"{i.note}"</p>}
-                    {i.quantity_hint && <p className="text-xs text-stone-400">Qty: {i.quantity_hint}</p>}
-                    {!i.note && !i.quantity_hint && <span className="text-stone-300 text-xs">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-stone-400">{new Date(i.created_at).toLocaleDateString('en-IN')}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      <Link
-                        href={`/orders/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
-                        className="text-xs px-2.5 py-1.5 rounded-lg bg-[#C49C64] text-white hover:bg-[#9B7A40] transition-colors whitespace-nowrap">
-                        → Order
-                      </Link>
-                      <Link
-                        href={`/cad-requests/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
-                        className="text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 transition-colors whitespace-nowrap">
-                        → CAD
-                      </Link>
-                    </div>
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden lg:block bg-white rounded-xl border border-stone-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-stone-100 bg-stone-50">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Partner</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Design</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Collection</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Note / Qty</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Date</th>
+                  <th className="text-right px-4 py-3 text-xs font-medium text-stone-400 uppercase tracking-wide">Actions</th>
                 </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {filtered.map(i => (
+                  <tr key={i.id} className="hover:bg-stone-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-stone-900">{i.partners?.store_name || '—'}</p>
+                      <p className="text-xs text-stone-400">{i.partners?.city}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-stone-700">{i.products?.name || '—'}</p>
+                      <p className="text-xs text-stone-400">{i.products?.code}</p>
+                    </td>
+                    <td className="px-4 py-3 text-stone-500 text-xs">{i.design_collections?.name || '—'}</td>
+                    <td className="px-4 py-3">
+                      {i.note && <p className="text-stone-600 text-xs italic">"{i.note}"</p>}
+                      {i.quantity_hint && <p className="text-xs text-stone-400">Qty: {i.quantity_hint}</p>}
+                      {!i.note && !i.quantity_hint && <span className="text-stone-300 text-xs">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-stone-400">{new Date(i.created_at).toLocaleDateString('en-IN')}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        <Link
+                          href={`/orders/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
+                          className="text-xs px-2.5 py-1.5 rounded-lg bg-[#C49C64] text-white hover:bg-[#9B7A40] transition-colors whitespace-nowrap">
+                          → Order
+                        </Link>
+                        <Link
+                          href={`/cad-requests/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
+                          className="text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 transition-colors whitespace-nowrap">
+                          → CAD
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card list */}
+          <div className="lg:hidden bg-white rounded-xl border border-stone-200 overflow-hidden">
+            <div className="divide-y divide-stone-50">
+              {filtered.map(i => (
+                <div key={i.id} className="px-4 py-3.5">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-stone-900">{i.partners?.store_name || '—'}</p>
+                      <p className="text-xs text-stone-400">{i.partners?.city}</p>
+                    </div>
+                    <p className="text-xs text-stone-400 shrink-0">{new Date(i.created_at).toLocaleDateString('en-IN')}</p>
+                  </div>
+                  <p className="text-sm text-stone-700">{i.products?.name || '—'} <span className="text-xs text-stone-400">{i.products?.code}</span></p>
+                  {i.design_collections?.name && <p className="text-xs text-stone-400 mt-0.5">{i.design_collections.name}</p>}
+                  {i.note && <p className="text-xs text-stone-500 italic mt-0.5">"{i.note}"</p>}
+                  <div className="flex gap-2 mt-2.5">
+                    <Link
+                      href={`/orders/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
+                      className="text-xs px-2.5 py-1.5 rounded-lg bg-[#C49C64] text-white hover:bg-[#9B7A40] transition-colors">
+                      → Order
+                    </Link>
+                    <Link
+                      href={`/cad-requests/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
+                      className="text-xs px-2.5 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 transition-colors">
+                      → CAD
+                    </Link>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
