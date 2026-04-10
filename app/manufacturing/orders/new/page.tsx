@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
 import { formatCurrency } from '@/lib/utils'
 import { ArrowLeft, Save, Upload, X, Printer, Package } from 'lucide-react'
 import Link from 'next/link'
@@ -75,14 +76,11 @@ function NewMfgOrderForm() {
 
   async function uploadImage(file: File) {
     setUploading(true)
-    const ext = file.name.split('.').pop()
-    const path = `manufacturing/${Date.now()}.${ext}`
-    const { data, error } = await supabase.storage
-      .from('shewah-uploads')
-      .upload(path, file, { upsert: true })
-    if (!error && data) {
-      const { data: { publicUrl } } = supabase.storage.from('shewah-uploads').getPublicUrl(data.path)
-      setUploadedImages(prev => [...prev, publicUrl])
+    try {
+      const url = await uploadToCloudinary(file)
+      setUploadedImages(prev => [...prev, url])
+    } catch (err) {
+      alert('Image upload failed: ' + (err instanceof Error ? err.message : String(err)))
     }
     setUploading(false)
   }
