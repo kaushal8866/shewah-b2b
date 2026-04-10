@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,11 +8,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing params' }, { status: 400 })
     }
     const ua = req.headers.get('user-agent') || null
-    await supabase.from('showcase_views').insert({
+    const { error } = await supabaseAdmin.from('showcase_views').insert({
       collection_id,
       partner_id,
       user_agent: ua ? ua.slice(0, 200) : null,
     })
+    if (error) return NextResponse.json({ ok: false, error: error.message })
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ ok: false })

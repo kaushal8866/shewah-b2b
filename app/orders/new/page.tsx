@@ -42,7 +42,7 @@ function NewOrderForm() {
       setProducts(prods)
       if (g?.[0]) setGoldRate(g[0].rate_24k)
       if (preProduct) {
-        const product = prods.find((x: any) => x.id === preProduct)
+        const product = prods.find(x => x.id === preProduct)
         if (product) {
           const days = product.delivery_days || 14
           setForm(prev => ({
