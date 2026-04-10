@@ -1,18 +1,23 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Heart } from 'lucide-react'
 import Link from 'next/link'
 
-export default function NewCADRequestPage() {
+function NewCADRequestForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const prePartner = searchParams.get('partner_id') || ''
+
   const [saving, setSaving] = useState(false)
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
+  const fromInterest = !!prePartner
 
   const [form, setForm] = useState({
-    partner_id: '', brief_text: '', diamond_shape: 'round',
+    partner_id: prePartner,
+    brief_text: '', diamond_shape: 'round',
     diamond_weight: '', gold_karat: '18', setting_type: '',
     special_requests: '', priority: 'normal',
     due_date: new Date(Date.now() + 48 * 3600000).toISOString().split('T')[0],
@@ -32,11 +37,10 @@ export default function NewCADRequestPage() {
     }
     setSaving(true)
 
-    // Generate request number
     const { count } = await supabase.from('cad_requests').select('*', { count: 'exact', head: true })
     const num = `SH-CAD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
 
-    const { data, error } = await supabase.from('cad_requests').insert([{
+    const { error } = await supabase.from('cad_requests').insert([{
       ...form,
       request_number: num,
       gold_karat: parseInt(form.gold_karat),
@@ -62,6 +66,13 @@ export default function NewCADRequestPage() {
           <p className="text-stone-500 text-sm">48-hour design turnaround</p>
         </div>
       </div>
+
+      {fromInterest && (
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 text-sm text-amber-800">
+          <Heart className="w-4 h-4 text-amber-600 shrink-0" />
+          Partner pre-filled from their design interest.
+        </div>
+      )}
 
       <div className="space-y-5">
         <div className="bg-white rounded-xl border border-stone-200 p-5">
@@ -157,5 +168,13 @@ export default function NewCADRequestPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function NewCADRequestPage() {
+  return (
+    <Suspense fallback={<div className="p-7 text-stone-400 text-sm">Loading...</div>}>
+      <NewCADRequestForm />
+    </Suspense>
   )
 }

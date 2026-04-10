@@ -41,8 +41,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
-  const isAuth = pathname === '/login' || pathname.startsWith('/setup')
-  if (isAuth) return <>{children}</>
+  const isPublic = pathname === '/login' || pathname.startsWith('/setup') || pathname.startsWith('/showcase')
+  if (isPublic) return <>{children}</>  
 
   const role = session?.user?.role || 'sub'
   const permissions = session?.user?.permissions || []
@@ -51,7 +51,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (!session) return false
     if (role === 'master') return true
     if (module === 'dashboard') return true
-    if (module === 'settings') return role === 'master'
+    if (module === 'settings') return false
     return permissions.includes(module)
   }
 

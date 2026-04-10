@@ -1,20 +1,27 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Heart } from 'lucide-react'
 import Link from 'next/link'
 
-export default function NewOrderPage() {
+function NewOrderForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const prePartner = searchParams.get('partner_id') || ''
+  const preProduct = searchParams.get('product_id') || ''
+
   const [saving, setSaving] = useState(false)
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
   const [products, setProducts] = useState<{ id: string; code: string; name: string; trade_price: number; delivery_days: number }[]>([])
   const [goldRate, setGoldRate] = useState(0)
+  const [fromInterest, setFromInterest] = useState(false)
 
   const [form, setForm] = useState({
-    partner_id: '', product_id: '', type: 'catalog',
+    partner_id: prePartner,
+    product_id: preProduct,
+    type: 'catalog',
     model: 'wholesale', quantity: '1', ring_size: '',
     special_notes: '', brief_text: '',
     trade_price: '', total_amount: '', advance_paid: '0',
@@ -24,14 +31,28 @@ export default function NewOrderPage() {
   })
 
   useEffect(() => {
+    if (prePartner || preProduct) setFromInterest(true)
     Promise.all([
       supabase.from('partners').select('id, store_name, city').order('store_name'),
       supabase.from('products').select('id, code, name, trade_price, delivery_days').eq('is_active', true).order('code'),
       supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
     ]).then(([{ data: p }, { data: pr }, { data: g }]) => {
       setPartners(p || [])
-      setProducts(pr || [])
+      const prods = pr || []
+      setProducts(prods)
       if (g?.[0]) setGoldRate(g[0].rate_24k)
+      if (preProduct) {
+        const product = prods.find((x: any) => x.id === preProduct)
+        if (product) {
+          const days = product.delivery_days || 14
+          setForm(prev => ({
+            ...prev,
+            trade_price: String(product.trade_price || ''),
+            total_amount: String(product.trade_price || ''),
+            expected_delivery: new Date(Date.now() + days * 86400000).toISOString().split('T')[0],
+          }))
+        }
+      }
     })
   }, [])
 
@@ -83,7 +104,7 @@ export default function NewOrderPage() {
       status: 'brief_received',
     }
 
-    const { data, error } = await supabase.from('orders').insert([payload]).select().single()
+    const { error } = await supabase.from('orders').insert([payload]).select().single()
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }
     router.push('/orders')
@@ -91,7 +112,6 @@ export default function NewOrderPage() {
 
   const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none"
   const label = "block text-xs font-medium text-stone-500 mb-1"
-
   const balanceDue = (parseFloat(form.total_amount) || 0) - (parseFloat(form.advance_paid) || 0)
 
   return (
@@ -106,8 +126,14 @@ export default function NewOrderPage() {
         </div>
       </div>
 
+      {fromInterest && (
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 text-sm text-amber-800">
+          <Heart className="w-4 h-4 text-amber-600 shrink-0" />
+          Partner and product pre-filled from their design interest.
+        </div>
+      )}
+
       <div className="space-y-5">
-        {/* Order basics */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Order details</h2>
           <div className="grid grid-cols-2 gap-4">
@@ -166,7 +192,6 @@ export default function NewOrderPage() {
           </div>
         </div>
 
-        {/* Pricing */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Pricing & payment</h2>
           {goldRate > 0 && (
@@ -191,14 +216,11 @@ export default function NewOrderPage() {
           {form.total_amount && (
             <div className={`mt-3 p-3 rounded-lg text-sm flex justify-between items-center ${balanceDue > 0 ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'}`}>
               <span className={balanceDue > 0 ? 'text-amber-700' : 'text-green-700'}>Balance due at delivery</span>
-              <span className={`font-semibold ${balanceDue > 0 ? 'text-amber-800' : 'text-green-800'}`}>
-                ₹{balanceDue.toLocaleString('en-IN')}
-              </span>
+              <span className={`font-semibold ${balanceDue > 0 ? 'text-amber-800' : 'text-green-800'}`}>₹{balanceDue.toLocaleString('en-IN')}</span>
             </div>
           )}
         </div>
 
-        {/* Dates */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Dates</h2>
           <div className="grid grid-cols-2 gap-4">
@@ -230,5 +252,13 @@ export default function NewOrderPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function NewOrderPage() {
+  return (
+    <Suspense fallback={<div className="p-7 text-stone-400 text-sm">Loading...</div>}>
+      <NewOrderForm />
+    </Suspense>
   )
 }
