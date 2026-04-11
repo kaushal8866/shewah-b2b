@@ -34,19 +34,14 @@ export default function LoginPage() {
         return
       }
 
-      // Send tokens to server route so cookies are set server-side
+      // Redirect through server callback to set cookies on the response
       if (data.session) {
-        await fetch('/auth/callback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-          }),
+        const params = new URLSearchParams({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
         })
+        window.location.href = `/auth/callback?${params.toString()}`
       }
-
-      window.location.href = '/'
     } catch (err: any) {
       setError(err?.message || 'Sign in failed. Please try again.')
       setLoading(false)

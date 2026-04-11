@@ -1,10 +1,17 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
-  const { access_token, refresh_token } = await request.json()
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url)
+  const access_token = searchParams.get('access_token')
+  const refresh_token = searchParams.get('refresh_token')
 
-  const response = NextResponse.json({ ok: true })
+  if (!access_token || !refresh_token) {
+    return NextResponse.redirect(new URL('/login', origin))
+  }
+
+  const redirectUrl = new URL('/', origin)
+  const response = NextResponse.redirect(redirectUrl)
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
