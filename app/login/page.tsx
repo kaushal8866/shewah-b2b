@@ -22,18 +22,27 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        throw new Error('Supabase environment details missing!')
+      }
 
-    if (authError) {
-      setError(authError.message)
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (authError) {
+        setError(authError.message)
+        setLoading(false)
+        return
+      }
+
+      window.location.href = '/'
+    } catch (err: any) {
+      setError(err?.message || 'A catastrophic error occurred during sign in.')
       setLoading(false)
-      return
     }
-
-    window.location.href = '/'
   }
 
   return (
