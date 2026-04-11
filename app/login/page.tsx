@@ -9,18 +9,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [debugInfo, setDebugInfo] = useState('')
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
-    setDebugInfo('')
 
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      setDebugInfo(`URL: ${supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING'}`)
-
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -28,26 +23,19 @@ export default function LoginPage() {
 
       if (authError) {
         setError(authError.message)
-        setDebugInfo(prev => prev + ` | Auth Error: ${authError.message}`)
         setLoading(false)
         return
       }
 
       if (!data.session) {
-        setError('Login succeeded but no session was returned. Check if email confirmation is required in your Supabase dashboard.')
-        setDebugInfo(prev => prev + ' | No session returned')
+        setError('No session returned. Please check if email confirmation is required in Supabase.')
         setLoading(false)
         return
       }
 
-      setDebugInfo(prev => prev + ` | Session OK, user: ${data.session.user.email} | Redirecting...`)
-
-      // Small delay so user can see the debug info
-      await new Promise(r => setTimeout(r, 500))
       window.location.href = '/'
     } catch (err: any) {
-      setError(err?.message || 'Unknown error')
-      setDebugInfo(prev => prev + ` | Caught: ${err?.message}`)
+      setError(err?.message || 'Sign in failed. Please try again.')
       setLoading(false)
     }
   }
@@ -67,12 +55,6 @@ export default function LoginPage() {
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">
               {error}
-            </div>
-          )}
-
-          {debugInfo && (
-            <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs rounded-xl px-4 py-3 font-mono break-all">
-              {debugInfo}
             </div>
           )}
 
