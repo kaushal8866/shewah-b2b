@@ -185,7 +185,11 @@ export default function SettingsPage() {
               <User className="w-4 h-4 text-[#C49C64]" />
               <h2 className="font-medium text-stone-900">Business information</h2>
             </div>
+<<<<<<< HEAD
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+=======
             <div className="grid grid-cols-2 gap-4">
+>>>>>>> 5d69cdc058afacc92aad31404919d6481919329f
               <div><label className={label}>Business name</label><input className={input} value={settings.business_name || ''} onChange={e => set('business_name', e.target.value)} /></div>
               <div><label className={label}>Owner name</label><input className={input} value={settings.owner_name || ''} onChange={e => set('owner_name', e.target.value)} /></div>
               <div><label className={label}>WhatsApp number</label><input className={input} value={settings.whatsapp_number || ''} onChange={e => set('whatsapp_number', e.target.value)} placeholder="919XXXXXXXXX" /></div>
@@ -199,7 +203,11 @@ export default function SettingsPage() {
               <h2 className="font-medium text-stone-900">Default pricing parameters</h2>
             </div>
             <p className="text-xs text-stone-400 mb-4">Used in the gold rate calculator and new product forms.</p>
+<<<<<<< HEAD
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+=======
             <div className="grid grid-cols-2 gap-4">
+>>>>>>> 5d69cdc058afacc92aad31404919d6481919329f
               <div><label className={label}>Default IGI cert cost (₹)</label><input type="number" className={input} value={settings.default_igi_cost || ''} onChange={e => set('default_igi_cost', e.target.value)} /></div>
               <div><label className={label}>Default making charges (₹)</label><input type="number" className={input} value={settings.default_making_charges || ''} onChange={e => set('default_making_charges', e.target.value)} /></div>
               <div>
@@ -221,7 +229,11 @@ export default function SettingsPage() {
               <h2 className="font-medium text-stone-900">Gold karat multipliers</h2>
             </div>
             <p className="text-xs text-stone-400 mb-4">Used to calculate gold cost per gram for each karat from the 24K base rate.</p>
+<<<<<<< HEAD
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+=======
             <div className="grid grid-cols-3 gap-4">
+>>>>>>> 5d69cdc058afacc92aad31404919d6481919329f
               {[
                 { key: 'gold_markup_14k', label: '14K multiplier', default: '0.585' },
                 { key: 'gold_markup_18k', label: '18K multiplier', default: '0.750' },
@@ -240,7 +252,11 @@ export default function SettingsPage() {
               <Phone className="w-4 h-4 text-[#C49C64]" />
               <h2 className="font-medium text-stone-900">Operations defaults</h2>
             </div>
+<<<<<<< HEAD
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+=======
             <div className="grid grid-cols-2 gap-4">
+>>>>>>> 5d69cdc058afacc92aad31404919d6481919329f
               <div><label className={label}>CAD turnaround SLA (hours)</label><input type="number" className={input} value={settings.cad_sla_hours || '48'} onChange={e => set('cad_sla_hours', e.target.value)} /></div>
               <div><label className={label}>Default catalog delivery (days)</label><input type="number" className={input} value={settings.default_delivery_days || '14'} onChange={e => set('default_delivery_days', e.target.value)} /></div>
               <div>

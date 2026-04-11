@@ -136,7 +136,8 @@ export default function VendorsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+          {/* Desktop table */}
+          <div className="hidden lg:block bg-white rounded-xl border border-stone-200 overflow-hidden">
             {loading ? (
               <div className="py-12 text-center text-stone-400">Loading...</div>
             ) : filteredVendors.length === 0 ? (
@@ -150,8 +151,8 @@ export default function VendorsPage() {
                 <thead>
                   <tr className="border-b border-stone-100 bg-stone-50">
                     <th className="text-left text-xs text-stone-400 font-medium px-4 py-3">Vendor</th>
-                    <th className="text-left text-xs text-stone-400 font-medium px-4 py-3 hidden sm:table-cell">Categories</th>
-                    <th className="text-left text-xs text-stone-400 font-medium px-4 py-3 hidden sm:table-cell">City</th>
+                    <th className="text-left text-xs text-stone-400 font-medium px-4 py-3">Categories</th>
+                    <th className="text-left text-xs text-stone-400 font-medium px-4 py-3">City</th>
                     <th className="text-left text-xs text-stone-400 font-medium px-4 py-3">Outstanding</th>
                     <th className="px-4 py-3"></th>
                   </tr>
@@ -164,14 +165,14 @@ export default function VendorsPage() {
                         <p className="text-sm font-medium text-stone-900">{v.name}</p>
                         <p className="text-xs text-stone-400">{v.owner_name}</p>
                       </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
+                      <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {v.category?.slice(0, 3).map((c: string) => (
                             <span key={c} className="text-xs bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">{c}</span>
                           ))}
                         </div>
                       </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
+                      <td className="px-4 py-3">
                         <p className="text-xs text-stone-500">{v.city || '—'}</p>
                       </td>
                       <td className="px-4 py-3">
@@ -188,6 +189,46 @@ export default function VendorsPage() {
                   ))}
                 </tbody>
               </table>
+            )}
+          </div>
+
+          {/* Mobile card list */}
+          <div className="lg:hidden bg-white rounded-xl border border-stone-200 overflow-hidden">
+            {loading ? (
+              <div className="py-12 text-center text-stone-400 text-sm">Loading...</div>
+            ) : filteredVendors.length === 0 ? (
+              <div className="py-12 text-center">
+                <Store className="w-10 h-10 text-stone-200 mx-auto mb-3" />
+                <p className="text-stone-400 text-sm">No vendors yet</p>
+                <Link href="/vendors/new" className="inline-block mt-3 text-sm text-[#C49C64] hover:underline">Add first vendor →</Link>
+              </div>
+            ) : (
+              <div className="divide-y divide-stone-50">
+                {filteredVendors.map(v => (
+                  <Link key={v.id} href={`/vendors/${v.id}`}
+                    className="flex items-center gap-3 px-4 py-3.5 hover:bg-stone-50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-stone-900">{v.name}</p>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        {v.city ? `${v.city} · ` : ''}{v.owner_name || ''}
+                      </p>
+                      {v.category?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {v.category.slice(0, 3).map((c: string) => (
+                            <span key={c} className="text-xs bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">{c}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      {v.outstanding > 0 ? (
+                        <p className="text-sm font-medium text-red-500">{formatCurrency(v.outstanding)}</p>
+                      ) : null}
+                      <ChevronRight className="w-4 h-4 text-stone-300 mt-1 ml-auto" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
             )}
           </div>
         </>

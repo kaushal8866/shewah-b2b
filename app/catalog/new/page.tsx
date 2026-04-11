@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
 import { ArrowLeft, Save, Calculator, Plus, X, Upload, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 
@@ -90,12 +91,11 @@ export default function NewProductPage() {
     if (!files) return
     setUploading(true)
     for (const file of Array.from(files)) {
-      const ext = file.name.split('.').pop()
-      const path = `catalog/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { data, error } = await supabase.storage.from('shewah-uploads').upload(path, file, { upsert: true })
-      if (!error && data) {
-        const { data: { publicUrl } } = supabase.storage.from('shewah-uploads').getPublicUrl(data.path)
-        setPhotoUrls(prev => [...prev, publicUrl])
+      try {
+        const url = await uploadToCloudinary(file)
+        setPhotoUrls(prev => [...prev, url])
+      } catch (err) {
+        alert('Image upload failed: ' + (err instanceof Error ? err.message : String(err)))
       }
     }
     setUploading(false)

@@ -60,7 +60,7 @@ export default function NewCircuitPage() {
   const suggestedForRegion = form.region ? (SUGGESTED_CITIES as any)[form.region] || [] : []
 
   return (
-    <div className="p-7 max-w-2xl">
+    <div className="p-4 lg:p-7 max-w-2xl">
       <div className="flex items-center gap-3 mb-7">
         <Link href="/circuits" className="text-stone-400 hover:text-stone-600">
           <ArrowLeft className="w-5 h-5" />
@@ -74,8 +74,8 @@ export default function NewCircuitPage() {
       <div className="space-y-5">
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Trip details</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="col-span-1 sm:col-span-2">
               <label className={label}>Circuit name *</label>
               <input className={input} value={form.name} onChange={e => set('name', e.target.value)}
                 placeholder="e.g. Gujarat Circuit — Apr 2025" />
@@ -154,7 +154,7 @@ export default function NewCircuitPage() {
 
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Targets</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={label}>Store visits target</label>
               <input type="number" className={input} value={form.target_visits}
@@ -175,13 +175,13 @@ export default function NewCircuitPage() {
 
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Budget & notes</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={label}>Budget (₹)</label>
               <input type="number" className={input} value={form.budget_inr}
                 onChange={e => set('budget_inr', e.target.value)} placeholder="e.g. 12000" />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <label className={label}>Notes / preparation checklist</label>
               <textarea className={`${input} resize-none`} rows={3} value={form.notes}
                 onChange={e => set('notes', e.target.value)}

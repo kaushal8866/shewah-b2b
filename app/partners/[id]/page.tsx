@@ -75,6 +75,22 @@ export default function PartnerDetailPage() {
 
   async function handleDelete() {
     setDeleting(true)
+    // Block deletion if partner has orders — data would be lost
+    const { count: orderCount } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('partner_id', id)
+    if (orderCount && orderCount > 0) {
+      setDeleting(false)
+      alert(`Cannot delete: this partner has ${orderCount} order(s). Move or delete their orders first.`)
+      setShowDeleteConfirm(false)
+      return
+    }
+    // Clean up FK references in tables that allow nulls
+    await Promise.all([
+      supabase.from('cad_requests').update({ partner_id: null }).eq('partner_id', id),
+      supabase.from('visits').delete().eq('partner_id', id),
+    ])
     const { error } = await supabase.from('partners').delete().eq('id', id)
     setDeleting(false)
     if (error) { alert('Error: ' + error.message); return }
@@ -102,7 +118,7 @@ export default function PartnerDetailPage() {
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return (
-    <div className="p-7 text-stone-400 text-sm">Loading...</div>
+    <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
   )
 
   return (
@@ -184,7 +200,7 @@ export default function PartnerDetailPage() {
 
       {/* Quick actions (view mode only) */}
       {!editing && (
-        <div className="flex gap-2 mb-5">
+        <div className="flex flex-wrap gap-2 mb-5">
           <a href={`tel:${partner.phone}`}
             className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
             <Phone className="w-4 h-4" /> Call

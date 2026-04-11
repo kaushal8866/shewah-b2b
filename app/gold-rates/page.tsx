@@ -75,9 +75,9 @@ export default function GoldRatesPage() {
   const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none"
 
   return (
-    <div className="p-7">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-stone-900">Gold Rates</h1>
+    <div className="p-4 lg:p-7">
+      <div className="mb-5 lg:mb-6">
+        <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Gold Rates</h1>
         <p className="text-stone-500 text-sm mt-0.5">Track rates and calculate trade pricing</p>
       </div>
 
@@ -91,7 +91,7 @@ export default function GoldRatesPage() {
             </div>
             <span className="text-xs text-yellow-600">{formatDate(latest.recorded_at)} · {latest.source}</span>
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { karat: '24K', rate: latest.rate_24k, purity: '99.9%' },
               { karat: '22K', rate: latest.rate_22k, purity: '91.6%' },
@@ -108,7 +108,7 @@ export default function GoldRatesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Update rate */}
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-stone-200 p-5">
