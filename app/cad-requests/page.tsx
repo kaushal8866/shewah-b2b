@@ -128,20 +128,20 @@ export default function CADRequestsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-3 mb-5">
+      <div className="flex overflow-x-auto gap-3 mb-5 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-5 snap-x">
         {statsBar.map(s => (
           <button key={s.label}
             onClick={() => setStatusFilter(s.label.toLowerCase().replace(' ', '_') === statusFilter ? 'all' : s.label.toLowerCase().replace(' ', '_'))}
-            className="bg-white rounded-xl border border-stone-200 px-3 py-3 text-center hover:border-stone-300 transition-colors">
+            className="bg-white rounded-xl border border-stone-200 px-3 py-3 text-center hover:border-stone-300 transition-colors shrink-0 min-w-[110px] w-auto sm:w-full snap-start sm:shrink">
             <p className={`text-2xl font-semibold ${s.color}`}>{s.count}</p>
-            <p className="text-xs text-stone-400 mt-0.5">{s.label}</p>
+            <p className="text-xs text-stone-400 mt-0.5 whitespace-nowrap">{s.label}</p>
           </button>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="relative w-full sm:flex-1">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-stone-400" />
           <input type="text" placeholder="Search request number, partner, brief..."
             value={search} onChange={e => setSearch(e.target.value)}
@@ -156,8 +156,8 @@ export default function CADRequestsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-xl border border-stone-200 overflow-x-auto">
+        <table className="w-full min-w-[800px]">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50">
               <th className="text-left text-xs text-stone-400 font-medium px-5 py-3">Request</th>

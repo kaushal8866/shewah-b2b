@@ -99,13 +99,13 @@ export default function OrdersPage() {
       {/* Kanban quick view */}
       <div className="bg-white rounded-xl border border-stone-200 p-4 mb-4">
         <p className="text-xs text-stone-400 mb-3 font-medium">Pipeline overview</p>
-        <div className="flex gap-2">
+        <div className="flex overflow-x-auto gap-2 pb-2 sm:pb-0 snap-x">
           {ORDER_STATUSES.filter(s => s.value !== 'delivered').map(stage => {
             const count = orders.filter(o => o.status === stage.value).length
             return (
               <button key={stage.value}
                 onClick={() => setStatusFilter(stage.value === statusFilter ? 'all' : stage.value)}
-                className={`flex-1 text-center rounded-lg py-2 text-xs font-medium transition-colors ${
+                className={`snap-start shrink-0 min-w-[100px] sm:min-w-0 sm:flex-1 text-center rounded-lg py-2 text-xs font-medium transition-colors ${
                   statusFilter === stage.value
                     ? 'bg-[#C49C64] text-white'
                     : count > 0 ? 'bg-stone-100 text-stone-700 hover:bg-stone-200' : 'bg-stone-50 text-stone-300'
@@ -119,28 +119,30 @@ export default function OrdersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="relative w-full sm:flex-1">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-stone-400" />
           <input type="text" placeholder="Search order, partner, product..."
             value={search} onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 rounded-lg bg-white" />
         </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-          <option value="all">All statuses</option>
-          {ORDER_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
-        <select className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-          <option>All types</option>
-          <option value="catalog">Catalog</option>
-          <option value="custom">Custom</option>
-        </select>
+        <div className="flex gap-2">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            className="flex-1 sm:flex-none text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
+            <option value="all">All statuses</option>
+            {ORDER_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+          <select className="flex-1 sm:flex-none text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
+            <option>All types</option>
+            <option value="catalog">Catalog</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-stone-200 overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[800px]">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50">
               <th className="text-left text-xs text-stone-400 font-medium px-5 py-3">Order</th>
