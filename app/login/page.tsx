@@ -23,11 +23,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        throw new Error('Supabase environment details missing!')
-      }
-
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
@@ -38,9 +34,21 @@ export default function LoginPage() {
         return
       }
 
+      // Send tokens to server route so cookies are set server-side
+      if (data.session) {
+        await fetch('/auth/callback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          }),
+        })
+      }
+
       window.location.href = '/'
     } catch (err: any) {
-      setError(err?.message || 'A catastrophic error occurred during sign in.')
+      setError(err?.message || 'Sign in failed. Please try again.')
       setLoading(false)
     }
   }
