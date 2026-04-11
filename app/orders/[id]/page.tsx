@@ -270,7 +270,7 @@ export default function OrderDetailPage() {
       {showPayment && (
         <div className="bg-white rounded-xl border border-stone-200 p-5 mb-5">
           <h3 className="font-medium text-stone-900 mb-3">Record payment</h3>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className={lbl}>Amount (₹) *</label>
               <input type="number" className={inp} value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)}
@@ -304,7 +304,7 @@ export default function OrderDetailPage() {
       {showDispatch && (
         <div className="bg-white rounded-xl border border-stone-200 p-5 mb-5">
           <h3 className="font-medium text-stone-900 mb-3">Dispatch details</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className={lbl}>Courier</label>
               <select className={inp} value={courier} onChange={e => setCourier(e.target.value)}>
@@ -365,7 +365,7 @@ export default function OrderDetailPage() {
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-3">Order details</h2>
             {!editing ? (
-              <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-sm">
                 {[
                   ['Product', order.products ? `${order.products.code} — ${order.products.name}` : 'Custom design'],
                   ['Type', `${order.type} · ${order.model?.replace(/_/g, ' ')}`],
@@ -393,7 +393,7 @@ export default function OrderDetailPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={lbl}>Ring size</label>
                   <input className={inp} value={form.ring_size || ''} onChange={e => setForm(prev => ({ ...prev, ring_size: e.target.value }))} />
@@ -428,7 +428,7 @@ export default function OrderDetailPage() {
               <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
                 <Truck className="w-4 h-4 text-teal-600" /> Dispatch info
               </h2>
-              <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-xs text-stone-400">Courier</p>
                   <p className="text-stone-800 mt-0.5">{order.courier || '—'}</p>

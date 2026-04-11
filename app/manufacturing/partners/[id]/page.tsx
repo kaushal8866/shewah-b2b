@@ -162,7 +162,7 @@ export default function ManufacturingPartnerDetailPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { label: 'Total orders', value: totalOrders },
               { label: 'Active orders', value: activeOrders },
@@ -177,7 +177,7 @@ export default function ManufacturingPartnerDetailPage() {
 
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-4">Partner details</h2>
-            <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-sm">
               {[
                 ['Name', partner.name],
                 ['Owner', partner.owner_name || '—'],

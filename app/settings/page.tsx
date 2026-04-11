@@ -57,7 +57,7 @@ export default function SettingsPage() {
             <User className="w-4 h-4 text-[#C49C64]" />
             <h2 className="font-medium text-stone-900">Business information</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={label}>Business name</label>
               <input className={input} value={settings.business_name || ''} onChange={e => set('business_name', e.target.value)} />
@@ -84,7 +84,7 @@ export default function SettingsPage() {
             <h2 className="font-medium text-stone-900">Default pricing parameters</h2>
           </div>
           <p className="text-xs text-stone-400 mb-4">These defaults are used in the gold rate calculator and new product forms.</p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={label}>Default IGI cert cost (₹)</label>
               <input type="number" className={input} value={settings.default_igi_cost || ''} onChange={e => set('default_igi_cost', e.target.value)} />
@@ -115,7 +115,7 @@ export default function SettingsPage() {
             <h2 className="font-medium text-stone-900">Gold karat multipliers</h2>
           </div>
           <p className="text-xs text-stone-400 mb-4">These are used to calculate gold cost per gram for each karat from the 24K base rate.</p>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { key: 'gold_markup_14k', label: '14K multiplier', default: '0.585' },
               { key: 'gold_markup_18k', label: '18K multiplier', default: '0.750' },
@@ -137,7 +137,7 @@ export default function SettingsPage() {
             <Phone className="w-4 h-4 text-[#C49C64]" />
             <h2 className="font-medium text-stone-900">Operations defaults</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={label}>CAD turnaround SLA (hours)</label>
               <input type="number" className={input}

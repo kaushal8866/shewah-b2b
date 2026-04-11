@@ -78,29 +78,31 @@ export default function CatalogPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 mb-4 flex-wrap">
-        <div className="relative flex-1 min-w-48">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="relative w-full sm:flex-1">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-stone-400" />
           <input type="text" placeholder="Search by name, code, shape..."
             value={search} onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 rounded-lg bg-white" />
         </div>
-        <select value={karatFilter} onChange={e => setKaratFilter(e.target.value)}
-          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-          <option value="all">All karats</option>
-          <option value="14">14K gold</option>
-          <option value="18">18K gold</option>
-        </select>
-        <select value={shapeFilter} onChange={e => setShapeFilter(e.target.value)}
-          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-          <option value="all">All shapes</option>
-          {shapes.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <button onClick={() => setShowInactive(!showInactive)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${showInactive ? 'bg-stone-100 border-stone-300 text-stone-700' : 'border-stone-200 text-stone-400 hover:text-stone-600'}`}>
-          {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-          {showInactive ? 'Hiding inactive' : 'Show inactive'}
-        </button>
+        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+          <select value={karatFilter} onChange={e => setKaratFilter(e.target.value)}
+            className="flex-1 sm:flex-none text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
+            <option value="all">All karats</option>
+            <option value="14">14K gold</option>
+            <option value="18">18K gold</option>
+          </select>
+          <select value={shapeFilter} onChange={e => setShapeFilter(e.target.value)}
+            className="flex-1 sm:flex-none text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
+            <option value="all">All shapes</option>
+            {shapes.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button onClick={() => setShowInactive(!showInactive)}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${showInactive ? 'bg-stone-100 border-stone-300 text-stone-700' : 'border-stone-200 text-stone-400 hover:text-stone-600'}`}>
+            {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            {showInactive ? 'Hiding inactive' : 'Show inactive'}
+          </button>
+        </div>
       </div>
 
       {/* Product grid */}
@@ -122,7 +124,7 @@ export default function CatalogPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map(p => (
             <div key={p.id} className={`bg-white rounded-xl border overflow-hidden transition-all ${p.is_active ? 'border-stone-200' : 'border-stone-100 opacity-60'}`}>
               {/* Photo placeholder */}
@@ -148,34 +150,34 @@ export default function CatalogPage() {
               </div>
 
               {/* Details */}
-              <div className="p-4">
+              <div className="p-3 sm:p-4">
                 <div className="flex items-start justify-between mb-1">
-                  <p className="font-medium text-stone-900 text-sm">{p.name}</p>
-                  <span className="text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full">
+                  <p className="font-medium text-stone-900 text-sm truncate pr-2">{p.name}</p>
+                  <span className="text-xs text-stone-400 bg-stone-50 px-1.5 py-0.5 rounded-md shrink-0">
                     {p.gold_karat}K
                   </span>
                 </div>
-                <p className="text-xs text-stone-400 mb-3">
+                <p className="text-xs text-stone-400 mb-3 line-clamp-1">
                   {p.diamond_weight}ct {p.diamond_shape} · {p.diamond_quality}/{p.diamond_color}
                 </p>
 
                 {/* Pricing */}
                 <div className="grid grid-cols-3 gap-1 mb-3">
-                  <div className="bg-stone-50 rounded-lg p-2 text-center">
-                    <p className="text-xs text-stone-400">Trade</p>
-                    <p className="text-xs font-semibold text-stone-700">
+                  <div className="bg-stone-50 rounded-md p-1.5 text-center">
+                    <p className="text-[10px] text-stone-400 truncate">Trade</p>
+                    <p className="text-[11px] sm:text-xs font-semibold text-stone-700 truncate">
                       {p.trade_price ? `₹${(p.trade_price/1000).toFixed(0)}K` : '—'}
                     </p>
                   </div>
-                  <div className="bg-stone-50 rounded-lg p-2 text-center">
-                    <p className="text-xs text-stone-400">MRP</p>
-                    <p className="text-xs font-semibold text-stone-700">
+                  <div className="bg-stone-50 rounded-md p-1.5 text-center">
+                    <p className="text-[10px] text-stone-400 truncate">MRP</p>
+                    <p className="text-[11px] sm:text-xs font-semibold text-stone-700 truncate">
                       {p.mrp_suggested ? `₹${(p.mrp_suggested/1000).toFixed(0)}K` : '—'}
                     </p>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-2 text-center">
-                    <p className="text-xs text-green-600">Margin</p>
-                    <p className="text-xs font-semibold text-green-700">
+                  <div className="bg-green-50 rounded-md p-1.5 text-center">
+                    <p className="text-[10px] text-green-600 truncate">Margin</p>
+                    <p className="text-[11px] sm:text-xs font-semibold text-green-700 truncate">
                       {p.trade_price && p.mrp_suggested
                         ? `₹${((p.mrp_suggested - p.trade_price)/1000).toFixed(0)}K`
                         : '—'}
