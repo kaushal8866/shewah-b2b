@@ -214,7 +214,7 @@ export default function VendorsPage() {
                       <p className="text-xs text-stone-500 mt-0.5">
                         {v.city ? `${v.city} · ` : ''}{v.owner_name || ''}
                       </p>
-                      {v.category?.length > 0 && (
+                      {(v.category?.length ?? 0) > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {v.category.slice(0, 3).map((c: string) => (
                             <span key={c} className="text-xs bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">{c}</span>
