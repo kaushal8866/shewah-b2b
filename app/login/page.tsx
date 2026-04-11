@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import { useRouter } from 'next/navigation'
 import { Diamond } from 'lucide-react'
 
 export default function LoginPage() {
@@ -10,12 +9,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const router = useRouter()
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -23,7 +16,12 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+
+      const { error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
@@ -34,14 +32,8 @@ export default function LoginPage() {
         return
       }
 
-      // Redirect through server callback to set cookies on the response
-      if (data.session) {
-        const params = new URLSearchParams({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        })
-        window.location.href = `/auth/callback?${params.toString()}`
-      }
+      // Auth succeeded — hard redirect to dashboard
+      window.location.href = '/'
     } catch (err: any) {
       setError(err?.message || 'Sign in failed. Please try again.')
       setLoading(false)

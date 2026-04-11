@@ -1,15 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
   Factory, Store, Menu, X, LogOut
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 
 const nav = [
   { href: '/',                icon: LayoutDashboard, label: 'Dashboard'     },
@@ -35,15 +35,59 @@ const bottomNav = [
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
 
   const isPortal = pathname.startsWith('/portal')
   const isLogin = pathname === '/login'
+  const isTrack = pathname.startsWith('/track')
+  const isAuth = pathname.startsWith('/auth')
+  const isPublicPage = isPortal || isLogin || isTrack || isAuth
 
-  // Portal and login pages render without the admin shell
-  if (isPortal || isLogin) return <>{children}</>
+  // Auth gate: check session on mount for protected pages
+  useEffect(() => {
+    if (isPublicPage) {
+      setAuthChecked(true)
+      return
+    }
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        window.location.href = '/login'
+      } else {
+        setAuthChecked(true)
+      }
+    })
+  }, [pathname, isPublicPage])
+
+  // Public pages render without shell
+  if (isPublicPage) return <>{children}</>
+
+  // Show loading while checking auth
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-[#1C1A17] flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[#C49C64] flex items-center justify-center">
+            <Diamond className="w-4 h-4 text-white" />
+          </div>
+          <p className="text-white/40 text-sm">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   async function handleSignOut() {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
     await supabase.auth.signOut()
     window.location.href = '/login'
   }
