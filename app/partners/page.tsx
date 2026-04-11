@@ -57,7 +57,7 @@ export default function PartnersPage() {
   }
 
   return (
-    <div className="p-7">
+    <div className="p-4 lg:p-7">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

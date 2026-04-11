@@ -68,7 +68,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="p-7">
+    <div className="p-4 lg:p-7">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-stone-900">Orders</h1>

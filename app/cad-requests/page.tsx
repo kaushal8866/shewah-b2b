@@ -103,7 +103,7 @@ export default function CADRequestsPage() {
   ]
 
   return (
-    <div className="p-7">
+    <div className="p-4 lg:p-7">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-stone-900">CAD Requests</h1>
@@ -128,7 +128,7 @@ export default function CADRequestsPage() {
       )}
 
       {/* Stats */}
-      <div className="flex overflow-x-auto gap-3 mb-5 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-5 snap-x">
+      <div className="flex overflow-x-auto gap-3 mb-5 pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 sm:grid sm:grid-cols-5 snap-x">
         {statsBar.map(s => (
           <button key={s.label}
             onClick={() => setStatusFilter(s.label.toLowerCase().replace(' ', '_') === statusFilter ? 'all' : s.label.toLowerCase().replace(' ', '_'))}

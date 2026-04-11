@@ -143,7 +143,7 @@ export default function AnalyticsPage() {
   const totalOrders = data.revenueByMonth.reduce((s, m) => s + m.orders, 0)
 
   return (
-    <div className="p-7">
+    <div className="p-4 lg:p-7">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-stone-900">Analytics</h1>
         <p className="text-stone-500 text-sm mt-0.5">Business performance overview</p>
