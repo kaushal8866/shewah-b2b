@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { supabase } from '@/lib/supabase'
 
 const nav = [
   { href: '/',                icon: LayoutDashboard, label: 'Dashboard'     },
@@ -35,27 +35,16 @@ const bottomNav = [
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
 
-  const isPortal = pathname.startsWith('/portal')
-  const isLogin = pathname === '/login'
-  const isTrack = pathname.startsWith('/track')
-  const isAuth = pathname.startsWith('/auth')
-  const isPublicPage = isPortal || isLogin || isTrack || isAuth
+  const isPublicPage = pathname === '/login' || pathname.startsWith('/portal') || pathname.startsWith('/track') || pathname.startsWith('/auth')
 
-  // Auth gate: check session on mount for protected pages
   useEffect(() => {
     if (isPublicPage) {
       setAuthChecked(true)
       return
     }
-
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -66,10 +55,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     })
   }, [pathname, isPublicPage])
 
-  // Public pages render without shell
   if (isPublicPage) return <>{children}</>
 
-  // Show loading while checking auth
   if (!authChecked) {
     return (
       <div className="min-h-screen bg-[#1C1A17] flex items-center justify-center">
@@ -84,10 +71,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   async function handleSignOut() {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
     await supabase.auth.signOut()
     window.location.href = '/login'
   }

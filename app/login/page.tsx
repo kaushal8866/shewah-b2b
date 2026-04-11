@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { supabase } from '@/lib/supabase'
 import { Diamond } from 'lucide-react'
 
 export default function LoginPage() {
@@ -15,29 +15,18 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    try {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (authError) {
-        setError(authError.message)
-        setLoading(false)
-        return
-      }
-
-      // Auth succeeded — hard redirect to dashboard
-      window.location.href = '/'
-    } catch (err: any) {
-      setError(err?.message || 'Sign in failed. Please try again.')
+    if (authError) {
+      setError(authError.message)
       setLoading(false)
+      return
     }
+
+    window.location.href = '/'
   }
 
   return (
