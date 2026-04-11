@@ -99,7 +99,7 @@ export default function AnalyticsPage() {
 
       // Conversion funnel
       const conversionFunnel = {
-        visited: allPartners.filter(p => ['contacted', 'sample_sent', 'active'].includes(p.stage)).length + allPartners.length,
+        visited: allPartners.length,
         contacted: allPartners.filter(p => ['contacted', 'sample_sent', 'active'].includes(p.stage)).length,
         sample: allPartners.filter(p => ['sample_sent', 'active'].includes(p.stage)).length,
         active: allPartners.filter(p => p.stage === 'active').length,
@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-4 gap-4 mb-7">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
         {[
           { label: '6-month revenue', value: formatCurrency(totalRevenue), icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Total orders', value: totalOrders, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Revenue chart */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Monthly revenue</h2>
@@ -177,9 +177,9 @@ export default function AnalyticsPage() {
             {data.revenueByMonth.map(m => (
               <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
                 <p className="text-xs text-stone-400">{m.revenue > 0 ? `₹${(m.revenue/1000).toFixed(0)}K` : ''}</p>
-                <div className="w-full bg-stone-100 rounded-t overflow-hidden" style={{ height: '80px' }}>
+                <div className="w-full bg-stone-100 rounded-t overflow-hidden flex flex-col justify-end" style={{ height: '80px' }}>
                   <div className="w-full bg-[#C49C64] rounded-t transition-all"
-                    style={{ height: `${(m.revenue / maxRevenue) * 100}%`, marginTop: 'auto' }} />
+                    style={{ height: `${(m.revenue / maxRevenue) * 100}%` }} />
                 </div>
                 <p className="text-xs text-stone-400">{m.month}</p>
               </div>
@@ -218,7 +218,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Top partners */}
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="px-5 py-4 border-b border-stone-100">

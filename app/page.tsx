@@ -8,6 +8,7 @@ import {
   Clock, CheckCircle2, AlertCircle, Package
 } from 'lucide-react'
 import Link from 'next/link'
+import { MetricsSkeleton, TableSkeleton } from './components/LoadingSkeleton'
 
 type Stats = {
   totalPartners: number
@@ -148,9 +149,9 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Order pipeline */}
-        <div className="col-span-2 bg-white rounded-xl border border-stone-200">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-stone-200">
           <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
             <h2 className="font-medium text-stone-900">Order pipeline</h2>
             <Link href="/orders" className="text-xs text-[#C49C64] hover:underline">View all</Link>

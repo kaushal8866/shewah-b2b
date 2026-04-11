@@ -28,7 +28,7 @@ export default function CADRequestsPage() {
       .select(`*, partners(store_name, city)`)
       .order('received_date', { ascending: false })
     setRequests(
-      (data || []).map((r: any) => ({
+      (data || []).map((r: CADRequest & { partners?: { store_name: string; city: string } | null }) => ({
         ...r,
         partner_name: r.partners?.store_name,
         partner_city: r.partners?.city,

@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, type Partner, type Visit, type Order } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import {
   ArrowLeft, Save, Trash2, Phone, MapPin,
   MessageCircle, Plus, Edit2, X, FileText
 } from 'lucide-react'
 import Link from 'next/link'
+import VisitModal from '@/app/components/VisitModal'
+import { useToast } from '@/app/components/Toast'
 
 const STAGES = ['prospect', 'contacted', 'sample_sent', 'active', 'inactive']
 const STATUSES = ['hot', 'warm', 'cold']
@@ -18,15 +20,17 @@ export default function PartnerDetailPage() {
   const router = useRouter()
   const id = params.id as string
 
-  const [partner, setPartner] = useState<any>(null)
-  const [visits, setVisits] = useState<any[]>([])
-  const [orders, setOrders] = useState<any[]>([])
+  const [partner, setPartner] = useState<Partner | null>(null)
+  const [visits, setVisits] = useState<Visit[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [form, setForm] = useState<any>({})
+  const [showVisitModal, setShowVisitModal] = useState(false)
+  const [form, setForm] = useState<Partial<Partner>>({})
+  const { toast } = useToast()
 
   useEffect(() => { load() }, [id])
 
@@ -68,57 +72,27 @@ export default function PartnerDetailPage() {
       notes: form.notes,
     }).eq('id', id)
     setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
+    if (error) { toast('Error: ' + error.message, 'error'); return }
+    toast('Partner updated')
     setEditing(false)
     load()
   }
 
   async function handleDelete() {
     setDeleting(true)
-    // Block deletion if partner has orders — data would be lost
-    const { count: orderCount } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('partner_id', id)
-    if (orderCount && orderCount > 0) {
-      setDeleting(false)
-      alert(`Cannot delete: this partner has ${orderCount} order(s). Move or delete their orders first.`)
-      setShowDeleteConfirm(false)
-      return
-    }
-    // Clean up FK references in tables that allow nulls
-    await Promise.all([
-      supabase.from('cad_requests').update({ partner_id: null }).eq('partner_id', id),
-      supabase.from('visits').delete().eq('partner_id', id),
-    ])
     const { error } = await supabase.from('partners').delete().eq('id', id)
     setDeleting(false)
-    if (error) { alert('Error: ' + error.message); return }
+    if (error) { toast('Error: ' + error.message, 'error'); return }
+    toast('Partner deleted')
     router.push('/partners')
   }
 
-  async function addVisit() {
-    const outcome = prompt('Visit outcome (interested / not_interested / callback / sample_requested):')
-    if (!outcome) return
-    const notes = prompt('Notes from the visit:') || ''
-    await supabase.from('visits').insert([{
-      partner_id: id,
-      visit_date: new Date().toISOString().split('T')[0],
-      city: partner.city,
-      circuit: partner.circuit,
-      outcome,
-      notes,
-      catalog_left: confirm('Did you leave a catalog?'),
-      sample_offered: confirm('Did you offer a sample?'),
-    }])
-    load()
-  }
 
   const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
-  if (loading) return (
-    <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
+  if (loading || !partner) return (
+    <div className="p-7 text-stone-400 text-sm">Loading...</div>
   )
 
   return (
@@ -200,7 +174,7 @@ export default function PartnerDetailPage() {
 
       {/* Quick actions (view mode only) */}
       {!editing && (
-        <div className="flex flex-wrap gap-2 mb-5">
+        <div className="flex gap-2 mb-5">
           <a href={`tel:${partner.phone}`}
             className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
             <Phone className="w-4 h-4" /> Call
@@ -209,7 +183,7 @@ export default function PartnerDetailPage() {
             className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-xl text-sm hover:bg-green-100">
             <MessageCircle className="w-4 h-4" /> WhatsApp
           </a>
-          <button onClick={addVisit}
+          <button onClick={() => setShowVisitModal(true)}
             className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
             <Plus className="w-4 h-4" /> Log visit
           </button>
@@ -269,7 +243,7 @@ export default function PartnerDetailPage() {
           <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
               <h2 className="font-medium text-stone-900">Visit history ({visits.length})</h2>
-              <button onClick={addVisit}
+              <button onClick={() => setShowVisitModal(true)}
                 className="text-xs text-[#C49C64] hover:underline flex items-center gap-1">
                 <Plus className="w-3.5 h-3.5" /> Log visit
               </button>
@@ -393,6 +367,16 @@ export default function PartnerDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Visit modal */}
+      <VisitModal
+        isOpen={showVisitModal}
+        onClose={() => setShowVisitModal(false)}
+        partnerId={id}
+        partnerCity={partner.city}
+        partnerCircuit={partner.circuit}
+        onSaved={load}
+      />
     </div>
   )
 }

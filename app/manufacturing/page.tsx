@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, type ManufacturingPartner, type ManufacturingOrder, type MaterialFloat } from '@/lib/supabase'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import { Plus, Factory, ChevronRight, Phone, Layers, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
@@ -28,7 +28,7 @@ type FloatSummary = {
 export default function ManufacturingPage() {
   const [partners, setPartners] = useState<MfgPartner[]>([])
   const [floats, setFloats] = useState<FloatSummary[]>([])
-  const [orders, setOrders] = useState<any[]>([])
+  const [orders, setOrders] = useState<(ManufacturingOrder & { manufacturing_partners?: { name: string } })[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { load() }, [])

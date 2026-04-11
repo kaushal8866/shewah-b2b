@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+import { supabase, type Vendor, type InventoryItem } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/utils'
 import { Plus, Search, ChevronRight, Store, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
@@ -9,8 +10,9 @@ import Link from 'next/link'
 const CATEGORIES = ['all', 'gold', 'diamonds', 'packaging', 'findings', 'chains', 'other']
 
 export default function VendorsPage() {
-  const [vendors, setVendors] = useState<any[]>([])
-  const [inventory, setInventory] = useState<any[]>([])
+  const router = useRouter()
+  const [vendors, setVendors] = useState<Vendor[]>([])
+  const [inventory, setInventory] = useState<(InventoryItem & { vendors?: { name: string } })[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('all')
@@ -160,7 +162,7 @@ export default function VendorsPage() {
                 <tbody className="divide-y divide-stone-50">
                   {filteredVendors.map(v => (
                     <tr key={v.id} className="hover:bg-stone-50 cursor-pointer"
-                      onClick={() => window.location.href = `/vendors/${v.id}`}>
+                      onClick={() => router.push(`/vendors/${v.id}`)}>
                       <td className="px-4 py-3">
                         <p className="text-sm font-medium text-stone-900">{v.name}</p>
                         <p className="text-xs text-stone-400">{v.owner_name}</p>

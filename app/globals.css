@@ -68,3 +68,18 @@ input:focus, textarea:focus, select:focus {
   a, button { min-height: 44px; }
   .status-pill { padding: 4px 10px; font-size: 12px; }
 }
+
+/* Toast slide-up animation */
+@keyframes slide-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Modal fade-in */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

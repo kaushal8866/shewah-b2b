@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  console.warn(
+    '[Shewah] Missing Supabase credentials. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local'
+  )
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // ── Type definitions ──────────────────────────────────────
@@ -150,6 +156,74 @@ export type Circuit = {
   actual_partners: number
   budget_inr?: number
   spent_inr: number
+  notes?: string
+}
+
+export type ManufacturingPartner = {
+  id: string
+  created_at: string
+  name: string
+  owner_name?: string
+  phone?: string
+  city?: string
+  speciality?: string[]
+  material_policy?: string
+  labour_rate_18k?: number
+  status: string
+  notes?: string
+}
+
+export type ManufacturingOrder = {
+  id: string
+  created_at: string
+  order_number: string
+  manufacturing_partner_id?: string
+  order_id?: string
+  description?: string
+  quantity: number
+  gold_weight_issue?: number
+  diamond_weight_issue?: number
+  labour_charges?: number
+  status: string
+  expected_delivery?: string
+  actual_delivery?: string
+  notes?: string
+}
+
+export type MaterialFloat = {
+  id: string
+  partner_id: string
+  material_type: string
+  balance: number
+  total_deposited: number
+}
+
+export type Vendor = {
+  id: string
+  name: string
+  owner_name?: string
+  phone?: string
+  email?: string
+  city?: string
+  state?: string
+  category?: string[]
+  payment_terms?: string
+  outstanding: number
+  notes?: string
+}
+
+export type InventoryItem = {
+  id: string
+  name: string
+  category: string
+  vendor_id?: string
+  quantity_in_stock: number
+  unit: string
+  avg_purchase_price?: number
+  low_stock_alert?: number
+  diamond_shape?: string
+  diamond_quality?: string
+  diamond_color?: string
   notes?: string
 }
 

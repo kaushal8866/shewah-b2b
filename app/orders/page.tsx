@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase, ORDER_STATUSES } from '@/lib/supabase'
 import { formatDate, formatCurrency, getStatusColor } from '@/lib/utils'
 import { Plus, Search, ChevronRight, AlertCircle } from 'lucide-react'
@@ -25,6 +26,7 @@ type OrderRow = {
 }
 
 export default function OrdersPage() {
+  const router = useRouter()
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -80,7 +82,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {[
           { label: 'Total orders', value: stats.total },
           { label: 'Open orders', value: stats.open },
@@ -137,7 +139,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-stone-200 overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50">
@@ -163,7 +165,7 @@ export default function OrdersPage() {
                 const isOverdue = daysLeft !== null && daysLeft < 0 && o.status !== 'delivered'
                 return (
                   <tr key={o.id} className="hover:bg-stone-50 transition-colors cursor-pointer"
-                    onClick={() => window.location.href = `/orders/${o.id}`}>
+                    onClick={() => router.push(`/orders/${o.id}`)}>
                     <td className="px-5 py-3.5">
                       <p className="text-sm font-medium text-stone-900">{o.order_number}</p>
                       <p className="text-xs text-stone-400 capitalize">{o.type} · {o.model?.replace(/_/g, ' ')}</p>

@@ -324,3 +324,132 @@ from partners p
 left join orders o on o.partner_id = p.id
 left join visits v on v.partner_id = p.id
 group by p.id;
+
+-- ============================================================
+-- Additional tables (V2) — Manufacturing, Vendors, Inventory
+-- ============================================================
+
+-- ── MANUFACTURING PARTNERS ───────────────────────────────
+create table manufacturing_partners (
+  id              uuid primary key default uuid_generate_v4(),
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now(),
+
+  name            text not null,
+  owner_name      text,
+  phone           text,
+  city            text,
+  speciality      text[],
+  material_policy text default 'provided',   -- 'provided','own_stock'
+  labour_rate_18k numeric,
+  status          text default 'active',     -- 'active','on_hold','inactive'
+  notes           text
+);
+
+-- ── MANUFACTURING ORDERS ─────────────────────────────────
+create table manufacturing_orders (
+  id                        uuid primary key default uuid_generate_v4(),
+  created_at                timestamptz default now(),
+  updated_at                timestamptz default now(),
+
+  order_number              text not null unique,
+  manufacturing_partner_id  uuid references manufacturing_partners(id),
+  order_id                  uuid references orders(id),
+  description               text,
+  quantity                  integer default 1,
+  gold_weight_issue         numeric,
+  diamond_weight_issue      numeric,
+  labour_charges            numeric,
+  status                    text default 'issued',
+  -- issued → material_sent → in_production → qc → ready → delivered
+  expected_delivery         date,
+  actual_delivery           date,
+  notes                     text
+);
+
+-- ── MATERIAL FLOAT (balance per partner per material) ────
+create table material_float (
+  id              uuid primary key default uuid_generate_v4(),
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now(),
+
+  partner_id      uuid references manufacturing_partners(id) on delete cascade,
+  material_type   text not null,              -- 'gold_18k','gold_14k','diamond_lgd','diamond_natural'
+  balance         numeric not null default 0,
+  total_deposited numeric not null default 0,
+  notes           text,
+
+  unique(partner_id, material_type)
+);
+
+-- ── VENDORS ──────────────────────────────────────────────
+create table vendors (
+  id              uuid primary key default uuid_generate_v4(),
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now(),
+
+  name            text not null,
+  owner_name      text,
+  phone           text,
+  email           text,
+  city            text,
+  state           text,
+  category        text[],                     -- ['gold','diamonds','packaging','findings']
+  payment_terms   text,
+  outstanding     numeric default 0,
+  notes           text
+);
+
+-- ── INVENTORY ────────────────────────────────────────────
+create table inventory (
+  id                  uuid primary key default uuid_generate_v4(),
+  created_at          timestamptz default now(),
+  updated_at          timestamptz default now(),
+
+  name                text not null,
+  category            text not null,            -- 'gold','diamond_lgd','diamond_natural','packaging','finding','other'
+  vendor_id           uuid references vendors(id),
+  quantity_in_stock   numeric default 0,
+  unit                text default 'pieces',    -- 'grams','carats','pieces'
+  avg_purchase_price  numeric,
+  low_stock_alert     numeric,
+  diamond_shape       text,
+  diamond_quality     text,
+  diamond_color       text,
+  notes               text
+);
+
+-- Triggers for updated_at on new tables
+create trigger mfg_partners_updated_at before update on manufacturing_partners
+  for each row execute function update_updated_at();
+
+create trigger mfg_orders_updated_at before update on manufacturing_orders
+  for each row execute function update_updated_at();
+
+create trigger material_float_updated_at before update on material_float
+  for each row execute function update_updated_at();
+
+create trigger vendors_updated_at before update on vendors
+  for each row execute function update_updated_at();
+
+create trigger inventory_updated_at before update on inventory
+  for each row execute function update_updated_at();
+
+-- RLS for new tables
+alter table manufacturing_partners enable row level security;
+alter table manufacturing_orders enable row level security;
+alter table material_float enable row level security;
+alter table vendors enable row level security;
+alter table inventory enable row level security;
+
+create policy "Authenticated users can do everything" on manufacturing_partners
+  for all using (auth.role() = 'authenticated');
+create policy "Authenticated users can do everything" on manufacturing_orders
+  for all using (auth.role() = 'authenticated');
+create policy "Authenticated users can do everything" on material_float
+  for all using (auth.role() = 'authenticated');
+create policy "Authenticated users can do everything" on vendors
+  for all using (auth.role() = 'authenticated');
+create policy "Authenticated users can do everything" on inventory
+  for all using (auth.role() = 'authenticated');
+
