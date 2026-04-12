@@ -10,17 +10,24 @@ export default function NewCADRequestPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
+  const [cadParties, setCadParties] = useState<{ id: string; name: string; city?: string }[]>([])
 
   const [form, setForm] = useState({
     partner_id: '', brief_text: '', diamond_shape: 'round',
     diamond_weight: '', gold_karat: '18', setting_type: '',
     special_requests: '', priority: 'normal',
+    cad_party_id: '',
     due_date: new Date(Date.now() + 48 * 3600000).toISOString().split('T')[0],
   })
 
   useEffect(() => {
-    supabase.from('partners').select('id, store_name, city').eq('stage', 'active')
-      .order('store_name').then(({ data }) => setPartners(data || []))
+    Promise.all([
+      supabase.from('partners').select('id, store_name, city').eq('stage', 'active').order('store_name'),
+      supabase.from('vendors').select('id, name, city').order('name'),
+    ]).then(([{ data: p }, { data: v }]) => {
+      setPartners(p || [])
+      setCadParties(v || [])
+    })
   }, [])
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
@@ -40,6 +47,7 @@ export default function NewCADRequestPage() {
       ...form,
       request_number: num,
       gold_karat: parseInt(form.gold_karat),
+      cad_party_id: form.cad_party_id || null,
       received_date: new Date().toISOString().split('T')[0],
     }]).select().single()
 
@@ -89,6 +97,16 @@ export default function NewCADRequestPage() {
             <div>
               <label className={label}>Due date</label>
               <input type="date" className={input} value={form.due_date} onChange={e => set('due_date', e.target.value)} />
+            </div>
+            <div className="col-span-2">
+              <label className={label}>CAD service party</label>
+              <select className={input} value={form.cad_party_id} onChange={e => set('cad_party_id', e.target.value)}>
+                <option value="">In-house / Select external party...</option>
+                {cadParties.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}{v.city ? ` — ${v.city}` : ''}</option>
+                ))}
+              </select>
+              <p className="text-xs text-stone-400 mt-1">Select the vendor handling the CAD design work</p>
             </div>
           </div>
         </div>

@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase, GoldRate, calculateGoldRates, calculateTradePrice } from '@/lib/supabase'
+import { supabase, GoldRate, calculateGoldRates, calculateTradePrice, KARAT_PURITY } from '@/lib/supabase'
 import { formatDate, formatCurrency } from '@/lib/utils'
-import { TrendingUp, Plus, Calculator, Save } from 'lucide-react'
+import { TrendingUp, Plus, Calculator, Save, Wrench } from 'lucide-react'
 
 export default function GoldRatesPage() {
   const [rates, setRates] = useState<GoldRate[]>([])
@@ -13,6 +13,10 @@ export default function GoldRatesPage() {
 
   const [newRate24k, setNewRate24k] = useState('')
   const [rateNotes, setRateNotes] = useState('')
+
+  // Labour rates state
+  const [labourRates, setLabourRates] = useState<{ id?: string; karat: number; rate_per_gram: number }[]>([])
+  const [savingLabour, setSavingLabour] = useState(false)
 
   // Calculator state
   const [calcDiamond, setCalcDiamond] = useState('8000')
@@ -26,16 +30,26 @@ export default function GoldRatesPage() {
 
   async function loadRates() {
     setLoading(true)
-    const { data } = await supabase
-      .from('gold_rates')
-      .select('*')
-      .order('recorded_at', { ascending: false })
-      .limit(30)
+    const [{ data }, { data: lr }] = await Promise.all([
+      supabase.from('gold_rates').select('*').order('recorded_at', { ascending: false }).limit(30),
+      supabase.from('labour_rates').select('*').order('karat'),
+    ])
     const all = data || []
     setRates(all)
     if (all.length > 0) {
       setLatest(all[0])
       setNewRate24k(String(all[0].rate_24k))
+    }
+    // Initialize labour rates with defaults if empty
+    const existingRates = lr || []
+    if (existingRates.length === 0) {
+      setLabourRates([
+        { karat: 14, rate_per_gram: 900 },
+        { karat: 18, rate_per_gram: 1200 },
+        { karat: 22, rate_per_gram: 1500 },
+      ])
+    } else {
+      setLabourRates(existingRates)
     }
     setLoading(false)
   }
@@ -55,6 +69,26 @@ export default function GoldRatesPage() {
   }
 
   const computed = newRate24k ? calculateGoldRates(parseFloat(newRate24k) || 0) : null
+
+  // Labour rate handlers
+  function updateLabourRate(karat: number, value: string) {
+    setLabourRates(prev =>
+      prev.map(r => r.karat === karat ? { ...r, rate_per_gram: parseFloat(value) || 0 } : r)
+    )
+  }
+
+  async function saveLabourRates() {
+    setSavingLabour(true)
+    for (const rate of labourRates) {
+      if (rate.id) {
+        await supabase.from('labour_rates').update({ rate_per_gram: rate.rate_per_gram }).eq('id', rate.id)
+      } else {
+        await supabase.from('labour_rates').upsert({ karat: rate.karat, rate_per_gram: rate.rate_per_gram }, { onConflict: 'karat' })
+      }
+    }
+    setSavingLabour(false)
+    loadRates()
+  }
 
   const tradePrice = calculateTradePrice(
     parseFloat(calcDiamond) || 0,
@@ -151,6 +185,40 @@ export default function GoldRatesPage() {
                 {saving ? 'Saving...' : 'Save rate'}
               </button>
             </div>
+          </div>
+
+          {/* Labour Rate Management */}
+          <div className="card bg-surface-low">
+            <h2 className="headline-md mb-6 flex items-center gap-3">
+              <Wrench className="w-5 h-5 text-secondary" />
+              Labour rates (₹/gram)
+            </h2>
+            <p className="text-sm text-secondary mb-6">
+              Global per-gram labour charges. Used in manufacturing order costing and catalog pricing. Partner-specific overrides take priority.
+            </p>
+            <div className="space-y-4">
+              {labourRates.map(r => (
+                <div key={r.karat} className="flex items-center gap-4">
+                  <span className="label-md w-16">{r.karat}K</span>
+                  <div className="flex-1 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary">₹</span>
+                    <input
+                      type="number"
+                      value={r.rate_per_gram || ''}
+                      onChange={e => updateLabourRate(r.karat, e.target.value)}
+                      className="w-full pl-7"
+                      placeholder="per gram"
+                    />
+                  </div>
+                  <span className="text-xs text-secondary w-24 text-right">/gram</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={saveLabourRates} disabled={savingLabour}
+              className="w-full mt-6 flex items-center justify-center gap-2 bg-primary text-surface-lowest py-3 text-sm font-medium hover:bg-surface-highest hover:text-primary disabled:opacity-40 transition-colors">
+              <Save className="w-4 h-4" />
+              {savingLabour ? 'Saving...' : 'Save labour rates'}
+            </button>
           </div>
 
           {/* Rate history */}

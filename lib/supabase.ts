@@ -229,12 +229,34 @@ export type InventoryItem = {
 
 // ── Helper functions ──────────────────────────────────────
 
+// Gold karat purity multipliers (fine gold fraction)
+export const KARAT_PURITY: Record<number, number> = {
+  9: 0.375, 10: 0.417, 14: 0.585, 18: 0.750, 22: 0.916, 24: 1.0,
+}
+
+/**
+ * Convert gross gold weight at a given karat to 24kt fine gold equivalent.
+ * Example: 3g of 18K → 3 × 0.75 = 2.25g fine gold.
+ */
+export function toFineGold24k(grossWeightG: number, karat: number): number {
+  return grossWeightG * (KARAT_PURITY[karat] || 0.75)
+}
+
+/**
+ * Convert 24kt fine gold to gross weight at a given karat.
+ * Example: 2.25g fine → 2.25 / 0.75 = 3g in 18K.
+ */
+export function fromFineGold24k(fineWeightG: number, karat: number): number {
+  const purity = KARAT_PURITY[karat] || 0.75
+  return purity > 0 ? fineWeightG / purity : 0
+}
+
 export function calculateGoldRates(rate24k: number) {
   return {
     rate_24k: rate24k,
-    rate_22k: Math.round(rate24k * 0.916),
-    rate_18k: Math.round(rate24k * 0.750),
-    rate_14k: Math.round(rate24k * 0.585),
+    rate_22k: Math.round(rate24k * KARAT_PURITY[22]),
+    rate_18k: Math.round(rate24k * KARAT_PURITY[18]),
+    rate_14k: Math.round(rate24k * KARAT_PURITY[14]),
   }
 }
 
@@ -247,27 +269,26 @@ export function calculateTradePrice(
   igiCost: number,
   marginMultiplier = 1.28
 ) {
-  const karatMultipliers: Record<number, number> = { 24: 1, 22: 0.916, 18: 0.750, 14: 0.585 }
-  const goldCost = goldWeightG * goldRatePerGram * (karatMultipliers[goldKarat] || 0.75)
+  const goldCost = goldWeightG * goldRatePerGram * (KARAT_PURITY[goldKarat] || 0.75)
   const cogs = diamondCost + goldCost + makingCharges + igiCost
   return Math.round(cogs * marginMultiplier)
 }
 
 export const ORDER_STATUSES = [
-  { value: 'brief_received',   label: 'Brief Received',   color: 'bg-blue-100 text-blue-800' },
-  { value: 'cad_in_progress',  label: 'CAD In Progress',  color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'cad_sent',         label: 'CAD Sent',         color: 'bg-purple-100 text-purple-800' },
-  { value: 'design_approved',  label: 'Design Approved',  color: 'bg-indigo-100 text-indigo-800' },
-  { value: 'production',       label: 'In Production',    color: 'bg-orange-100 text-orange-800' },
-  { value: 'qc',               label: 'Quality Check',    color: 'bg-amber-100 text-amber-800' },
-  { value: 'dispatched',       label: 'Dispatched',       color: 'bg-teal-100 text-teal-800' },
-  { value: 'delivered',        label: 'Delivered',        color: 'bg-green-100 text-green-800' },
+  { value: 'brief_received',   label: 'Brief Received' },
+  { value: 'cad_in_progress',  label: 'CAD In Progress' },
+  { value: 'cad_sent',         label: 'CAD Sent' },
+  { value: 'design_approved',  label: 'Design Approved' },
+  { value: 'production',       label: 'In Production' },
+  { value: 'qc',               label: 'Quality Check' },
+  { value: 'dispatched',       label: 'Dispatched' },
+  { value: 'delivered',        label: 'Delivered' },
 ]
 
 export const PARTNER_STAGES = [
-  { value: 'prospect',     label: 'Prospect',      color: 'bg-gray-100 text-gray-700' },
-  { value: 'contacted',    label: 'Contacted',      color: 'bg-blue-100 text-blue-800' },
-  { value: 'sample_sent',  label: 'Sample Sent',    color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'active',       label: 'Active Partner', color: 'bg-green-100 text-green-800' },
-  { value: 'inactive',     label: 'Inactive',       color: 'bg-red-100 text-red-700' },
+  { value: 'prospect',     label: 'Prospect' },
+  { value: 'contacted',    label: 'Contacted' },
+  { value: 'sample_sent',  label: 'Sample Sent' },
+  { value: 'active',       label: 'Active Partner' },
+  { value: 'inactive',     label: 'Inactive' },
 ]

@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, toFineGold24k, fromFineGold24k, KARAT_PURITY } from '@/lib/supabase'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
 import { formatCurrency } from '@/lib/utils'
-import { ArrowLeft, Save, Upload, X, Printer, Package } from 'lucide-react'
+import { ArrowLeft, Save, Upload, X, Printer, Package, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 function NewMfgOrderForm() {
@@ -44,7 +44,7 @@ function NewMfgOrderForm() {
   useEffect(() => {
     Promise.all([
       supabase.from('manufacturing_partners').select('*').eq('status', 'active').order('name'),
-      supabase.from('orders').select('id, order_number, partners(store_name)').order('order_date', { ascending: false }).limit(20),
+      supabase.from('orders').select('id, order_number, type, model, quantity, ring_size, special_notes, brief_text, brief_images, product_id, partner_id, partners(store_name), products(name, code, gold_karat, gold_weight_g, diamond_weight)').order('order_date', { ascending: false }).limit(30),
       supabase.from('labour_rates').select('*'),
     ]).then(([{ data: p }, { data: co }, { data: lr }]) => {
       setPartners(p || [])
@@ -63,6 +63,35 @@ function NewMfgOrderForm() {
         .then(({ data }) => setFloats(data || []))
     }
   }, [form.manufacturing_partner_id])
+
+  // Prefill form from linked customer order
+  function onOrderSelect(orderId: string) {
+    const order = customerOrders.find((o: any) => o.id === orderId)
+    if (!order) { set('customer_order_id', ''); return }
+    setForm(prev => ({
+      ...prev,
+      customer_order_id: orderId,
+      description: order.brief_text || order.products?.name || prev.description,
+      quantity: String(order.quantity || 1),
+      ring_size: order.ring_size || '',
+      special_notes: order.special_notes || '',
+      gold_karat: String(order.products?.gold_karat || 18),
+      gold_weight_required: String(order.products?.gold_weight_g || ''),
+      diamond_weight: String(order.products?.diamond_weight || ''),
+    }))
+    if (order.brief_images?.length) setUploadedImages(order.brief_images)
+  }
+
+  // 24kt fine gold computation for current weight/karat
+  const goldWeightReq = parseFloat(form.gold_weight_required || '0')
+  const goldKarat = parseInt(form.gold_karat) || 18
+  const fineGold24k = toFineGold24k(goldWeightReq, goldKarat)
+
+  // Check float balance (24kt gold) for stock gating
+  const goldFloat = floats.find(f => f.material_type === 'gold_24k')
+    || floats.find(f => f.material_type === `gold_${form.gold_karat}k`)
+  const availableFloat = goldFloat?.balance || 0
+  const insufficientFloat = form.material_from_float && fineGold24k > 0 && fineGold24k > availableFloat
 
   // Auto-fill labour rate when karat changes
   useEffect(() => {
@@ -99,6 +128,10 @@ function NewMfgOrderForm() {
   async function handleSave() {
     if (!form.manufacturing_partner_id || !form.description) {
       alert('Select a manufacturing partner and add description')
+      return
+    }
+    if (insufficientFloat) {
+      alert(`Insufficient material with partner. Need ${fineGold24k.toFixed(3)}g (24kt), available: ${availableFloat.toFixed(3)}g (24kt)`)
       return
     }
     setSaving(true)
@@ -239,8 +272,8 @@ function NewMfgOrderForm() {
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className={lbl}>Link to customer order (optional)</label>
-                <select className={inp} value={form.customer_order_id} onChange={e => set('customer_order_id', e.target.value)}>
+                <label className={lbl}>Link to customer order (optional — auto-prefills details)</label>
+                <select className={inp} value={form.customer_order_id} onChange={e => onOrderSelect(e.target.value)}>
                   <option value="">No linked order</option>
                   {customerOrders.map((o: any) => (
                     <option key={o.id} value={o.id}>{o.order_number} — {o.partners?.store_name}</option>
@@ -331,8 +364,13 @@ function NewMfgOrderForm() {
                 </select>
               </div>
               <div>
-                <label className={lbl}>Gold weight needed (g)</label>
+                <label className={lbl}>Gold weight needed (g) — in {form.gold_karat}K</label>
                 <input type="number" step="0.01" className={inp} value={form.gold_weight_required} onChange={e => set('gold_weight_required', e.target.value)} placeholder="e.g. 3.5" />
+                {goldWeightReq > 0 && (
+                  <p className="text-xs text-secondary mt-1">
+                    = <strong>{fineGold24k.toFixed(3)}g in 24kt</strong> fine gold
+                  </p>
+                )}
               </div>
               <div>
                 <label className={lbl}>Diamond weight (ct)</label>

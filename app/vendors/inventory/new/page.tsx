@@ -34,11 +34,12 @@ export default function NewInventoryItemPage() {
 
   async function handleSave() {
     if (!form.name) { alert('Item name is required'); return }
+    if (!form.vendor_id) { alert('Vendor is mandatory for all inventory items'); return }
     setSaving(true)
     const payload = {
       name: form.name,
       category: form.category,
-      vendor_id: form.vendor_id || null,
+      vendor_id: form.vendor_id,
       quantity_in_stock: parseFloat(form.quantity_in_stock) || 0,
       unit: form.unit,
       avg_purchase_price: parseFloat(form.avg_purchase_price) || null,
@@ -96,11 +97,14 @@ export default function NewInventoryItemPage() {
               <input className={inp} value={form.sku} onChange={e => set('sku', e.target.value)} placeholder="Optional internal code" />
             </div>
             <div>
-              <label className={lbl}>Vendor / supplier</label>
+              <label className={lbl}>Vendor / supplier *</label>
               <select className={inp} value={form.vendor_id} onChange={e => set('vendor_id', e.target.value)}>
-                <option value="">No specific vendor</option>
+                <option value="">Select vendor (required)...</option>
                 {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
               </select>
+              {!form.vendor_id && (
+                <p className="text-xs text-red-500 mt-1">Vendor is mandatory for procurement compliance</p>
+              )}
             </div>
           </div>
         </div>
