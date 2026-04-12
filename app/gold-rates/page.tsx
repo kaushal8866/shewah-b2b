@@ -72,83 +72,81 @@ export default function GoldRatesPage() {
 
   const cogs = (parseFloat(calcDiamond) || 0) + goldCost + (parseFloat(calcMaking) || 0) + (parseFloat(calcIGI) || 0)
 
-  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none"
-
   return (
-    <div className="p-4 lg:p-7">
-      <div className="mb-5 lg:mb-6">
-        <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Gold Rates</h1>
-        <p className="text-stone-500 text-sm mt-0.5">Track rates and calculate trade pricing</p>
+    <div className="p-4 sm:p-6 lg:p-16 lg:pr-32">
+      <div className="mb-8 lg:mb-12">
+        <h1 className="display-sm">Gold Rates</h1>
+        <p className="text-secondary tracking-wide mt-2">Track rates and calculate trade pricing</p>
       </div>
 
       {/* Current rates banner */}
       {latest && (
-        <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-5 mb-6">
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-surface-low p-6 mb-8 lg:mb-12">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-yellow-600" />
-              <span className="text-sm font-medium text-yellow-800">Current gold rates</span>
+              <TrendingUp className="w-5 h-5 text-secondary" />
+              <span className="headline-md">Current gold rates</span>
             </div>
-            <span className="text-xs text-yellow-600">{formatDate(latest.recorded_at)} · {latest.source}</span>
+            <span className="label-md">{formatDate(latest.recorded_at)} · {latest.source}</span>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
             {[
               { karat: '24K', rate: latest.rate_24k, purity: '99.9%' },
               { karat: '22K', rate: latest.rate_22k, purity: '91.6%' },
               { karat: '18K', rate: latest.rate_18k, purity: '75.0%' },
               { karat: '14K', rate: latest.rate_14k, purity: '58.5%' },
             ].map(r => (
-              <div key={r.karat} className="text-center bg-white rounded-lg p-3 border border-yellow-200">
-                <p className="text-xs text-stone-400">{r.karat} ({r.purity})</p>
-                <p className="text-xl font-semibold text-stone-900">₹{r.rate?.toLocaleString('en-IN')}</p>
-                <p className="text-xs text-stone-400">per gram</p>
+              <div key={r.karat} className="bg-surface-lowest hover:bg-surface-highest transition-colors flex flex-col justify-center items-center py-6 px-4">
+                <p className="label-md mb-2 text-outline-variant">{r.karat} <span className="lowercase">({r.purity})</span></p>
+                <p className="display-sm text-primary">₹{r.rate?.toLocaleString('en-IN')}</p>
+                <p className="text-[10px] text-secondary mt-1 uppercase tracking-widest">per gram</p>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 lg:gap-12">
         {/* Update rate */}
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-stone-200 p-5">
-            <h2 className="font-medium text-stone-900 mb-4 flex items-center gap-2">
-              <Plus className="w-4 h-4 text-[#C49C64]" />
+        <div className="space-y-8">
+          <div className="card bg-surface-low">
+            <h2 className="headline-md mb-6 flex items-center gap-3">
+              <Plus className="w-5 h-5 text-secondary" />
               Update today's rate
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-6">
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">24K gold rate (₹ per gram) *</label>
-                <input type="number" className={input}
+                <label className="label-md block mb-2">24K gold rate (₹ per gram) *</label>
+                <input type="number"
                   value={newRate24k} onChange={e => setNewRate24k(e.target.value)}
                   placeholder="e.g. 7350" />
-                <p className="text-xs text-stone-400 mt-1">Check: IBJA, MCX, or your local market</p>
+                <p className="text-xs text-secondary mt-2">Check: IBJA, MCX, or your local market</p>
               </div>
 
               {/* Live preview */}
               {computed && computed.rate_24k > 0 && (
-                <div className="bg-stone-50 rounded-lg p-3 space-y-1">
+                <div className="bg-surface-lowest p-4 space-y-2 ghost-border">
                   {[
                     { k: '22K', r: computed.rate_22k },
                     { k: '18K', r: computed.rate_18k },
                     { k: '14K', r: computed.rate_14k },
                   ].map(({ k, r }) => (
-                    <div key={k} className="flex justify-between text-xs">
-                      <span className="text-stone-500">{k} auto-calculated</span>
-                      <span className="font-medium text-stone-700">₹{r?.toLocaleString('en-IN')}/g</span>
+                    <div key={k} className="flex justify-between text-sm">
+                      <span className="text-secondary">{k} auto-calculated</span>
+                      <span className="font-medium text-primary">₹{r?.toLocaleString('en-IN')}/g</span>
                     </div>
                   ))}
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">Notes (optional)</label>
-                <input className={input} value={rateNotes} onChange={e => setRateNotes(e.target.value)}
+                <label className="label-md block mb-2">Notes (optional)</label>
+                <input type="text" value={rateNotes} onChange={e => setRateNotes(e.target.value)}
                   placeholder="e.g. post-budget rate" />
               </div>
 
               <button onClick={saveRate} disabled={saving || !newRate24k}
-                className="w-full flex items-center justify-center gap-2 bg-[#C49C64] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-40 transition-colors">
+                className="w-full flex items-center justify-center gap-2 bg-primary text-surface-lowest py-4 text-sm font-medium hover:bg-surface-highest hover:text-primary disabled:opacity-40 transition-colors">
                 <Save className="w-4 h-4" />
                 {saving ? 'Saving...' : 'Save rate'}
               </button>
@@ -156,28 +154,28 @@ export default function GoldRatesPage() {
           </div>
 
           {/* Rate history */}
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-stone-100">
-              <h2 className="font-medium text-stone-900">Rate history</h2>
+          <div className="card bg-surface-low !p-0">
+            <div className="px-6 py-5 border-b ghost-border">
+              <h2 className="headline-md">Rate history</h2>
             </div>
-            <div className="divide-y divide-stone-50">
+            <div className="divide-y divide-outline-variant/20 max-h-[500px] overflow-y-auto hide-scrollbar">
               {loading ? (
-                <div className="px-5 py-4 text-sm text-stone-400">Loading...</div>
+                <div className="px-6 py-6 text-sm text-secondary">Loading...</div>
               ) : rates.length === 0 ? (
-                <div className="px-5 py-4 text-sm text-stone-400">No rates recorded yet</div>
+                <div className="px-6 py-6 text-sm text-secondary">No rates recorded yet</div>
               ) : (
                 rates.map((r, i) => (
-                  <div key={r.id} className="px-5 py-3 flex items-center justify-between">
+                  <div key={r.id} className="px-6 py-4 flex items-center justify-between hover:bg-surface-highest transition-colors">
                     <div>
-                      <p className="text-sm font-medium text-stone-900">
-                        ₹{r.rate_24k?.toLocaleString('en-IN')}/g (24K)
-                        {i === 0 && <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">current</span>}
+                      <p className="text-base font-medium text-primary flex items-center gap-3">
+                        ₹{r.rate_24k?.toLocaleString('en-IN')}/g <span className="text-secondary font-normal">(24K)</span>
+                        {i === 0 && <span className="status-pill success ml-2">current</span>}
                       </p>
-                      <p className="text-xs text-stone-400">{formatDate(r.recorded_at)} · {r.source}</p>
+                      <p className="text-xs text-secondary mt-1">{formatDate(r.recorded_at)} · {r.source}</p>
                     </div>
-                    <div className="text-right text-xs text-stone-400">
+                    <div className="text-right text-sm text-secondary">
                       <p>18K: ₹{r.rate_18k?.toLocaleString('en-IN')}</p>
-                      <p>14K: ₹{r.rate_14k?.toLocaleString('en-IN')}</p>
+                      <p className="mt-0.5">14K: ₹{r.rate_14k?.toLocaleString('en-IN')}</p>
                     </div>
                   </div>
                 ))
@@ -187,85 +185,87 @@ export default function GoldRatesPage() {
         </div>
 
         {/* Trade price calculator */}
-        <div className="bg-white rounded-xl border border-stone-200 p-5">
-          <h2 className="font-medium text-stone-900 mb-4 flex items-center gap-2">
-            <Calculator className="w-4 h-4 text-[#C49C64]" />
+        <div className="card bg-surface-low self-start">
+          <h2 className="headline-md mb-6 flex items-center gap-3">
+            <Calculator className="w-5 h-5 text-secondary" />
             Trade price calculator
           </h2>
           {!latest && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700 mb-4">
+            <div className="bg-surface-highest border border-outline-variant/30 p-4 text-sm text-primary mb-6">
               Update today's gold rate first to get accurate pricing.
             </div>
           )}
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-6">
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">Diamond cost (₹)</label>
-                <input type="number" className={input} value={calcDiamond} onChange={e => setCalcDiamond(e.target.value)} />
+                <label className="label-md block mb-2">Diamond cost (₹)</label>
+                <input type="number" value={calcDiamond} onChange={e => setCalcDiamond(e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">Gold karat</label>
-                <select className={input} value={calcGoldKarat} onChange={e => setCalcGoldKarat(e.target.value)}>
+                <label className="label-md block mb-2">Gold karat</label>
+                <select value={calcGoldKarat} onChange={e => setCalcGoldKarat(e.target.value)}>
                   <option value="14">14K</option>
                   <option value="18">18K</option>
                   <option value="22">22K</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">Gold weight (g)</label>
-                <input type="number" className={input} value={calcGoldWeight} onChange={e => setCalcGoldWeight(e.target.value)} />
+                <label className="label-md block mb-2">Gold weight (g)</label>
+                <input type="number" value={calcGoldWeight} onChange={e => setCalcGoldWeight(e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">Making charges (₹)</label>
-                <input type="number" className={input} value={calcMaking} onChange={e => setCalcMaking(e.target.value)} />
+                <label className="label-md block mb-2">Making charges (₹)</label>
+                <input type="number" value={calcMaking} onChange={e => setCalcMaking(e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">IGI cert cost (₹)</label>
-                <input type="number" className={input} value={calcIGI} onChange={e => setCalcIGI(e.target.value)} />
+                <label className="label-md block mb-2">IGI cert cost (₹)</label>
+                <input type="number" value={calcIGI} onChange={e => setCalcIGI(e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">Margin above COGS (%)</label>
-                <input type="number" className={input} value={calcMargin} onChange={e => setCalcMargin(e.target.value)} />
+                <label className="label-md block mb-2">Margin above COGS (%)</label>
+                <input type="number" value={calcMargin} onChange={e => setCalcMargin(e.target.value)} />
               </div>
             </div>
 
             {/* Result */}
-            <div className="bg-stone-50 rounded-xl p-4 mt-2 space-y-2">
-              <div className="flex justify-between text-xs text-stone-500">
+            <div className="bg-surface-lowest ghost-border p-6 mt-8 space-y-3">
+              <div className="flex justify-between text-sm text-secondary">
                 <span>Diamond cost</span>
                 <span>₹{parseFloat(calcDiamond).toLocaleString('en-IN') || 0}</span>
               </div>
-              <div className="flex justify-between text-xs text-stone-500">
+              <div className="flex justify-between text-sm text-secondary">
                 <span>Gold cost ({calcGoldKarat}K, {calcGoldWeight}g)</span>
                 <span>₹{Math.round(goldCost).toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-xs text-stone-500">
+              <div className="flex justify-between text-sm text-secondary">
                 <span>Making charges</span>
                 <span>₹{parseFloat(calcMaking).toLocaleString('en-IN') || 0}</span>
               </div>
-              <div className="flex justify-between text-xs text-stone-500">
+              <div className="flex justify-between text-sm text-secondary">
                 <span>IGI certification</span>
                 <span>₹{parseFloat(calcIGI).toLocaleString('en-IN') || 0}</span>
               </div>
-              <div className="border-t border-stone-200 pt-2 flex justify-between text-sm font-medium text-stone-700">
+              <div className="border-t ghost-border pt-4 mt-2 flex justify-between text-base font-medium text-primary">
                 <span>COGS</span>
                 <span>₹{Math.round(cogs).toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-sm font-medium text-stone-500">
+              <div className="flex justify-between text-sm text-secondary mb-4">
                 <span>Margin ({calcMargin}%)</span>
                 <span>₹{Math.round(cogs * parseFloat(calcMargin) / 100).toLocaleString('en-IN')}</span>
               </div>
-              <div className="bg-[#C49C64] rounded-lg p-3 flex justify-between items-center">
-                <span className="text-white font-medium">Trade price</span>
-                <span className="text-white text-2xl font-semibold">₹{tradePrice.toLocaleString('en-IN')}</span>
+              
+              <div className="bg-primary text-surface-lowest p-5 flex justify-between items-end my-4 shadow-ambient">
+                <span className="headline-md !text-surface-lowest">Trade price</span>
+                <span className="display-sm !text-surface-lowest leading-none">₹{tradePrice.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-xs text-stone-500">
-                <span>Suggested MRP (jeweler +40%)</span>
-                <span className="font-medium">₹{Math.round(tradePrice * 1.40).toLocaleString('en-IN')}</span>
+              
+              <div className="flex justify-between text-sm text-secondary pt-2">
+                <span>Suggested MRP (retail +40%)</span>
+                <span className="font-medium text-primary">₹{Math.round(tradePrice * 1.40).toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-xs text-stone-500">
-                <span>Jeweler's margin</span>
-                <span className="text-green-600 font-medium">₹{Math.round(tradePrice * 0.40).toLocaleString('en-IN')}</span>
+              <div className="flex justify-between text-sm text-secondary">
+                <span>Retailer's margin</span>
+                <span className="font-medium text-primary">₹{Math.round(tradePrice * 0.40).toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>
