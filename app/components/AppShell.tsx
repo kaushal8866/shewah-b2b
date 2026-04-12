@@ -59,7 +59,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!authChecked) {
     return (
-    return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
