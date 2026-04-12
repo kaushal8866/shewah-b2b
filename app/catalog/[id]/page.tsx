@@ -45,6 +45,7 @@ export default function CatalogProductEditPage() {
   const id = params.id as string
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [goldRate, setGoldRate] = useState(0)
   const [labourRates, setLabourRates] = useState<Record<number, number>>({})
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
@@ -146,6 +147,12 @@ export default function CatalogProductEditPage() {
     set('models_available', current.includes(model) ? current.filter(m => m !== model) : [...current, model])
   }
 
+  async function handleDelete() {
+    const { error } = await supabase.from('products').delete().eq('id', id)
+    if (error) { alert('Error: ' + error.message); return }
+    router.push('/catalog')
+  }
+
   async function handleSave() {
     if (!form.code || !form.name) { alert('Product code and name are required'); return }
     if (!form.trade_price) { alert('Trade price is required. Use Auto-calculate or enter manually.'); return }
@@ -184,11 +191,32 @@ export default function CatalogProductEditPage() {
     <div className="p-4 lg:p-7 max-w-3xl pb-10">
       <div className="flex items-center gap-3 mb-6">
         <Link href="/catalog" className="text-stone-400 hover:text-stone-600"><ArrowLeft className="w-5 h-5" /></Link>
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Edit product</h1>
           <p className="text-stone-500 text-sm">Update catalog entry</p>
         </div>
+        <button onClick={() => setShowDeleteConfirm(true)}
+          className="flex items-center gap-1.5 border border-red-200 text-red-500 px-3 py-2 rounded-lg text-sm hover:bg-red-50 transition-colors shrink-0">
+          <Trash2 className="w-4 h-4" /> <span className="hidden sm:inline">Delete</span>
+        </button>
       </div>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <h3 className="font-semibold text-stone-900 mb-2">Delete this product?</h3>
+            <p className="text-sm text-stone-500 mb-5">
+              Permanently delete <strong>{form.code} {form.name}</strong>? This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50">Cancel</button>
+              <button onClick={handleDelete}
+                className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-red-600">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">

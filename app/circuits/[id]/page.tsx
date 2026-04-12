@@ -7,7 +7,7 @@ import { formatDate, formatCurrency, getStatusColor } from '@/lib/utils'
 import {
   ArrowLeft, Save, Edit2, X, Plus, MapPin,
   Target, TrendingUp, IndianRupee, Calendar,
-  CheckCircle2, Clock
+  CheckCircle2, Clock, Trash2
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/app/components/Toast'
@@ -26,6 +26,7 @@ export default function CircuitDetailPage() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<any>({})
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   // Visit logging
   const [showLogVisit, setShowLogVisit] = useState(false)
@@ -96,6 +97,13 @@ export default function CircuitDetailPage() {
     setEditing(false)
     toast('Circuit updated', 'success')
     load()
+  }
+
+  async function handleDelete() {
+    const { error } = await supabase.from('circuits').delete().eq('id', id)
+    if (error) { toast('Error: ' + error.message, 'error'); return }
+    toast('Circuit deleted', 'success')
+    router.push('/circuits')
   }
 
   async function logVisit() {
@@ -186,10 +194,16 @@ export default function CircuitDetailPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!editing ? (
-            <button onClick={() => setEditing(true)}
-              className="flex items-center gap-1.5 border border-stone-200 text-stone-600 px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
-              <Edit2 className="w-4 h-4" /> Edit
-            </button>
+            <>
+              <button onClick={() => setEditing(true)}
+                className="flex items-center gap-1.5 border border-stone-200 text-stone-600 px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
+                <Edit2 className="w-4 h-4" /> Edit
+              </button>
+              <button onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-1.5 border border-red-200 text-red-500 px-3 py-2 rounded-lg text-sm hover:bg-red-50">
+                <Trash2 className="w-4 h-4" /> <span className="hidden sm:inline">Delete</span>
+              </button>
+            </>
           ) : (
             <>
               <button onClick={() => { setEditing(false); setForm(circuit) }}
@@ -197,13 +211,30 @@ export default function CircuitDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
           )}
         </div>
       </div>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <h3 className="font-semibold text-stone-900 mb-2">Delete this circuit?</h3>
+            <p className="text-sm text-stone-500 mb-5">
+              Permanently delete <strong>{circuit.name}</strong>? Visits and partners will not be deleted but will lose their circuit association.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50">Cancel</button>
+              <button onClick={handleDelete}
+                className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-red-600">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {!editing ? (
         <div className="space-y-5">

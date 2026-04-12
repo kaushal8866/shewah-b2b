@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatDate, getStatusColor, formatCurrency } from '@/lib/utils'
-import { ArrowLeft, Save, Edit2, X, Clock, CheckCircle2, Copy, Check } from 'lucide-react'
+import { ArrowLeft, Save, Edit2, X, Clock, CheckCircle2, Copy, Check, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/app/components/Toast'
 
@@ -21,6 +21,7 @@ export default function CADRequestDetailPage() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<any>({})
   const [copied, setCopied] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => { load() }, [id])
 
@@ -62,6 +63,13 @@ export default function CADRequestDetailPage() {
     setEditing(false)
     toast('CAD request updated successfully', 'success')
     load()
+  }
+
+  async function handleDelete() {
+    const { error } = await supabase.from('cad_requests').delete().eq('id', id)
+    if (error) { toast('Error: ' + error.message, 'error'); return }
+    toast('CAD request deleted', 'success')
+    router.push('/cad-requests')
   }
 
   function copyRequestNumber() {
@@ -108,10 +116,16 @@ export default function CADRequestDetailPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!editing ? (
-            <button onClick={() => setEditing(true)}
-              className="flex items-center gap-1.5 border border-stone-200 text-stone-600 px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
-              <Edit2 className="w-4 h-4" /> Edit
-            </button>
+            <>
+              <button onClick={() => setEditing(true)}
+                className="flex items-center gap-1.5 border border-stone-200 text-stone-600 px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
+                <Edit2 className="w-4 h-4" /> Edit
+              </button>
+              <button onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-1.5 border border-red-200 text-red-500 px-3 py-2 rounded-lg text-sm hover:bg-red-50">
+                <Trash2 className="w-4 h-4" /> <span className="hidden sm:inline">Delete</span>
+              </button>
+            </>
           ) : (
             <>
               <button onClick={() => { setEditing(false); setForm(cadRequest) }}
@@ -126,6 +140,23 @@ export default function CADRequestDetailPage() {
           )}
         </div>
       </div>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <h3 className="font-semibold text-stone-900 mb-2">Delete this CAD request?</h3>
+            <p className="text-sm text-stone-500 mb-5">
+              Permanently delete request <strong>{cadRequest.request_number}</strong>? This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50">Cancel</button>
+              <button onClick={handleDelete}
+                className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-red-600">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {!editing ? (
         <div className="space-y-4">
