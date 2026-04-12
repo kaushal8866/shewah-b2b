@@ -41,43 +41,41 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1C1A17] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="flex justify-center mb-8">
-          <div className="w-14 h-14 bg-[#C49C64] rounded-2xl flex items-center justify-center shadow-lg shadow-[#C49C64]/20">
-            <Diamond className="w-7 h-7 text-white" />
+          <div className="w-16 h-16 bg-primary rounded-md flex items-center justify-center shadow-ambient">
+            <Diamond className="w-8 h-8 text-surface-lowest" />
           </div>
         </div>
-        <h1 className="text-2xl font-semibold text-white text-center mb-1">Shewah Admin</h1>
-        <p className="text-white/40 text-sm text-center mb-8">Sign in to continue</p>
+        <h1 className="display-sm text-center mb-2">Shewah Admin</h1>
+        <p className="text-secondary tracking-wide text-sm text-center mb-10">Sign in to continue</p>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-6">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">
+            <div className="bg-surface-highest border border-outline-variant/30 text-primary text-sm p-4">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-xs text-white/50 mb-1.5 font-medium">Email</label>
+            <label className="label-md block mb-2">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/20 focus:border-[#C49C64] focus:outline-none transition-colors"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-white/50 mb-1.5 font-medium">Password</label>
+            <label className="label-md block mb-2">Password</label>
             <input
               type="password"
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/20 focus:border-[#C49C64] focus:outline-none transition-colors"
               placeholder="••••••••"
             />
           </div>
@@ -85,13 +83,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#C49C64] text-white py-3 rounded-xl text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors mt-2"
+            className="w-full bg-primary text-surface-lowest py-4 text-sm font-medium hover:bg-surface-highest hover:text-primary disabled:opacity-50 transition-colors mt-4"
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
-        <p className="text-white/20 text-xs text-center mt-8">
+        <p className="label-md text-center mt-12 text-outline-variant">
           Shewah B2B Admin · Surat, Gujarat
         </p>
       </div>
