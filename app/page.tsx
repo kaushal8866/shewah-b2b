@@ -116,9 +116,9 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="p-6 lg:p-16 lg:pr-32">
+    <div className="p-4 sm:p-6 lg:p-16 lg:pr-32">
       {/* Header */}
-      <div className="mb-12 flex items-end justify-between">
+      <div className="mb-8 lg:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="display-sm">Dashboard</h1>
           <p className="text-secondary tracking-wide mt-2">
@@ -156,8 +156,8 @@ export default function Dashboard() {
           </div>
 
           {/* Pipeline funnel */}
-          <div className="py-6 border-b ghost-border">
-            <div className="flex gap-2">
+          <div className="py-6 border-b ghost-border overflow-x-auto hide-scrollbar">
+            <div className="flex gap-2 min-w-[600px] md:min-w-0 px-2 lg:px-0">
               {pipelineStages.map((stage) => {
                 const count = recentOrders.filter(o => o.status === stage.status).length
                 return (

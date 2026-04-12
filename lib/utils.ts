@@ -39,23 +39,23 @@ export function getDaysUntil(dateStr: string) {
 }
 
 export function getStatusColor(status: string): string {
-  const colors: Record<string, string> = {
-    hot: 'bg-red-100 text-red-700',
-    warm: 'bg-yellow-100 text-yellow-700',
-    cold: 'bg-blue-100 text-blue-700',
-    active: 'bg-green-100 text-green-700',
-    inactive: 'bg-gray-100 text-gray-600',
-    prospect: 'bg-gray-100 text-gray-700',
-    contacted: 'bg-blue-100 text-blue-800',
-    sample_sent: 'bg-yellow-100 text-yellow-800',
-    delivered: 'bg-green-100 text-green-800',
-    dispatched: 'bg-teal-100 text-teal-800',
-    production: 'bg-orange-100 text-orange-800',
-    urgent: 'bg-red-100 text-red-700',
-    normal: 'bg-gray-100 text-gray-600',
-    planned: 'bg-blue-100 text-blue-800',
-    in_progress: 'bg-yellow-100 text-yellow-800',
-    completed: 'bg-green-100 text-green-800',
+  const map: Record<string, string> = {
+    hot: 'warning',
+    warm: 'warning',
+    cold: 'active',
+    active: 'success',
+    inactive: '',
+    prospect: 'active',
+    contacted: 'active',
+    sample_sent: 'warning',
+    delivered: 'success',
+    dispatched: 'success',
+    production: 'warning',
+    urgent: 'warning',
+    normal: '',
+    planned: 'active',
+    in_progress: 'warning',
+    completed: 'success',
   }
-  return colors[status] || 'bg-gray-100 text-gray-600'
+  return map[status] || ''
 }

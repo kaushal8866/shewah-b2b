@@ -25,12 +25,12 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* Typography Classes */
-.display-lg { @apply text-[3.5rem] font-medium tracking-[-0.02em] leading-[1.1] text-primary; }
-.display-md { @apply text-[2.5rem] font-medium tracking-tight leading-[1.1] text-primary; }
-.display-sm { @apply text-[2rem] font-medium tracking-tight leading-[1.1] text-primary; }
-.headline-lg { @apply text-xl font-medium tracking-tight text-primary; }
-.headline-md { @apply text-lg font-medium tracking-tight text-on-surface; }
-.label-md { @apply text-xs font-medium uppercase tracking-[0.05em] text-secondary; }
+.display-lg { @apply text-[2.5rem] md:text-[3.5rem] font-medium tracking-[-0.02em] leading-[1.1] text-primary; }
+.display-md { @apply text-[2rem] md:text-[2.5rem] font-medium tracking-tight leading-[1.1] text-primary; }
+.display-sm { @apply text-[1.75rem] md:text-[2rem] font-medium tracking-tight leading-[1.1] text-primary; }
+.headline-lg { @apply text-lg md:text-xl font-medium tracking-tight text-primary; }
+.headline-md { @apply text-base md:text-lg font-medium tracking-tight text-on-surface; }
+.label-md { @apply text-[0.65rem] md:text-xs font-medium uppercase tracking-[0.05em] text-secondary; }
 
 /* Table styles */
 .table-row-hover:hover { background-color: #f5f3f3; }
