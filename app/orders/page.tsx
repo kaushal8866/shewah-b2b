@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, ORDER_STATUSES } from '@/lib/supabase'
 import { formatDate, formatCurrency, getStatusColor } from '@/lib/utils'
-import { Plus, Search, ChevronRight, AlertCircle } from 'lucide-react'
+import { Plus, Search, ChevronRight, AlertCircle, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 
 type OrderRow = {
