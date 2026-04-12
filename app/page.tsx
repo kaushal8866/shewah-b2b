@@ -97,12 +97,12 @@ export default function Dashboard() {
   }, [])
 
   const metrics = [
-    { label: 'Active Partners', value: stats.activePartners, sub: `${stats.totalPartners} total`, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Hot Leads', value: stats.hotLeads, sub: 'Need follow-up', icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-50' },
-    { label: 'Open Orders', value: stats.pendingOrders, sub: `${stats.totalOrders} total`, icon: ShoppingBag, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Pending Revenue', value: formatCurrency(stats.pendingRevenue), sub: 'Balance due', icon: IndianRupee, color: 'text-gold-600', bg: 'bg-yellow-50' },
-    { label: 'Total Earned', value: formatCurrency(stats.totalRevenue), sub: 'Delivered orders', icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'CAD Queue', value: stats.activeCadRequests, sub: 'Pending + in-progress', icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Active Partners', value: stats.activePartners, sub: `${stats.totalPartners} total`, icon: Users },
+    { label: 'Hot Leads', value: stats.hotLeads, sub: 'Need follow-up', icon: AlertCircle },
+    { label: 'Open Orders', value: stats.pendingOrders, sub: `${stats.totalOrders} total`, icon: ShoppingBag },
+    { label: 'Pending Revenue', value: formatCurrency(stats.pendingRevenue), sub: 'Balance due', icon: IndianRupee },
+    { label: 'Total Earned', value: formatCurrency(stats.totalRevenue), sub: 'Delivered orders', icon: TrendingUp },
+    { label: 'CAD Queue', value: stats.activeCadRequests, sub: 'Pending + in-progress', icon: Clock },
   ]
 
   const pipelineStages = [
@@ -116,58 +116,56 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="p-4 lg:p-7">
+    <div className="p-6 lg:p-16 lg:pr-32">
       {/* Header */}
-      <div className="mb-7 flex items-center justify-between">
+      <div className="mb-12 flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Dashboard</h1>
-          <p className="text-stone-500 text-sm mt-0.5">
-            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          <h1 className="display-sm">Dashboard</h1>
+          <p className="text-secondary tracking-wide mt-2">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
         {stats.goldRate24k > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg">
-            <p className="text-xs text-yellow-600 font-medium">Gold 24K today</p>
-            <p className="text-lg font-semibold text-yellow-800">₹{stats.goldRate24k.toLocaleString('en-IN')}/g</p>
+          <div className="bg-surface-highest px-4 py-3 text-right">
+            <p className="label-md mb-1">Gold 24K today</p>
+            <p className="headline-lg">₹{stats.goldRate24k.toLocaleString('en-IN')}/g</p>
           </div>
         )}
       </div>
 
       {/* Metrics grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-7">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-1 mb-10">
         {metrics.map((m) => (
-          <div key={m.label} className="bg-white rounded-xl border border-stone-200 p-5">
-            <div className="flex items-start justify-between mb-3">
-              <p className="text-sm text-stone-500">{m.label}</p>
-              <div className={`w-8 h-8 rounded-lg ${m.bg} flex items-center justify-center`}>
-                <m.icon className={`w-4 h-4 ${m.color}`} />
-              </div>
+          <div key={m.label} className="metric-card bg-surface-low hover:bg-surface-highest transition-colors cursor-default">
+            <div className="flex items-start justify-between mb-4">
+              <p className="label-md">{m.label}</p>
+              <m.icon className="w-5 h-5 text-secondary" />
             </div>
-            <p className="text-2xl font-semibold text-stone-900">{loading ? '—' : m.value}</p>
-            <p className="text-xs text-stone-400 mt-0.5">{m.sub}</p>
+            <p className="display-md">{loading ? '—' : m.value}</p>
+            <p className="text-xs text-secondary mt-1 tracking-wide">{m.sub}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-1 lg:gap-8">
         {/* Order pipeline */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-stone-200">
-          <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
-            <h2 className="font-medium text-stone-900">Order pipeline</h2>
-            <Link href="/orders" className="text-xs text-[#C49C64] hover:underline">View all</Link>
+        <div className="lg:col-span-2 card bg-surface-low">
+          <div className="pb-6 border-b ghost-border flex items-center justify-between">
+            <h2 className="headline-md">Order pipeline</h2>
+            <Link href="/orders" className="text-sm text-secondary hover:text-primary underline underline-offset-4">View all</Link>
           </div>
 
           {/* Pipeline funnel */}
-          <div className="px-5 py-4 border-b border-stone-100">
-            <div className="flex gap-1">
+          <div className="py-6 border-b ghost-border">
+            <div className="flex gap-2">
               {pipelineStages.map((stage) => {
                 const count = recentOrders.filter(o => o.status === stage.status).length
                 return (
                   <div key={stage.status} className="flex-1 text-center">
-                    <div className={`rounded py-1.5 text-xs font-medium ${count > 0 ? 'bg-[#C49C64] text-white' : 'bg-stone-100 text-stone-400'}`}>
+                    <div className={`py-4 text-sm font-medium ${count > 0 ? 'bg-primary text-surface-lowest' : 'bg-surface-highest text-secondary'}`}>
                       {count}
                     </div>
-                    <p className="text-xs text-stone-400 mt-1 truncate">{stage.label}</p>
+                    <p className="label-md mt-2 truncate">{stage.label}</p>
                   </div>
                 )
               })}
@@ -175,27 +173,27 @@ export default function Dashboard() {
           </div>
 
           {/* Recent orders table */}
-          <div className="divide-y divide-stone-50">
+          <div className="divide-y divide-[#cfc4c5]/20 mt-4">
             {loading ? (
-              <div className="px-5 py-8 text-center text-stone-400 text-sm">Loading...</div>
+              <div className="py-8 text-center text-secondary text-sm">Loading...</div>
             ) : recentOrders.length === 0 ? (
-              <div className="px-5 py-8 text-center text-stone-400 text-sm">
+              <div className="py-8 text-center text-secondary text-sm">
                 No orders yet.{' '}
-                <Link href="/orders" className="text-[#C49C64] hover:underline">Create first order</Link>
+                <Link href="/orders" className="text-primary hover:underline">Create first order</Link>
               </div>
             ) : (
               recentOrders.map((order) => (
                 <Link key={order.id} href={`/orders/${order.id}`}
-                  className="flex items-center gap-4 px-5 py-3 hover:bg-stone-50 transition-colors">
+                  className="flex items-center gap-4 py-4 hover:bg-surface-highest transition-colors">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-stone-900">{order.order_number}</p>
-                    <p className="text-xs text-stone-400 truncate">{order.partner_name} · {order.product_name}</p>
+                    <p className="text-base font-medium text-primary">{order.order_number}</p>
+                    <p className="text-sm text-secondary truncate mt-0.5">{order.partner_name} · {order.product_name}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-medium text-stone-900">{formatCurrency(order.total_amount)}</p>
-                    <p className="text-xs text-stone-400">{formatDate(order.order_date)}</p>
+                    <p className="text-base font-medium text-primary">{formatCurrency(order.total_amount)}</p>
+                    <p className="text-xs text-secondary mt-0.5">{formatDate(order.order_date)}</p>
                   </div>
-                  <span className={`status-pill text-xs shrink-0 ${getStatusColor(order.status)}`}>
+                  <span className={`status-pill uppercase ml-3 shrink-0 ${order.status === 'delivered' ? 'success' : order.status === 'brief_received' ? 'warning' : 'active'}`}>
                     {order.status.replace(/_/g, ' ')}
                   </span>
                 </Link>
@@ -205,11 +203,11 @@ export default function Dashboard() {
         </div>
 
         {/* Quick actions + hot leads */}
-        <div className="space-y-4">
+        <div className="space-y-1 lg:space-y-8">
           {/* Quick actions */}
-          <div className="bg-white rounded-xl border border-stone-200 p-5">
-            <h2 className="font-medium text-stone-900 mb-3">Quick actions</h2>
-            <div className="space-y-2">
+          <div className="card bg-surface-low">
+            <h2 className="headline-md mb-6">Quick actions</h2>
+            <div className="space-y-3">
               {[
                 { href: '/partners/new', label: 'Add partner', icon: Users },
                 { href: '/orders/new', label: 'New order', icon: ShoppingBag },
@@ -218,8 +216,8 @@ export default function Dashboard() {
                 { href: '/circuits/new', label: 'Plan a circuit', icon: CheckCircle2 },
               ].map(({ href, label, icon: Icon }) => (
                 <Link key={href} href={href}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-700 hover:bg-stone-50 hover:text-stone-900 transition-colors">
-                  <Icon className="w-4 h-4 text-[#C49C64]" />
+                  className="flex items-center gap-4 px-4 py-3 rounded-md text-base text-primary hover:bg-surface-highest transition-colors">
+                  <Icon className="w-5 h-5 text-secondary" />
                   {label}
                 </Link>
               ))}
@@ -227,15 +225,15 @@ export default function Dashboard() {
           </div>
 
           {/* Today's follow-ups */}
-          <div className="bg-white rounded-xl border border-stone-200 p-5">
-            <h2 className="font-medium text-stone-900 mb-3">Pending CAD (48h)</h2>
+          <div className="card bg-surface-low">
+            <h2 className="headline-md mb-6">Pending CAD (48h)</h2>
             {stats.activeCadRequests === 0 ? (
-              <p className="text-sm text-stone-400">No pending CAD requests</p>
+              <p className="text-secondary text-sm">No pending CAD requests</p>
             ) : (
               <Link href="/cad-requests" className="block">
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
-                  <p className="text-2xl font-semibold text-amber-700">{stats.activeCadRequests}</p>
-                  <p className="text-xs text-amber-600">requests in queue</p>
+                <div className="bg-surface-highest border border-outline-variant/20 p-6 text-center">
+                  <p className="display-md text-primary">{stats.activeCadRequests}</p>
+                  <p className="label-md mt-2">requests in queue</p>
                 </div>
               </Link>
             )}

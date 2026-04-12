@@ -9,26 +9,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        gold: {
-          50:  '#FAF5EA',
-          100: '#F2E8D5',
-          200: '#E8D4A8',
-          400: '#C49C64',
-          600: '#9B7A40',
-          800: '#6B5228',
-          900: '#4A3818',
+        surface: {
+          DEFAULT: '#faf9f9',
+          low: '#f5f3f3',
+          highest: '#e3e2e2',
+          lowest: '#ffffff',
+          dim: '#dbdad9',
         },
-        charcoal: {
-          50:  '#F7F5F2',
-          100: '#EDEAE4',
-          400: '#7A7163',
-          600: '#4A4540',
-          800: '#2E2B26',
-          900: '#1C1A17',
+        primary: {
+          DEFAULT: '#000000',
+          container: '#1b1b1b',
         },
+        'on-surface': '#1b1c1c',
+        'outline-variant': '#cfc4c5',
+        secondary: '#5f5e5e',
+      },
+      boxShadow: {
+        'ambient': '0 20px 40px rgba(0,0,0, 0.04)',
       },
       fontFamily: {
-        serif: ['var(--font-serif)', 'Georgia', 'serif'],
+        sans: ['var(--font-inter)', 'sans-serif'],
       },
     },
   },

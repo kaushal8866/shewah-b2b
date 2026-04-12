@@ -59,12 +59,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!authChecked) {
     return (
-      <div className="min-h-screen bg-[#1C1A17] flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#C49C64] flex items-center justify-center">
-            <Diamond className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+            <Diamond className="w-4 h-4 text-surface-lowest" />
           </div>
-          <p className="text-white/40 text-sm">Loading...</p>
+          <p className="text-secondary text-sm">Loading...</p>
         </div>
       </div>
     )
@@ -79,26 +80,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden">
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-56 bg-[#1C1A17] flex-col shrink-0">
-        <div className="px-5 py-5 border-b border-white/10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#C49C64] flex items-center justify-center">
-              <Diamond className="w-4 h-4 text-white" />
+      <aside className="hidden lg:flex w-64 bg-surface-low flex-col shrink-0">
+        <div className="px-6 py-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+              <Diamond className="w-4 h-4 text-surface-lowest" />
             </div>
             <div>
-              <p className="text-white font-semibold text-sm leading-none">Shewah</p>
-              <p className="text-white/40 text-xs mt-0.5">B2B Admin</p>
+              <p className="text-primary font-medium text-sm leading-none tracking-tight">Shewah</p>
+              <p className="text-secondary text-[10px] uppercase tracking-widest mt-1">B2B Admin</p>
             </div>
           </div>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           {nav.map(({ href, icon: Icon, label }) => {
             const active = pathname === href || (href !== '/' && pathname.startsWith(href))
             return (
               <Link key={href} href={href}
                 className={cn(
-                  'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
-                  active ? 'bg-[#C49C64] text-white font-medium' : 'text-white/60 hover:text-white hover:bg-white/8'
+                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all',
+                  active ? 'bg-surface-lowest text-primary shadow-ambient font-medium' : 'text-secondary hover:text-primary hover:bg-surface-highest'
                 )}>
                 <Icon className="w-4 h-4 shrink-0" />
                 {label}
@@ -106,11 +107,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             )
           })}
         </nav>
-        <div className="px-5 py-4 border-t border-white/10 space-y-3">
-          <p className="text-white/30 text-xs">Surat, Gujarat</p>
+        <div className="px-6 py-5 space-y-3">
+          <p className="label-md">Surat, Gujarat</p>
           <button onClick={handleSignOut}
-            className="flex items-center gap-2 text-white/30 hover:text-white/60 text-xs transition-colors">
-            <LogOut className="w-3.5 h-3.5" />
+            className="flex items-center gap-2 text-secondary hover:text-primary text-xs transition-colors">
+            <LogOut className="w-4 h-4" />
             Sign out
           </button>
         </div>
@@ -118,15 +119,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile full menu overlay */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-[#1C1A17] flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#C49C64] flex items-center justify-center">
-                <Diamond className="w-4 h-4 text-white" />
+        <div className="lg:hidden fixed inset-0 z-50 bg-surface-lowest flex flex-col">
+          <div className="flex items-center justify-between px-5 py-5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+                <Diamond className="w-4 h-4 text-surface-lowest" />
               </div>
-              <p className="text-white font-semibold text-sm">Shewah</p>
+              <p className="text-primary font-medium text-sm">Shewah</p>
             </div>
-            <button onClick={() => setMobileMenuOpen(false)} className="text-white/60 hover:text-white p-2">
+            <button onClick={() => setMobileMenuOpen(false)} className="text-secondary hover:text-primary p-2">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -137,8 +138,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <Link key={href} href={href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 px-4 py-3.5 rounded-xl text-base transition-colors',
-                    active ? 'bg-[#C49C64] text-white font-medium' : 'text-white/60'
+                    'flex items-center gap-3 px-4 py-3.5 rounded-md text-base transition-colors',
+                    active ? 'bg-primary text-surface-lowest font-medium' : 'text-secondary'
                   )}>
                   <Icon className="w-5 h-5 shrink-0" />
                   {label}
@@ -146,9 +147,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               )
             })}
           </nav>
-          <div className="px-5 py-4 border-t border-white/10">
+          <div className="px-5 py-5">
             <button onClick={handleSignOut}
-              className="flex items-center gap-2 text-white/40 hover:text-white/60 text-sm transition-colors">
+              className="flex items-center gap-2 text-secondary hover:text-primary text-sm transition-colors">
               <LogOut className="w-4 h-4" />
               Sign out
             </button>
@@ -157,43 +158,43 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Main content area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile header */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#1C1A17] shrink-0">
+      <div className="flex-1 flex flex-col overflow-hidden bg-surface relative">
+        {/* Mobile header (Glassmorphism) */}
+        <header className="lg:hidden fixed top-0 w-full z-40 flex items-center justify-between px-4 py-3 bg-surface-lowest/70 backdrop-blur-[12px] shrink-0 border-b border-outline-variant/20">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#C49C64] flex items-center justify-center">
-              <Diamond className="w-3.5 h-3.5 text-white" />
+            <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
+              <Diamond className="w-3.5 h-3.5 text-surface-lowest" />
             </div>
-            <p className="text-white font-semibold text-sm">Shewah Admin</p>
+            <p className="text-primary font-medium text-sm tracking-tight">Shewah Admin</p>
           </div>
-          <button onClick={() => setMobileMenuOpen(true)} className="text-white/70 p-1">
+          <button onClick={() => setMobileMenuOpen(true)} className="text-primary p-1">
             <Menu className="w-5 h-5" />
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-stone-50 pb-20 lg:pb-0">
+        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 pt-14 lg:pt-0">
           {children}
         </main>
 
         {/* Mobile bottom nav */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 flex z-40 safe-area-pb">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-surface-lowest/80 backdrop-blur-[12px] border-t ghost-border flex z-40 safe-area-pb">
           {bottomNav.map(({ href, icon: Icon, short }) => {
             const active = pathname === href || (href !== '/' && pathname.startsWith(href))
             return (
               <Link key={href} href={href}
                 className={cn(
-                  'flex-1 flex flex-col items-center gap-0.5 py-2 text-xs transition-colors',
-                  active ? 'text-[#C49C64]' : 'text-stone-400'
+                  'flex-1 flex flex-col items-center gap-1 py-3 text-xs transition-colors',
+                  active ? 'text-primary' : 'text-secondary hover:text-primary'
                 )}>
                 <Icon className={cn('w-5 h-5', active && 'stroke-[2.5]')} />
-                <span className="text-[10px] leading-none">{short}</span>
+                <span className="text-[10px] leading-none uppercase tracking-[0.05em]">{short}</span>
               </Link>
             )
           })}
           <button onClick={() => setMobileMenuOpen(true)}
-            className="flex-1 flex flex-col items-center gap-0.5 py-2 text-xs text-stone-400">
+            className="flex-1 flex flex-col items-center gap-1 py-3 text-xs text-secondary hover:text-primary">
             <Menu className="w-5 h-5" />
-            <span className="text-[10px] leading-none">More</span>
+            <span className="text-[10px] leading-none uppercase tracking-[0.05em]">More</span>
           </button>
         </nav>
       </div>

@@ -2,55 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --gold: #C49C64;
-  --gold-dark: #9B7A40;
-  --charcoal: #1C1A17;
-  --cream: #F7F2EA;
+@layer utilities {
+  .ghost-border {
+    @apply border border-outline-variant/20;
+  }
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #F7F5F2;
-  color: #1C1A17;
+  /* Colors handled by app/layout.tsx body tags */
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #F7F5F2; }
-::-webkit-scrollbar-thumb { background: #D3D1C7; border-radius: 3px; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #faf9f9; }
+::-webkit-scrollbar-thumb { background: #e3e2e2; border-radius: 0px; }
+::-webkit-scrollbar-thumb:hover { background: #cfc4c5; }
 
-/* Gold focus ring */
+/* Brutalist Inputs */
 input:focus, textarea:focus, select:focus {
-  outline: 2px solid #C49C64;
-  outline-offset: 1px;
+  outline: none;
+  border-color: #000 !important;
 }
+
+/* Typography Classes */
+.display-lg { @apply text-[3.5rem] font-medium tracking-[-0.02em] leading-[1.1] text-primary; }
+.display-md { @apply text-[2.5rem] font-medium tracking-tight leading-[1.1] text-primary; }
+.display-sm { @apply text-[2rem] font-medium tracking-tight leading-[1.1] text-primary; }
+.headline-lg { @apply text-xl font-medium tracking-tight text-primary; }
+.headline-md { @apply text-lg font-medium tracking-tight text-on-surface; }
+.label-md { @apply text-xs font-medium uppercase tracking-[0.05em] text-secondary; }
 
 /* Table styles */
-.table-row-hover:hover { background-color: #FAF8F5; }
+.table-row-hover:hover { background-color: #f5f3f3; }
 
-/* Status pill */
+/* Status pill - Custom styling as per guidelines */
 .status-pill {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  @apply inline-flex items-center justify-center px-3 py-1 rounded-[4px] text-[0.65rem] font-medium tracking-[0.05em] uppercase bg-surface-highest text-on-surface whitespace-nowrap;
+}
+.status-pill.success, .status-pill.approved, .status-pill.delivered, .status-pill.active {
+  background: radial-gradient(circle at center, rgba(34, 197, 94, 0.15) 0%, transparent 60%), #e3e2e2;
+}
+.status-pill.danger, .status-pill.urgent, .status-pill.hot, .status-pill.rejected {
+  background: radial-gradient(circle at center, rgba(239, 68, 68, 0.15) 0%, transparent 60%), #e3e2e2;
+}
+.status-pill.warning, .status-pill.pending, .status-pill.warm {
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.15) 0%, transparent 60%), #e3e2e2;
 }
 
-/* Card */
+/* Card - Editorial Brutalism (No Shadows, Background Shifts) */
 .card {
-  @apply bg-white rounded-xl border border-stone-200 p-5;
+  @apply bg-surface-lowest p-6 sm:p-8;
 }
-
-/* Metric card */
 .metric-card {
-  @apply bg-white rounded-xl border border-stone-200 p-5 flex flex-col gap-1;
+  @apply bg-surface-lowest p-6 flex flex-col gap-2;
 }
 
 /* Mobile touch improvements */
 @media (max-width: 1023px) {
-  .metric-card, .card { @apply p-4; }
-  input, select, textarea { font-size: 16px !important; } /* prevents iOS zoom */
+  .metric-card, .card { @apply p-5; }
+  input, select, textarea { font-size: 16px !important; }
 }
 
-/* Safe area for iPhone notch/home indicator */
+/* Safe area for iPhone notch */
 .safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0); }
 
 /* Print styles */
@@ -60,25 +73,19 @@ input:focus, textarea:focus, select:focus {
   .print\:block { display: block !important; }
 }
 
-/* Responsive padding utility */
-.page-pad { @apply p-4 lg:p-7; }
-
 /* Touch-friendly tap targets */
 @media (max-width: 1023px) {
-  a, button { min-height: 44px; }
-  .status-pill { padding: 4px 10px; font-size: 12px; }
+  a.btn, button.btn { min-height: 44px; }
 }
 
-/* Toast slide-up animation */
+/* Animations */
 @keyframes slide-up {
   from { transform: translateY(16px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 .animate-slide-up {
-  animation: slide-up 0.3s ease-out;
+  animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-/* Modal fade-in */
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
