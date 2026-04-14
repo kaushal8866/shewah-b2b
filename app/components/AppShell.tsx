@@ -12,7 +12,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
 const nav = [
-  { href: '/',                icon: LayoutDashboard, label: 'Dashboard'     },
+  { href: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard'     },
   { href: '/partners',        icon: Users,           label: 'Partners'      },
   { href: '/orders',          icon: ShoppingBag,     label: 'Orders'        },
   { href: '/cad-requests',    icon: Pen,             label: 'CAD Requests'  },
@@ -26,7 +26,7 @@ const nav = [
 ]
 
 const bottomNav = [
-  { href: '/',              icon: LayoutDashboard, short: 'Home'     },
+  { href: '/dashboard',     icon: LayoutDashboard, short: 'Dashboard'},
   { href: '/partners',      icon: Users,           short: 'Partners' },
   { href: '/orders',        icon: ShoppingBag,     short: 'Orders'   },
   { href: '/manufacturing', icon: Factory,         short: 'Mfg'      },
@@ -38,7 +38,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
 
-  const isPublicPage = pathname === '/login' || pathname.startsWith('/portal') || pathname.startsWith('/track') || pathname.startsWith('/auth')
+  const isPublicPage = pathname === '/' || pathname === '/login' || pathname.startsWith('/portal') || pathname.startsWith('/track') || pathname.startsWith('/auth')
 
   useEffect(() => {
     if (isPublicPage) {
@@ -93,7 +93,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           {nav.map(({ href, icon: Icon, label }) => {
-            const active = pathname === href || (href !== '/' && pathname.startsWith(href))
+            const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
             return (
               <Link key={href} href={href}
                 className={cn(
@@ -132,7 +132,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             {nav.map(({ href, icon: Icon, label }) => {
-              const active = pathname === href || (href !== '/' && pathname.startsWith(href))
+              const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
               return (
                 <Link key={href} href={href}
                   onClick={() => setMobileMenuOpen(false)}
@@ -178,7 +178,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* Mobile bottom nav */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-surface-lowest/80 backdrop-blur-[12px] border-t ghost-border flex z-40 safe-area-pb">
           {bottomNav.map(({ href, icon: Icon, short }) => {
-            const active = pathname === href || (href !== '/' && pathname.startsWith(href))
+            const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
             return (
               <Link key={href} href={href}
                 className={cn(
