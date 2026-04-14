@@ -23,7 +23,7 @@ export default function NewCADRequestPage() {
   useEffect(() => {
     Promise.all([
       supabase.from('partners').select('id, store_name, city').eq('stage', 'active').order('store_name'),
-      supabase.from('vendors').select('id, name, city').order('name'),
+      supabase.from('vendors').select('id, name, city').eq('category', 'cad_service').order('name'),
     ]).then(([{ data: p }, { data: v }]) => {
       setPartners(p || [])
       setCadParties(v || [])

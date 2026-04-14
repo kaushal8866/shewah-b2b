@@ -1,5 +1,5 @@
 -- ============================================================
--- Shewah B2B Admin — 003 Partner Portal Updates
+-- Shewah B2B Admin — 003 Partner Portal Updates (FIXED)
 -- Run this in Supabase SQL Editor → New Query
 -- ============================================================
 
@@ -35,4 +35,20 @@ create policy "Partners can create requests"
   with check ( partner_id = (select id from partners where user_id = auth.uid()) );
 
 -- 4. Order Placements directly from collections
-alter table order_pipeline add column if not exists advance_reference_number text;
+-- Fix: Add to 'orders' table, then update the view
+alter table orders add column if not exists advance_reference_number text;
+
+-- Re-create the view to include the new column
+drop view if exists order_pipeline;
+create view order_pipeline as
+select
+  o.id, o.order_number, o.status, o.type, o.model,
+  o.trade_price, o.total_amount, o.advance_paid,
+  o.total_amount - o.advance_paid as balance_due,
+  o.order_date, o.expected_delivery,
+  o.advance_reference_number,
+  p.store_name as partner_name, p.city as partner_city, p.id as partner_id,
+  pr.name as product_name, pr.code as product_code
+from orders o
+left join partners p on o.partner_id = p.id
+left join products pr on o.product_id = pr.id;

@@ -36,6 +36,7 @@ type OrderDetail = {
   courier?: string
   dispatch_date?: string
   internal_notes?: string
+  advance_reference_number?: string
   partners?: { store_name: string; owner_name: string; phone: string; city: string }
   products?: { code: string; name: string }
 }
@@ -410,6 +411,12 @@ export default function OrderDetailPage() {
                     <p className="text-stone-800 mt-0.5">{String(v)}</p>
                   </div>
                 ))}
+                {order.advance_reference_number && (
+                  <div>
+                    <p className="text-xs text-stone-400">Advance ref #</p>
+                    <p className="text-[#9B7A40] font-mono font-medium mt-0.5">{order.advance_reference_number}</p>
+                  </div>
+                )}
                 {order.brief_text && (
                   <div className="col-span-2">
                     <p className="text-xs text-stone-400">Design brief</p>
