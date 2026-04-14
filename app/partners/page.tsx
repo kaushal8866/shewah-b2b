@@ -46,7 +46,21 @@ export default function PartnersPage() {
   }
 
   async function approvePartner(id: string) {
-    await supabase.from('partners').update({ stage: 'active', status: 'hot' }).eq('id', id)
+    if (!confirm('This will create an authentication account and send an email invite. Proceed?')) return
+    
+    // Call our automated API
+    const res = await fetch('/api/partners/approve', {
+      method: 'POST',
+      body: JSON.stringify({ partner_id: id })
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      alert(data.error || 'Automation failed')
+      return
+    }
+
+    alert('Partner verified and authentication invite dispatched.')
     loadPartners()
   }
 
