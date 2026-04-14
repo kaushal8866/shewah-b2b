@@ -33,7 +33,18 @@ export default function LoginPage() {
         return
       }
 
-      window.location.href = '/dashboard'
+      // Fetch user role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.session.user.id)
+        .single()
+
+      if (roleData?.role === 'partner') {
+        window.location.href = '/portal/overview'
+      } else {
+        window.location.href = '/dashboard'
+      }
     } catch (err: any) {
       setError(err?.message || 'Sign in failed. Please try again.')
       setLoading(false)
@@ -48,8 +59,8 @@ export default function LoginPage() {
             <Diamond className="w-8 h-8 text-surface-lowest" />
           </div>
         </div>
-        <h1 className="display-sm text-center mb-2">Shewah Admin</h1>
-        <p className="text-secondary tracking-wide text-sm text-center mb-10">Sign in to continue</p>
+        <h1 className="display-sm text-center mb-2">Shewah Portal</h1>
+        <p className="text-secondary tracking-wide text-sm text-center mb-10">Secure B2B Access</p>
 
         <form onSubmit={handleLogin} className="space-y-6">
           {error && (
@@ -90,7 +101,7 @@ export default function LoginPage() {
         </form>
 
         <p className="label-md text-center mt-12 text-outline-variant">
-          Shewah B2B Admin · Surat, Gujarat
+          Shewah B2B Restricted Network · Surat, Gujarat
         </p>
       </div>
     </div>
