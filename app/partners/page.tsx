@@ -22,6 +22,8 @@ export default function PartnersPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [stageFilter, setStageFilter] = useState('all')
   const [circuitFilter, setCircuitFilter] = useState('all')
+  const [pendingApprovals, setPendingApprovals] = useState<Partner[]>([])
+  const [catalogRequests, setCatalogRequests] = useState<any[]>([])
 
   useEffect(() => {
     loadPartners()
@@ -29,12 +31,29 @@ export default function PartnersPage() {
 
   async function loadPartners() {
     setLoading(true)
-    const { data } = await supabase
-      .from('partners')
-      .select('*')
-      .order('created_at', { ascending: false })
-    setPartners(data || [])
+    const [{ data: pData }, { data: reqData }] = await Promise.all([
+      supabase.from('partners').select('*').order('created_at', { ascending: false }),
+      supabase.from('catalog_access_requests').select('*, partners(store_name)').eq('status', 'pending')
+    ])
+    
+    if (pData) {
+      setPartners(pData.filter(p => p.stage !== 'pending_approval'))
+      setPendingApprovals(pData.filter(p => p.stage === 'pending_approval'))
+    }
+    
+    setCatalogRequests(reqData || [])
     setLoading(false)
+  }
+
+  async function approvePartner(id: string) {
+    await supabase.from('partners').update({ stage: 'active', status: 'hot' }).eq('id', id)
+    loadPartners()
+  }
+
+  async function approveCatalogAccess(id: string) {
+    const expiresAt = new Date(Date.now() + 24 * 3600000).toISOString()
+    await supabase.from('catalog_access_requests').update({ status: 'approved', granted_at: new Date().toISOString(), expires_at: expiresAt }).eq('id', id)
+    loadPartners()
   }
 
   const filtered = partners.filter(p => {
@@ -70,6 +89,35 @@ export default function PartnersPage() {
           Add partner
         </Link>
       </div>
+
+      {/* Admin Action Banners */}
+      {(pendingApprovals.length > 0 || catalogRequests.length > 0) && (
+        <div className="mb-8 space-y-4">
+          {pendingApprovals.map(p => (
+            <div key={p.id} className="bg-amber-50 border border-amber-200 p-4 flex items-center justify-between shadow-sm">
+              <div>
+                <p className="text-amber-800 font-medium text-sm">New Partner Registration: {p.store_name} ({p.owner_name})</p>
+                <p className="text-amber-700 text-xs mt-0.5">{p.phone} · {p.email}</p>
+              </div>
+              <button onClick={() => approvePartner(p.id)} className="bg-amber-100 text-amber-900 border border-amber-300 px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-amber-200 transition-colors">
+                Approve Access
+              </button>
+            </div>
+          ))}
+
+          {catalogRequests.map(req => (
+            <div key={req.id} className="bg-blue-50 border border-blue-200 p-4 flex items-center justify-between shadow-sm">
+              <div>
+                <p className="text-blue-800 font-medium text-sm">24-Hour Catalog Access Request</p>
+                <p className="text-blue-700 text-xs mt-0.5">Requested by: {req.partners?.store_name}</p>
+              </div>
+              <button onClick={() => approveCatalogAccess(req.id)} className="bg-blue-100 text-blue-900 border border-blue-300 px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-blue-200 transition-colors">
+                Grant 24HR Access
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Stat pills */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mb-8">

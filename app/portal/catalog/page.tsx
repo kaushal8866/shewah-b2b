@@ -8,16 +8,86 @@ import Link from 'next/link'
 export default function PartnerCatalog() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [partnerId, setPartnerId] = useState<string | null>(null)
+  const [accessStatus, setAccessStatus] = useState<'granted' | 'requested' | 'denied'>('denied')
+  const [accessExpiry, setAccessExpiry] = useState<string | null>(null)
+  
   const [search, setSearch] = useState('')
   const [karatFilter, setKaratFilter] = useState('all')
+  
+  // Ordering logic
+  const [orderingProduct, setOrderingProduct] = useState<Product | null>(null)
+  const [advanceRef, setAdvanceRef] = useState('')
+  const [orderSaving, setOrderSaving] = useState(false)
 
-  useEffect(() => { loadProducts() }, [])
+  useEffect(() => { loadAccessAndProducts() }, [])
 
-  async function loadProducts() {
+  async function loadAccessAndProducts() {
     setLoading(true)
-    const { data } = await supabase.from('products').select('*').eq('is_active', true).order('code')
-    setProducts(data || [])
+    const { data: p } = await supabase.from('partners').select('id').single()
+    if (!p) { setLoading(false); return }
+    setPartnerId(p.id)
+
+    // Check access
+    const { data: requests } = await supabase.from('catalog_access_requests')
+      .select('*').eq('partner_id', p.id).order('created_at', { ascending: false }).limit(1)
+
+    let hasAccess = false
+    if (requests && requests.length > 0) {
+      const req = requests[0]
+      if (req.status === 'approved' && new Date(req.expires_at) > new Date()) {
+        hasAccess = true
+        setAccessStatus('granted')
+        setAccessExpiry(req.expires_at)
+      } else if (req.status === 'pending') {
+        setAccessStatus('requested')
+      }
+    }
+
+    if (hasAccess) {
+      const { data } = await supabase.from('products').select('*').eq('is_active', true).order('code')
+      setProducts(data || [])
+    }
+    
     setLoading(false)
+  }
+
+  async function handleRequestAccess() {
+    if (!partnerId) return
+    setLoading(true)
+    await supabase.from('catalog_access_requests').insert([{ partner_id: partnerId }])
+    setAccessStatus('requested')
+    setLoading(false)
+  }
+
+  async function handlePlaceOrder(e: React.FormEvent) {
+    e.preventDefault()
+    if (!partnerId || !orderingProduct || !advanceRef) return
+    setOrderSaving(true)
+
+    const { count } = await supabase.from('order_pipeline').select('*', { count: 'exact', head: true })
+    const num = `SH-ORD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
+
+    const { error } = await supabase.from('order_pipeline').insert([{
+      partner_id: partnerId,
+      product_id: orderingProduct.id,
+      order_number: num,
+      type: 'catalog',
+      model: 'wholesale',
+      trade_price: orderingProduct.trade_price || 0,
+      total_amount: orderingProduct.trade_price || 0,
+      status: 'brief_received',
+      advance_reference_number: advanceRef,
+    }])
+
+    setOrderSaving(false)
+    if (error) {
+      alert('Order failed: ' + error.message)
+    } else {
+      alert('Order placed successfully.')
+      setOrderingProduct(null)
+      setAdvanceRef('')
+    }
   }
 
   const filtered = products.filter(p => {
@@ -41,11 +111,31 @@ export default function PartnerCatalog() {
           Signature Collections
         </h1>
         <p className="text-secondary font-light max-w-xl text-lg leading-relaxed">
-          Browse our curated, production-ready architectural models available for immediate bespoke adaptation.
+          {accessStatus === 'granted' 
+            ? `Browse our curated architectural models. Access expires strictly on ${new Date(accessExpiry!).toLocaleString()}.`
+            : 'Access to the Shewah Signature Collection is tightly restricted. Provide structural intent to gain 24-hour clearance.'}
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-12 border-b border-outline-variant/30 pb-8">
+      {accessStatus !== 'granted' ? (
+        <div className="bg-surface-lowest p-16 text-center border border-outline-variant/30 shadow-ambient max-w-2xl mx-auto">
+          <Package className="w-12 h-12 text-primary mx-auto mb-6" />
+          <h2 className="text-2xl font-serif text-primary mb-2">Vault Locked</h2>
+          <p className="text-sm text-secondary mb-8">
+            {accessStatus === 'requested' 
+              ? 'Your clearance authorization is currently pending administrative review. Please check back later.'
+              : 'Our collections are protected intellectual property. Request temporary access to view the catalog.'}
+          </p>
+          {accessStatus !== 'requested' && (
+            <button onClick={handleRequestAccess}
+              className="bg-primary text-surface-lowest px-10 py-4 uppercase text-[10px] tracking-[0.2em] font-bold hover:bg-surface-highest hover:text-primary transition-all duration-300">
+              Request 24-Hour Clearance
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col sm:flex-row gap-4 mb-12 border-b border-outline-variant/30 pb-8">
         <div className="relative w-full sm:flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant" />
           <input type="text" placeholder="Search by name, code, or diamond shape..."
@@ -105,15 +195,42 @@ export default function PartnerCatalog() {
                 </p>
                 <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-widest">
                   <span className="text-secondary">{p.delivery_days} Day Manifestation</span>
-                  <Link href={`/shared-design/${p.id}`} className="text-primary hover:text-secondary flex items-center gap-2 transition-colors">
-                    View Spec →
-                  </Link>
+                  <button onClick={() => setOrderingProduct(p)} className="text-primary hover:text-secondary flex items-center gap-2 transition-colors">
+                    Place Order →
+                  </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
-    </div>
+
+      {/* Order Modal */}
+      {orderingProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface/90 backdrop-blur-sm">
+          <div className="bg-surface-lowest border border-outline-variant/30 p-8 max-w-md w-full shadow-ambient relative">
+            <h2 className="text-2xl font-serif text-primary mb-2">Initialize Production</h2>
+            <p className="text-sm text-secondary mb-6">{orderingProduct.name} ({orderingProduct.code})</p>
+            
+            <form onSubmit={handlePlaceOrder} className="space-y-6">
+              <div>
+                <label className="block text-[10px] uppercase font-bold tracking-widest text-secondary mb-2">Advance Payment Reference *</label>
+                <input required className="w-full bg-surface-highest border-b border-outline-variant/40 focus:border-primary px-0 py-3 text-sm outline-none transition-colors" 
+                  placeholder="Txn ID / UTR Number" value={advanceRef} onChange={e => setAdvanceRef(e.target.value)} />
+                <p className="text-xs text-secondary mt-2 font-light">Order processing commences strictly after advance validation.</p>
+              </div>
+              <div className="flex justify-end gap-4 pt-4">
+                <button type="button" onClick={() => setOrderingProduct(null)} className="px-6 py-3 text-[10px] uppercase tracking-widest font-bold text-secondary hover:text-primary">Cancel</button>
+                <button type="submit" disabled={orderSaving} className="bg-primary text-surface-lowest px-8 py-3 uppercase text-[10px] tracking-[0.2em] font-bold hover:bg-surface-highest hover:text-primary transition-all disabled:opacity-50">
+                  {orderSaving ? 'Processing...' : 'Confirm Order'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      </>
+    )}
+  </div>
   )
 }

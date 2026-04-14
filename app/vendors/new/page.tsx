@@ -104,8 +104,14 @@ export default function NewVendorPage() {
             </div>
             <div>
               <label className={lbl}>Category supplied</label>
-              <input className={inp} value={form.category} onChange={e => set('category', e.target.value)}
-                placeholder="e.g. diamonds, gemstones, findings" />
+              <select className={inp} value={form.category} onChange={e => set('category', e.target.value)}>
+                <option value="">Select category...</option>
+                <option value="cad_service">CAD Service Party</option>
+                <option value="diamonds">Diamonds</option>
+                <option value="gemstones">Gemstones</option>
+                <option value="findings">Findings / Parts</option>
+                <option value="other">Other</option>
+              </select>
             </div>
             <div>
               <label className={lbl}>Status</label>
