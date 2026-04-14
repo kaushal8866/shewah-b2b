@@ -33,7 +33,7 @@ export default function LoginPage() {
         return
       }
 
-      window.location.href = '/'
+      window.location.href = '/dashboard'
     } catch (err: any) {
       setError(err?.message || 'Sign in failed. Please try again.')
       setLoading(false)

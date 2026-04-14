@@ -24,9 +24,9 @@ export default function B2BLandingPage() {
         </div>
         
         <div className="flex items-center space-x-6 text-slate-700">
-          <Link href="/login" className="hidden md:flex text-xs tracking-[0.2em] uppercase hover:opacity-70 transition-opacity font-bold items-center gap-2 border-b border-transparent hover:border-slate-700 pb-1">
-            Partner Login <ArrowRight className="w-3 h-3" />
-          </Link>
+          <a href="mailto:partners@shewah.co" className="hidden md:flex text-xs tracking-[0.2em] uppercase hover:opacity-70 transition-opacity font-bold items-center gap-2 border-b border-transparent hover:border-slate-700 pb-1">
+            Apply to Join <ArrowRight className="w-3 h-3" />
+          </a>
           <button className="hover:opacity-70 transition-opacity duration-300">
             <ShoppingBag className="w-5 h-5 stroke-[1.5]" />
           </button>
@@ -58,9 +58,9 @@ export default function B2BLandingPage() {
               Elevate your inventory with one-of-a-kind masterpieces. From initial concept to the final polish, our master artisans bring your client's most ambitious dreams to life.
             </p>
             <div className="flex space-x-6">
-              <Link href="/login" className="bg-[#5d5e61] text-[#f7f7fa] px-10 py-5 uppercase text-xs tracking-widest font-bold hover:bg-[#515255] transition-colors border border-transparent hover:border-[#abb3b7]/30">
+              <a href="mailto:partners@shewah.co" className="bg-[#5d5e61] text-[#f7f7fa] px-10 py-5 uppercase text-xs tracking-widest font-bold hover:bg-[#515255] transition-colors border border-transparent hover:border-[#abb3b7]/30">
                 Initiate Consultation
-              </Link>
+              </a>
             </div>
           </div>
         </section>
@@ -204,9 +204,9 @@ export default function B2BLandingPage() {
           <p className="text-[#586064] font-light max-w-2xl mb-12 leading-relaxed text-lg">
             Join the world's leading retailers in providing unparalleled bespoke experiences. Let our master artisans become an extension of your brand.
           </p>
-          <Link href="/login" className="border border-[#2b3437] px-12 py-5 uppercase text-xs tracking-[0.2em] font-medium hover:bg-[#2b3437] hover:text-[#f8f9fa] transition-all duration-300">
-            Login to Admin Panel
-          </Link>
+          <a href="mailto:partners@shewah.co" className="border border-[#2b3437] px-12 py-5 uppercase text-xs tracking-[0.2em] font-medium hover:bg-[#2b3437] hover:text-[#f8f9fa] transition-all duration-300">
+            Request Partnership
+          </a>
         </section>
 
       </main>
