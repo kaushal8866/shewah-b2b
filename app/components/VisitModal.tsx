@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Save } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from './Toast'
@@ -25,6 +25,7 @@ const OUTCOMES = [
 export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, partnerCircuit, onSaved }: Props) {
   const { toast } = useToast()
   const [saving, setSaving] = useState(false)
+  const [coords, setCoords] = useState<{ lat: number; lng: number; accuracy: number } | null>(null)
   const [form, setForm] = useState({
     outcome: 'interested',
     notes: '',
@@ -34,6 +35,21 @@ export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, pa
     next_action_date: '',
   })
 
+  // SOP §5.1 Capture Geotag on modal open
+  useEffect(() => {
+    if (isOpen && typeof navigator !== 'undefined') {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setCoords({ 
+          lat: pos.coords.latitude, 
+          lng: pos.coords.longitude, 
+          accuracy: pos.coords.accuracy 
+        }),
+        (err) => console.warn('GPS Capture failed:', err),
+        { enableHighAccuracy: true }
+      )
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
   function set(key: string, value: string | boolean) {
@@ -42,8 +58,11 @@ export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, pa
 
   async function handleSave() {
     setSaving(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    
     const { error } = await supabase.from('visits').insert([{
       partner_id: partnerId,
+      rep_id: session?.user?.id,
       visit_date: new Date().toISOString().split('T')[0],
       city: partnerCity,
       circuit: partnerCircuit,
@@ -53,6 +72,9 @@ export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, pa
       sample_offered: form.sample_offered,
       next_action: form.next_action || null,
       next_action_date: form.next_action_date || null,
+      lat: coords?.lat,
+      long: coords?.lng,
+      is_geotagged: !!coords,
     }])
     setSaving(false)
 
@@ -61,14 +83,16 @@ export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, pa
       return
     }
 
-    toast('Visit logged successfully')
+    toast(coords ? 'Visit logged (Geotagged)' : 'Visit logged (No GPS)')
     setForm({
       outcome: 'interested', notes: '', catalog_left: false,
       sample_offered: false, next_action: '', next_action_date: '',
     })
+    setCoords(null)
     onSaved()
     onClose()
   }
+
 
   const inp = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm focus:border-[#C49C64] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1.5"
