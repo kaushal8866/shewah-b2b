@@ -59,6 +59,16 @@ export default function NewOrderPage() {
     if (!form.trade_price || !form.total_amount) { alert('Enter pricing'); return }
 
     setSaving(true)
+    
+    // 1. Fetch Partner for Credit Evaluation
+    const { data: partner } = await supabase.from('partners').select('*').eq('id', form.partner_id).single()
+    if (!partner) { alert('Partner not found'); setSaving(false); return }
+
+    // 2. Evaluate Risk
+    const totalAmountPaise = parseFloat(form.total_amount) * 100
+    const { evaluateCreditRisk } = await import('@/lib/ethics')
+    const risk = evaluateCreditRisk(partner, totalAmountPaise)
+
     const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true })
     const orderNumber = `SH-ORD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
 
@@ -73,21 +83,28 @@ export default function NewOrderPage() {
       special_notes: form.special_notes || null,
       brief_text: form.type === 'custom' ? form.brief_text : null,
       gold_rate_at_order: goldRate,
-      trade_price: parseFloat(form.trade_price),
-      total_amount: parseFloat(form.total_amount),
-      advance_paid: parseFloat(form.advance_paid) || 0,
-      balance_due: parseFloat(form.total_amount) - (parseFloat(form.advance_paid) || 0),
+      trade_price: parseFloat(form.trade_price) * 100, // stored in paise
+      total_amount: totalAmountPaise, // stored in paise
+      advance_paid: (parseFloat(form.advance_paid) || 0) * 100, // stored in paise
+      balance_due: (parseFloat(form.total_amount) - (parseFloat(form.advance_paid) || 0)) * 100, // stored in paise
       order_date: form.order_date,
       expected_delivery: form.expected_delivery,
       internal_notes: form.internal_notes || null,
       status: 'brief_received',
+      gov_status: risk.requiresApproval ? 'pending_approval' : 'auto_approved',
+      gov_notes: risk.reason || null,
     }
 
     const { data, error } = await supabase.from('orders').insert([payload]).select().single()
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }
+    
+    if (risk.requiresApproval) {
+      alert(`⚠️ Order flagged for approval: ${risk.reason}`)
+    }
     router.push('/orders')
   }
+
 
   const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none"
   const label = "block text-xs font-medium text-stone-500 mb-1"

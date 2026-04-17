@@ -47,12 +47,27 @@ const partnerBottomNav = [
   { href: '/portal/orders',   icon: ShoppingBag,     short: 'Orders'   },
   { href: '/portal/bespoke',  icon: Pen,             short: 'Bespoke'  },
 ]
+const repNav = [
+  { href: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'     },
+  { href: '/partners',      icon: Users,           label: 'My Partners'   },
+  { href: '/circuits',      icon: Map,             label: 'My Circuits'   },
+  { href: '/orders',        icon: ShoppingBag,     label: 'Orders'        },
+  { href: '/catalog',       icon: Package,         label: 'Catalog'       },
+  { href: '/settings',      icon: Settings,        label: 'My Profile'    },
+]
+
+const repBottomNav = [
+  { href: '/dashboard',     icon: LayoutDashboard, short: 'Dash'     },
+  { href: '/partners',      icon: Users,           short: 'Partners' },
+  { href: '/circuits',      icon: Map,             short: 'Circuits' },
+  { href: '/catalog',       icon: Package,         short: 'Catalog'  },
+]
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
-  const [userRole, setUserRole] = useState<'admin' | 'partner'>('admin')
+  const [userRole, setUserRole] = useState<'owner' | 'rep' | 'partner'>('owner')
 
   const isPublicPage = pathname === '/' || pathname === '/login' || pathname.startsWith('/shared-design') || pathname.startsWith('/track') || pathname.startsWith('/auth')
 
@@ -68,8 +83,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       } else {
         supabase.from('user_roles').select('role').eq('user_id', session.user.id).single()
           .then(({ data }) => {
-            if (data?.role === 'partner') {
-              setUserRole('partner')
+            if (data?.role) {
+              setUserRole(data.role as 'owner' | 'rep' | 'partner')
             }
             setAuthChecked(true)
           })
@@ -114,7 +129,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-          {(userRole === 'partner' ? partnerNav : nav).map(({ href, icon: Icon, label }) => {
+          {(userRole === 'partner' ? partnerNav : userRole === 'rep' ? repNav : nav).map(({ href, icon: Icon, label }) => {
             const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
             return (
               <Link key={href} href={href}
@@ -153,7 +168,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-            {(userRole === 'partner' ? partnerNav : nav).map(({ href, icon: Icon, label }) => {
+            {(userRole === 'partner' ? partnerNav : userRole === 'rep' ? repNav : nav).map(({ href, icon: Icon, label }) => {
               const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
               return (
                 <Link key={href} href={href}
@@ -199,7 +214,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Mobile bottom nav */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-surface-lowest/80 backdrop-blur-[12px] border-t ghost-border flex z-40 safe-area-pb">
-          {(userRole === 'partner' ? partnerBottomNav : bottomNav).map(({ href, icon: Icon, short }) => {
+          {(userRole === 'partner' ? partnerBottomNav : userRole === 'rep' ? repBottomNav : bottomNav).map(({ href, icon: Icon, short }) => {
             const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
             return (
               <Link key={href} href={href}

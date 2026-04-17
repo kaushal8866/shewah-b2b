@@ -70,6 +70,8 @@ export default function PartnerDetailPage() {
       stage: form.stage,
       source: form.source,
       notes: form.notes,
+      credit_limit_paise: form.credit_limit_paise,
+      credit_approval_required: form.credit_approval_required,
     }).eq('id', id)
     setSaving(false)
     if (error) { toast('Error: ' + error.message, 'error'); return }
@@ -365,6 +367,29 @@ export default function PartnerDetailPage() {
               </div>
             </div>
           </div>
+
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <h2 className="font-medium text-stone-900 mb-4">Financial Governance</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={lbl}>Credit Limit (INR)</label>
+                <input type="number" className={inp} 
+                  value={(form.credit_limit_paise || 0) / 100} 
+                  onChange={e => setForm(prev => ({ ...prev, credit_limit_paise: Number(e.target.value) * 100 }))} 
+                  placeholder="e.g. 500000" />
+              </div>
+              <div className="flex items-center gap-2 pt-6">
+                <input type="checkbox" id="require_approval"
+                  checked={form.credit_approval_required || false}
+                  onChange={e => setForm(prev => ({ ...prev, credit_approval_required: e.target.checked }))}
+                  className="w-4 h-4 rounded border-stone-300 text-[#C49C64] focus:ring-[#C49C64]" />
+                <label htmlFor="require_approval" className="text-sm text-stone-600 cursor-pointer">
+                  Require manual approval for all orders
+                </label>
+              </div>
+            </div>
+          </div>
+
         </div>
       )}
 

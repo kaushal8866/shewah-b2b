@@ -106,13 +106,77 @@ export default function CircuitDetailPage() {
     router.push('/circuits')
   }
 
+  async function startTrip() {
+    const km = prompt('Enter starting KM (Odometer reading):')
+    if (!km) return
+    
+    const { data: { session } } = await supabase.auth.getSession()
+    const { error } = await supabase.from('circuits').update({
+      status: 'in_progress',
+      started_at: new Date().toISOString(),
+      start_km: parseInt(km),
+      active_trip_rep_id: session?.user?.id
+    }).eq('id', id)
+    
+    if (error) { toast('Error: ' + error.message, 'error'); return }
+    toast('Trip started! Good luck on the road.', 'success')
+    load()
+  }
+
+  async function closeTrip() {
+    const km = prompt('Enter ending KM (Odometer reading):')
+    if (!km) return
+
+    const { error } = await supabase.from('circuits').update({
+      status: 'completed',
+      closed_at: new Date().toISOString(),
+      end_km: parseInt(km),
+    }).eq('id', id)
+
+    if (error) { toast('Error: ' + error.message, 'error'); return }
+    toast('Trip closed. Welcome back!', 'success')
+    load()
+  }
+
+  async function addExpense() {
+    const amount = parseFloat(expenseAmount)
+    if (!amount || amount <= 0) { toast('Enter a valid amount', 'error'); return }
+
+    // Aggregate spend
+    const newSpent = (circuit.spent_inr || 0) + amount
+    
+    // Update ledger (JSONB)
+    const category = (expenseNote.toLowerCase().trim() || 'other') as keyof typeof circuit.expense_ledger
+    const ledger = { ...circuit.expense_ledger }
+    if (ledger && category in ledger) {
+      ledger[category] = (ledger[category] || 0) + amount
+    } else {
+      ledger['other'] = (ledger['other'] || 0) + amount
+    }
+
+    await supabase.from('circuits').update({
+      spent_inr: newSpent,
+      expense_ledger: ledger
+    }).eq('id', id)
+
+    setShowExpense(false)
+    setExpenseAmount('')
+    setExpenseNote('')
+    toast(`₹${amount.toLocaleString('en-IN')} logged under ${String(category)}`, 'success')
+    load()
+  }
+
+
   async function logVisit() {
     if (!visitForm.partner_id) { toast('Select a partner', 'error'); return }
     setSavingVisit(true)
 
+    const { data: { session } } = await supabase.auth.getSession()
+
     // Insert into visits table
     const { error: visitError } = await supabase.from('visits').insert([{
       partner_id: visitForm.partner_id,
+      rep_id: session?.user?.id,
       visit_date: visitForm.visit_date,
       circuit: circuit.name,
       city: allPartners.find(p => p.id === visitForm.partner_id)?.city || '',
@@ -140,21 +204,6 @@ export default function CircuitDetailPage() {
       next_action: '', next_action_date: '',
     })
     toast('Visit logged!', 'success')
-    load()
-  }
-
-  async function addExpense() {
-    const amount = parseFloat(expenseAmount)
-    if (!amount || amount <= 0) { toast('Enter a valid amount', 'error'); return }
-
-    await supabase.from('circuits').update({
-      spent_inr: (circuit.spent_inr || 0) + amount,
-    }).eq('id', id)
-
-    setShowExpense(false)
-    setExpenseAmount('')
-    setExpenseNote('')
-    toast(`₹${amount.toLocaleString('en-IN')} expense added`, 'success')
     load()
   }
 
@@ -195,13 +244,21 @@ export default function CircuitDetailPage() {
         <div className="flex items-center gap-2 shrink-0">
           {!editing ? (
             <>
+              {circuit.status === 'planned' && (
+                <button onClick={startTrip}
+                  className="bg-primary text-surface-lowest px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+                  Start Trip
+                </button>
+              )}
+              {circuit.status === 'in_progress' && (
+                <button onClick={closeTrip}
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors">
+                  End Trip
+                </button>
+              )}
               <button onClick={() => setEditing(true)}
-                className="flex items-center gap-1.5 border border-stone-200 text-stone-600 px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
+                className="flex items-center gap-1.5 border border-stone-200 text-stone-600 px-3 py-2 rounded-lg text-sm hover:bg-stone-50 transition-colors">
                 <Edit2 className="w-4 h-4" /> Edit
-              </button>
-              <button onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center gap-1.5 border border-red-200 text-red-500 px-3 py-2 rounded-lg text-sm hover:bg-red-50">
-                <Trash2 className="w-4 h-4" /> <span className="hidden sm:inline">Delete</span>
               </button>
             </>
           ) : (
@@ -241,14 +298,17 @@ export default function CircuitDetailPage() {
           {/* Action buttons */}
           <div className="flex gap-2 flex-wrap">
             <button onClick={() => setShowLogVisit(true)}
-              className="flex items-center gap-1.5 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40]">
+              disabled={circuit.status === 'completed'}
+              className="flex items-center gap-1.5 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-all">
               <Plus className="w-4 h-4" /> Log visit
             </button>
             <button onClick={() => setShowExpense(true)}
-              className="flex items-center gap-1.5 border border-stone-200 text-stone-600 px-4 py-2 rounded-lg text-sm hover:bg-stone-50">
+              disabled={circuit.status === 'completed'}
+              className="flex items-center gap-1.5 border border-stone-200 text-stone-600 px-4 py-2 rounded-lg text-sm hover:bg-stone-50 disabled:opacity-50 transition-all">
               <IndianRupee className="w-4 h-4" /> Add expense
             </button>
           </div>
+
 
           {/* Log visit form */}
           {showLogVisit && (
