@@ -163,9 +163,37 @@ function NewMfgOrderForm() {
       issued_date: new Date().toISOString().split('T')[0],
     }
 
-    const { data, error } = await supabase.from('manufacturing_orders').insert([payload]).select().single()
+    const { data: mfgOrder, error: mfgError } = await supabase.from('manufacturing_orders').insert([payload]).select().single()
+    
+    if (mfgError) { 
+      setSaving(false)
+      alert('Error: ' + mfgError.message)
+      return 
+    }
+
+    // Material Ledger Transaction (Phase 2 - Existing Schema Alignment)
+    if (form.material_from_float && fineGold24k > 0) {
+      const goldFloat = floats.find(f => f.material_type === 'gold_24k' || f.material_type === `gold_${form.gold_karat}k`)
+      
+      if (goldFloat) {
+        const { error: txError } = await supabase.from('material_transactions').insert([{
+          float_id: goldFloat.id,
+          manufacturing_partner_id: form.manufacturing_partner_id,
+          transaction_type: 'consumption',
+          quantity: -fineGold24k,
+          reference: orderNumber,
+          notes: `Issued for order ${orderNumber}`,
+          date: new Date().toISOString().split('T')[0]
+        }])
+        
+        if (txError) {
+          console.error('Ledger sync failed:', txError.message)
+          alert('Order issued, but material ledger synchronization failed.')
+        }
+      }
+    }
+
     setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
     router.push('/manufacturing')
   }
 
