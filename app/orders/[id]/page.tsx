@@ -8,7 +8,7 @@ import {
   ArrowLeft, Save, Edit2, X, Truck, IndianRupee,
   CheckCircle2, Clock, Package, Phone, MessageCircle,
   ChevronRight, AlertCircle, Copy, Check, Trash2,
-  AlertTriangle, ShieldCheck
+  AlertTriangle, ShieldCheck, FileText
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/app/components/Toast'
