@@ -70,7 +70,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         window.location.href = '/login'
       } else {
         supabase.from('user_roles').select('role').eq('user_id', session.user.id).single()
-          .then(async ({ data }) => {
+          .then(async ({ data }: any) => {
             if (data?.role) {
               setUserRole(data.role as any)
               setAuthChecked(true)
