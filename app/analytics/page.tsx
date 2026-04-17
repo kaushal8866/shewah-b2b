@@ -25,6 +25,8 @@ export default function AnalyticsPage() {
     conversionFunnel: { visited: 0, contacted: 0, sample: 0, active: 0 },
     modelSplit: [],
     cadStats: { total: 0, avgTurnaround: 0, approvalRate: 0 },
+    governance: { approved: 0, denied: 0, pending: 0 },
+    circuitROI: { budget: 0, revenue: 0, circuits: 0 }
   })
 
   useEffect(() => { loadAnalytics() }, [])
@@ -36,16 +38,34 @@ export default function AnalyticsPage() {
         { data: orders },
         { data: partners },
         { data: cadReqs },
+        { data: circuits }
       ] = await Promise.all([
         supabase.from('order_pipeline').select('*'),
         supabase.from('partners').select('*'),
         supabase.from('cad_requests').select('*'),
+        supabase.from('circuits').select('*')
       ])
 
       const allOrders = orders || []
       const allPartners = partners || []
       const allCAD = cadReqs || []
+      const allCircuits = circuits || []
 
+      // Governance
+      const governance = {
+        approved: allOrders.filter(o => o.gov_status === 'owner_approved' || o.gov_status === 'auto_approved').length,
+        denied: allOrders.filter(o => o.gov_status === 'denied').length,
+        pending: allOrders.filter(o => o.gov_status === 'pending_approval').length,
+      }
+
+      // Circuit ROI
+      const circuitROI = {
+        budget: allCircuits.reduce((s, c) => s + (c.budget_inr || 0), 0),
+        revenue: allOrders.reduce((s, o) => s + (o.total_amount || 0), 0),
+        circuits: allCircuits.length
+      }
+
+      // ... existing calculations ...
       // Revenue by month (last 6 months)
       const monthMap: Record<string, { revenue: number; orders: number }> = {}
       const months: string[] = []
@@ -123,7 +143,7 @@ export default function AnalyticsPage() {
         approvalRate: allCAD.length ? Math.round((approved / allCAD.length) * 100) : 0,
       }
 
-      setData({ revenueByMonth, partnersByStage, partnersByCircuit, ordersByStatus, topPartners, conversionFunnel, modelSplit, cadStats })
+      setData({ revenueByMonth, partnersByStage, partnersByCircuit, ordersByStatus, topPartners, conversionFunnel, modelSplit, cadStats, governance, circuitROI })
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }
@@ -154,8 +174,8 @@ export default function AnalyticsPage() {
         {[
           { label: '6-month revenue', value: formatCurrency(totalRevenue), icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Total orders', value: totalOrders, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Active partners', value: data.conversionFunnel.active, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
-          { label: 'CAD approval rate', value: `${data.cadStats.approvalRate}%`, icon: BarChart2, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Circuit ROI', value: `${((data.circuitROI.revenue / (data.circuitROI.budget || 1)) * 100).toFixed(0)}%`, icon: BarChart2, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Gov. Health', value: `${((data.governance.approved / ((data.governance.approved + data.governance.denied) || 1)) * 100).toFixed(0)}%`, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
         ].map(m => (
           <div key={m.label} className="bg-white rounded-xl border border-stone-200 p-5">
             <div className="flex items-center justify-between mb-2">

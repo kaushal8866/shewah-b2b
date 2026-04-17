@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { ORDER_STATUSES } from '@/lib/supabase'
 import { Check, AlertTriangle, Diamond } from 'lucide-react'

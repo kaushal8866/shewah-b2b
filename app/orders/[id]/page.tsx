@@ -99,6 +99,12 @@ export default function OrderDetailPage() {
   }
 
   async function updateStatus(newStatus: string) {
+    if (newStatus === 'delivered' && (order?.balance_due || 0) > 0) {
+      if (!confirm(`Warning: This order has a balance due of ${formatCurrency(order?.balance_due || 0)}. Mark as delivered anyway?`)) {
+        return
+      }
+    }
+
     const updates: Record<string, any> = { status: newStatus }
     if (newStatus === 'delivered') {
       updates.actual_delivery = new Date().toISOString().split('T')[0]
