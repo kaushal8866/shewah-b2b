@@ -193,7 +193,7 @@ export default function ManufacturingPartnerDetailPage() {
                 ['Labour rate 18K', partner.labour_rate_18k ? `₹${partner.labour_rate_18k}/g` : '—'],
                 ['Labour rate 22K', partner.labour_rate_22k ? `₹${partner.labour_rate_22k}/g` : '—'],
                 ['Specialities', Array.isArray(partner.speciality) ? partner.speciality.join(', ') || '—' : partner.speciality || '—'],
-              ].map(([k, v]: [string, any]) => (
+              ].map(([k, v]: any) => (
                 <div key={String(k)}>
                   <p className="text-xs text-stone-400">{k}</p>
                   <p className="text-stone-800 mt-0.5 capitalize">{String(v)}</p>

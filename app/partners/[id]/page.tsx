@@ -221,7 +221,7 @@ export default function PartnerDetailPage() {
                 ['Email', partner.email || '—'],
                 ['GSTIN', partner.gstin || '—'],
                 ['Credit Limit', partner.credit_limit_paise ? `₹${(partner.credit_limit_paise / 100).toLocaleString('en-IN')}` : '₹5,000'],
-              ].map(([k, v]: [string, any]) => (
+              ].map(([k, v]: any) => (
                 <div key={k}>
                   <p className="text-xs text-stone-400">{k}</p>
                   <p className="text-stone-800 mt-0.5">{v}</p>

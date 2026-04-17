@@ -60,7 +60,7 @@ function NewMfgOrderForm() {
       supabase.from('material_float')
         .select('*')
         .eq('manufacturing_partner_id', form.manufacturing_partner_id)
-        .then(({ data }) => setFloats(data || []))
+        .then(({ data }: any) => setFloats(data || []))
     }
   }, [form.manufacturing_partner_id])
 

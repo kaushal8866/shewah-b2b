@@ -469,7 +469,7 @@ export default function OrderDetailPage() {
                   ['Ring size', order.ring_size || '—'],
                   ['Special notes', order.special_notes || '—'],
                   ['Gold rate at order', order.gold_rate_at_order ? `₹${order.gold_rate_at_order.toLocaleString('en-IN')}/g` : '—'],
-                ].map(([k, v]: [string, any]) => (
+                ].map(([k, v]: any) => (
                   <div key={String(k)}>
                     <p className="text-xs text-stone-400">{k}</p>
                     <p className="text-stone-800 mt-0.5">{String(v)}</p>
