@@ -30,11 +30,27 @@ export type Partner = {
   current_products?: string[]
   model_preference?: string
   status: 'hot' | 'warm' | 'cold'
-  stage: 'prospect' | 'contacted' | 'sample_sent' | 'active' | 'inactive'
+  stage: 'prospect' | 'contacted' | 'pending_approval' | 'sample_sent' | 'active' | 'inactive'
   source?: string
   notes?: string
   tags?: string[]
+  assigned_rep_id?: string
+  credit_limit_paise?: number
+  credit_approval_required?: boolean
+  deleted_at?: string
+  created_by?: string
+  updated_by?: string
 }
+
+export type AppUser = {
+  id: string
+  full_name: string
+  phone?: string
+  avatar_url?: string
+  is_active: boolean
+  created_at: string
+}
+
 
 export type Visit = {
   id: string
@@ -49,6 +65,11 @@ export type Visit = {
   catalog_left?: boolean
   next_action?: string
   next_action_date?: string
+  rep_id?: string
+  lat?: number
+  long?: number
+  verification_distance_meters?: number
+  is_geotagged: boolean
 }
 
 export type Product = {
@@ -63,17 +84,20 @@ export type Product = {
   diamond_color?: string
   diamond_type: string
   gold_karat?: number
-  gold_weight_g?: number
-  diamond_cost?: number
-  making_charges?: number
-  igi_cert_cost?: number
-  trade_price?: number
-  mrp_suggested?: number
+  gold_weight_mg?: number // stored in milligrams (§4.2)
+  diamond_cost?: number // in paise
+  making_charges?: number // in paise
+  igi_cert_cost?: number // in paise
+  trade_price?: number // in paise
+  mrp_suggested?: number // in paise
   photo_urls?: string[]
   is_active: boolean
   delivery_days?: number
   models_available?: string[]
   tags?: string[]
+  deleted_at?: string
+  created_by?: string
+  updated_by?: string
 }
 
 export type Order = {
@@ -89,11 +113,12 @@ export type Order = {
   brief_text?: string
   brief_images?: string[]
   cad_request_id?: string
-  gold_rate_at_order?: number
-  trade_price: number
-  total_amount: number
-  advance_paid: number
-  balance_due?: number
+  gold_rate_at_order?: number // in Rupees (e.g., 6000)
+  trade_price: number // in paise
+  total_amount: number // in paise
+  advance_paid: number // in paise
+  balance_due?: number // in paise
+  advance_reference_number?: string
   status: string
   order_date: string
   expected_delivery?: string
@@ -102,6 +127,11 @@ export type Order = {
   courier?: string
   dispatch_date?: string
   internal_notes?: string
+  gov_status: 'auto_approved' | 'pending_approval' | 'denied' | 'owner_approved'
+  gov_notes?: string
+  deleted_at?: string
+  created_by?: string
+  updated_by?: string
 }
 
 export type CADRequest = {
@@ -157,6 +187,17 @@ export type Circuit = {
   budget_inr?: number
   spent_inr: number
   notes?: string
+  active_trip_rep_id?: string
+  started_at?: string
+  closed_at?: string
+  expense_ledger?: {
+    petrol: number
+    stay: number
+    food: number
+    other: number
+  }
+  start_km?: number
+  end_km?: number
 }
 
 export type ManufacturingPartner = {
@@ -254,9 +295,9 @@ export function fromFineGold24k(fineWeightG: number, karat: number): number {
 export function calculateGoldRates(rate24k: number) {
   return {
     rate_24k: rate24k,
-    rate_22k: Math.round(rate24k * KARAT_PURITY[22]),
-    rate_18k: Math.round(rate24k * KARAT_PURITY[18]),
-    rate_14k: Math.round(rate24k * KARAT_PURITY[14]),
+    rate_22k: Math.round(rate24k * (KARAT_PURITY[22] || 0.916)),
+    rate_18k: Math.round(rate24k * (KARAT_PURITY[18] || 0.75)),
+    rate_14k: Math.round(rate24k * (KARAT_PURITY[14] || 0.585)),
   }
 }
 
@@ -286,9 +327,11 @@ export const ORDER_STATUSES = [
 ]
 
 export const PARTNER_STAGES = [
-  { value: 'prospect',     label: 'Prospect' },
-  { value: 'contacted',    label: 'Contacted' },
-  { value: 'sample_sent',  label: 'Sample Sent' },
-  { value: 'active',       label: 'Active Partner' },
-  { value: 'inactive',     label: 'Inactive' },
+  { value: 'prospect',         label: 'Prospect' },
+  { value: 'contacted',        label: 'Contacted' },
+  { value: 'pending_approval', label: 'Pending Approval' },
+  { value: 'sample_sent',      label: 'Sample Sent' },
+  { value: 'active',           label: 'Active Partner' },
+  { value: 'inactive',         label: 'Inactive' },
 ]
+
