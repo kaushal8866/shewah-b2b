@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Save, UserCircle } from 'lucide-react'
+import { usePartner } from '@/app/hooks/usePartner'
+import { formatCurrency } from '@/lib/utils'
+import { Save, UserCircle, ShieldCheck } from 'lucide-react'
 
 export default function PartnerProfile() {
-  const [partner, setPartner] = useState<any>(null)
+  const { partner, loading: partnerLoading } = usePartner()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -19,22 +21,19 @@ export default function PartnerProfile() {
   })
 
   useEffect(() => {
-    async function load() {
-      const { data } = await supabase.from('partners').select('*').single()
-      if (data) {
-        setPartner(data)
-        setForm({
-          store_name: data.store_name || '',
-          owner_name: data.owner_name || '',
-          phone: data.phone || '',
-          email: data.email || '',
-          city: data.city || ''
-        })
-      }
+    if (partner) {
+      setForm({
+        store_name: partner.store_name || '',
+        owner_name: partner.owner_name || '',
+        phone: partner.phone || '',
+        email: partner.email || '',
+        city: partner.city || ''
+      })
+      setLoading(false)
+    } else if (!partnerLoading) {
       setLoading(false)
     }
-    load()
-  }, [])
+  }, [partner, partnerLoading])
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
 
@@ -81,12 +80,19 @@ export default function PartnerProfile() {
             </div>
             <div className="space-y-4 text-sm">
               <div className="flex justify-between">
-                <span className="text-secondary">Network Stage:</span>
-                <span className="text-primary font-medium capitalize">{partner?.stage || 'Active'}</span>
+                <span className="text-secondary">Network Tier:</span>
+                <span className="text-primary font-medium">Tier {partner?.tier || 'C'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-secondary">Credit Limit:</span>
+                <span className="text-primary font-medium">{formatCurrency(partner?.credit_limit_paise || 500000)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-secondary">Access Control:</span>
-                <span className="text-primary font-medium">B2B Verified</span>
+                <span className="text-primary font-medium flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#9B7A40]" />
+                  B2B Verified
+                </span>
               </div>
             </div>
           </div>

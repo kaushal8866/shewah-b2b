@@ -3,29 +3,28 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ArrowRight, Package, Clock, ShieldCheck, TrendingUp } from 'lucide-react'
+import { usePartner } from '@/app/hooks/usePartner'
 import Link from 'next/link'
 
 export default function PartnerOverview() {
-  const [partner, setPartner] = useState<any>(null)
+  const { partner, loading: partnerLoading } = usePartner()
   const [activeCads, setActiveCads] = useState<any[]>([])
   const [activeOrders, setActiveOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const { data: p } = await supabase.from('partners').select('*').single()
-      if (p) {
-        setPartner(p)
+      if (partner) {
         const [{ data: cads }, { data: orders }] = await Promise.all([
           supabase.from('cad_requests')
             .select('*')
-            .eq('partner_id', p.id)
+            .eq('partner_id', partner.id)
             .in('status', ['pending', 'in_progress', 'revision_requested'])
             .order('created_at', { ascending: false })
             .limit(3),
-          supabase.from('order_pipeline')
+          supabase.from('orders')
             .select('*')
-            .eq('partner_id', p.id)
+            .eq('partner_id', partner.id)
             .not('status', 'eq', 'delivered')
             .order('order_date', { ascending: false })
             .limit(3)
@@ -35,10 +34,10 @@ export default function PartnerOverview() {
       }
       setLoading(false)
     }
-    load()
-  }, [])
+    if (!partnerLoading) load()
+  }, [partner, partnerLoading])
 
-  if (loading) {
+  if (partnerLoading || loading) {
     return <div className="p-12 text-secondary animate-pulse text-sm">Synchronizing ledger...</div>
   }
 

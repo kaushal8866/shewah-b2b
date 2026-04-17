@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import { supabase, Product } from '@/lib/supabase'
 import { Package, Search } from 'lucide-react'
+import { usePartner } from '@/app/hooks/usePartner'
 import Link from 'next/link'
 
 export default function PartnerCatalog() {
+  const { partner, loading: partnerLoading } = usePartner()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [partnerId, setPartnerId] = useState<string | null>(null)
   const [accessStatus, setAccessStatus] = useState<'granted' | 'requested' | 'denied'>('denied')
   const [accessExpiry, setAccessExpiry] = useState<string | null>(null)
   
@@ -20,17 +21,17 @@ export default function PartnerCatalog() {
   const [advanceRef, setAdvanceRef] = useState('')
   const [orderSaving, setOrderSaving] = useState(false)
 
-  useEffect(() => { loadAccessAndProducts() }, [])
+  useEffect(() => { 
+    if (!partnerLoading) loadAccessAndProducts() 
+  }, [partner, partnerLoading])
 
   async function loadAccessAndProducts() {
+    if (!partner) { setLoading(false); return }
     setLoading(true)
-    const { data: p } = await supabase.from('partners').select('id').single()
-    if (!p) { setLoading(false); return }
-    setPartnerId(p.id)
 
     // Check access
     const { data: requests } = await supabase.from('catalog_access_requests')
-      .select('*').eq('partner_id', p.id).order('created_at', { ascending: false }).limit(1)
+      .select('*').eq('partner_id', partner.id).order('created_at', { ascending: false }).limit(1)
 
     let hasAccess = false
     if (requests && requests.length > 0) {
@@ -52,39 +53,54 @@ export default function PartnerCatalog() {
     setLoading(false)
   }
 
+  function getTierPrice(p: Product) {
+    if (!p.trade_price) return 0
+    let multiplier = 1
+    if (partner?.tier === 'B') multiplier = 1.02
+    if (partner?.tier === 'C') multiplier = 1.05
+    return Math.round(p.trade_price * multiplier)
+  }
+
   async function handleRequestAccess() {
-    if (!partnerId) return
+    if (!partner) return
     setLoading(true)
-    await supabase.from('catalog_access_requests').insert([{ partner_id: partnerId }])
+    await supabase.from('catalog_access_requests').insert([{ partner_id: partner.id }])
     setAccessStatus('requested')
     setLoading(false)
   }
 
   async function handlePlaceOrder(e: React.FormEvent) {
     e.preventDefault()
-    if (!partnerId || !orderingProduct || !advanceRef) return
+    if (!partner || !orderingProduct || !advanceRef) return
     setOrderSaving(true)
 
-    const { count } = await supabase.from('order_pipeline').select('*', { count: 'exact', head: true })
+    const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true })
     const num = `SH-ORD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
+    
+    const pricePaise = getTierPrice(orderingProduct)
 
-    const { error } = await supabase.from('order_pipeline').insert([{
-      partner_id: partnerId,
+    const { error } = await supabase.from('orders').insert([{
+      partner_id: partner.id,
       product_id: orderingProduct.id,
       order_number: num,
       type: 'catalog',
       model: 'wholesale',
-      trade_price: orderingProduct.trade_price || 0,
-      total_amount: orderingProduct.trade_price || 0,
+      trade_price: pricePaise,
+      total_amount: pricePaise,
+      advance_paid: 0,
+      balance_due: pricePaise,
       status: 'brief_received',
+      gov_status: 'auto_approved',
       advance_reference_number: advanceRef,
+      order_date: new Date().toISOString().split('T')[0],
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     }])
 
     setOrderSaving(false)
     if (error) {
       alert('Order failed: ' + error.message)
     } else {
-      alert('Order placed successfully.')
+      alert('Order placed successfully. Rate is locked for 24 hours.')
       setOrderingProduct(null)
       setAdvanceRef('')
     }
@@ -187,7 +203,7 @@ export default function PartnerCatalog() {
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-serif text-primary truncate pr-4">{p.name}</h3>
                   <p className="text-sm font-medium text-primary shrink-0">
-                    {p.trade_price ? `₹${(p.trade_price/1000).toFixed(0)}K` : 'TBD'}
+                    {p.trade_price ? `₹${(getTierPrice(p)/100).toLocaleString('en-IN')}` : 'TBD'}
                   </p>
                 </div>
                 <p className="text-xs text-secondary mb-3">

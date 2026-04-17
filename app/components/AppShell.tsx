@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
+const nav = [
   { href: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard'     },
   { href: '/approvals',       icon: ShieldCheck,     label: 'Approvals', ownerOnly: true },
   { href: '/partners',        icon: Users,           label: 'Partners'      },
