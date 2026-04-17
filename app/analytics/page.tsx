@@ -16,6 +16,8 @@ export default function AnalyticsPage() {
     conversionFunnel: { visited: number; contacted: number; sample: number; active: number }
     modelSplit: { model: string; count: number; revenue: number }[]
     cadStats: { total: number; avgTurnaround: number; approvalRate: number }
+    governance: { approved: number; denied: number; pending: number }
+    circuitROI: { budget: number; revenue: number; circuits: number }
   }>({
     revenueByMonth: [],
     partnersByStage: [],
