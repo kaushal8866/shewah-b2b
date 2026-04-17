@@ -27,6 +27,8 @@ export default function CircuitDetailPage() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<any>({})
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [reps, setReps] = useState<any[]>([])
+  const [loggedUserRole, setLoggedUserRole] = useState<string | null>(null)
 
   // Visit logging
   const [showLogVisit, setShowLogVisit] = useState(false)
@@ -51,7 +53,7 @@ export default function CircuitDetailPage() {
     setCircuit(c)
     setForm(c)
 
-    const [{ data: v }, { data: p }, { data: ap }] = await Promise.all([
+    const [{ data: v }, { data: p }, { data: ap }, { data: rs }, { data: roleData }] = await Promise.all([
       supabase.from('visits')
         .select('*, partners(store_name, city)')
         .eq('circuit', c.name)
@@ -64,10 +66,18 @@ export default function CircuitDetailPage() {
       supabase.from('partners')
         .select('id, store_name, city')
         .order('store_name'),
+      supabase.from('app_users')
+        .select('id, full_name'),
+      supabase.from('user_roles')
+        .select('role')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single()
     ])
     setVisits(v || [])
     setPartners(p || [])
     setAllPartners(ap || [])
+    setReps(rs || [])
+    setLoggedUserRole(roleData?.role || null)
     setLoading(false)
   }
 
@@ -83,6 +93,7 @@ export default function CircuitDetailPage() {
             ? form.cities.split(',').map((s: string) => s.trim()).filter(Boolean)
             : form.cities)
         : [],
+      active_trip_rep_id: form.active_trip_rep_id || null,
       status: form.status,
       start_date: form.start_date || null,
       end_date: form.end_date || null,
@@ -110,7 +121,17 @@ export default function CircuitDetailPage() {
     if (!visitForm.partner_id) { toast('Select a partner', 'error'); return }
     setSavingVisit(true)
 
-    // Insert into visits table
+    let coords = { lat: null, long: null }
+    try {
+      const pos = await new Promise<GeolocationPosition>((res, rej) => 
+        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 })
+      )
+      coords.lat = pos.coords.latitude as any
+      coords.long = pos.coords.longitude as any
+    } catch {
+      console.warn('Geolocation failed or timed out')
+    }
+
     const { error: visitError } = await supabase.from('visits').insert([{
       partner_id: visitForm.partner_id,
       visit_date: visitForm.visit_date,
@@ -122,11 +143,13 @@ export default function CircuitDetailPage() {
       catalog_left: visitForm.catalog_left,
       next_action: visitForm.next_action || null,
       next_action_date: visitForm.next_action_date || null,
+      lat: coords.lat,
+      long: coords.long,
+      is_geotagged: !!coords.lat
     }])
 
     if (visitError) { toast('Error: ' + visitError.message, 'error'); setSavingVisit(false); return }
 
-    // Increment actual_visits on circuit
     await supabase.from('circuits').update({
       actual_visits: (circuit.actual_visits || 0) + 1,
       actual_samples: visitForm.sample_offered ? (circuit.actual_samples || 0) + 1 : circuit.actual_samples,
@@ -139,22 +162,26 @@ export default function CircuitDetailPage() {
       outcome: 'met_owner', notes: '', sample_offered: false, catalog_left: false,
       next_action: '', next_action_date: '',
     })
-    toast('Visit logged!', 'success')
+    toast(coords.lat ? 'Geotagged visit logged!' : 'Visit logged (no GPS)', 'success')
     load()
   }
 
-  async function addExpense() {
+  async function addExpense(category: string) {
     const amount = parseFloat(expenseAmount)
     if (!amount || amount <= 0) { toast('Enter a valid amount', 'error'); return }
 
+    const ledger = circuit.expense_ledger || { petrol: 0, stay: 0, food: 0, other: 0 }
+    ledger[category] = (ledger[category] || 0) + amount
+
     await supabase.from('circuits').update({
       spent_inr: (circuit.spent_inr || 0) + amount,
+      expense_ledger: ledger
     }).eq('id', id)
 
     setShowExpense(false)
     setExpenseAmount('')
     setExpenseNote('')
-    toast(`₹${amount.toLocaleString('en-IN')} expense added`, 'success')
+    toast(`₹${amount.toLocaleString('en-IN')} ${category} added`, 'success')
     load()
   }
 
@@ -189,7 +216,7 @@ export default function CircuitDetailPage() {
             <span className={`status-pill ${getStatusColor(circuit.status)}`}>{circuit.status.replace(/_/g, ' ')}</span>
           </div>
           <p className="text-stone-400 text-sm">
-            {circuit.region} · {partners.length} partners · {visits.length} visits logged
+            {reps.find(r => r.id === circuit.active_trip_rep_id)?.full_name || 'No rep assigned'} · {partners.length} partners · {visits.length} visits
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -326,18 +353,25 @@ export default function CircuitDetailPage() {
           {showExpense && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <h3 className="font-medium text-stone-900 mb-3">Add expense</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2 flex gap-2">
+                  {['petrol', 'stay', 'food', 'other'].map(cat => (
+                    <button key={cat} onClick={() => addExpense(cat)}
+                      className="capitalize flex-1 border border-stone-200 py-2 rounded-lg text-xs hover:border-[#C49C64] hover:text-[#C49C64]">
+                      + {cat}
+                    </button>
+                  ))}
+                </div>
                 <div>
                   <label className={lbl}>Amount (₹)</label>
                   <input type="number" className={inp} value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} placeholder="e.g. 500" />
                 </div>
                 <div>
-                  <label className={lbl}>Note</label>
-                  <input className={inp} value={expenseNote} onChange={e => setExpenseNote(e.target.value)} placeholder="e.g. Hotel, Auto, Food" />
+                  <label className={lbl}>Note (optional)</label>
+                  <input className={inp} value={expenseNote} onChange={e => setExpenseNote(e.target.value)} placeholder="e.g. Fuel for bike" />
                 </div>
               </div>
-              <div className="flex gap-2 mt-3">
-                <button onClick={addExpense} className="bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40]">Save</button>
+              <div className="flex gap-2 mt-4 pt-4 border-t border-stone-100">
                 <button onClick={() => setShowExpense(false)} className="text-stone-500 text-sm px-3">Cancel</button>
               </div>
             </div>
@@ -403,6 +437,7 @@ export default function CircuitDetailPage() {
             <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
               {[
                 ['Circuit name', circuit.name],
+                ['Assigned Rep', reps.find(r => r.id === circuit.active_trip_rep_id)?.full_name || 'Unassigned'],
                 ['Region', circuit.region || '—'],
                 ['Status', circuit.status],
                 ['Cities', Array.isArray(circuit.cities) ? circuit.cities.join(', ') || '—' : circuit.cities || '—'],
@@ -495,6 +530,13 @@ export default function CircuitDetailPage() {
               <div>
                 <label className={lbl}>Circuit name</label>
                 <input className={inp} value={form.name || ''} onChange={e => set('name', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Assigned Sales Rep</label>
+                <select className={inp} value={form.active_trip_rep_id || ''} onChange={e => set('active_trip_rep_id', e.target.value)}>
+                  <option value="">Select Rep...</option>
+                  {reps.map(r => <option key={r.id} value={r.id}>{r.full_name}</option>)}
+                </select>
               </div>
               <div>
                 <label className={lbl}>Region</label>

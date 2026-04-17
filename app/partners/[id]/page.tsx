@@ -30,22 +30,28 @@ export default function PartnerDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showVisitModal, setShowVisitModal] = useState(false)
   const [form, setForm] = useState<Partial<Partner>>({})
+  const [reps, setReps] = useState<any[]>([])
+  const [circuits, setCircuits] = useState<any[]>([])
   const { toast } = useToast()
 
   useEffect(() => { load() }, [id])
 
   async function load() {
     setLoading(true)
-    const [{ data: p }, { data: v }, { data: o }] = await Promise.all([
+    const [{ data: p }, { data: v }, { data: o }, { data: rs }, { data: cs }] = await Promise.all([
       supabase.from('partners').select('*').eq('id', id).single(),
       supabase.from('visits').select('*').eq('partner_id', id).order('visit_date', { ascending: false }),
       supabase.from('orders').select('*').eq('partner_id', id).order('created_at', { ascending: false }),
+      supabase.from('app_users').select('id, full_name'),
+      supabase.from('circuits').select('id, name').order('name'),
     ])
     if (!p) { router.push('/partners'); return }
     setPartner(p)
     setForm(p)
     setVisits(v || [])
     setOrders(o || [])
+    setReps(rs || [])
+    setCircuits(cs || [])
     setLoading(false)
   }
 
@@ -70,6 +76,11 @@ export default function PartnerDetailPage() {
       stage: form.stage,
       source: form.source,
       notes: form.notes,
+      assigned_rep_id: form.assigned_rep_id || null,
+      tier: form.tier || 'B',
+      gstin: form.gstin || null,
+      pan: form.pan || null,
+      credit_limit_paise: form.credit_limit_paise || 500000,
     }).eq('id', id)
     setSaving(false)
     if (error) { toast('Error: ' + error.message, 'error'); return }
@@ -204,12 +215,12 @@ export default function PartnerDetailPage() {
               {[
                 ['Store name', partner.store_name],
                 ['Owner', partner.owner_name],
+                ['Assigned Rep', reps.find(r => r.id === partner.assigned_rep_id)?.full_name || 'Unassigned'],
+                ['Tier', partner.tier || 'B'],
                 ['Phone', partner.phone],
                 ['Email', partner.email || '—'],
-                ['Store type', partner.store_type || '—'],
-                ['Annual revenue', partner.annual_revenue || '—'],
-                ['Model preference', partner.model_preference?.replace(/_/g, ' ') || '—'],
-                ['Source', partner.source?.replace(/_/g, ' ') || '—'],
+                ['GSTIN', partner.gstin || '—'],
+                ['Credit Limit', partner.credit_limit_paise ? `₹${(partner.credit_limit_paise / 100).toLocaleString('en-IN')}` : '₹5,000'],
               ].map(([k, v]) => (
                 <div key={k}>
                   <p className="text-xs text-stone-400">{k}</p>
@@ -316,7 +327,7 @@ export default function PartnerDetailPage() {
                 <label className={lbl}>Circuit</label>
                 <select className={inp} value={form.circuit || ''} onChange={e => set('circuit', e.target.value)}>
                   <option value="">None</option>
-                  {['Gujarat','Maharashtra','MP','Rajasthan'].map(c => <option key={c} value={c}>{c}</option>)}
+                  {circuits.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
               </div>
               <div><label className={lbl}>Address / Market</label><input className={inp} value={form.address || ''} onChange={e => set('address', e.target.value)} /></div>
@@ -337,6 +348,29 @@ export default function PartnerDetailPage() {
                 <select className={inp} value={form.stage || 'prospect'} onChange={e => set('stage', e.target.value)}>
                   {STAGES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className={lbl}>Assigned Sales Rep</label>
+                <select className={inp} value={form.assigned_rep_id || ''} onChange={e => set('assigned_rep_id', e.target.value)}>
+                  <option value="">Select Rep...</option>
+                  {reps.map(r => <option key={r.id} value={r.id}>{r.full_name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>Partner Tier</label>
+                <select className={inp} value={form.tier || 'B'} onChange={e => set('tier', e.target.value)}>
+                  <option value="A">Tier A (Elite)</option>
+                  <option value="B">Tier B (Standard)</option>
+                  <option value="C">Tier C (New/Small)</option>
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>GSTIN</label>
+                <input className={inp} value={form.gstin || ''} onChange={e => set('gstin', e.target.value.toUpperCase())} placeholder="24AAAAAAAAAA1Z5" />
+              </div>
+              <div>
+                <label className={lbl}>Credit Limit (Paise)</label>
+                <input type="number" className={inp} value={form.credit_limit_paise || ''} onChange={e => set('credit_limit_paise', e.target.value)} placeholder="500000" />
               </div>
               <div>
                 <label className={lbl}>Model preference</label>

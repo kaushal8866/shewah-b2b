@@ -5,14 +5,14 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
-  Factory, Store, Menu, X, LogOut
+  Factory, Store, Menu, X, LogOut, ShieldCheck
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
-const nav = [
   { href: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard'     },
+  { href: '/approvals',       icon: ShieldCheck,     label: 'Approvals', ownerOnly: true },
   { href: '/partners',        icon: Users,           label: 'Partners'      },
   { href: '/orders',          icon: ShoppingBag,     label: 'Orders'        },
   { href: '/cad-requests',    icon: Pen,             label: 'CAD Requests'  },
@@ -52,7 +52,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
-  const [userRole, setUserRole] = useState<'admin' | 'partner'>('admin')
+  const [userRole, setUserRole] = useState<'owner' | 'rep' | 'partner' | null>(null)
 
   const isPublicPage = pathname === '/' || pathname === '/login' || pathname.startsWith('/shared-design') || pathname.startsWith('/track') || pathname.startsWith('/auth')
 
@@ -68,9 +68,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       } else {
         supabase.from('user_roles').select('role').eq('user_id', session.user.id).single()
           .then(({ data }) => {
-            if (data?.role === 'partner') {
-              setUserRole('partner')
-            }
+            setUserRole(data?.role as any || 'rep')
             setAuthChecked(true)
           })
       }
@@ -114,7 +112,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-          {(userRole === 'partner' ? partnerNav : nav).map(({ href, icon: Icon, label }) => {
+          {(userRole === 'partner' ? partnerNav : nav).filter(n => !(n as any).ownerOnly || userRole === 'owner').map(({ href, icon: Icon, label }) => {
             const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
             return (
               <Link key={href} href={href}
@@ -153,7 +151,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-            {(userRole === 'partner' ? partnerNav : nav).map(({ href, icon: Icon, label }) => {
+            {(userRole === 'partner' ? partnerNav : nav).filter(n => !(n as any).ownerOnly || userRole === 'owner').map(({ href, icon: Icon, label }) => {
               const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
               return (
                 <Link key={href} href={href}

@@ -155,8 +155,8 @@ export const PIDocument: React.FC<PIDocumentProps> = ({ order, partner, product,
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={styles.col1}>Item Description</Text>
-            <Text style={styles.tableHeader, styles.col2}>Qty</Text>
-            <Text style={styles.tableHeader, styles.col3}>Amount</Text>
+            <Text style={styles.col2}>Qty</Text>
+            <Text style={styles.col3}>Amount</Text>
           </View>
           
           <View style={styles.tableRow}>

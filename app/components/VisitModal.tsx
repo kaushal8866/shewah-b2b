@@ -42,6 +42,18 @@ export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, pa
 
   async function handleSave() {
     setSaving(true)
+
+    let coords = { lat: null, long: null }
+    try {
+      const pos = await new Promise<GeolocationPosition>((res, rej) => 
+        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 3000 })
+      )
+      coords.lat = pos.coords.latitude as any
+      coords.long = pos.coords.longitude as any
+    } catch (e) {
+      console.warn('Geolocation capture failed', e)
+    }
+
     const { error } = await supabase.from('visits').insert([{
       partner_id: partnerId,
       visit_date: new Date().toISOString().split('T')[0],
@@ -53,6 +65,9 @@ export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, pa
       sample_offered: form.sample_offered,
       next_action: form.next_action || null,
       next_action_date: form.next_action_date || null,
+      lat: coords.lat,
+      long: coords.long,
+      is_geotagged: !!coords.lat
     }])
     setSaving(false)
 
@@ -61,7 +76,7 @@ export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, pa
       return
     }
 
-    toast('Visit logged successfully')
+    toast(coords.lat ? 'Geotagged visit logged!' : 'Visit logged (GPS signal weak)')
     setForm({
       outcome: 'interested', notes: '', catalog_left: false,
       sample_offered: false, next_action: '', next_action_date: '',

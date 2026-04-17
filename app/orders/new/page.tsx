@@ -9,7 +9,7 @@ import Link from 'next/link'
 export default function NewOrderPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
-  const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
+  const [partners, setPartners] = useState<any[]>([])
   const [products, setProducts] = useState<{ id: string; code: string; name: string; trade_price: number; delivery_days: number }[]>([])
   const [goldRate, setGoldRate] = useState(0)
 
@@ -18,6 +18,7 @@ export default function NewOrderPage() {
     model: 'wholesale', quantity: '1', ring_size: '',
     special_notes: '', brief_text: '',
     trade_price: '', total_amount: '', advance_paid: '0',
+    discount_pct: '0',
     order_date: new Date().toISOString().split('T')[0],
     expected_delivery: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
     internal_notes: '',
@@ -25,7 +26,7 @@ export default function NewOrderPage() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('partners').select('id, store_name, city').order('store_name'),
+      supabase.from('partners').select('*').order('store_name'),
       supabase.from('products').select('id, code, name, trade_price, delivery_days').eq('is_active', true).order('code'),
       supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
     ]).then(([{ data: p }, { data: pr }, { data: g }]) => {
@@ -58,9 +59,28 @@ export default function NewOrderPage() {
     if (!form.partner_id) { alert('Select a partner'); return }
     if (!form.trade_price || !form.total_amount) { alert('Enter pricing'); return }
 
+    const partner = partners.find(p => p.id === form.partner_id)
+    if (!partner) return
+
     setSaving(true)
     const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true })
     const orderNumber = `SH-ORD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
+
+    const totalAmountPaise = Math.round(parseFloat(form.total_amount) * 100)
+    const discount = parseFloat(form.discount_pct) / 100
+    const creditLimit = partner.credit_limit_paise || 500000 // 5k default
+
+    // Governance Logic (SOP §6.12)
+    let govStatus = 'auto_approved'
+    let govNotes = []
+    if (totalAmountPaise > creditLimit) {
+      govStatus = 'pending_approval'
+      govNotes.push('Exceeds partner credit limit')
+    }
+    if (discount > 0.03) {
+      govStatus = 'pending_approval'
+      govNotes.push('Discount > 3%')
+    }
 
     const payload = {
       order_number: orderNumber,
@@ -72,18 +92,22 @@ export default function NewOrderPage() {
       ring_size: form.ring_size || null,
       special_notes: form.special_notes || null,
       brief_text: form.type === 'custom' ? form.brief_text : null,
-      gold_rate_at_order: goldRate,
-      trade_price: parseFloat(form.trade_price),
-      total_amount: parseFloat(form.total_amount),
-      advance_paid: parseFloat(form.advance_paid) || 0,
-      balance_due: parseFloat(form.total_amount) - (parseFloat(form.advance_paid) || 0),
+      gold_rate_at_order: goldRate, // stored as paise per gram
+      trade_price: Math.round(parseFloat(form.trade_price) * 100),
+      total_amount: totalAmountPaise,
+      advance_paid: Math.round(parseFloat(form.advance_paid) * 100),
+      balance_due: totalAmountPaise - Math.round(parseFloat(form.advance_paid) * 100),
+      discount_pct: discount,
+      gov_status: govStatus,
+      gov_notes: govNotes.join(', '),
       order_date: form.order_date,
       expected_delivery: form.expected_delivery,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h rate lock
       internal_notes: form.internal_notes || null,
       status: 'brief_received',
     }
 
-    const { data, error } = await supabase.from('orders').insert([payload]).select().single()
+    const { error } = await supabase.from('orders').insert([payload])
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }
     router.push('/orders')
@@ -174,7 +198,7 @@ export default function NewOrderPage() {
               Gold rate locked at: ₹{goldRate.toLocaleString('en-IN')}/g (24K)
             </p>
           )}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
               <label className={label}>Trade price (₹) *</label>
               <input type="number" className={input} value={form.trade_price} onChange={e => set('trade_price', e.target.value)} />
@@ -184,7 +208,11 @@ export default function NewOrderPage() {
               <input type="number" className={input} value={form.total_amount} onChange={e => set('total_amount', e.target.value)} />
             </div>
             <div>
-              <label className={label}>Advance paid (₹)</label>
+              <label className={label}>Discount (%)</label>
+              <input type="number" step="0.1" className={input} value={form.discount_pct} onChange={e => set('discount_pct', e.target.value)} />
+            </div>
+            <div>
+              <label className={label}>Advance (₹)</label>
               <input type="number" className={input} value={form.advance_paid} onChange={e => set('advance_paid', e.target.value)} />
             </div>
           </div>

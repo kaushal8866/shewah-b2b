@@ -7,10 +7,13 @@ import { formatDate, formatCurrency, getStatusColor } from '@/lib/utils'
 import {
   ArrowLeft, Save, Edit2, X, Truck, IndianRupee,
   CheckCircle2, Clock, Package, Phone, MessageCircle,
-  ChevronRight, AlertCircle, Copy, Check, Trash2
+  ChevronRight, AlertCircle, Copy, Check, Trash2,
+  AlertTriangle, ShieldCheck
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/app/components/Toast'
+import { PDFDownloadLink } from '@react-pdf/renderer'
+import { PIDocument } from '@/lib/pi-generator'
 
 type OrderDetail = {
   id: string
@@ -37,8 +40,11 @@ type OrderDetail = {
   dispatch_date?: string
   internal_notes?: string
   advance_reference_number?: string
-  partners?: { store_name: string; owner_name: string; phone: string; city: string }
-  products?: { code: string; name: string }
+  gov_status?: string
+  gov_notes?: string
+  expires_at?: string
+  partners?: { id: string; store_name: string; owner_name: string; phone: string; city: string; address?: string; state: string; pincode?: string; gstin?: string }
+  products?: { id: string; code: string; name: string; gold_karat?: number; gold_weight_mg?: number }
 }
 
 type PaymentEntry = {
@@ -83,7 +89,7 @@ export default function OrderDetailPage() {
     setLoading(true)
     const { data } = await supabase
       .from('orders')
-      .select('*, partners(store_name, owner_name, phone, city), products(code, name)')
+      .select('*, partners(*), products(*)')
       .eq('id', id)
       .single()
     if (!data) { router.push('/orders'); return }
@@ -213,6 +219,22 @@ export default function OrderDetailPage() {
                 className="flex items-center gap-1.5 border border-red-200 text-red-500 px-3 py-2 rounded-lg text-sm hover:bg-red-50">
                 <Trash2 className="w-4 h-4" /> <span className="hidden sm:inline">Delete</span>
               </button>
+              {order && order.partners && (
+                <PDFDownloadLink
+                  document={<PIDocument order={order as any} partner={order.partners as any} product={order.products as any} piNumber={order.order_number} />}
+                  fileName={`PI-${order.order_number}.pdf`}
+                >
+                  {({ loading: pdfLoading }) => (
+                    <button
+                      className="flex items-center gap-1.5 bg-stone-900 text-white px-3 py-2 rounded-lg text-sm hover:bg-black transition-colors"
+                      disabled={pdfLoading}
+                    >
+                      <FileText className="w-4 h-4" />
+                      {pdfLoading ? 'Preparing PI...' : 'Generate PI'}
+                    </button>
+                  )}
+                </PDFDownloadLink>
+              )}
             </>
           ) : (
             <>
@@ -228,6 +250,42 @@ export default function OrderDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Governance Banner */}
+      {order.gov_status && order.gov_status !== 'auto_approved' && (
+        <div className={`mb-5 p-4 rounded-xl border flex items-start gap-3 ${
+          order.gov_status === 'pending_approval' ? 'bg-amber-50 border-amber-200 text-amber-800' :
+          order.gov_status === 'approved' ? 'bg-green-50 border-green-200 text-green-800' :
+          'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          {order.gov_status === 'approved' ? <ShieldCheck className="w-5 h-5 shrink-0" /> : <AlertTriangle className="w-5 h-5 shrink-0" />}
+          <div>
+            <p className="text-sm font-semibold capitalize">
+              Governance: {order.gov_status.replace(/_/g, ' ')}
+            </p>
+            {order.gov_notes && <p className="text-xs mt-0.5 opacity-80">{order.gov_notes}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Rate Lock Banner */}
+      {order.advance_paid === 0 && order.expires_at && (
+        <div className={`mb-5 p-4 rounded-xl border flex items-start gap-3 ${
+          new Date(order.expires_at) > new Date() ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <Clock className="w-5 h-5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold">
+              {new Date(order.expires_at) > new Date() ? 'Gold Rate Locked' : 'Rate Lock Expired'}
+            </p>
+            <p className="text-xs mt-0.5 opacity-80">
+              {new Date(order.expires_at) > new Date() 
+                ? `Pricing is valid until ${formatDate(order.expires_at)} ${new Date(order.expires_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}. Confirm advance to finalize.`
+                : 'The 24-hour window for this rate has closed. Production will require a rate refresh.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
