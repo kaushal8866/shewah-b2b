@@ -50,7 +50,7 @@ function NewMfgOrderForm() {
       setPartners(p || [])
       setCustomerOrders(co || [])
       const rateMap: Record<number, number> = {}
-      lr?.forEach(r => { rateMap[r.karat] = r.rate_per_gram })
+      lr?.forEach((r: any) => { rateMap[r.karat] = r.rate_per_gram })
       setLabourRates(rateMap)
     })
   }, [])

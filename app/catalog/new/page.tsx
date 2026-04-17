@@ -76,7 +76,7 @@ export default function NewProductPage() {
   const labourRate = labourRates[parseInt(form.gold_karat)] || 0
   const effectiveWeight = Math.max(goldWeightG, 1)
   const labourCost = Math.round(labourRate * effectiveWeight)
-  const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1), 0)
+  const totalDiamondCost = diamonds.reduce((sum: number, d: DiamondRow) => sum + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1), 0)
   const makingCharges = parseFloat(form.making_charges) || 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
   const cogs = goldCost + totalDiamondCost + makingCharges + igiCost + labourCost
@@ -102,9 +102,9 @@ export default function NewProductPage() {
   }
 
   function addDiamondRow() { setDiamonds(prev => [...prev, newDiamondRow()]) }
-  function removeDiamondRow(id: string) { if (diamonds.length > 1) setDiamonds(prev => prev.filter(d => d.id !== id)) }
+  function removeDiamondRow(id: string) { if (diamonds.length > 1) setDiamonds(prev => prev.filter((d: DiamondRow) => d.id !== id)) }
   function updateDiamond(id: string, key: keyof DiamondRow, val: string) {
-    setDiamonds(prev => prev.map(d => d.id === id ? { ...d, [key]: val } : d))
+    setDiamonds(prev => prev.map((d: DiamondRow) => d.id === id ? { ...d, [key]: val } : d))
   }
 
   function autoCalculate() {
@@ -116,7 +116,7 @@ export default function NewProductPage() {
 
   function toggleModel(model: string) {
     const current = form.models_available
-    set('models_available', current.includes(model) ? current.filter(m => m !== model) : [...current, model])
+    set('models_available', current.includes(model) ? current.filter((m: string) => m !== model) : [...current, model])
   }
 
   async function handleSave() {
@@ -134,7 +134,7 @@ export default function NewProductPage() {
       diamond_weight: parseFloat(primary.weight) || null, diamond_shape: primary.shape,
       diamond_quality: primary.quality, diamond_color: primary.color,
       diamond_type: primary.type, diamond_cost: parseFloat(primary.cost) || null,
-      diamond_specs: diamonds.map(d => ({
+      diamond_specs: diamonds.map((d: DiamondRow) => ({
         role: d.role, shape: d.shape, weight: parseFloat(d.weight) || 0,
         quality: d.quality, color: d.color, type: d.type,
         pieces: parseInt(d.pieces) || 1, cost: parseFloat(d.cost) || 0,
@@ -187,11 +187,11 @@ export default function NewProductPage() {
           <h2 className="font-medium text-stone-900 mb-1">Product photos</h2>
           <p className="text-xs text-stone-400 mb-4">Upload multiple angles. First photo is the cover shown in catalog and jeweler portal.</p>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
-            {photoUrls.map((url, i) => (
+            {photoUrls.map((url: string, i: number) => (
               <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 group">
                 <img src={url} alt="" className="w-full h-full object-cover" />
                 {i === 0 && <div className="absolute bottom-1 left-1 bg-[#C49C64] text-white text-xs px-1.5 py-0.5 rounded-md">Cover</div>}
-                <button onClick={() => setPhotoUrls(prev => prev.filter((_, idx) => idx !== i))}
+                <button onClick={() => setPhotoUrls(prev => prev.filter((_: string, idx: number) => idx !== i))}
                   className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <X className="w-3 h-3" />
                 </button>
@@ -222,7 +222,7 @@ export default function NewProductPage() {
           <p className="text-xs text-stone-400 mb-4">Add one row per diamond type — center stone, side stones, accents, etc.</p>
 
           <div className="space-y-3">
-            {diamonds.map((d, idx) => (
+            {diamonds.map((d: DiamondRow, idx: number) => (
               <div key={d.id} className="border border-stone-100 rounded-xl p-3 bg-stone-50">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-medium text-stone-500">{idx === 0 ? 'Primary diamond' : `Diamond ${idx + 1}`}</span>
@@ -236,13 +236,13 @@ export default function NewProductPage() {
                   <div>
                     <label className={lbl}>Role</label>
                     <select className={inp} value={d.role} onChange={e => updateDiamond(d.id, 'role', e.target.value)}>
-                      {ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                      {ROLES.map((r: string) => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className={lbl}>Shape</label>
                     <select className={inp} value={d.shape} onChange={e => updateDiamond(d.id, 'shape', e.target.value)}>
-                      {SHAPES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                      {SHAPES.map((s: string) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                     </select>
                   </div>
                   <div>
@@ -256,13 +256,13 @@ export default function NewProductPage() {
                   <div>
                     <label className={lbl}>Quality</label>
                     <select className={inp} value={d.quality} onChange={e => updateDiamond(d.id, 'quality', e.target.value)}>
-                      {QUALITIES.map(q => <option key={q} value={q}>{q}</option>)}
+                      {QUALITIES.map((q: string) => <option key={q} value={q}>{q}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className={lbl}>Color</label>
                     <select className={inp} value={d.color} onChange={e => updateDiamond(d.id, 'color', e.target.value)}>
-                      {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+                      {COLORS.map((c: string) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
@@ -300,7 +300,7 @@ export default function NewProductPage() {
             <div>
               <label className={lbl}>Gold karat</label>
               <select className={inp} value={form.gold_karat} onChange={e => set('gold_karat', e.target.value)}>
-                {KARATS.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}
+                {KARATS.map((k: any) => <option key={k.value} value={k.value}>{k.label}</option>)}
               </select>
             </div>
             <div>
@@ -379,7 +379,7 @@ export default function NewProductPage() {
                   { label: 'Diamonds (all rows)', value: totalDiamondCost },
                   { label: 'Making charges', value: makingCharges },
                   { label: 'IGI certification', value: igiCost },
-                ].map(row => (
+                ].map((row: any) => (
                   <div key={row.label} className="flex justify-between text-sm">
                     <span className="text-stone-500">{row.label}</span>
                     <span className="text-stone-700">₹{row.value.toLocaleString('en-IN')}</span>
@@ -444,7 +444,7 @@ export default function NewProductPage() {
               { id: 'wholesale', label: 'Wholesale catalog' },
               { id: 'design_make', label: 'Design + Make' },
               { id: 'white_label', label: 'White Label OEM' },
-            ].map(m => (
+            ].map((m: any) => (
               <button key={m.id} onClick={() => toggleModel(m.id)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
                   form.models_available.includes(m.id)

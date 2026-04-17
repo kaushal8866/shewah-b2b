@@ -42,7 +42,7 @@ export default function NewManufacturingPartnerPage() {
       email: form.email || null,
       city: form.city,
       address: form.address || null,
-      speciality: form.speciality ? form.speciality.split(',').map(s => s.trim()).filter(Boolean) : null,
+      speciality: form.speciality ? form.speciality.split(',').map((s: string) => s.trim()).filter(Boolean) : null,
       material_policy: form.material_policy,
       labour_rate_14k: parseFloat(form.labour_rate_14k) || null,
       labour_rate_18k: parseFloat(form.labour_rate_18k) || null,
