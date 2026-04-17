@@ -49,6 +49,8 @@ const partnerBottomNav = [
   { href: '/portal/bespoke',  icon: Pen,             short: 'Bespoke'  },
 ]
 
+import { automateBootstrap } from '@/lib/actions/bootstrap'
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -68,13 +70,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         window.location.href = '/login'
       } else {
         supabase.from('user_roles').select('role').eq('user_id', session.user.id).single()
-          .then(({ data }) => {
-            setUserRole(data?.role as any || 'rep')
-            setAuthChecked(true)
+          .then(async ({ data }) => {
+            if (data?.role) {
+              setUserRole(data.role as any)
+              setAuthChecked(true)
+            } else {
+              // System may be uninitialized or user has no role
+              const res = await automateBootstrap()
+              if (res.success) {
+                // If promoted, reload to get fresh session/role state
+                window.location.reload()
+              } else {
+                // Fallback for non-first users with no role
+                setUserRole('rep') 
+                setAuthChecked(true)
+              }
+            }
           })
       }
     })
   }, [pathname, isPublicPage])
+
 
   if (isPublicPage) return <>{children}</>
 
