@@ -1,21 +1,28 @@
-import { createClient } from '@supabase/supabase-js'
+/**
+ * Browser-side Supabase client.
+ * Importable in Client Components only.
+ * For Server Components / Server Actions use @/lib/supabase-server instead.
+ */
+import { createBrowserClient } from '@supabase/ssr'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  console.warn(
-    '[Shewah] Missing Supabase credentials. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local'
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    '[Shewah] NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. ' +
+    'Copy .env.local.example → .env.local and fill in values.'
   )
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
 
 // ── Type definitions ──────────────────────────────────────
 
 export type Partner = {
   id: string
   created_at: string
+  updated_at?: string
   store_name: string
   owner_name: string
   phone: string
@@ -34,6 +41,18 @@ export type Partner = {
   source?: string
   notes?: string
   tags?: string[]
+  // Phase 0 additions
+  tier?: 'A' | 'B' | 'C'
+  credit_limit_paise?: number    // integer paise
+  credit_approval_required?: boolean
+  assigned_rep_id?: string
+  user_id?: string
+  gstin?: string
+  pan?: string
+  pincode?: string
+  deleted_at?: string
+  created_by?: string
+  updated_by?: string
 }
 
 export type Visit = {
@@ -57,23 +76,24 @@ export type Product = {
   name: string
   description?: string
   category: string
-  diamond_weight?: number
+  diamond_weight?: number      // carats (stays as decimal — not affected by paise/mg rule)
   diamond_shape?: string
   diamond_quality?: string
   diamond_color?: string
   diamond_type: string
   gold_karat?: number
-  gold_weight_g?: number
-  diamond_cost?: number
-  making_charges?: number
-  igi_cert_cost?: number
-  trade_price?: number
-  mrp_suggested?: number
+  gold_weight_mg?: number      // integer milligrams (renamed from gold_weight_g)
+  diamond_cost?: number        // integer paise
+  making_charges?: number      // integer paise
+  igi_cert_cost?: number       // integer paise
+  trade_price?: number         // integer paise
+  mrp_suggested?: number       // integer paise
   photo_urls?: string[]
   is_active: boolean
   delivery_days?: number
   models_available?: string[]
   tags?: string[]
+  deleted_at?: string
 }
 
 export type Order = {
@@ -89,12 +109,15 @@ export type Order = {
   brief_text?: string
   brief_images?: string[]
   cad_request_id?: string
-  gold_rate_at_order?: number
-  trade_price: number
-  total_amount: number
-  advance_paid: number
-  balance_due?: number
+  gold_rate_at_order?: number   // paise per gram at time of order
+  trade_price: number           // integer paise
+  total_amount: number          // integer paise
+  advance_paid: number          // integer paise
+  balance_due?: number          // integer paise
   status: string
+  gov_status?: 'auto_approved' | 'pending_approval' | 'owner_approved' | 'denied'
+  gov_notes?: string
+  discount_pct?: number
   order_date: string
   expected_delivery?: string
   actual_delivery?: string
@@ -102,6 +125,9 @@ export type Order = {
   courier?: string
   dispatch_date?: string
   internal_notes?: string
+  deleted_at?: string
+  created_by?: string
+  updated_by?: string
 }
 
 export type CADRequest = {
@@ -131,12 +157,14 @@ export type CADRequest = {
 export type GoldRate = {
   id: string
   recorded_at: string
-  source: string
-  rate_24k: number
-  rate_22k?: number
-  rate_18k?: number
-  rate_14k?: number
+  source: 'manual' | 'ibja' | 'api'
+  rate_24k: number   // integer paise per gram
+  rate_22k?: number  // integer paise per gram
+  rate_18k?: number  // integer paise per gram
+  rate_14k?: number  // integer paise per gram
   notes?: string
+  deleted_at?: string
+  created_by?: string
 }
 
 export type Circuit = {
@@ -260,6 +288,11 @@ export function calculateGoldRates(rate24k: number) {
   }
 }
 
+/**
+ * @deprecated Use calculateDetailedPrice() from lib/pricing.ts instead.
+ * This function is retained for backward compatibility only.
+ * It does NOT match the SOP §6.8 formula (missing wastage, wrong margin model, no GST).
+ */
 export function calculateTradePrice(
   diamondCost: number,
   goldKarat: number,
@@ -268,7 +301,7 @@ export function calculateTradePrice(
   makingCharges: number,
   igiCost: number,
   marginMultiplier = 1.28
-) {
+): number {
   const goldCost = goldWeightG * goldRatePerGram * (KARAT_PURITY[goldKarat] || 0.75)
   const cogs = diamondCost + goldCost + makingCharges + igiCost
   return Math.round(cogs * marginMultiplier)
