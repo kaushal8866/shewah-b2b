@@ -5,17 +5,24 @@
  */
 import { createBrowserClient } from '@supabase/ssr'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error(
-    '[Shewah] NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. ' +
-    'Copy .env.local.example → .env.local and fill in values.'
-  )
+  if (process.env.NODE_ENV === 'production') {
+    console.warn(
+      '[Shewah] NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. ' +
+      'Ensure these are configured in your production environment variables.'
+    )
+  }
 }
 
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+// Initialize safely. If keys are missing (e.g. during build), this will be null-ish or handled by the SDK.
+// We use a dummy URL for build-time safety if necessary, but returning a conditional client is cleaner.
+export const supabase = (supabaseUrl && supabaseAnonKey) 
+  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+  : null as any
+
 
 // ── Type definitions ──────────────────────────────────────
 
