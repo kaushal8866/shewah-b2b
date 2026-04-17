@@ -161,15 +161,20 @@ export default function ManufacturingPage() {
                   {/* Material float cards */}
                   {pFloats.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-stone-100">
-                      {pFloats.map(f => (
-                        <div key={f.material_type} className={`rounded-lg p-2.5 ${f.balance < 1 ? 'bg-amber-50 border border-amber-200' : 'bg-stone-50'}`}>
-                          <p className="text-xs text-stone-400 capitalize">{f.material_type.replace(/_/g, ' ')}</p>
-                          <p className={`text-base font-semibold mt-0.5 ${f.balance < 1 ? 'text-amber-700' : 'text-stone-800'}`}>
-                            {f.balance?.toFixed(2)}g
-                          </p>
-                          <p className="text-xs text-stone-400">of {f.total_deposited}g</p>
-                        </div>
-                      ))}
+                      {pFloats.map(f => {
+                        const isGold = f.material_type?.startsWith('gold')
+                        const displayValue = isGold ? (f.balance / 1000).toFixed(3) : (f.balance / 100).toFixed(2)
+                        const unit = isGold ? 'g' : 'ct'
+                        return (
+                          <div key={f.material_type} className={`rounded-lg p-2.5 ${f.balance < 1 ? 'bg-amber-50 border border-amber-200' : 'bg-stone-50'}`}>
+                            <p className="text-xs text-stone-400 capitalize">{f.material_type.replace(/_/g, ' ')}</p>
+                            <p className={`text-base font-semibold mt-0.5 ${f.balance < 1 ? 'text-amber-700' : 'text-stone-800'}`}>
+                              {displayValue}{unit}
+                            </p>
+                            <p className="text-xs text-stone-400">Total: {isGold ? (f.total_deposited/1000).toFixed(1) : (f.total_deposited/100).toFixed(1)}{unit}</p>
+                          </div>
+                        )
+                      })}
                       <Link href={`/manufacturing/partners/${p.id}/float`}
                         className="rounded-lg border border-dashed border-stone-200 p-2.5 flex items-center justify-center text-xs text-stone-400 hover:border-[#C49C64] hover:text-[#C49C64] transition-colors">
                         <Plus className="w-3.5 h-3.5 mr-1" /> Deposit / Withdraw

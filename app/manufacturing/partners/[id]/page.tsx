@@ -15,6 +15,7 @@ export default function ManufacturingPartnerDetailPage() {
   const [partner, setPartner] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [floats, setFloats] = useState<any[]>([])
+  const [ledger, setLedger] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -25,16 +26,18 @@ export default function ManufacturingPartnerDetailPage() {
 
   async function load() {
     setLoading(true)
-    const [{ data: p }, { data: o }, { data: f }] = await Promise.all([
+    const [{ data: p }, { data: o }, { data: f }, { data: l }] = await Promise.all([
       supabase.from('manufacturing_partners').select('*').eq('id', id).single(),
       supabase.from('manufacturing_orders').select('*').eq('manufacturing_partner_id', id).order('created_at', { ascending: false }).limit(10),
       supabase.from('material_float').select('*').eq('manufacturing_partner_id', id),
+      supabase.from('material_ledger').select('*').eq('partner_id', id).order('created_at', { ascending: false }).limit(10),
     ])
     if (!p) { router.push('/manufacturing'); return }
     setPartner(p)
     setForm(p)
     setOrders(o || [])
     setFloats(f || [])
+    setLedger(l || [])
     setLoading(false)
   }
 
@@ -215,17 +218,50 @@ export default function ManufacturingPartnerDetailPage() {
                 <Link href={`/manufacturing/partners/${id}/float`} className="text-xs text-[#C49C64] hover:underline">Manage</Link>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {floats.map(f => (
-                  <div key={f.id} className={`rounded-xl border p-3 ${f.balance < 1 ? 'border-amber-300 bg-amber-50' : 'border-stone-200 bg-stone-50'}`}>
-                    <p className="text-xs text-stone-400 mb-1">{f.material_type?.replace(/_/g, ' ')}</p>
-                    <p className={`text-lg font-semibold ${f.balance < 1 ? 'text-amber-600' : 'text-stone-900'}`}>
-                      {f.balance?.toFixed(3)}{f.unit === 'carats' ? 'ct' : 'g'}
-                    </p>
-                  </div>
-                ))}
+                {floats.map(f => {
+                  const isGold = f.material_type?.startsWith('gold')
+                  const displayValue = isGold ? (f.balance / 1000).toFixed(3) : (f.balance / 100).toFixed(2)
+                  const unit = isGold ? 'g' : 'ct'
+                  return (
+                    <div key={f.id} className={`rounded-xl border p-3 ${f.balance < 1 ? 'border-amber-300 bg-amber-50' : 'border-stone-200 bg-stone-50'}`}>
+                      <p className="text-xs text-stone-400 mb-1 capitalize">{f.material_type?.replace(/_/g, ' ')}</p>
+                      <p className={`text-lg font-semibold ${f.balance < 1 ? 'text-amber-600' : 'text-stone-900'}`}>
+                        {displayValue}{unit}
+                      </p>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
+          {ledger.length > 0 && (
+            <div className="bg-white rounded-xl border border-stone-200 p-5">
+              <h2 className="font-medium text-stone-900 mb-4">Recent Material Transactions</h2>
+              <div className="space-y-3">
+                {ledger.map(entry => {
+                  const isGold = entry.material_type?.startsWith('gold')
+                  const amount = Math.abs(entry.amount)
+                  const displayValue = isGold ? (amount / 1000).toFixed(3) : (amount / 100).toFixed(2)
+                  const unit = isGold ? 'g' : 'ct'
+                  
+                  return (
+                    <div key={entry.id} className="flex items-center justify-between text-sm py-1 border-b border-stone-50 last:border-0">
+                      <div>
+                        <p className="font-medium text-stone-800 capitalize">
+                          {entry.transaction_type} ({entry.material_type?.replace(/_/g, ' ')})
+                        </p>
+                        <p className="text-xs text-stone-400">{formatDate(entry.created_at)}</p>
+                      </div>
+                      <p className={`font-mono font-semibold ${entry.amount > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                        {entry.amount > 0 ? '+' : '-'}{displayValue}{unit}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
 
           {orders.length > 0 && (
             <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">

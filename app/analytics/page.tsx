@@ -16,6 +16,8 @@ export default function AnalyticsPage() {
     conversionFunnel: { visited: number; contacted: number; sample: number; active: number }
     modelSplit: { model: string; count: number; revenue: number }[]
     cadStats: { total: number; avgTurnaround: number; approvalRate: number }
+    revenueByCity: { city: string; revenue: number }[]
+    karigarFloat: { name: string; gold_mg: number; diamond_cents: number }[]
   }>({
     revenueByMonth: [],
     partnersByStage: [],
@@ -25,6 +27,8 @@ export default function AnalyticsPage() {
     conversionFunnel: { visited: 0, contacted: 0, sample: 0, active: 0 },
     modelSplit: [],
     cadStats: { total: 0, avgTurnaround: 0, approvalRate: 0 },
+    revenueByCity: [],
+    karigarFloat: [],
   })
 
   useEffect(() => { loadAnalytics() }, [])
@@ -36,15 +40,18 @@ export default function AnalyticsPage() {
         { data: orders },
         { data: partners },
         { data: cadReqs },
+        { data: floatData },
       ] = await Promise.all([
         supabase.from('order_pipeline').select('*'),
         supabase.from('partners').select('*'),
         supabase.from('cad_requests').select('*'),
+        supabase.from('material_float').select('*, manufacturing_partners(name)'),
       ])
 
       const allOrders = orders || []
       const allPartners = partners || []
       const allCAD = cadReqs || []
+      const allFloat = floatData || []
 
       // Revenue by month (last 6 months)
       const monthMap: Record<string, { revenue: number; orders: number }> = {}
@@ -123,7 +130,31 @@ export default function AnalyticsPage() {
         approvalRate: allCAD.length ? Math.round((approved / allCAD.length) * 100) : 0,
       }
 
-      setData({ revenueByMonth, partnersByStage, partnersByCircuit, ordersByStatus, topPartners, conversionFunnel, modelSplit, cadStats })
+      // Revenue by City
+      const cityRevMap: Record<string, number> = {}
+      allOrders.forEach(o => {
+        const city = o.partner_city || 'Unknown'
+        cityRevMap[city] = (cityRevMap[city] || 0) + (o.total_amount || 0)
+      })
+      const revenueByCity = Object.entries(cityRevMap)
+        .map(([city, revenue]) => ({ city, revenue }))
+        .sort((a, b) => b.revenue - a.revenue)
+
+      // Karigar Float summary
+      const floatMap: Record<string, { name: string; gold_mg: number; diamond_cents: number }> = {}
+      allFloat.forEach((f: any) => {
+        const name = f.manufacturing_partners?.name || 'Unknown'
+        if (!floatMap[name]) floatMap[name] = { name, gold_mg: 0, diamond_cents: 0 }
+        if (f.material_type?.startsWith('gold')) floatMap[name].gold_mg += (f.balance || 0)
+        if (f.material_type?.startsWith('diamond')) floatMap[name].diamond_cents += (f.balance || 0)
+      })
+      const karigarFloat = Object.values(floatMap)
+
+      setData({ 
+        revenueByMonth, partnersByStage, partnersByCircuit, 
+        ordersByStatus, topPartners, conversionFunnel, 
+        modelSplit, cadStats, revenueByCity, karigarFloat 
+      })
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }
@@ -287,6 +318,62 @@ export default function AnalyticsPage() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* Revenue by City */}
+        <div className="bg-white rounded-xl border border-stone-200 p-5">
+          <h2 className="font-medium text-stone-900 mb-4 flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-[#C49C64]" /> Revenue by City
+          </h2>
+          <div className="space-y-4">
+            {data.revenueByCity.map(c => (
+              <div key={c.city}>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-stone-600 font-medium">{c.city}</span>
+                  <span className="text-stone-900">{formatCurrency(c.revenue)}</span>
+                </div>
+                <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#C49C64] rounded-full transition-all"
+                    style={{ width: `${(c.revenue / Math.max(...data.revenueByCity.map(x => x.revenue))) * 100}%` }} />
+                </div>
+              </div>
+            ))}
+            {data.revenueByCity.length === 0 && <p className="text-xs text-stone-400">No city data available</p>}
+          </div>
+        </div>
+
+        {/* Karigar Material Float */}
+        <div className="bg-white rounded-xl border border-stone-200 p-5">
+          <h2 className="font-medium text-stone-900 mb-4 flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4 text-[#C49C64]" /> Outstanding Material Float
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-stone-400 border-b border-stone-100">
+                  <th className="pb-2 font-medium">Karigar</th>
+                  <th className="pb-2 font-medium text-right">Gold (mg)</th>
+                  <th className="pb-2 font-medium text-right">Diam. (cts)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-50 text-stone-700">
+                {data.karigarFloat.map(f => (
+                  <tr key={f.name}>
+                    <td className="py-2.5">{f.name}</td>
+                    <td className="py-2.5 text-right font-mono">{f.gold_mg} mg</td>
+                    <td className="py-2.5 text-right font-mono">{(f.diamond_cents / 100).toFixed(2)} cts</td>
+                  </tr>
+                ))}
+                {data.karigarFloat.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="py-4 text-center text-stone-400 text-xs text-italic">No outstanding material float</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

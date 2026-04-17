@@ -335,3 +335,16 @@ export const PARTNER_STAGES = [
   { value: 'inactive',         label: 'Inactive' },
 ]
 
+export type MaterialLedger = {
+  id: string
+  created_at: string
+  partner_id: string
+  material_type: string
+  amount: number // BigInt in DB
+  transaction_type: 'issue' | 'return' | 'loss' | 'adjustment'
+  reference_id?: string
+  notes?: string
+  created_by?: string
+}
+
+
