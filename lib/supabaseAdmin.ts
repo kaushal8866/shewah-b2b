@@ -9,19 +9,16 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-if (!supabaseUrl) {
-  throw new Error('[supabaseAdmin] NEXT_PUBLIC_SUPABASE_URL is not set')
-}
-if (!supabaseServiceKey) {
-  throw new Error(
-    '[supabaseAdmin] SUPABASE_SERVICE_ROLE_KEY is not set. ' +
-    'Add it to .env.local (never prefix with NEXT_PUBLIC_).'
-  )
+export const supabaseAdmin = (supabaseUrl && supabaseServiceKey) 
+  ? createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
+  : null as any
+
+if (!supabaseAdmin && typeof window === 'undefined') {
+  console.warn('[supabaseAdmin] Skipping initialization — keys missing or build-time environment.')
 }
 
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-})

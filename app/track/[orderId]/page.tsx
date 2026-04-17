@@ -25,11 +25,20 @@ function formatDate(d: string | null | undefined) {
 }
 
 export default async function TrackOrderPage({ params }: { params: { orderId: string } }) {
+  if (!supabaseAdmin) {
+    return (
+      <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4 text-stone-500">
+        Tracking service temporarily unavailable.
+      </div>
+    )
+  }
+
   const { data: order, error } = await supabaseAdmin
     .from('orders')
     .select('id, order_number, status, order_date, expected_delivery, actual_delivery, dispatch_date, courier, tracking_number, updated_at, partners(store_name, city), products(code, name)')
     .eq('id', params.orderId)
     .single()
+
 
   if (error || !order) {
     return (
