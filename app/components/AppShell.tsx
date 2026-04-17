@@ -65,7 +65,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       return
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       if (!session) {
         window.location.href = '/login'
       } else {
