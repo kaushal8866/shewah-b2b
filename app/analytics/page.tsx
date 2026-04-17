@@ -151,7 +151,7 @@ export default function AnalyticsPage() {
     finally { setLoading(false) }
   }
 
-  const maxRevenue = Math.max(...data.revenueByMonth.map(m => m.revenue), 1)
+  const maxRevenue = Math.max(...data.revenueByMonth.map((m: any) => m.revenue), 1)
 
   const stageColors: Record<string, string> = {
     prospect: 'bg-gray-200', contacted: 'bg-blue-300',
@@ -162,8 +162,9 @@ export default function AnalyticsPage() {
     <div className="p-7 text-center text-stone-400 pt-20">Loading analytics...</div>
   )
 
-  const totalRevenue = data.revenueByMonth.reduce((s, m) => s + m.revenue, 0)
-  const totalOrders = data.revenueByMonth.reduce((s, m) => s + m.orders, 0)
+  const totalRevenue = data.revenueByMonth.reduce((s: number, m: any) => s + m.revenue, 0)
+  const totalOrders = data.revenueByMonth.reduce((s: number, m: any) => s + m.orders, 0)
+
 
   return (
     <div className="p-4 lg:p-7">

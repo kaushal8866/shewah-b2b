@@ -31,7 +31,7 @@ export default function VendorsPage() {
     setLoading(false)
   }
 
-  const filteredVendors = vendors.filter(v => {
+  const filteredVendors = vendors.filter((v: Vendor) => {
     const matchSearch = !search ||
       v.name.toLowerCase().includes(search.toLowerCase()) ||
       v.city?.toLowerCase().includes(search.toLowerCase())
@@ -39,16 +39,17 @@ export default function VendorsPage() {
     return matchSearch && matchCat
   })
 
-  const lowStockItems = inventory.filter(i =>
+  const lowStockItems = inventory.filter((i: any) =>
     i.low_stock_alert && i.quantity_in_stock <= i.low_stock_alert
   )
 
-  const totalStockValue = inventory.reduce((s, i) =>
+  const totalStockValue = inventory.reduce((s: number, i: any) =>
     s + (i.quantity_in_stock * (i.avg_purchase_price || 0)), 0
   )
 
-  const goldStock = inventory.filter(i => i.category === 'gold')
-  const diamondStock = inventory.filter(i => i.category?.includes('diamond'))
+  const goldStock = inventory.filter((i: any) => i.category === 'gold')
+  const diamondStock = inventory.filter((i: any) => i.category?.includes('diamond'))
+
 
   return (
     <div className="p-4 lg:p-7">
@@ -247,7 +248,8 @@ export default function VendorsPage() {
           ) : (
             <>
               {['gold', 'diamond_lgd', 'diamond_natural', 'packaging', 'finding', 'other'].map(cat => {
-                const items = inventory.filter(i => i.category === cat)
+                const items = inventory.filter((i: any) => i.category === cat)
+
                 if (items.length === 0) return null
                 return (
                   <div key={cat} className="bg-white rounded-xl border border-stone-200 overflow-hidden">

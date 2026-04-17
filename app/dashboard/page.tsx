@@ -62,9 +62,10 @@ export default function Dashboard() {
         ])
 
         const allOrders = orders || []
-        const pending = allOrders.filter(o => !['delivered'].includes(o.status))
-        const totalRevenue = allOrders.filter(o => o.status === 'delivered').reduce((s, o) => s + (o.total_amount || 0), 0)
-        const pendingRevenue = pending.reduce((s, o) => s + ((o.total_amount || 0) - (o.advance_paid || 0)), 0)
+        const pending = allOrders.filter((o: any) => !['delivered'].includes(o.status))
+        const totalRevenue = allOrders.filter((o: any) => o.status === 'delivered').reduce((s: number, o: any) => s + (o.total_amount || 0), 0)
+        const pendingRevenue = pending.reduce((s: number, o: any) => s + ((o.total_amount || 0) - (o.advance_paid || 0)), 0)
+
 
         setStats({
           totalPartners: totalPartners || 0,
@@ -159,7 +160,7 @@ export default function Dashboard() {
           <div className="py-6 border-b ghost-border overflow-x-auto hide-scrollbar">
             <div className="flex gap-2 min-w-[600px] md:min-w-0 px-2 lg:px-0">
               {pipelineStages.map((stage) => {
-                const count = recentOrders.filter(o => o.status === stage.status).length
+                const count = recentOrders.filter((o: any) => o.status === stage.status).length
                 return (
                   <div key={stage.status} className="flex-1 text-center">
                     <div className={`py-4 text-sm font-medium ${count > 0 ? 'bg-primary text-surface-lowest' : 'bg-surface-highest text-secondary'}`}>

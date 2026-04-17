@@ -45,7 +45,7 @@ export default function OrdersPage() {
     setLoading(false)
   }
 
-  const filtered = orders.filter(o => {
+  const filtered = orders.filter((o: OrderRow) => {
     const matchSearch = !search ||
       o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
       o.partner_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -56,10 +56,11 @@ export default function OrdersPage() {
 
   const stats = {
     total: orders.length,
-    open: orders.filter(o => o.status !== 'delivered').length,
-    pending_payment: orders.filter(o => (o.balance_due || 0) > 0).length,
-    total_revenue: orders.filter(o => o.status === 'delivered').reduce((s, o) => s + o.total_amount, 0),
+    open: orders.filter((o: OrderRow) => o.status !== 'delivered').length,
+    pending_payment: orders.filter((o: OrderRow) => (o.balance_due || 0) > 0).length,
+    total_revenue: orders.filter((o: OrderRow) => o.status === 'delivered').reduce((s: number, o: OrderRow) => s + o.total_amount, 0),
   }
+
 
   const getDaysLeft = (date: string) => {
     if (!date) return null
@@ -100,8 +101,8 @@ export default function OrdersPage() {
       <div className="bg-surface-low p-6 mb-8">
         <p className="label-md mb-4">Pipeline overview</p>
         <div className="flex overflow-x-auto gap-2 min-w-0 hide-scrollbar pb-2 sm:pb-0 snap-x">
-          {ORDER_STATUSES.filter(s => s.value !== 'delivered').map(stage => {
-            const count = orders.filter(o => o.status === stage.value).length
+          {ORDER_STATUSES.filter((s: any) => s.value !== 'delivered').map((stage: any) => {
+            const count = orders.filter((o: OrderRow) => o.status === stage.value).length
             return (
               <button key={stage.value}
                 onClick={() => setStatusFilter(stage.value === statusFilter ? 'all' : stage.value)}
@@ -115,6 +116,7 @@ export default function OrdersPage() {
               </button>
             )
           })}
+
         </div>
       </div>
 

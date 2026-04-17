@@ -28,7 +28,7 @@ export default function CatalogPage() {
     loadProducts()
   }
 
-  const filtered = products.filter(p => {
+  const filtered = products.filter((p: Product) => {
     const matchSearch = !search ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.code.toLowerCase().includes(search.toLowerCase()) ||
@@ -39,14 +39,15 @@ export default function CatalogPage() {
     return matchSearch && matchKarat && matchShape && matchActive
   })
 
-  const shapes = Array.from(new Set(products.map(p => p.diamond_shape).filter(Boolean)))
+  const shapes = Array.from(new Set(products.map((p: Product) => p.diamond_shape).filter(Boolean)))
 
   const stats = {
     total: products.length,
-    active: products.filter(p => p.is_active).length,
-    k14: products.filter(p => p.gold_karat === 14).length,
-    k18: products.filter(p => p.gold_karat === 18).length,
+    active: products.filter((p: Product) => p.is_active).length,
+    k14: products.filter((p: Product) => p.gold_karat === 14).length,
+    k18: products.filter((p: Product) => p.gold_karat === 18).length,
   }
+
 
   return (
     <div className="p-4 sm:p-6 lg:p-16 lg:pr-32">

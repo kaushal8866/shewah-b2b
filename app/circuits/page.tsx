@@ -38,12 +38,13 @@ export default function CircuitsPage() {
 
   const stats = {
     total: circuits.length,
-    planned: circuits.filter(c => c.status === 'planned').length,
-    active: circuits.filter(c => c.status === 'in_progress').length,
-    completed: circuits.filter(c => c.status === 'completed').length,
-    totalVisits: circuits.reduce((s, c) => s + (c.actual_visits || 0), 0),
-    totalPartners: circuits.reduce((s, c) => s + (c.actual_partners || 0), 0),
+    planned: circuits.filter((c: Circuit) => c.status === 'planned').length,
+    active: circuits.filter((c: Circuit) => c.status === 'in_progress').length,
+    completed: circuits.filter((c: Circuit) => c.status === 'completed').length,
+    totalVisits: circuits.reduce((s: number, c: Circuit) => s + (c.actual_visits || 0), 0),
+    totalPartners: circuits.reduce((s: number, c: Circuit) => s + (c.actual_partners || 0), 0),
   }
+
 
   return (
     <div className="p-4 lg:p-7">

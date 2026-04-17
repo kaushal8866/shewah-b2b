@@ -37,9 +37,10 @@ export default function PartnersPage() {
     ])
     
     if (pData) {
-      setPartners(pData.filter(p => p.stage !== 'pending_approval'))
-      setPendingApprovals(pData.filter(p => p.stage === 'pending_approval'))
+      setPartners(pData.filter((p: Partner) => p.stage !== 'pending_approval'))
+      setPendingApprovals(pData.filter((p: Partner) => p.stage === 'pending_approval'))
     }
+
     
     setCatalogRequests(reqData || [])
     setLoading(false)
@@ -70,7 +71,7 @@ export default function PartnersPage() {
     loadPartners()
   }
 
-  const filtered = partners.filter(p => {
+  const filtered = partners.filter((p: Partner) => {
     const matchSearch = !search ||
       p.store_name.toLowerCase().includes(search.toLowerCase()) ||
       p.owner_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -84,10 +85,11 @@ export default function PartnersPage() {
 
   const stats = {
     total: partners.length,
-    hot: partners.filter(p => p.status === 'hot').length,
-    active: partners.filter(p => p.stage === 'active').length,
-    sample: partners.filter(p => p.stage === 'sample_sent').length,
+    hot: partners.filter((p: Partner) => p.status === 'hot').length,
+    active: partners.filter((p: Partner) => p.stage === 'active').length,
+    sample: partners.filter((p: Partner) => p.stage === 'sample_sent').length,
   }
+
 
   return (
     <div className="p-4 sm:p-6 lg:p-16 lg:pr-32">

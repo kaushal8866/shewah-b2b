@@ -47,10 +47,11 @@ export default function ManufacturingPage() {
   }
 
   function getPartnerFloats(partnerId: string) {
-    return floats.filter(f => f.partner_id === partnerId)
+    return floats.filter((f: FloatSummary) => f.partner_id === partnerId)
   }
 
-  const activeOrders = orders.filter(o => !['delivered'].includes(o.status))
+  const activeOrders = orders.filter((o: any) => !['delivered'].includes(o.status))
+
 
   const MFG_STATUS_COLORS: Record<string, string> = {
     issued: 'bg-blue-100 text-blue-700',

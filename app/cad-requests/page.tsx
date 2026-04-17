@@ -80,7 +80,7 @@ export default function CADRequestsPage() {
 
   const STATUSES = ['all', 'pending', 'in_progress', 'sent', 'revision_requested', 'approved', 'rejected']
 
-  const filtered = requests.filter(r => {
+  const filtered = requests.filter((r: CADRow) => {
     const matchSearch = !search ||
       r.request_number.toLowerCase().includes(search.toLowerCase()) ||
       r.partner_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -89,18 +89,19 @@ export default function CADRequestsPage() {
     return matchSearch && matchStatus
   })
 
-  const urgentCount = requests.filter(r =>
+  const urgentCount = requests.filter((r: CADRow) =>
     !['approved', 'rejected', 'sent'].includes(r.status) &&
     getHoursLeft(r.received_date, r.due_date) < 24
   ).length
 
   const statsBar = [
-    { label: 'Pending', count: requests.filter(r => r.status === 'pending').length, color: 'text-blue-600' },
-    { label: 'In progress', count: requests.filter(r => r.status === 'in_progress').length, color: 'text-yellow-600' },
-    { label: 'Sent to partner', count: requests.filter(r => r.status === 'sent').length, color: 'text-purple-600' },
-    { label: 'Revision needed', count: requests.filter(r => r.status === 'revision_requested').length, color: 'text-orange-600' },
-    { label: 'Approved', count: requests.filter(r => r.status === 'approved').length, color: 'text-green-600' },
+    { label: 'Pending', count: requests.filter((r: CADRow) => r.status === 'pending').length, color: 'text-blue-600' },
+    { label: 'In progress', count: requests.filter((r: CADRow) => r.status === 'in_progress').length, color: 'text-yellow-600' },
+    { label: 'Sent to partner', count: requests.filter((r: CADRow) => r.status === 'sent').length, color: 'text-purple-600' },
+    { label: 'Revision needed', count: requests.filter((r: CADRow) => r.status === 'revision_requested').length, color: 'text-orange-600' },
+    { label: 'Approved', count: requests.filter((r: CADRow) => r.status === 'approved').length, color: 'text-green-600' },
   ]
+
 
   return (
     <div className="p-4 lg:p-7">
