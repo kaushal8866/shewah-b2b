@@ -48,24 +48,25 @@ export default function AnalyticsPage() {
         supabase.from('circuits').select('*')
       ])
 
-      const allOrders = orders || []
-      const allPartners = partners || []
-      const allCAD = cadReqs || []
-      const allCircuits = circuits || []
+      const allOrders: any[] = orders || []
+      const allPartners: any[] = partners || []
+      const allCAD: any[] = cadReqs || []
+      const allCircuits: any[] = circuits || []
 
       // Governance
       const governance = {
-        approved: allOrders.filter(o => o.gov_status === 'owner_approved' || o.gov_status === 'auto_approved').length,
-        denied: allOrders.filter(o => o.gov_status === 'denied').length,
-        pending: allOrders.filter(o => o.gov_status === 'pending_approval').length,
+        approved: allOrders.filter((o: any) => o.gov_status === 'owner_approved' || o.gov_status === 'auto_approved').length,
+        denied: allOrders.filter((o: any) => o.gov_status === 'denied').length,
+        pending: allOrders.filter((o: any) => o.gov_status === 'pending_approval').length,
       }
 
       // Circuit ROI
       const circuitROI = {
-        budget: allCircuits.reduce((s, c) => s + (c.budget_inr || 0), 0),
-        revenue: allOrders.reduce((s, o) => s + (o.total_amount || 0), 0),
+        budget: allCircuits.reduce((s: number, c: any) => s + (c.budget_inr || 0), 0),
+        revenue: allOrders.reduce((s: number, o: any) => s + (o.total_amount || 0), 0),
         circuits: allCircuits.length
       }
+
 
       // ... existing calculations ...
       // Revenue by month (last 6 months)
@@ -77,7 +78,7 @@ export default function AnalyticsPage() {
         months.push(key)
         monthMap[key] = { revenue: 0, orders: 0 }
       }
-      allOrders.forEach(o => {
+      allOrders.forEach((o: any) => {
         const key = new Date(o.order_date).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
         if (monthMap[key]) {
           monthMap[key].revenue += o.total_amount || 0
@@ -88,12 +89,12 @@ export default function AnalyticsPage() {
 
       // Partners by stage
       const stageCount: Record<string, number> = {}
-      allPartners.forEach(p => { stageCount[p.stage] = (stageCount[p.stage] || 0) + 1 })
+      allPartners.forEach((p: any) => { stageCount[p.stage] = (stageCount[p.stage] || 0) + 1 })
       const partnersByStage = Object.entries(stageCount).map(([stage, count]) => ({ stage, count }))
 
       // Partners by circuit
       const circuitCount: Record<string, number> = {}
-      allPartners.forEach(p => {
+      allPartners.forEach((p: any) => {
         const c = p.circuit || 'Unassigned'
         circuitCount[c] = (circuitCount[c] || 0) + 1
       })
@@ -101,7 +102,7 @@ export default function AnalyticsPage() {
 
       // Orders by status
       const statusMap: Record<string, { count: number; value: number }> = {}
-      allOrders.forEach(o => {
+      allOrders.forEach((o: any) => {
         if (!statusMap[o.status]) statusMap[o.status] = { count: 0, value: 0 }
         statusMap[o.status].count++
         statusMap[o.status].value += o.total_amount || 0
@@ -110,26 +111,26 @@ export default function AnalyticsPage() {
 
       // Top partners
       const partnerRevMap: Record<string, { store_name: string; city: string; orders: number; revenue: number }> = {}
-      allOrders.forEach(o => {
+      allOrders.forEach((o: any) => {
         if (!o.partner_name) return
         const key = o.partner_name
         if (!partnerRevMap[key]) partnerRevMap[key] = { store_name: o.partner_name, city: o.partner_city, orders: 0, revenue: 0 }
         partnerRevMap[key].orders++
         partnerRevMap[key].revenue += o.total_amount || 0
       })
-      const topPartners = Object.values(partnerRevMap).sort((a, b) => b.revenue - a.revenue).slice(0, 5)
+      const topPartners = Object.values(partnerRevMap).sort((a: any, b: any) => b.revenue - a.revenue).slice(0, 5)
 
       // Conversion funnel
       const conversionFunnel = {
         visited: allPartners.length,
-        contacted: allPartners.filter(p => ['contacted', 'sample_sent', 'active'].includes(p.stage)).length,
-        sample: allPartners.filter(p => ['sample_sent', 'active'].includes(p.stage)).length,
-        active: allPartners.filter(p => p.stage === 'active').length,
+        contacted: allPartners.filter((p: any) => ['contacted', 'sample_sent', 'active'].includes(p.stage)).length,
+        sample: allPartners.filter((p: any) => ['sample_sent', 'active'].includes(p.stage)).length,
+        active: allPartners.filter((p: any) => p.stage === 'active').length,
       }
 
       // Model split
       const modelMap: Record<string, { count: number; revenue: number }> = {}
-      allOrders.forEach(o => {
+      allOrders.forEach((o: any) => {
         const m = o.model || 'unknown'
         if (!modelMap[m]) modelMap[m] = { count: 0, revenue: 0 }
         modelMap[m].count++
@@ -138,7 +139,7 @@ export default function AnalyticsPage() {
       const modelSplit = Object.entries(modelMap).map(([model, v]) => ({ model, ...v }))
 
       // CAD stats
-      const approved = allCAD.filter(c => c.status === 'approved').length
+      const approved = allCAD.filter((c: any) => c.status === 'approved').length
       const cadStats = {
         total: allCAD.length,
         avgTurnaround: 0,
