@@ -221,7 +221,7 @@ export default function PartnerDetailPage() {
                 ['Email', partner.email || '—'],
                 ['GSTIN', partner.gstin || '—'],
                 ['Credit Limit', partner.credit_limit_paise ? `₹${(partner.credit_limit_paise / 100).toLocaleString('en-IN')}` : '₹5,000'],
-              ].map(([k, v]) => (
+              ].map(([k, v]: [string, any]) => (
                 <div key={k}>
                   <p className="text-xs text-stone-400">{k}</p>
                   <p className="text-stone-800 mt-0.5">{v}</p>
@@ -263,7 +263,7 @@ export default function PartnerDetailPage() {
               <div className="px-5 py-6 text-sm text-stone-400">No visits logged yet</div>
             ) : (
               <div className="divide-y divide-stone-50">
-                {visits.map(v => (
+                {visits.map((v: any) => (
                   <div key={v.id} className="px-5 py-3">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-sm font-medium text-stone-700 capitalize">
@@ -289,7 +289,7 @@ export default function PartnerDetailPage() {
                 <h2 className="font-medium text-stone-900">Orders ({orders.length})</h2>
               </div>
               <div className="divide-y divide-stone-50">
-                {orders.map(o => (
+                {orders.map((o: any) => (
                   <Link key={o.id} href={`/orders/${o.id}`}
                     className="flex items-center justify-between px-5 py-3 hover:bg-stone-50">
                     <div>

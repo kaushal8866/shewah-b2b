@@ -84,8 +84,8 @@ export default function ManufacturingPartnerDetailPage() {
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
 
   const totalOrders = orders.length
-  const activeOrders = orders.filter(o => !['completed', 'cancelled'].includes(o.status)).length
-  const totalCost = orders.reduce((sum, o) => sum + (o.total_manufacturing_cost || 0), 0)
+  const activeOrders = orders.filter((o: any) => !['completed', 'cancelled'].includes(o.status)).length
+  const totalCost = orders.reduce((sum: number, o: any) => sum + (o.total_manufacturing_cost || 0), 0)
 
   return (
     <div className="p-4 lg:p-7 max-w-3xl">
@@ -169,7 +169,7 @@ export default function ManufacturingPartnerDetailPage() {
               { label: 'Total orders', value: totalOrders },
               { label: 'Active orders', value: activeOrders },
               { label: 'Total cost', value: `₹${totalCost.toLocaleString('en-IN')}` },
-            ].map(stat => (
+            ].map((stat: any) => (
               <div key={stat.label} className="bg-white rounded-xl border border-stone-200 p-4">
                 <p className="text-xs text-stone-400">{stat.label}</p>
                 <p className="text-xl font-semibold text-stone-900 mt-1">{stat.value}</p>
@@ -193,7 +193,7 @@ export default function ManufacturingPartnerDetailPage() {
                 ['Labour rate 18K', partner.labour_rate_18k ? `₹${partner.labour_rate_18k}/g` : '—'],
                 ['Labour rate 22K', partner.labour_rate_22k ? `₹${partner.labour_rate_22k}/g` : '—'],
                 ['Specialities', Array.isArray(partner.speciality) ? partner.speciality.join(', ') || '—' : partner.speciality || '—'],
-              ].map(([k, v]) => (
+              ].map(([k, v]: [string, any]) => (
                 <div key={String(k)}>
                   <p className="text-xs text-stone-400">{k}</p>
                   <p className="text-stone-800 mt-0.5 capitalize">{String(v)}</p>
@@ -215,7 +215,7 @@ export default function ManufacturingPartnerDetailPage() {
                 <Link href={`/manufacturing/partners/${id}/float`} className="text-xs text-[#C49C64] hover:underline">Manage</Link>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {floats.map(f => (
+                {floats.map((f: any) => (
                   <div key={f.id} className={`rounded-xl border p-3 ${f.balance < 1 ? 'border-amber-300 bg-amber-50' : 'border-stone-200 bg-stone-50'}`}>
                     <p className="text-xs text-stone-400 mb-1">{f.material_type?.replace(/_/g, ' ')}</p>
                     <p className={`text-lg font-semibold ${f.balance < 1 ? 'text-amber-600' : 'text-stone-900'}`}>
@@ -233,7 +233,7 @@ export default function ManufacturingPartnerDetailPage() {
                 <h2 className="font-medium text-stone-900">Manufacturing orders ({orders.length})</h2>
               </div>
               <div className="divide-y divide-stone-50">
-                {orders.map(o => (
+                {orders.map((o: any) => (
                   <Link key={o.id} href={`/manufacturing/orders/${o.id}`}
                     className="flex items-center justify-between px-5 py-3 hover:bg-stone-50">
                     <div>

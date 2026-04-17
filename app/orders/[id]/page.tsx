@@ -313,7 +313,7 @@ export default function OrderDetailPage() {
       {/* Status pipeline */}
       <div className="bg-white rounded-xl border border-stone-200 p-4 mb-5">
         <div className="flex gap-1">
-          {ORDER_STATUSES.map((s, i) => {
+          {ORDER_STATUSES.map((s: any, i: number) => {
             const isPast = i <= currentIndex
             const isCurrent = s.value === order.status
             return (
@@ -469,7 +469,7 @@ export default function OrderDetailPage() {
                   ['Ring size', order.ring_size || '—'],
                   ['Special notes', order.special_notes || '—'],
                   ['Gold rate at order', order.gold_rate_at_order ? `₹${order.gold_rate_at_order.toLocaleString('en-IN')}/g` : '—'],
-                ].map(([k, v]) => (
+                ].map(([k, v]: [string, any]) => (
                   <div key={String(k)}>
                     <p className="text-xs text-stone-400">{k}</p>
                     <p className="text-stone-800 mt-0.5">{String(v)}</p>

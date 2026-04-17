@@ -79,7 +79,7 @@ export default function Dashboard() {
           goldRate24k: goldData?.[0]?.rate_24k || 0,
         })
 
-        setRecentOrders(allOrders.slice(0, 8).map(o => ({
+        setRecentOrders(allOrders.slice(0, 8).map((o: any) => ({
           id: o.id,
           order_number: o.order_number,
           status: o.status,
