@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useMemo, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { supabase, Product } from '@/lib/supabase'
+import { supabase, Product, computeOrderCogs } from '@/lib/supabase'
 import { Plus, Search, Package, Edit2, Eye, EyeOff, Library, Heart, Trash2, Copy, Check, Globe, Lock, ChevronRight, Terminal, RefreshCw } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -91,14 +91,35 @@ function ProductsTab() {
   const [karatFilter, setKaratFilter] = useState('all')
   const [shapeFilter, setShapeFilter] = useState('all')
   const [showInactive, setShowInactive] = useState(false)
+  const [goldRate, setGoldRate] = useState<number | null>(null)
+  const [marginFilter, setMarginFilter] = useState('all')
+  const [sortBy, setSortBy] = useState<'code' | 'margin_desc' | 'margin_asc'>('code')
 
   useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase.from('products').select('*').order('code')
+    const [{ data }, { data: g }] = await Promise.all([
+      supabase.from('products').select('*').order('code'),
+      supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
+    ])
     setProducts(data || [])
+    if (g?.[0]) setGoldRate(g[0].rate_24k)
     setLoading(false)
+  }
+
+  function estimateForProduct(p: Product) {
+    if (!goldRate || !p.gold_weight_g || !p.gold_karat || !p.trade_price) return null
+    const { total_cogs, margin } = computeOrderCogs({
+      gold_weight_actual: p.gold_weight_g,
+      gold_rate_at_order: goldRate,
+      gold_karat: p.gold_karat,
+      making_charges: p.making_charges || 0,
+      stone_cost: p.diamond_cost || 0,
+      total_amount: p.trade_price,
+    })
+    const marginPct = p.trade_price > 0 ? (margin / p.trade_price) * 100 : 0
+    return { total_cogs, margin, marginPct }
   }
 
   async function toggleActive(id: string, current: boolean) {
@@ -106,16 +127,35 @@ function ProductsTab() {
     load()
   }
 
-  const filtered = products.filter(p => {
-    const matchSearch = !search ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.code.toLowerCase().includes(search.toLowerCase()) ||
-      p.diamond_shape?.toLowerCase().includes(search.toLowerCase())
-    const matchKarat = karatFilter === 'all' || String(p.gold_karat) === karatFilter
-    const matchShape = shapeFilter === 'all' || p.diamond_shape === shapeFilter
-    const matchActive = showInactive || p.is_active
-    return matchSearch && matchKarat && matchShape && matchActive
-  })
+  const filtered = useMemo(() => {
+    const list = products.filter(p => {
+      const matchSearch = !search ||
+        p.name.toLowerCase().includes(search.toLowerCase()) ||
+        p.code.toLowerCase().includes(search.toLowerCase()) ||
+        p.diamond_shape?.toLowerCase().includes(search.toLowerCase())
+      const matchKarat = karatFilter === 'all' || String(p.gold_karat) === karatFilter
+      const matchShape = shapeFilter === 'all' || p.diamond_shape === shapeFilter
+      const matchActive = showInactive || p.is_active
+      let matchMargin = true
+      if (marginFilter !== 'all') {
+        const est = estimateForProduct(p)
+        const pct = est?.marginPct ?? null
+        if (pct === null) matchMargin = false
+        else if (marginFilter === 'high') matchMargin = pct >= 25
+        else if (marginFilter === 'mid') matchMargin = pct >= 10 && pct < 25
+        else if (marginFilter === 'low') matchMargin = pct < 10
+      }
+      return matchSearch && matchKarat && matchShape && matchActive && matchMargin
+    })
+    if (sortBy === 'margin_desc' || sortBy === 'margin_asc') {
+      list.sort((a, b) => {
+        const ea = estimateForProduct(a)?.marginPct ?? -Infinity
+        const eb = estimateForProduct(b)?.marginPct ?? -Infinity
+        return sortBy === 'margin_desc' ? eb - ea : ea - eb
+      })
+    }
+    return list
+  }, [products, search, karatFilter, shapeFilter, showInactive, marginFilter, sortBy, goldRate])
 
   const shapes = Array.from(new Set(products.map(p => p.diamond_shape).filter((s): s is string => Boolean(s))))
   const stats = {
@@ -129,7 +169,10 @@ function ProductsTab() {
     <>
       <div className="mb-1">
         <h1 className="text-xl font-semibold text-stone-900">Catalog</h1>
-        <p className="text-stone-500 text-sm">{stats.active} active designs</p>
+        <p className="text-stone-500 text-sm">
+          {stats.active} active designs
+          {goldRate ? <span className="ml-2 text-stone-400">· Margins estimated at today&apos;s 24K rate ₹{goldRate.toLocaleString('en-IN')}/g</span> : <span className="ml-2 text-amber-600">· Add today&apos;s gold rate to see margin estimates</span>}
+        </p>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 my-5">
         {[
@@ -162,6 +205,19 @@ function ProductsTab() {
           <option value="all">All shapes</option>
           {shapes.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+        <select value={marginFilter} onChange={e => setMarginFilter(e.target.value)}
+          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white" disabled={!goldRate}>
+          <option value="all">All margins</option>
+          <option value="high">High (≥25%)</option>
+          <option value="mid">Mid (10–25%)</option>
+          <option value="low">Low (&lt;10%)</option>
+        </select>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
+          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white" disabled={!goldRate}>
+          <option value="code">Sort: Code</option>
+          <option value="margin_desc">Sort: Margin % (high→low)</option>
+          <option value="margin_asc">Sort: Margin % (low→high)</option>
+        </select>
         <button onClick={() => setShowInactive(!showInactive)}
           className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${showInactive ? 'bg-stone-100 border-stone-300 text-stone-700' : 'border-stone-200 text-stone-400 hover:text-stone-600'}`}>
           {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -178,7 +234,15 @@ function ProductsTab() {
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(p => (
+          {filtered.map(p => {
+            const est = estimateForProduct(p)
+            const pct = est?.marginPct
+            const badgeClass = pct == null
+              ? 'bg-stone-100 text-stone-400'
+              : pct >= 25 ? 'bg-green-100 text-green-700'
+              : pct >= 10 ? 'bg-amber-100 text-amber-700'
+              : 'bg-red-100 text-red-700'
+            return (
             <div key={p.id} className={`bg-white rounded-xl border overflow-hidden transition-all ${p.is_active ? 'border-stone-200' : 'border-stone-100 opacity-60'}`}>
               <div className="aspect-square bg-gradient-to-br from-stone-50 to-yellow-50 flex items-center justify-center relative">
                 {p.photo_urls && p.photo_urls.length > 0 ? (
@@ -201,20 +265,23 @@ function ProductsTab() {
                   <span className="text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full">{p.gold_karat}K</span>
                 </div>
                 <p className="text-xs text-stone-400 mb-3">{p.diamond_weight}ct {p.diamond_shape} · {p.diamond_quality}/{p.diamond_color}</p>
-                <div className="grid grid-cols-3 gap-1 mb-3">
+                <div className="grid grid-cols-3 gap-1 mb-2">
                   <div className="bg-stone-50 rounded-lg p-2 text-center">
                     <p className="text-xs text-stone-400">Trade</p>
                     <p className="text-xs font-semibold text-stone-700">{p.trade_price ? `₹${(p.trade_price/1000).toFixed(0)}K` : '—'}</p>
                   </div>
-                  <div className="bg-stone-50 rounded-lg p-2 text-center">
-                    <p className="text-xs text-stone-400">MRP</p>
-                    <p className="text-xs font-semibold text-stone-700">{p.mrp_suggested ? `₹${(p.mrp_suggested/1000).toFixed(0)}K` : '—'}</p>
+                  <div className="bg-stone-50 rounded-lg p-2 text-center" title="Estimated COGS at today's gold rate">
+                    <p className="text-xs text-stone-400">Est. COGS</p>
+                    <p className="text-xs font-semibold text-stone-700">{est ? `₹${(est.total_cogs/1000).toFixed(0)}K` : '—'}</p>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-2 text-center">
-                    <p className="text-xs text-green-600">Margin</p>
-                    <p className="text-xs font-semibold text-green-700">{p.trade_price && p.mrp_suggested ? `₹${((p.mrp_suggested - p.trade_price)/1000).toFixed(0)}K` : '—'}</p>
+                  <div className={`rounded-lg p-2 text-center ${badgeClass}`} title="Estimated margin vs trade price">
+                    <p className="text-xs opacity-80">Margin</p>
+                    <p className="text-xs font-semibold">{est ? `${est.marginPct.toFixed(0)}%` : '—'}</p>
                   </div>
                 </div>
+                {est && (
+                  <p className="text-[10px] text-stone-400 mb-2">≈ ₹{(est.margin/1000).toFixed(1)}K margin · MRP {p.mrp_suggested ? `₹${(p.mrp_suggested/1000).toFixed(0)}K` : '—'}</p>
+                )}
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-stone-400">{p.delivery_days} days delivery</p>
                   <div className="flex gap-1.5">
@@ -230,7 +297,8 @@ function ProductsTab() {
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </>
