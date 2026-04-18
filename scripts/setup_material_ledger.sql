@@ -68,23 +68,26 @@ END$$;
 -- the insert; UI is responsible for warning + requiring confirmation. Stored
 -- so that integrity reports / audits can flag these rows later.
 CREATE OR REPLACE FUNCTION mt_flag_negative_balance()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS $func$
+#variable_conflict use_variable
 DECLARE
-  current_balance numeric;
-  delta numeric;
+  v_balance numeric := 0;
+  v_delta   numeric := 0;
 BEGIN
-  SELECT COALESCE(balance, 0) INTO current_balance
-    FROM material_float WHERE id = NEW.float_id;
+  SELECT COALESCE(mf.balance, 0)
+    INTO v_balance
+    FROM material_float mf
+   WHERE mf.id = NEW.float_id;
 
-  delta := CASE NEW.transaction_type
-             WHEN 'deposit'     THEN  NEW.quantity
-             WHEN 'consumption' THEN -NEW.quantity
-             WHEN 'return'      THEN -NEW.quantity
-             WHEN 'adjustment'  THEN  NEW.quantity   -- signed by caller
-             ELSE 0
-           END;
+  v_delta := CASE NEW.transaction_type
+               WHEN 'deposit'     THEN  NEW.quantity
+               WHEN 'consumption' THEN -NEW.quantity
+               WHEN 'return'      THEN -NEW.quantity
+               WHEN 'adjustment'  THEN  NEW.quantity   -- signed by caller
+               ELSE 0
+             END;
 
-  IF (current_balance + delta) < 0 THEN
+  IF (v_balance + v_delta) < 0 THEN
     NEW.creates_negative_balance := true;
   ELSE
     NEW.creates_negative_balance := false;
@@ -92,7 +95,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$func$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS mt_flag_negative_balance_trg ON material_transactions;
 CREATE TRIGGER mt_flag_negative_balance_trg
