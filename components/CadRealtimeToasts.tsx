@@ -79,7 +79,7 @@ export function useCadRequestRealtimeToasts(opts?: {
                 cadId: row.id,
                 requestNumber: row.request_number || 'CAD request',
                 kind: 'approval',
-                message: 'Retailer approved the design',
+                message: 'Design approved',
               },
             ])
             setTimeout(() => dismiss(key), 8000)
@@ -94,8 +94,8 @@ export function useCadRequestRealtimeToasts(opts?: {
                 requestNumber: row.request_number || 'CAD request',
                 kind: 'revision',
                 message: note
-                  ? `Retailer requested a revision: ${note.slice(0, 120)}${note.length > 120 ? '…' : ''}`
-                  : 'Retailer requested a revision',
+                  ? `Revision requested: ${note.slice(0, 120)}${note.length > 120 ? '…' : ''}`
+                  : 'Revision requested',
               },
             ])
             setTimeout(() => dismiss(key), 12000)

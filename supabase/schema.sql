@@ -513,6 +513,46 @@ alter table material_transactions enable row level security;
 create policy "service_role_all" on material_transactions
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
+-- ── CAD PARTNER HANDOFF (Task 47) ───────────────────────────────────
+-- Public expiring links the design team can hand to an external CAD partner
+-- (no login). The partner downloads the brief as PDF, reference images as
+-- ZIP, and submits Approve / Request revision + comment back. Both tables are
+-- service-role only; the public route accesses them via supabaseAdmin.
+-- See scripts/migrate_task47_cad_partner_share.sql.
+create table if not exists cad_partner_share_links (
+  token              uuid        primary key default gen_random_uuid(),
+  cad_request_id     uuid        not null references cad_requests(id) on delete cascade,
+  partner_name       text,
+  partner_phone      text,
+  created_at         timestamptz not null default now(),
+  created_by         uuid,
+  expires_at         timestamptz not null,
+  revoked_at         timestamptz,
+  last_opened_at     timestamptz
+);
+create index if not exists cad_partner_share_links_request_idx
+  on cad_partner_share_links(cad_request_id, created_at desc);
+alter table cad_partner_share_links enable row level security;
+create policy "service_role_all" on cad_partner_share_links
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create table if not exists cad_partner_responses (
+  id              uuid        primary key default gen_random_uuid(),
+  link_id         uuid        not null references cad_partner_share_links(token) on delete cascade,
+  cad_request_id  uuid        not null references cad_requests(id) on delete cascade,
+  decision        text        not null check (decision in ('approved','revision')),
+  comment         text,
+  partner_name    text,
+  ip              text,
+  user_agent      text,
+  responded_at    timestamptz not null default now()
+);
+create index if not exists cad_partner_responses_request_idx
+  on cad_partner_responses(cad_request_id, responded_at desc);
+alter table cad_partner_responses enable row level security;
+create policy "service_role_all" on cad_partner_responses
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
 -- 48-hour public asset links for karigars (Task 46).
 create table if not exists mfg_share_links (
   token                       uuid        primary key default gen_random_uuid(),

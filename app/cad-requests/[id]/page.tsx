@@ -8,6 +8,7 @@ import { ArrowLeft, Save, Trash2, Edit2, X, Upload, Sparkles } from 'lucide-reac
 import Link from 'next/link'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
 import { useCadRequestRealtimeToasts, CadToastStack } from '@/components/CadRealtimeToasts'
+import CadPartnerSharePanel from '@/components/CadPartnerSharePanel'
 
 const CAD_STATUSES = [
   { value: 'brief_received', label: 'Brief Received' },
@@ -321,6 +322,13 @@ export default function CadRequestDetailPage() {
               <p className="text-sm text-stone-700 leading-relaxed">{req.revision_notes}</p>
             </div>
           )}
+
+          <CadPartnerSharePanel
+            cadRequestId={req.id}
+            hasReferenceImages={Array.isArray(req.reference_images) && req.reference_images.length > 0}
+            defaultPartnerName={undefined}
+            defaultPartnerPhone={undefined}
+          />
 
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
