@@ -9,7 +9,8 @@ const DETAIL_COLS = `
   id, order_number, status, description, quantity, ring_size,
   gold_karat, gold_weight_required, gold_weight_actual, diamond_weight,
   issued_date, expected_date, completed_date,
-  reference_images, special_notes, manufacturer_notes, manufacturer_updated_at,
+  reference_images, cad_files, cad_file_names,
+  special_notes, manufacturer_notes, manufacturer_updated_at,
   manufacturing_partner_id
 `
 
@@ -51,6 +52,7 @@ export async function PATCH(req: Request, ctx: { params: { id: string } }) {
     manufacturer_updated_by: user.id,
   }
 
+  let willFinalizeReservation = false
   if (typeof body.status === 'string') {
     if (!ALLOWED_STATUSES.has(body.status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
@@ -59,6 +61,7 @@ export async function PATCH(req: Request, ctx: { params: { id: string } }) {
     if (body.status === 'completed' && !body.completed_date) {
       updates.completed_date = new Date().toISOString().slice(0, 10)
     }
+    willFinalizeReservation = body.status === 'completed'
   }
   if (typeof body.manufacturer_notes === 'string') {
     updates.manufacturer_notes = body.manufacturer_notes
@@ -83,6 +86,22 @@ export async function PATCH(req: Request, ctx: { params: { id: string } }) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  // When the karigar marks this order completed, finalise any pending
+  // float reservation we created on issue. The reservation is matched by
+  // (manufacturing_order_id, lifecycle='pending', transaction_type='consumption').
+  if (willFinalizeReservation) {
+    const actual = (data as any).gold_weight_actual
+    const finalQty = actual != null ? Number(actual) : null
+    const updatePayload: any = { lifecycle: 'final' }
+    if (finalQty != null && finalQty > 0) updatePayload.quantity = finalQty
+    await supabaseAdmin
+      .from('material_transactions')
+      .update(updatePayload)
+      .eq('manufacturing_order_id', ctx.params.id)
+      .eq('transaction_type', 'consumption')
+      .eq('lifecycle', 'pending')
+  }
 
   const { manufacturing_partner_id, ...safe } = data as any
   return NextResponse.json({ order: safe })

@@ -97,6 +97,6 @@ export const config = {
     // /api/cron/* is excluded so Replit Scheduled Deployments can hit it
     // without a session — every route under /api/cron MUST implement its own
     // auth (typically a Bearer $CRON_SECRET check) inside the handler.
-    '/((?!login|setup|showcase|track|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|_next|_vercel|favicon\\.ico|.*\\.).*)',
+    '/((?!login|setup|showcase|track|m/|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|_next|_vercel|favicon\\.ico|.*\\.).*)',
   ],
 }

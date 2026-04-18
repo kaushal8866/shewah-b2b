@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
-import { ArrowLeft, Save, Trash2, Edit2, X, Printer } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Edit2, X, Printer, Send, Copy, RefreshCw, FileDown, Check, Clock, Link2 } from 'lucide-react'
 import Link from 'next/link'
 
 const MFG_STATUSES = ['issued', 'in_progress', 'quality_check', 'completed', 'returned', 'cancelled']
@@ -20,8 +20,75 @@ export default function ManufacturingOrderDetailPage() {
   const [saving, setSaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [form, setForm] = useState<any>({})
+  const [shareLink, setShareLink] = useState<any>(null)
+  const [shareBusy, setShareBusy] = useState(false)
+  const [shareToast, setShareToast] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => { load() }, [id])
+  useEffect(() => { loadShareLink() }, [id])
+
+  async function loadShareLink() {
+    try {
+      const r = await fetch(`/api/manufacturing/orders/${id}/share-link`)
+      const j = await r.json()
+      const links = (j.links || []) as any[]
+      const active = links.find(l => !l.revoked && new Date(l.expires_at).getTime() > Date.now())
+      setShareLink(active || null)
+    } catch { /* ignore */ }
+  }
+
+  async function createOrRefreshLink(sendWhatsapp: boolean, reuseActive = false) {
+    setShareBusy(true)
+    setShareToast(null)
+    try {
+      const r = await fetch(`/api/manufacturing/orders/${id}/share-link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sendWhatsapp, reuseActive }),
+      })
+      const j = await r.json()
+      if (!r.ok) throw new Error(j.error || 'Failed')
+      setShareLink(j.link)
+      if (sendWhatsapp) {
+        if (j.send?.ok) {
+          setShareToast('WhatsApp message sent to karigar.')
+        } else {
+          const reason = j.send?.reason || `status ${j.send?.status || '?'}`
+          setShareToast(`Link created, but WhatsApp send failed (${reason}). Copy the link to share manually.`)
+        }
+      } else {
+        setShareToast('Fresh link generated.')
+      }
+    } catch (e: any) {
+      setShareToast(e?.message || 'Failed to generate link')
+    }
+    setShareBusy(false)
+  }
+
+  async function revokeLink() {
+    if (!shareLink?.token) return
+    if (!confirm('Revoke this link? The karigar will lose access immediately.')) return
+    setShareBusy(true)
+    await fetch(`/api/manufacturing/orders/${id}/share-link?token=${shareLink.token}`, { method: 'DELETE' })
+    setShareLink(null)
+    setShareToast('Link revoked.')
+    setShareBusy(false)
+  }
+
+  function shareUrl(token: string): string {
+    if (typeof window === 'undefined') return `/m/${token}`
+    return `${window.location.origin}/m/${token}`
+  }
+
+  async function copyLink() {
+    if (!shareLink?.token) return
+    try {
+      await navigator.clipboard.writeText(shareUrl(shareLink.token))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch { /* ignore */ }
+  }
 
   async function load() {
     setLoading(true)
@@ -45,6 +112,8 @@ export default function ManufacturingOrderDetailPage() {
     const labourAmount = effectiveWeight * (parseFloat(form.labour_per_gram) || 0)
     const otherCharges = parseFloat(form.other_charges) || 0
     const totalMfgCost = labourAmount + otherCharges
+    const prevStatus: string | undefined = order?.status
+    const newStatus: string = form.status
 
     const { error } = await supabase.from('manufacturing_orders').update({
       status: form.status,
@@ -66,8 +135,49 @@ export default function ManufacturingOrderDetailPage() {
       completed_date: form.completed_date || null,
       internal_notes: form.internal_notes || null,
     }).eq('id', id)
+    if (error) { setSaving(false); alert('Error: ' + error.message); return }
+
+    // Float lifecycle transitions for the pending consumption row that was
+    // created when this order was issued from float:
+    //   • → completed → flip to lifecycle='final' (use actual weight if entered)
+    //   • → cancelled → delete the reservation, gold returns to Available
+    if (prevStatus !== newStatus && order?.material_from_float) {
+      try {
+        if (newStatus === 'completed') {
+          const finalQty = parseFloat(form.gold_weight_actual) || null
+          const upd: any = { lifecycle: 'final' }
+          if (finalQty && finalQty > 0) upd.quantity = finalQty
+          await supabase.from('material_transactions')
+            .update(upd)
+            .eq('manufacturing_order_id', id)
+            .eq('transaction_type', 'consumption')
+            .eq('lifecycle', 'pending')
+        } else if (prevStatus === 'completed' && newStatus !== 'completed' && newStatus !== 'cancelled') {
+          // Reverting from completed → revert the finalised consumption back
+          // to a pending reservation so the gold is no longer counted as Used.
+          // Restore the originally-required quantity.
+          const restoreQty = parseFloat(order.gold_weight_required) || null
+          const upd: any = { lifecycle: 'pending' }
+          if (restoreQty && restoreQty > 0) upd.quantity = restoreQty
+          await supabase.from('material_transactions')
+            .update(upd)
+            .eq('manufacturing_order_id', id)
+            .eq('transaction_type', 'consumption')
+            .eq('lifecycle', 'final')
+        } else if (newStatus === 'cancelled') {
+          // Cancellation drops both pending reservations AND a finalised one
+          // (because the order itself has been declared void).
+          await supabase.from('material_transactions')
+            .delete()
+            .eq('manufacturing_order_id', id)
+            .eq('transaction_type', 'consumption')
+        }
+      } catch (e) {
+        console.error('lifecycle transition failed', e)
+      }
+    }
+
     setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
     setEditing(false)
     load()
   }
@@ -238,6 +348,99 @@ export default function ManufacturingOrderDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* Karigar pack — WhatsApp share link */}
+          <div className="bg-white rounded-xl border border-stone-200 p-5 print:hidden">
+            <div className="flex items-start justify-between mb-3 gap-2">
+              <div>
+                <h2 className="font-medium text-stone-900 flex items-center gap-2">
+                  <Link2 className="w-4 h-4 text-[#1E3A5F]" />
+                  Karigar pack link
+                </h2>
+                <p className="text-xs text-stone-400 mt-0.5">Send the assets to {order.manufacturing_partners?.name || 'the karigar'} on WhatsApp. Link auto-expires in 48 hours.</p>
+              </div>
+            </div>
+
+            {shareLink ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-3">
+                <div className="flex items-center gap-2 mb-2 text-emerald-800 text-sm font-medium">
+                  <Check className="w-4 h-4" /> Active link
+                </div>
+                <div className="bg-white rounded-lg border border-emerald-200 px-3 py-2 mb-2 text-xs text-stone-700 font-mono break-all">
+                  {shareUrl(shareLink.token)}
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <button onClick={copyLink}
+                    className="flex items-center gap-1.5 text-xs bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 px-3 py-1.5 rounded-lg">
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? 'Copied' : 'Copy link'}
+                  </button>
+                  <a href={shareUrl(shareLink.token)} target="_blank" rel="noreferrer"
+                    className="flex items-center gap-1.5 text-xs bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 px-3 py-1.5 rounded-lg">
+                    Preview as karigar
+                  </a>
+                </div>
+                <div className="grid grid-cols-3 text-xs text-emerald-800 gap-2 mb-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-emerald-600">Expires</p>
+                    <p className="font-medium">{formatDate(shareLink.expires_at)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-emerald-600">Last opened</p>
+                    <p className="font-medium">{shareLink.last_accessed_at ? formatDate(shareLink.last_accessed_at) : 'Not yet'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-emerald-600">Downloads</p>
+                    <p className="font-medium">{shareLink.download_count || 0}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => createOrRefreshLink(true, true)} disabled={shareBusy}
+                    className="flex items-center gap-1.5 text-xs bg-[#1E3A5F] hover:bg-[#162B47] text-white px-3 py-1.5 rounded-lg disabled:opacity-50">
+                    <Send className="w-3.5 h-3.5" /> Re-send same link
+                  </button>
+                  <button onClick={() => createOrRefreshLink(false, false)} disabled={shareBusy}
+                    className="flex items-center gap-1.5 text-xs bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 px-3 py-1.5 rounded-lg disabled:opacity-50">
+                    <RefreshCw className="w-3.5 h-3.5" /> Generate fresh 48h link
+                  </button>
+                  <button onClick={revokeLink} disabled={shareBusy}
+                    className="flex items-center gap-1.5 text-xs bg-white border border-red-200 hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-lg disabled:opacity-50">
+                    <X className="w-3.5 h-3.5" /> Revoke
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => createOrRefreshLink(true)} disabled={shareBusy}
+                className="flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">
+                <Send className="w-4 h-4" />
+                {shareBusy ? 'Sending...' : 'Send karigar pack on WhatsApp'}
+              </button>
+            )}
+            {shareToast && (
+              <p className="text-xs mt-2 text-stone-600">{shareToast}</p>
+            )}
+          </div>
+
+          {order.cad_files && order.cad_files.length > 0 && (
+            <div className="bg-white rounded-xl border border-stone-200 p-5">
+              <h2 className="font-medium text-stone-900 mb-3">CAD &amp; design files</h2>
+              <ul className="divide-y divide-stone-100">
+                {order.cad_files.map((url: string, i: number) => {
+                  const name = (order.cad_file_names || [])[i] || `file-${i + 1}`
+                  return (
+                    <li key={i} className="py-2 flex items-center gap-3">
+                      <FileDown className="w-4 h-4 text-stone-400 shrink-0" />
+                      <span className="flex-1 text-sm text-stone-700 truncate">{name}</span>
+                      <a href={url} download={name} target="_blank" rel="noreferrer"
+                        className="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1 rounded-md">
+                        Download
+                      </a>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
 
           {order.reference_images && order.reference_images.length > 0 && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">

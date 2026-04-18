@@ -2,6 +2,22 @@
 // and CLOUDINARY_UPLOAD_PRESET secrets. No Cloudinary credentials are exposed to
 // the browser.
 export async function uploadToCloudinary(file: File): Promise<string> {
+  const r = await uploadFileToCloudinary(file)
+  return r.url
+}
+
+export type UploadResult = {
+  url: string
+  filename: string
+  resource_type: 'image' | 'raw'
+}
+
+/**
+ * Upload any file (image, .stl, .3dm, .step, .pdf, etc.) to Cloudinary via
+ * the server-side proxy. Returns the resulting URL plus the original filename
+ * for display.
+ */
+export async function uploadFileToCloudinary(file: File): Promise<UploadResult> {
   const body = new FormData()
   body.append('file', file)
 
@@ -14,6 +30,6 @@ export async function uploadToCloudinary(file: File): Promise<string> {
     )
   }
 
-  const data = await res.json() as { url: string }
-  return data.url
+  const data = await res.json() as UploadResult
+  return data
 }

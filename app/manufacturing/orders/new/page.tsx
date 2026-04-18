@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
+import { uploadToCloudinary, uploadFileToCloudinary } from '@/lib/cloudinaryUpload'
 import { formatCurrency } from '@/lib/utils'
-import { ArrowLeft, Save, Upload, X, Printer, Package } from 'lucide-react'
+import { ArrowLeft, Save, Upload, X, Printer, Package, FileUp, FileDown, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 function NewMfgOrderForm() {
@@ -16,9 +16,12 @@ function NewMfgOrderForm() {
   const [uploading, setUploading] = useState(false)
   const [partners, setPartners] = useState<any[]>([])
   const [customerOrders, setCustomerOrders] = useState<any[]>([])
-  const [floats, setFloats] = useState<any[]>([])
+  const [buckets, setBuckets] = useState<any[]>([])
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [cadFiles, setCadFiles] = useState<{ url: string; filename: string }[]>([])
+  const [uploadingCad, setUploadingCad] = useState(false)
   const [labourRates, setLabourRates] = useState<Record<number, number>>({})
+  const [floatError, setFloatError] = useState<string | null>(null)
 
   const defaultPartnerId = searchParams.get('partner') || ''
 
@@ -57,12 +60,29 @@ function NewMfgOrderForm() {
 
   useEffect(() => {
     if (form.manufacturing_partner_id) {
-      supabase.from('material_float')
-        .select('*')
-        .eq('manufacturing_partner_id', form.manufacturing_partner_id)
-        .then(({ data }) => setFloats(data || []))
+      fetch(`/api/manufacturing/partners/${form.manufacturing_partner_id}/buckets`)
+        .then(r => r.json())
+        .then(d => setBuckets(d.buckets || []))
+        .catch(() => setBuckets([]))
+    } else {
+      setBuckets([])
     }
   }, [form.manufacturing_partner_id])
+
+  function materialTypeForKarat(k: string): string {
+    const n = parseInt(k, 10)
+    if (n === 14) return 'gold_14k'
+    if (n === 22) return 'gold_22k'
+    return 'gold_18k'
+  }
+  const requiredMaterialType = materialTypeForKarat(form.gold_karat)
+  const activeBucket = buckets.find(b => b.material_type === requiredMaterialType)
+  const required = parseFloat(form.gold_weight_required || '0') || 0
+  const shortfall =
+    form.material_from_float && required > 0 && activeBucket
+      ? Math.max(0, required - activeBucket.available)
+      : 0
+  const overIssue = form.material_from_float && required > 0 && (!activeBucket || activeBucket.available < required)
 
   // Auto-fill labour rate when karat changes
   useEffect(() => {
@@ -85,6 +105,17 @@ function NewMfgOrderForm() {
     setUploading(false)
   }
 
+  async function uploadCad(file: File) {
+    setUploadingCad(true)
+    try {
+      const r = await uploadFileToCloudinary(file)
+      setCadFiles(prev => [...prev, { url: r.url, filename: r.filename }])
+    } catch (err) {
+      alert('File upload failed: ' + (err instanceof Error ? err.message : String(err)))
+    }
+    setUploadingCad(false)
+  }
+
   // Calculate labour amount
   const goldWeight = parseFloat(form.gold_weight_actual || form.gold_weight_required || '0')
   const effectiveWeight = Math.max(goldWeight, parseFloat('1')) // minimum 1 gram
@@ -97,8 +128,17 @@ function NewMfgOrderForm() {
   }
 
   async function handleSave() {
+    setFloatError(null)
     if (!form.manufacturing_partner_id || !form.description) {
       alert('Select a manufacturing partner and add description')
+      return
+    }
+    if (overIssue) {
+      const avail = activeBucket?.available?.toFixed(3) || '0.000'
+      setFloatError(
+        `Available ${requiredMaterialType.replace('_', ' ')} float for this karigar is ${avail}g, but this order needs ${required.toFixed(3)}g. ` +
+        `Record a deposit of at least ${shortfall.toFixed(3)}g first, then come back to issue this order.`
+      )
       return
     }
     setSaving(true)
@@ -114,6 +154,8 @@ function NewMfgOrderForm() {
       ring_size: form.ring_size || null,
       special_notes: form.special_notes || null,
       reference_images: uploadedImages,
+      cad_files: cadFiles.map(c => c.url),
+      cad_file_names: cadFiles.map(c => c.filename),
       material_from_float: form.material_from_float,
       gold_weight_required: parseFloat(form.gold_weight_required) || null,
       gold_karat: parseInt(form.gold_karat),
@@ -131,9 +173,40 @@ function NewMfgOrderForm() {
     }
 
     const { data, error } = await supabase.from('manufacturing_orders').insert([payload]).select().single()
+    if (error) { setSaving(false); alert('Error: ' + error.message); return }
+
+    // Reserve gold from float on the server — re-checks Available inside the
+    // request to close the race window where two admins issue overlapping
+    // orders. On rejection we delete the order we just created.
+    if (form.material_from_float && required > 0) {
+      const reserve = await fetch(`/api/manufacturing/orders/${data.id}/reserve-float`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partner_id: form.manufacturing_partner_id,
+          material_type: requiredMaterialType,
+          quantity: required,
+          order_id: form.customer_order_id || null,
+          notes: `Reserved for ${orderNumber}`,
+        }),
+      })
+      if (!reserve.ok) {
+        const j = await reserve.json().catch(() => ({}))
+        await supabase.from('manufacturing_orders').delete().eq('id', data.id)
+        setSaving(false)
+        if (reserve.status === 409) {
+          setFloatError(
+            `Another order may have just consumed the float. Available is now ${(j.available || 0).toFixed(3)}g but this needs ${(j.required || required).toFixed(3)}g. Record a deposit and try again.`
+          )
+        } else {
+          setFloatError(j.error || 'Failed to reserve float; order was rolled back.')
+        }
+        return
+      }
+    }
+
     setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
-    router.push('/manufacturing')
+    router.push(`/manufacturing/orders/${data.id}`)
   }
 
   const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
@@ -297,6 +370,31 @@ function NewMfgOrderForm() {
             <p className="text-xs text-stone-400">Upload customer's reference images, sketches, or inspiration photos</p>
           </div>
 
+          {/* CAD / STL files */}
+          <div className="bg-white rounded-xl border border-stone-200 p-4">
+            <h2 className="font-medium text-stone-900 mb-1">CAD &amp; design files</h2>
+            <p className="text-xs text-stone-400 mb-3">Attach the approved CAD, STL, STEP or PDF you want the karigar to make from. These will be bundled in the WhatsApp link they receive.</p>
+            <div className="space-y-2 mb-3">
+              {cadFiles.map((f, i) => (
+                <div key={i} className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2">
+                  <FileDown className="w-4 h-4 text-stone-500 shrink-0" />
+                  <span className="flex-1 text-sm text-stone-700 truncate">{f.filename}</span>
+                  <button onClick={() => setCadFiles(prev => prev.filter((_, idx) => idx !== i))}
+                    className="text-stone-400 hover:text-red-500" aria-label="Remove">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <label className="flex items-center justify-center gap-2 border-2 border-dashed border-stone-200 rounded-lg py-3 cursor-pointer hover:border-[#1E3A5F] hover:bg-yellow-50 transition-colors">
+              <input type="file" multiple className="hidden"
+                accept=".stl,.3dm,.step,.stp,.iges,.igs,.obj,.zip,.pdf,.dwg,.dxf,application/pdf,application/zip"
+                onChange={e => { Array.from(e.target.files || []).forEach(f => uploadCad(f)); e.target.value = '' }} />
+              <FileUp className="w-4 h-4 text-stone-400" />
+              <span className="text-sm text-stone-500">{uploadingCad ? 'Uploading...' : 'Add CAD / STL / PDF'}</span>
+            </label>
+          </div>
+
           {/* Material */}
           <div className="bg-white rounded-xl border border-stone-200 p-4">
             <h2 className="font-medium text-stone-900 mb-4">Material</h2>
@@ -311,16 +409,68 @@ function NewMfgOrderForm() {
                 </div>
               </label>
             </div>
-            {form.material_from_float && floats.length > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                <p className="text-xs font-medium text-amber-700 mb-2">Current material balance:</p>
-                <div className="flex flex-wrap gap-2">
-                  {floats.map(f => (
-                    <span key={f.id} className="text-xs bg-white border border-amber-200 text-amber-700 px-2 py-1 rounded-lg">
-                      {f.material_type.replace(/_/g, ' ')}: {f.balance}g available
-                    </span>
-                  ))}
-                </div>
+            {form.material_from_float && (
+              <div className="space-y-3 mb-4">
+                {buckets.length === 0 && form.manufacturing_partner_id && (
+                  <div className="bg-stone-50 border border-stone-200 rounded-lg p-3 text-xs text-stone-500">
+                    No float deposits recorded for this karigar yet.
+                  </div>
+                )}
+                {buckets.map(b => {
+                  const isActive = b.material_type === requiredMaterialType
+                  return (
+                    <div key={b.material_type}
+                      className={`rounded-lg p-3 border ${isActive ? 'bg-[#F5F6F8] border-[#1E3A5F]' : 'bg-stone-50 border-stone-200'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-stone-700">
+                          {b.material_type.replace(/_/g, ' ')}
+                        </p>
+                        {isActive && <span className="text-[10px] bg-[#1E3A5F] text-white px-2 py-0.5 rounded-full">selected karat</span>}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-white rounded-md py-2 border border-stone-200">
+                          <p className="text-[10px] text-stone-500 uppercase">Available</p>
+                          <p className="text-sm font-semibold text-emerald-700">{b.available.toFixed(3)}g</p>
+                        </div>
+                        <div className="bg-white rounded-md py-2 border border-stone-200">
+                          <p className="text-[10px] text-stone-500 uppercase">Reserved</p>
+                          <p className="text-sm font-semibold text-amber-700">{b.reserved.toFixed(3)}g</p>
+                        </div>
+                        <div className="bg-white rounded-md py-2 border border-stone-200">
+                          <p className="text-[10px] text-stone-500 uppercase">Used</p>
+                          <p className="text-sm font-semibold text-stone-700">{b.used.toFixed(3)}g</p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+                {overIssue && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="flex gap-2 items-start">
+                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-red-700">
+                          Available {requiredMaterialType.replace(/_/g, ' ')}: {(activeBucket?.available || 0).toFixed(3)}g — short by {shortfall.toFixed(3)}g.
+                        </p>
+                        <p className="text-xs text-red-600 mt-1">
+                          Record a deposit before issuing this order.
+                        </p>
+                        {form.manufacturing_partner_id && (
+                          <Link
+                            href={`/manufacturing/partners/${form.manufacturing_partner_id}/float`}
+                            className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-red-700 underline">
+                            Record deposit now →
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {floatError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-sm text-red-700">
+                {floatError}
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

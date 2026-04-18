@@ -1,0 +1,103 @@
+import { supabaseAdmin } from './supabaseAdmin'
+
+export type Bucket = {
+  material_type: string
+  unit: string
+  available: number
+  reserved: number
+  used: number
+  in_custody: number // available + reserved
+}
+
+type Row = {
+  transaction_type: string
+  quantity: number | null
+  unit: string | null
+  lifecycle: string | null
+  material_float: { material_type: string } | null
+}
+
+/**
+ * Compute live float buckets for a karigar from material_transactions.
+ *
+ * Three buckets per material_type:
+ *   • available — gold in custody, not yet allocated to any in-flight order
+ *   • reserved  — allocated to a pending manufacturing order (lifecycle='pending')
+ *   • used      — finalised by a completed order (transaction_type='consumption' & lifecycle='final')
+ *
+ * in_custody = available + reserved (what's physically with the karigar today).
+ *
+ * Pending reservations sit on top of physical custody; they don't reduce it.
+ */
+export async function getPartnerBuckets(partnerId: string): Promise<Bucket[]> {
+  const { data, error } = await supabaseAdmin
+    .from('material_transactions')
+    .select('transaction_type, quantity, unit, lifecycle, material_float(material_type)')
+    .eq('manufacturing_partner_id', partnerId)
+
+  if (error) throw error
+
+  const groups = new Map<string, Bucket>()
+  const get = (mt: string, unit: string) => {
+    let b = groups.get(mt)
+    if (!b) {
+      b = { material_type: mt, unit, available: 0, reserved: 0, used: 0, in_custody: 0 }
+      groups.set(mt, b)
+    }
+    return b
+  }
+
+  for (const r of (data || []) as unknown as Row[]) {
+    const mt = r.material_float?.material_type
+    if (!mt) continue
+    const qty = Number(r.quantity) || 0
+    const b = get(mt, r.unit || 'grams')
+    const lifecycle = r.lifecycle || 'final'
+
+    if (r.transaction_type === 'consumption') {
+      if (lifecycle === 'pending') {
+        b.reserved += qty
+      } else {
+        b.used += qty
+      }
+    } else if (r.transaction_type === 'deposit') {
+      b.in_custody += qty
+    } else if (r.transaction_type === 'return') {
+      b.in_custody -= qty
+    } else if (r.transaction_type === 'adjustment') {
+      b.in_custody += qty // signed by caller
+    }
+  }
+
+  for (const b of groups.values()) {
+    // Final consumptions removed gold from custody too.
+    b.in_custody -= b.used
+    b.available = b.in_custody - b.reserved
+  }
+
+  return Array.from(groups.values())
+}
+
+/**
+ * Available qty for a single material type — the number we validate against
+ * when issuing an order from float.
+ */
+export async function getAvailableForMaterial(
+  partnerId: string,
+  materialType: string,
+): Promise<number> {
+  const buckets = await getPartnerBuckets(partnerId)
+  const b = buckets.find(x => x.material_type === materialType)
+  return b ? b.available : 0
+}
+
+/**
+ * Map a karat number to the canonical material_float material_type.
+ */
+export function materialTypeForKarat(karat: number | string | null | undefined): string {
+  const k = typeof karat === 'string' ? parseInt(karat, 10) : karat
+  if (k === 14) return 'gold_14k'
+  if (k === 18) return 'gold_18k'
+  if (k === 22) return 'gold_22k'
+  return 'gold_18k'
+}

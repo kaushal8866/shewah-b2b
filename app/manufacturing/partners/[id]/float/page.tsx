@@ -29,6 +29,7 @@ function MaterialFloatInner() {
 
   const [partner, setPartner] = useState<any>(null)
   const [floats, setFloats] = useState<any[]>([])
+  const [buckets, setBuckets] = useState<any[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
   const [orderInfo, setOrderInfo] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -77,6 +78,11 @@ function MaterialFloatInner() {
     setPartner(p)
     setFloats(f || [])
     setTransactions(t || [])
+    try {
+      const r = await fetch(`/api/manufacturing/partners/${partnerId}/buckets`)
+      const j = await r.json()
+      setBuckets(j.buckets || [])
+    } catch { setBuckets([]) }
     setLoading(false)
   }
 
@@ -183,26 +189,36 @@ function MaterialFloatInner() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-        {floats.map(f => {
-          const info = MATERIAL_TYPES.find(m => m.value === f.material_type)
-          const pct = f.total_deposited > 0 ? (f.balance / f.total_deposited) * 100 : 0
+      <div className="space-y-3 mb-6">
+        {buckets.map(b => {
+          const info = MATERIAL_TYPES.find(m => m.value === b.material_type)
+          const u = info?.unit === 'carats' ? 'ct' : 'g'
+          const lowAvail = b.available < 1
           return (
-            <div key={f.id} className={`bg-white rounded-xl border p-4 ${f.balance < 1 ? 'border-amber-300' : 'border-stone-200'}`}>
-              <p className="text-xs text-stone-400 mb-1">{info?.label || f.material_type}</p>
-              <p className={`text-2xl font-semibold ${f.balance < 1 ? 'text-amber-600' : 'text-stone-900'}`}>
-                {f.balance?.toFixed(3)}{info?.unit === 'carats' ? 'ct' : 'g'}
-              </p>
-              <div className="h-1.5 bg-stone-100 rounded-full mt-2 overflow-hidden">
-                <div className={`h-full rounded-full ${f.balance < 1 ? 'bg-amber-400' : 'bg-[#1E3A5F]'}`}
-                  style={{ width: `${Math.min(Math.max(pct,0), 100)}%` }} />
+            <div key={b.material_type} className={`bg-white rounded-xl border p-4 ${lowAvail ? 'border-amber-300' : 'border-stone-200'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-stone-800">{info?.label || b.material_type.replace(/_/g, ' ')}</p>
+                <p className="text-xs text-stone-400">In custody: {b.in_custody.toFixed(3)}{u}</p>
               </div>
-              <p className="text-xs text-stone-400 mt-1">of {f.total_deposited}{info?.unit === 'carats' ? 'ct' : 'g'} deposited</p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-emerald-50 rounded-lg py-2.5 px-3 border border-emerald-100">
+                  <p className="text-[10px] uppercase text-emerald-700 tracking-wider">Available</p>
+                  <p className={`text-lg font-semibold ${lowAvail ? 'text-amber-700' : 'text-emerald-700'}`}>{b.available.toFixed(3)}{u}</p>
+                </div>
+                <div className="bg-amber-50 rounded-lg py-2.5 px-3 border border-amber-100">
+                  <p className="text-[10px] uppercase text-amber-700 tracking-wider">Reserved</p>
+                  <p className="text-lg font-semibold text-amber-700">{b.reserved.toFixed(3)}{u}</p>
+                </div>
+                <div className="bg-stone-50 rounded-lg py-2.5 px-3 border border-stone-200">
+                  <p className="text-[10px] uppercase text-stone-500 tracking-wider">Used</p>
+                  <p className="text-lg font-semibold text-stone-700">{b.used.toFixed(3)}{u}</p>
+                </div>
+              </div>
             </div>
           )
         })}
-        {floats.length === 0 && !loading && (
-          <div className="col-span-3 text-center py-6 text-stone-400 text-sm">
+        {buckets.length === 0 && !loading && (
+          <div className="text-center py-6 text-stone-400 text-sm bg-white rounded-xl border border-stone-200">
             No material deposited yet — use the form below to deposit gold
           </div>
         )}

@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+const IMAGE_EXTS = new Set(['png','jpg','jpeg','webp','gif','heic','heif','avif','svg'])
+
+function pickResourceType(filename: string): 'image' | 'raw' {
+  const ext = (filename.split('.').pop() || '').toLowerCase()
+  return IMAGE_EXTS.has(ext) ? 'image' : 'raw'
+}
+
 export async function POST(req: NextRequest) {
   const CLOUD_NAME =
     process.env.CLOUDINARY_CLOUD_NAME ||
@@ -28,12 +35,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 })
   }
 
+  // Caller can override resource type, but default is auto-detected by extension.
+  const requested = (formData.get('resource_type') as string | null) || ''
+  const resourceType: 'image' | 'raw' =
+    requested === 'image' || requested === 'raw'
+      ? (requested as 'image' | 'raw')
+      : pickResourceType(file.name || '')
+
   const upload = new FormData()
   upload.append('file', file)
   upload.append('upload_preset', UPLOAD_PRESET)
+  // Preserve the original filename in Cloudinary so the asset URL ends with a
+  // human-readable name (helps karigars who download the file).
+  upload.append('use_filename', 'true')
+  upload.append('unique_filename', 'true')
 
   const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
     { method: 'POST', body: upload }
   )
 
@@ -43,6 +61,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 502 })
   }
 
-  const data = await res.json() as { secure_url: string }
-  return NextResponse.json({ url: data.secure_url })
+  const data = await res.json() as { secure_url: string; original_filename?: string; format?: string }
+  return NextResponse.json({
+    url: data.secure_url,
+    filename: file.name || data.original_filename || 'file',
+    resource_type: resourceType,
+  })
 }
