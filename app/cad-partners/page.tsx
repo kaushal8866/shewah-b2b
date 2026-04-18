@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BookUser, Plus, Edit2, Trash2, X, Save, Phone, Clock, Send, MessageSquareWarning, CheckCircle2, Archive, ArchiveRestore, ExternalLink } from 'lucide-react'
+import { BookUser, Plus, Edit2, Trash2, X, Save, Phone, Clock, Send, MessageSquareWarning, CheckCircle2, Archive, ArchiveRestore, ExternalLink, Sparkles, UserPlus } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 type Partner = {
@@ -39,6 +39,14 @@ type Partner = {
 
 const blank = { name: '', phone: '', notes: '', default_ttl_days: 7 }
 
+type Suggestion = {
+  key: string
+  name: string
+  phone: string | null
+  link_count: number
+  last_share_at: string
+}
+
 export default function CadPartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,19 +56,56 @@ export default function CadPartnersPage() {
   const [draft, setDraft] = useState<typeof blank>(blank)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState<Partial<Partner>>({})
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [adoptingKey, setAdoptingKey] = useState<string | null>(null)
+  const [adoptedNotice, setAdoptedNotice] = useState<string | null>(null)
 
   useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
     try {
-      const r = await fetch('/api/cad-partners?stats=1')
+      const [r, rs] = await Promise.all([
+        fetch('/api/cad-partners?stats=1'),
+        fetch('/api/cad-partners/suggestions'),
+      ])
       const j = await r.json()
       setPartners(j.partners || [])
+      if (rs.ok) {
+        const js = await rs.json()
+        setSuggestions(js.suggestions || [])
+      } else {
+        setSuggestions([])
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to load')
     }
     setLoading(false)
+  }
+
+  async function adoptSuggestion(s: Suggestion) {
+    setAdoptingKey(s.key); setError(null); setAdoptedNotice(null)
+    try {
+      const r = await fetch('/api/cad-partners/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: s.name, phone: s.phone || '' }),
+      })
+      const j = await r.json()
+      if (!r.ok) {
+        setError(j?.error || 'Failed to add to directory')
+      } else {
+        const n = j?.backfilled || 0
+        setAdoptedNotice(
+          `Added "${s.name}" to the directory${n ? ` and linked ${n} past share link${n === 1 ? '' : 's'}` : ''}.`,
+        )
+        await load()
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Network error')
+    } finally {
+      setAdoptingKey(null)
+    }
   }
 
   async function createPartner() {
@@ -154,6 +199,53 @@ export default function CadPartnersPage() {
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2 mb-4">
           {error}
+        </div>
+      )}
+
+      {adoptedNotice && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-3 py-2 mb-4 flex items-start justify-between gap-2">
+          <span>{adoptedNotice}</span>
+          <button onClick={() => setAdoptedNotice(null)} className="text-emerald-500 hover:text-emerald-700 shrink-0">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {suggestions.length > 0 && (
+        <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-5 mb-5">
+          <div className="flex items-start gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <h2 className="font-medium text-stone-900 text-sm">Suggest from past links</h2>
+              <p className="text-xs text-stone-600 mt-0.5">
+                These names came up repeatedly in older share links but aren&apos;t in your directory yet. Add them in one click and we&apos;ll back-link their past shares automatically.
+              </p>
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {suggestions.map(s => (
+              <li key={s.key} className="bg-white rounded-lg border border-amber-100 px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-stone-900 font-medium truncate">{s.name}</p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-stone-500 mt-0.5">
+                    {s.phone && (
+                      <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {s.phone}</span>
+                    )}
+                    <span>{s.link_count} past link{s.link_count === 1 ? '' : 's'}</span>
+                    <span>Last shared {formatDate(s.last_share_at)}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => adoptSuggestion(s)}
+                  disabled={adoptingKey === s.key}
+                  className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] disabled:opacity-50 shrink-0"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  {adoptingKey === s.key ? 'Adding…' : 'Add to directory'}
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
