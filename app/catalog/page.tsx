@@ -317,6 +317,9 @@ function CollectionsTab() {
   const [needsSetup, setNeedsSetup] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [avgMargins, setAvgMargins] = useState<Map<string, number>>(new Map())
+  const [marginFilter, setMarginFilter] = useState<'all' | 'high' | 'mid' | 'low'>('all')
+  const [sortBy, setSortBy] = useState<'default' | 'margin_desc' | 'margin_asc'>('default')
+  const [hasGoldRate, setHasGoldRate] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -353,6 +356,7 @@ function CollectionsTab() {
       if (linksErr) { console.warn('loadMargins links error', linksErr.message); return }
       if (gErr) { console.warn('loadMargins gold rate error', gErr.message); return }
       const goldRate = g?.[0]?.rate_24k as number | undefined
+      setHasGoldRate(!!goldRate)
       if (!goldRate || !links) return
       type LinkProduct = { gold_karat?: number; gold_weight_g?: number; making_charges?: number; diamond_cost?: number; trade_price?: number }
       type LinkRow = { collection_id: string; products: LinkProduct | LinkProduct[] | null }
@@ -398,6 +402,29 @@ function CollectionsTab() {
     load()
   }
 
+  const visible = useMemo(() => {
+    const list = collections.filter(c => {
+      if (marginFilter === 'all') return true
+      const m = avgMargins.get(c.id)
+      if (m == null) return false
+      if (marginFilter === 'high') return m >= 25
+      if (marginFilter === 'mid') return m >= 10 && m < 25
+      if (marginFilter === 'low') return m < 10
+      return true
+    })
+    if (sortBy === 'margin_desc' || sortBy === 'margin_asc') {
+      list.sort((a, b) => {
+        const ma = avgMargins.get(a.id)
+        const mb = avgMargins.get(b.id)
+        if (ma == null && mb == null) return 0
+        if (ma == null) return 1
+        if (mb == null) return -1
+        return sortBy === 'margin_desc' ? mb - ma : ma - mb
+      })
+    }
+    return list
+  }, [collections, avgMargins, marginFilter, sortBy])
+
   if (loading) return <div className="py-16 text-center text-stone-400 text-sm">Loading collections...</div>
 
   if (needsSetup) {
@@ -430,8 +457,29 @@ function CollectionsTab() {
     <div>
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-stone-900">Design Collections</h2>
-        <p className="text-stone-500 text-sm">Curate lookbooks to share with partners and track their interest</p>
+        <p className="text-stone-500 text-sm">
+          Curate lookbooks to share with partners and track their interest
+          {!hasGoldRate && <span className="ml-2 text-amber-600">· Add today&apos;s gold rate to enable margin sort/filter</span>}
+        </p>
       </div>
+
+      {collections.length > 0 && (
+        <div className="flex gap-3 mb-4 flex-wrap">
+          <select value={marginFilter} onChange={e => setMarginFilter(e.target.value as typeof marginFilter)}
+            className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white" disabled={!hasGoldRate}>
+            <option value="all">All margins</option>
+            <option value="high">High (≥25%)</option>
+            <option value="mid">Mid (10–25%)</option>
+            <option value="low">Low (&lt;10%)</option>
+          </select>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
+            className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white" disabled={!hasGoldRate}>
+            <option value="default">Sort: Default</option>
+            <option value="margin_desc">Sort: Avg margin (high→low)</option>
+            <option value="margin_asc">Sort: Avg margin (low→high)</option>
+          </select>
+        </div>
+      )}
 
       {collections.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border border-stone-200">
@@ -442,9 +490,14 @@ function CollectionsTab() {
             <Plus className="w-4 h-4" /> Create first collection
           </Link>
         </div>
+      ) : visible.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl border border-stone-200">
+          <Library className="w-10 h-10 text-stone-200 mx-auto mb-3" />
+          <p className="text-stone-400 text-sm">No collections match the current margin filter.</p>
+        </div>
       ) : (
         <div className="space-y-3">
-          {collections.map(c => (
+          {visible.map(c => (
             <div key={c.id} className="bg-white rounded-xl border border-stone-200 p-4">
               <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
