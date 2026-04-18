@@ -25,9 +25,10 @@ const ALLOWED_TABLES = new Set([
   'settings',
   'material_float',
   'material_transactions',
+  'reconciliation_alerts',
 ])
 
-const MASTER_ONLY_TABLES = new Set(['app_users', 'material_float', 'material_transactions'])
+const MASTER_ONLY_TABLES = new Set(['app_users', 'material_float', 'material_transactions', 'reconciliation_alerts'])
 
 // Roles allowed to use the generic admin DB proxy at all.
 // Manufacturer / retailer portal users go through dedicated /api/portal/* endpoints.

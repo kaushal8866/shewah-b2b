@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
-import { Plus, Factory, ChevronRight, Phone, Layers, AlertCircle } from 'lucide-react'
+import { Plus, Factory, ChevronRight, Phone, Layers, AlertCircle, Bell } from 'lucide-react'
 import Link from 'next/link'
 
 type MfgPartner = {
@@ -73,6 +73,13 @@ export default function ManufacturingPage() {
           <p className="text-stone-500 text-sm mt-0.5">Partner orders + material tracking</p>
         </div>
         <div className="flex gap-2">
+          {isMaster && (
+            <Link href="/manufacturing/reconciliation-alerts"
+              className="flex items-center gap-2 border border-stone-200 bg-white text-stone-700 px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-stone-50 transition-colors">
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">Alerts</span>
+            </Link>
+          )}
           <Link href="/manufacturing/orders/new"
             className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
             <Plus className="w-4 h-4" />

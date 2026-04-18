@@ -116,6 +116,16 @@ Retailer Portal (Task #7 — uses the same `partner_id` column added in Task #6 
 - Master admins create retailer logins from Settings → User management → "Retailer" tile, picking
   the linked row in `partners`
 
+## Daily karigar reconciliation digest (Task #17 — `scripts/setup_reconciliation_alerts.sql`)
+
+- Endpoint: `POST/GET /api/cron/reconciliation-digest` (excluded from NextAuth middleware via the matcher). Auth: master session **or** `Authorization: Bearer $CRON_SECRET`.
+- Mirrors the per-partner metrics on `/manufacturing/partners/[id]/reconciliation` over a configurable window for every active `manufacturing_partners` row, then upserts one row per flagged partner into `reconciliation_alerts` (unique on `partner_id, run_date`). Returns the digest message (with deep links into each per-partner reconciliation page) for WhatsApp/email.
+- Thresholds live in `settings`: `reconciliation_alert_window_days` (default 7), `reconciliation_alert_variance_g` (2.0), `reconciliation_alert_negative_count` (1), `reconciliation_alert_unlinked_count` (3). Set any count to `0` to disable that trigger.
+- Master-only dashboard: `/manufacturing/reconciliation-alerts` — runs the digest on demand, edits thresholds, copies the message or opens it in WhatsApp (via the `whatsapp_number` setting), and shows the recent history. Linked from the manufacturing landing page header for masters.
+- `reconciliation_alerts` is added to the master-only set in `app/api/db/route.ts`. To run the digest automatically, configure a Replit Scheduled Deployment that hits the endpoint daily with the `CRON_SECRET` bearer header.
+- Auto-send: when `RESEND_API_KEY` is set in env and `reconciliation_alert_email_to` + `reconciliation_alert_email_from` settings are filled, the cron route emails the digest to those recipients via Resend (https://api.resend.com/emails) for any run with at least one flagged karigar. Send result is persisted on the alert rows (`notified_at`, `notify_channel`, `notify_error`) and surfaced in the dashboard's history trail. With no Resend key the route still produces the message and persists snapshots so masters can copy or open in WhatsApp from the dashboard.
+- The route uses Asia/Kolkata for `run_date` (matches the schema default) and clears any rows for today's date before inserting the latest snapshot, so re-runs are idempotent and partners that no longer trip a threshold drop off the same-day list.
+
 ## Notes
 
 - Migrated from Vercel to Replit

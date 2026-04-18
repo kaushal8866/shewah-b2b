@@ -77,6 +77,11 @@ export default withAuth(
       return NextResponse.redirect(new URL('/manufacturing', req.url))
     }
 
+    // Reconciliation digest dashboard is master-only
+    if (pathname.startsWith('/manufacturing/reconciliation-alerts') && token.role !== 'master') {
+      return NextResponse.redirect(new URL('/manufacturing', req.url))
+    }
+
     return NextResponse.next()
   },
   {
@@ -88,6 +93,10 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/((?!login|setup|showcase|track|api/auth|api/setup|api/showcase|api/track|_next|_vercel|favicon\\.ico|.*\\.).*)',
+    // SECURITY: anything matched here is excluded from NextAuth middleware.
+    // /api/cron/* is excluded so Replit Scheduled Deployments can hit it
+    // without a session — every route under /api/cron MUST implement its own
+    // auth (typically a Bearer $CRON_SECRET check) inside the handler.
+    '/((?!login|setup|showcase|track|api/auth|api/setup|api/showcase|api/track|api/cron|_next|_vercel|favicon\\.ico|.*\\.).*)',
   ],
 }
