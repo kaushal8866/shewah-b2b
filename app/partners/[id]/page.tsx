@@ -66,6 +66,7 @@ export default function PartnerDetailPage() {
       stage: form.stage,
       source: form.source,
       notes: form.notes,
+      notify_whatsapp: form.notify_whatsapp !== false,
     }).eq('id', id)
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }
@@ -388,6 +389,22 @@ export default function PartnerDetailPage() {
                 <label className={lbl}>Notes</label>
                 <textarea className={`${inp} resize-none`} rows={3}
                   value={form.notes || ''} onChange={e => set('notes', e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border border-stone-200 hover:bg-stone-50">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 w-4 h-4 accent-[#1E3A5F]"
+                    checked={form.notify_whatsapp !== false}
+                    onChange={e => setForm((prev: any) => ({ ...prev, notify_whatsapp: e.target.checked }))}
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-stone-800">Send WhatsApp updates on orders</p>
+                    <p className="text-xs text-stone-400 mt-0.5">
+                      Pings this retailer when their order status changes (CAD sent, design approved, dispatched, delivered) or when tracking is added.
+                    </p>
+                  </div>
+                </label>
               </div>
             </div>
           </div>

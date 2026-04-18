@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { notifyRetailerOrderUpdate } from '@/lib/whatsappNotify'
 
 const ALLOWED_TABLES = new Set([
   'partners',
@@ -123,6 +124,20 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // For order status / tracking notifications, capture the previous rows
+  // before the update so we can diff after the write succeeds.
+  let priorOrderRows: any[] | null = null
+  if (op === 'update' && table === 'orders') {
+    let priorQ: any = supabaseAdmin
+      .from('orders')
+      .select('id, order_number, status, partner_id, tracking_number, courier')
+    if (Array.isArray(filters)) {
+      for (const f of filters) priorQ = applyFilter(priorQ, f)
+    }
+    const { data: priorData } = await priorQ
+    priorOrderRows = Array.isArray(priorData) ? priorData : []
+  }
+
   let q: any = supabaseAdmin.from(table)
 
   if (op === 'select') {
@@ -171,5 +186,22 @@ export async function POST(req: NextRequest) {
       { data: null, error: { message: error.message, code: (error as any).code, details: (error as any).details } }
     )
   }
+
+  // Fire WhatsApp notifications for retailer-facing milestones. Failures are
+  // logged inside notifyRetailerOrderUpdate and never block the admin save.
+  if (op === 'update' && table === 'orders' && Array.isArray(priorOrderRows) && priorOrderRows.length > 0) {
+    const afterValues = (values && typeof values === 'object') ? values : {}
+    for (const prior of priorOrderRows) {
+      // fire-and-forget — do not await
+      notifyRetailerOrderUpdate({
+        orderId: prior.id,
+        before: prior,
+        afterValues,
+      }).catch((err) => {
+        console.error('[whatsappNotify] dispatch error', err?.message || err)
+      })
+    }
+  }
+
   return NextResponse.json({ data, error: null, count: returnedCount ?? null })
 }

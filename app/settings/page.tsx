@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import { MODULES } from '@/lib/modules'
 import {
   Save, Settings2, Calculator, User, Phone, Users, Plus,
-  Edit2, Trash2, X, Check, Shield, ShieldOff, Eye, EyeOff, Lock
+  Edit2, Trash2, X, Check, Shield, ShieldOff, Eye, EyeOff, Lock, MessageCircle
 } from 'lucide-react'
 
 const ALL_MODULES = MODULES.filter(m => m.id !== 'dashboard')
@@ -276,6 +276,61 @@ export default function SettingsPage() {
                 <p className="text-xs text-stone-400 mt-1">% of order value required upfront</p>
               </div>
               <div><label className={label}>Follow-up reminder (days after visit)</label><input type="number" inputMode="decimal" className={input} value={settings.followup_days || '3'} onChange={e => set('followup_days', e.target.value)} /></div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <MessageCircle className="w-4 h-4 text-[#1E3A5F]" />
+              <h2 className="font-medium text-stone-900">Retailer WhatsApp notifications</h2>
+            </div>
+            <p className="text-xs text-stone-400 mb-4">
+              Send retailers a WhatsApp ping when their order moves to a milestone (CAD sent, design approved, dispatched, delivered) or when courier / tracking is added. Per-retailer toggle lives on each partner's profile.
+            </p>
+            <div className="space-y-4">
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <div>
+                  <p className="text-sm font-medium text-stone-800">Globally enabled</p>
+                  <p className="text-xs text-stone-400">Master kill-switch. When off, no retailer pings are sent.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 accent-[#1E3A5F]"
+                  checked={(settings.whatsapp_notifications_enabled ?? 'true').toLowerCase() !== 'false'}
+                  onChange={e => set('whatsapp_notifications_enabled', e.target.checked ? 'true' : 'false')}
+                />
+              </label>
+              <div>
+                <label className={label}>Webhook URL</label>
+                <input
+                  className={input}
+                  value={settings.whatsapp_webhook_url || ''}
+                  onChange={e => set('whatsapp_webhook_url', e.target.value)}
+                  placeholder="https://your-whatsapp-gateway.example.com/send"
+                />
+                <p className="text-xs text-stone-400 mt-1">
+                  POSTs JSON: <code>{`{ phone, message, orderId, trigger }`}</code>. Use your WhatsApp Business / gateway endpoint.
+                </p>
+              </div>
+              <div>
+                <label className={label}>Webhook bearer token (optional)</label>
+                <input
+                  type="password"
+                  className={input}
+                  value={settings.whatsapp_webhook_token || ''}
+                  onChange={e => set('whatsapp_webhook_token', e.target.value)}
+                  placeholder="Sent as Authorization: Bearer ..."
+                />
+              </div>
+              <div>
+                <label className={label}>Public app URL (used in message links)</label>
+                <input
+                  className={input}
+                  value={settings.public_base_url || ''}
+                  onChange={e => set('public_base_url', e.target.value)}
+                  placeholder="https://shewah.example.com"
+                />
+              </div>
             </div>
           </div>
         </div>

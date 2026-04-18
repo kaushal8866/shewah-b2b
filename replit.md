@@ -33,6 +33,13 @@ A Next.js 14 B2B admin panel for Shewah jewelry, built with Supabase as the data
 - `middleware.ts` - Auth guard (excludes /showcase/* and /api/showcase/*)
 - `scripts/setup_collections.sql` - Migration for 4 new tables (must run manually in Supabase Dashboard)
 - `scripts/setup_material_ledger.sql` - **Task 5 migration: must run manually in Supabase SQL Editor.** Adds COGS/gold columns to `orders` (gold_weight_estimated/actual, gold_source, making_charges, cad_cost, stone_cost, total_cogs, margin, assigned_manufacturer_id), ensures `material_transactions.order_id` FK + negative-balance flag columns + BEFORE-INSERT trigger that flags (does not block) negative-balance rows, renames `total_withdrawn`→`total_returned` on `material_float`, and migrates the `transaction_type` value `withdrawal`→`return`. Canonical 4-type set: `deposit`, `consumption`, `return`, `adjustment`.
+- `scripts/migrate_task14_whatsapp_notifications.sql` - **Task 14 migration: must run manually.** Adds `partners.notify_whatsapp boolean default true` and seeds settings keys `whatsapp_notifications_enabled`, `whatsapp_webhook_url`, `whatsapp_webhook_token`, `public_base_url`.
+
+## Retailer WhatsApp notifications (Task 14)
+
+`lib/whatsappNotify.ts` is a server-only util that sends a WhatsApp ping to the linked retailer when an admin order update changes `status` to a milestone (`cad_sent`, `design_approved`, `dispatched`, `delivered`) or fills/changes `tracking_number` / `courier`. The dispatcher is wired into `app/api/db/route.ts`: for any `op=update` on `orders`, the route snapshots the prior rows, performs the update, and then fire-and-forget calls `notifyRetailerOrderUpdate` per affected order. Failures are logged and never block the admin save.
+
+Outbound delivery is a generic JSON POST to a configurable `whatsapp_webhook_url` (with optional `whatsapp_webhook_token` as `Authorization: Bearer ...`). Payload: `{ phone, message, orderId, trigger }`. Dispatch is gated by the global `whatsapp_notifications_enabled` setting and the per-retailer `partners.notify_whatsapp` flag (both editable from Settings → General and the partner edit page respectively). Message links use `public_base_url` and point at `/portal/retailer/orders/[id]`.
 
 ## Material ledger access control
 

@@ -38,7 +38,10 @@ create table partners (
 
   -- Notes
   notes         text,
-  tags          text[]
+  tags          text[],
+
+  -- Notifications (Task 14)
+  notify_whatsapp boolean not null default true
 );
 
 -- ── VISITS (Circuit visit log) ────────────────────────────
@@ -240,6 +243,10 @@ insert into settings (key, value) values
   ('business_name', 'Shewah'),
   ('owner_name', 'Kaushal'),
   ('whatsapp_number', ''),
+  ('whatsapp_notifications_enabled', 'true'),
+  ('whatsapp_webhook_url', ''),
+  ('whatsapp_webhook_token', ''),
+  ('public_base_url', ''),
   ('surat_address', 'Surat, Gujarat'),
   ('default_igi_cost', '1500'),
   ('default_making_charges', '2500'),
