@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/utils'
-import { TrendingUp, TrendingDown, IndianRupee, Percent, Package, Users, ShoppingBag, ChevronRight, Download } from 'lucide-react'
+import { TrendingUp, TrendingDown, IndianRupee, Percent, Package, Users, ShoppingBag, ChevronRight, Download, AlertTriangle, ExternalLink } from 'lucide-react'
 
 // CSV-injection hardening: prefix a single-quote when a cell starts with a
 // formula-trigger character so spreadsheets render it as text.
@@ -27,6 +27,7 @@ type OrderRow = {
   total_amount: number | null
   total_cogs: number | null
   margin: number | null
+  gold_source: string | null
   partner_id: string | null
   product_id: string | null
   partner: { store_name: string; city: string | null } | null
@@ -82,7 +83,7 @@ export default function ProfitabilityPage() {
         .from('orders')
         .select(`
           id, order_number, order_date, status, type, model, quantity,
-          total_amount, total_cogs, margin, partner_id, product_id,
+          total_amount, total_cogs, margin, gold_source, partner_id, product_id,
           partner:partners ( store_name, city ),
           product:products ( code, name, category )
         `)
@@ -185,6 +186,26 @@ export default function ProfitabilityPage() {
     return Array.from(m.values()).sort((a, b) => b.margin - a.margin)
   }, [filtered])
 
+  const byGoldSource = useMemo(() => {
+    const m = new Map<string, { name: string; orders: number; revenue: number; cogs: number; margin: number }>()
+    filtered.forEach(o => {
+      const key = o.gold_source === 'manufacturer' ? 'Manufacturer' : 'Self'
+      const row = m.get(key) || { name: key, orders: 0, revenue: 0, cogs: 0, margin: 0 }
+      row.orders += 1
+      row.revenue += o.total_amount || 0
+      row.cogs    += o.total_cogs || 0
+      row.margin  += o.margin || 0
+      m.set(key, row)
+    })
+    return Array.from(m.values())
+  }, [filtered])
+
+  const lossOrders = useMemo(() => {
+    return filtered
+      .filter(o => (o.margin || 0) < 0)
+      .sort((a, b) => (a.margin || 0) - (b.margin || 0))
+  }, [filtered])
+
   const ordersSorted = useMemo(() => {
     return [...filtered].sort((a, b) => (b.margin || 0) - (a.margin || 0))
   }, [filtered])
@@ -239,16 +260,16 @@ export default function ProfitabilityPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}
-            className="bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none">
+            className="bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none">
             <option value="realised">Dispatched / delivered only</option>
             <option value="all">All open orders (provisional)</option>
           </select>
           <select value={range} onChange={e => setRange(e.target.value as Range)}
-            className="bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none">
+            className="bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none">
             {RANGE_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
           <button onClick={downloadCsv} disabled={!filtered.length}
-            className="flex items-center gap-1.5 bg-white border border-stone-200 hover:border-[#C49C64] text-stone-700 px-3 py-2 rounded-lg text-sm disabled:opacity-50">
+            className="flex items-center gap-1.5 bg-white border border-stone-200 hover:border-[#1E3A5F] text-stone-700 px-3 py-2 rounded-lg text-sm disabled:opacity-50">
             <Download className="w-4 h-4" /> CSV
           </button>
         </div>
@@ -295,7 +316,7 @@ export default function ProfitabilityPage() {
                     <p className="text-[10px] text-stone-400">{m.revenue ? `₹${(m.revenue/1000).toFixed(0)}K` : ''}</p>
                     <div className="flex items-end gap-0.5" style={{ height: 140 }}>
                       <div className="w-3 bg-blue-200 rounded-t" style={{ height: `${revH}px` }} />
-                      <div className="w-3 bg-[#C49C64] rounded-t" style={{ height: `${marH}px` }} />
+                      <div className="w-3 bg-[#1E3A5F] rounded-t" style={{ height: `${marH}px` }} />
                     </div>
                     <p className="text-xs text-stone-400">{m.label}</p>
                   </div>
@@ -304,7 +325,7 @@ export default function ProfitabilityPage() {
             </div>
             <div className="flex items-center gap-4 mt-3 text-xs text-stone-500">
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-blue-200 rounded-sm" /> Revenue</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#C49C64] rounded-sm" /> Margin</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#1E3A5F] rounded-sm" /> Margin</span>
             </div>
           </div>
         )}
@@ -327,6 +348,51 @@ export default function ProfitabilityPage() {
             <h2 className="font-medium text-stone-900">Top products by margin</h2>
           </div>
           <ProductTable rows={byProduct.slice(0, 10)} />
+        </div>
+      </div>
+
+      {/* Gold-source split + loss makers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-5 lg:mb-6">
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-stone-100 flex items-center gap-2">
+            <Percent className="w-4 h-4 text-stone-400" />
+            <h2 className="font-medium text-stone-900">Margin by gold source</h2>
+          </div>
+          <GoldSourceBreakdown rows={byGoldSource} />
+        </div>
+
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-stone-100 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-status-danger-fg" />
+            <h2 className="font-medium text-stone-900">Loss-making orders</h2>
+            <span className="ml-auto text-xs text-stone-400">{lossOrders.length} found</span>
+          </div>
+          {lossOrders.length === 0 ? (
+            <p className="px-5 py-6 text-sm text-stone-400">No loss-making orders for this filter — clean books.</p>
+          ) : (
+            <div className="max-h-80 overflow-y-auto">
+              {lossOrders.slice(0, 20).map(o => (
+                <Link key={o.id} href={`/orders/${o.id}`}
+                  className="flex items-center gap-3 px-5 py-3 hover:bg-stone-50 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-stone-800 truncate">{o.order_number}</p>
+                      <ExternalLink className="w-3 h-3 text-stone-300" />
+                    </div>
+                    <p className="text-xs text-stone-400 truncate">
+                      {o.partner?.store_name || '—'} · {o.order_date}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold text-status-danger-fg">{formatCurrency(o.margin || 0)}</p>
+                    <p className="text-xs text-stone-400">
+                      {formatCurrency(o.total_amount || 0)} − {formatCurrency(o.total_cogs || 0)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -378,7 +444,7 @@ export default function ProfitabilityPage() {
                         {fmtPct(m, r)}
                       </td>
                       <td className="px-4 py-2.5 text-right">
-                        <Link href={`/orders/${o.id}`} className="text-stone-300 hover:text-[#C49C64]">
+                        <Link href={`/orders/${o.id}`} className="text-stone-300 hover:text-[#1E3A5F]">
                           <ChevronRight className="w-4 h-4 inline" />
                         </Link>
                       </td>
@@ -437,6 +503,58 @@ function PartnerTable({ rows }: { rows: { id: string; name: string; city: string
           </div>
         )
       })}
+    </div>
+  )
+}
+
+function GoldSourceBreakdown({ rows }: { rows: { name: string; orders: number; revenue: number; cogs: number; margin: number }[] }) {
+  if (rows.length === 0) {
+    return <p className="px-5 py-6 text-sm text-stone-400">No data yet.</p>
+  }
+  const totalMargin = rows.reduce((s, r) => s + Math.abs(r.margin), 0) || 1
+  return (
+    <div className="p-5 space-y-4">
+      {/* Stacked bar */}
+      <div className="flex w-full h-2.5 rounded-full overflow-hidden bg-stone-100">
+        {rows.map((r, i) => {
+          const pct = (Math.abs(r.margin) / totalMargin) * 100
+          const bg = i === 0 ? '#1E3A5F' : '#7B8295'
+          return <div key={r.name} style={{ width: `${pct}%`, background: bg }} />
+        })}
+      </div>
+      <div className="space-y-3">
+        {rows.map((r, i) => {
+          const pct = r.revenue ? (r.margin / r.revenue) * 100 : 0
+          const dotBg = i === 0 ? '#1E3A5F' : '#7B8295'
+          return (
+            <div key={r.name}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: dotBg }} />
+                <span className="font-medium text-stone-800">{r.name}</span>
+                <span className="ml-auto text-xs text-stone-400">{r.orders} orders</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs pl-5">
+                <div>
+                  <p className="text-stone-400">Revenue</p>
+                  <p className="text-stone-800 font-medium">{formatCurrency(r.revenue)}</p>
+                </div>
+                <div>
+                  <p className="text-stone-400">Margin</p>
+                  <p className={`font-medium ${r.margin >= 0 ? 'text-status-success-fg' : 'text-status-danger-fg'}`}>
+                    {formatCurrency(r.margin)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-stone-400">Margin %</p>
+                  <p className={`font-medium ${pct >= 0 ? 'text-status-success-fg' : 'text-status-danger-fg'}`}>
+                    {pct.toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

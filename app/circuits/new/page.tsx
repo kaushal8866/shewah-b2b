@@ -47,7 +47,7 @@ export default function NewCircuitPage() {
     router.push('/circuits')
   }
 
-  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none"
+  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
   const label = "block text-xs font-medium text-stone-500 mb-1"
 
   const SUGGESTED_CITIES = {
@@ -117,8 +117,8 @@ export default function NewCircuitPage() {
                   }}
                     className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                       form.cities.includes(city)
-                        ? 'bg-[#C49C64] text-white border-[#C49C64]'
-                        : 'border-stone-200 text-stone-500 hover:border-[#C49C64] hover:text-[#C49C64]'
+                        ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
+                        : 'border-stone-200 text-stone-500 hover:border-[#1E3A5F] hover:text-[#1E3A5F]'
                     }`}>
                     {city}
                   </button>
@@ -195,7 +195,7 @@ export default function NewCircuitPage() {
             Cancel
           </Link>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 bg-[#C49C64] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Save circuit'}
           </button>

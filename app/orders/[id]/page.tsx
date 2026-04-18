@@ -153,7 +153,7 @@ export default function OrderDetailPage() {
     router.push('/orders')
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
@@ -207,7 +207,7 @@ export default function OrderDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
@@ -250,7 +250,7 @@ export default function OrderDetailPage() {
               <h2 className="font-medium text-stone-900">Pipeline stage</h2>
               {nextStage && !isCancelled && (
                 <button onClick={advanceStage} disabled={advancing}
-                  className="flex items-center gap-1.5 bg-[#C49C64] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+                  className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
                   {advancing ? 'Moving...' : `Move to ${nextStage.label}`}
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -271,21 +271,21 @@ export default function OrderDetailPage() {
                   <div key={stage.value} className="flex items-center flex-1 min-w-0">
                     <div className="flex flex-col items-center flex-1 min-w-0">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 border-2 transition-colors ${
-                        isDone ? 'bg-[#C49C64] border-[#C49C64] text-white'
-                        : isActive ? 'bg-white border-[#C49C64] text-[#C49C64]'
+                        isDone ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white'
+                        : isActive ? 'bg-white border-[#1E3A5F] text-[#1E3A5F]'
                         : 'bg-white border-stone-200 text-stone-300'
                       }`}>
                         {isDone ? <Check className="w-3 h-3" /> : idx + 1}
                       </div>
                       <p className={`text-center mt-1 leading-tight text-[10px] hidden sm:block truncate max-w-full px-0.5 ${
-                        isActive ? 'text-[#C49C64] font-semibold'
+                        isActive ? 'text-[#1E3A5F] font-semibold'
                         : isDone ? 'text-stone-400'
                         : 'text-stone-300'
                       }`}>{stage.label}</p>
                     </div>
                     {!isLast && (
                       <div className={`h-0.5 flex-shrink-0 w-full max-w-6 mt-0 mb-4 sm:mb-5 transition-colors ${
-                        isDone ? 'bg-[#C49C64]' : 'bg-stone-200'
+                        isDone ? 'bg-[#1E3A5F]' : 'bg-stone-200'
                       }`} />
                     )}
                   </div>
@@ -366,7 +366,7 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="flex justify-between font-semibold text-stone-900 border-t border-stone-200 pt-1">
                   <span>Total COGS</span>
-                  <span className="text-[#C49C64]">₹{Math.round(savedCogs.total_cogs).toLocaleString('en-IN')}</span>
+                  <span className="text-[#1E3A5F]">₹{Math.round(savedCogs.total_cogs).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between font-medium">
                   <span>Margin vs selling price</span>

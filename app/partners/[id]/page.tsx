@@ -114,7 +114,7 @@ export default function PartnerDetailPage() {
     load()
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return (
@@ -151,7 +151,7 @@ export default function PartnerDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
@@ -214,7 +214,7 @@ export default function PartnerDetailPage() {
             <Plus className="w-4 h-4" /> Log visit
           </button>
           <Link href={`/orders/new?partner=${id}`}
-            className="flex items-center gap-2 bg-[#C49C64] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#9B7A40]">
+            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#162B47]">
             <Plus className="w-4 h-4" /> New order
           </Link>
         </div>
@@ -270,7 +270,7 @@ export default function PartnerDetailPage() {
             <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
               <h2 className="font-medium text-stone-900">Visit history ({visits.length})</h2>
               <button onClick={addVisit}
-                className="text-xs text-[#C49C64] hover:underline flex items-center gap-1">
+                className="text-xs text-[#1E3A5F] hover:underline flex items-center gap-1">
                 <Plus className="w-3.5 h-3.5" /> Log visit
               </button>
             </div>

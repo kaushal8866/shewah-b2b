@@ -1,53 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --gold: #C49C64;
-  --gold-dark: #9B7A40;
-  --charcoal: #1C1A17;
-  --cream: #F7F2EA;
+  --primary:        #1E3A5F;
+  --primary-strong: #162B47;
+  --surface-base:   #F5F6F8;
+  --surface-low:    #EEF0F4;
+  --surface-lowest: #FFFFFF;
+  --surface-high:   #1C2333;
+  --on-surface:     #1A1F2E;
+  --on-surface-mut: #5C6478;
+  --outline-variant:#E5E8EE;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #F7F5F2;
-  color: #1C1A17;
+html, body {
+  background-color: var(--surface-base);
+  color: var(--on-surface);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #F7F5F2; }
-::-webkit-scrollbar-thumb { background: #D3D1C7; border-radius: 3px; }
-
-/* Gold focus ring */
-input:focus, textarea:focus, select:focus {
-  outline: 2px solid #C49C64;
-  outline-offset: 1px;
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
-/* Table styles */
-.table-row-hover:hover { background-color: #FAF8F5; }
+/* Numeric / metric values */
+.font-metric, .metric-value {
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: 'tnum';
+  letter-spacing: -0.02em;
+}
 
-/* Status pill */
+/* Calmer scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D5D9E2; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #B7BEC9; }
+
+/* Ghost focus ring — soft navy halo, no hard outline */
+input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.16);
+  border-color: #1E3A5F;
+}
+
+/* Status pill base */
 .status-pill {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium;
 }
 
-/* Card */
+/* Card — surface-lowest sitting on surface-low, no border */
 .card {
-  @apply bg-white rounded-xl border border-stone-200 p-5;
+  @apply bg-white rounded-xl p-5;
+}
+.metric-card {
+  @apply bg-white rounded-xl p-5 flex flex-col gap-1;
 }
 
-/* Metric card */
-.metric-card {
-  @apply bg-white rounded-xl border border-stone-200 p-5 flex flex-col gap-1;
+/* Data Feature Card — optional 4px primary accent bar on the left */
+.feature-card {
+  @apply bg-white rounded-xl p-5 relative overflow-hidden;
+}
+.feature-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #2C5180 0%, #1E3A5F 100%);
+  border-radius: 4px 0 0 4px;
+}
+
+/* Glassmorphism — used on the floating top/bottom bars */
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.62) 100%);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+.glass-dark {
+  background: linear-gradient(180deg, rgba(28,35,51,0.85) 0%, rgba(15,22,38,0.7) 100%);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* Primary button gradient utility */
+.btn-primary-grad {
+  background-image: linear-gradient(135deg, #2C5180 0%, #1E3A5F 100%);
+  color: white;
+}
+.btn-primary-grad:hover {
+  background-image: linear-gradient(135deg, #1E3A5F 0%, #162B47 100%);
 }
 
 /* Mobile touch improvements */
 @media (max-width: 1023px) {
-  .metric-card, .card { @apply p-4; }
-  input, select, textarea { font-size: 16px !important; } /* prevents iOS zoom */
+  .metric-card, .card, .feature-card { @apply p-4; }
+  input, select, textarea { font-size: 16px !important; }
 }
 
 /* Safe area for iPhone notch/home indicator */
@@ -66,5 +117,5 @@ input:focus, textarea:focus, select:focus {
 /* Touch-friendly tap targets */
 @media (max-width: 1023px) {
   a, button { min-height: 44px; }
-  .status-pill { padding: 4px 10px; font-size: 12px; }
+  .status-pill { padding: 4px 10px; font-size: 12px; min-height: 0; }
 }

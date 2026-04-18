@@ -73,7 +73,7 @@ export default function OrdersPage() {
           <p className="text-stone-500 text-sm mt-0.5">Pipeline tracker — {orders.length} orders</p>
         </div>
         <Link href="/orders/new"
-          className="flex items-center gap-2 bg-[#C49C64] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors">
+          className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">New order</span>
           <span className="sm:hidden">New</span>
@@ -106,7 +106,7 @@ export default function OrdersPage() {
                 onClick={() => setStatusFilter(stage.value === statusFilter ? 'all' : stage.value)}
                 className={`flex-1 text-center rounded-lg py-2 text-xs font-medium transition-colors ${
                   statusFilter === stage.value
-                    ? 'bg-[#C49C64] text-white'
+                    ? 'bg-[#1E3A5F] text-white'
                     : count > 0 ? 'bg-stone-100 text-stone-700 hover:bg-stone-200' : 'bg-stone-50 text-stone-300'
                 }`}>
                 <p className="text-lg font-semibold">{count}</p>

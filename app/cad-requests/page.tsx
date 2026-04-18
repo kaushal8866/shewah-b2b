@@ -110,7 +110,7 @@ export default function CADRequestsPage() {
           <p className="text-stone-500 text-sm mt-0.5">Custom design tracker — 48h SLA</p>
         </div>
         <Link href="/cad-requests/new"
-          className="flex items-center gap-2 bg-[#C49C64] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors">
+          className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">New request</span>
           <span className="sm:hidden">New</span>

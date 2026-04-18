@@ -177,7 +177,7 @@ export default function CatalogProductEditPage() {
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -215,14 +215,14 @@ export default function CatalogProductEditPage() {
             {photoUrls.map((url, i) => (
               <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 group">
                 <img src={url} alt="" className="w-full h-full object-cover" />
-                {i === 0 && <div className="absolute bottom-1 left-1 bg-[#C49C64] text-white text-xs px-1.5 py-0.5 rounded-md">Cover</div>}
+                {i === 0 && <div className="absolute bottom-1 left-1 bg-[#1E3A5F] text-white text-xs px-1.5 py-0.5 rounded-md">Cover</div>}
                 <button onClick={() => setPhotoUrls(prev => prev.filter((_, idx) => idx !== i))}
                   className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <X className="w-3 h-3" />
                 </button>
               </div>
             ))}
-            <label className="aspect-square border-2 border-dashed border-stone-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#C49C64] hover:bg-yellow-50 transition-colors">
+            <label className="aspect-square border-2 border-dashed border-stone-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#1E3A5F] hover:bg-yellow-50 transition-colors">
               <input type="file" accept="image/*" multiple className="hidden" onChange={e => handleImageUpload(e.target.files)} disabled={uploading} />
               <Upload className={`w-5 h-5 mb-1 ${uploading ? 'text-stone-200 animate-pulse' : 'text-stone-300'}`} />
               <span className="text-xs text-stone-300">{uploading ? 'Uploading...' : 'Add photos'}</span>
@@ -233,7 +233,7 @@ export default function CatalogProductEditPage() {
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
           <div className="flex items-center justify-between mb-1">
             <h2 className="font-medium text-stone-900">Diamond specifications</h2>
-            <button onClick={addDiamondRow} className="flex items-center gap-1.5 text-xs text-[#C49C64] border border-[#C49C64] px-3 py-1.5 rounded-lg hover:bg-yellow-50">
+            <button onClick={addDiamondRow} className="flex items-center gap-1.5 text-xs text-[#1E3A5F] border border-[#1E3A5F] px-3 py-1.5 rounded-lg hover:bg-yellow-50">
               <Plus className="w-3.5 h-3.5" /> Add row
             </button>
           </div>
@@ -271,7 +271,7 @@ export default function CatalogProductEditPage() {
 
         <div className="flex justify-end gap-3 pt-2">
           <Link href="/catalog" className="px-5 py-2.5 text-sm text-stone-600 border border-stone-200 rounded-xl hover:bg-stone-50">Cancel</Link>
-          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-[#C49C64] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-[#1E3A5F] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save product'}
           </button>
         </div>

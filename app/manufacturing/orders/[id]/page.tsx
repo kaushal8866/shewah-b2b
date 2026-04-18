@@ -78,7 +78,7 @@ export default function ManufacturingOrderDetailPage() {
     router.push('/manufacturing')
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
@@ -124,7 +124,7 @@ export default function ManufacturingOrderDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
@@ -234,7 +234,7 @@ export default function ManufacturingOrderDetailPage() {
               )}
               <div className="flex justify-between font-semibold text-stone-900 pt-2 border-t border-stone-200">
                 <span>Total manufacturing cost</span>
-                <span className="text-[#C49C64]">₹{order.total_manufacturing_cost?.toLocaleString('en-IN') || '—'}</span>
+                <span className="text-[#1E3A5F]">₹{order.total_manufacturing_cost?.toLocaleString('en-IN') || '—'}</span>
               </div>
             </div>
           </div>
@@ -321,7 +321,7 @@ export default function ManufacturingOrderDetailPage() {
                   </div>
                   <div className="flex justify-between font-semibold text-stone-900">
                     <span>Total manufacturing cost</span>
-                    <span className="text-[#C49C64]">₹{totalMfgCost.toLocaleString('en-IN')}</span>
+                    <span className="text-[#1E3A5F]">₹{totalMfgCost.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               )}
@@ -338,7 +338,7 @@ export default function ManufacturingOrderDetailPage() {
                 <label className="flex items-center gap-2 cursor-pointer text-sm text-stone-700">
                   <input type="checkbox" checked={form.material_from_float || false}
                     onChange={e => set('material_from_float', e.target.checked)}
-                    className="w-4 h-4 accent-[#C49C64]" />
+                    className="w-4 h-4 accent-[#1E3A5F]" />
                   Material from float
                 </label>
               </div>

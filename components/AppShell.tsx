@@ -8,7 +8,7 @@ import { canAccess } from '@/lib/modules'
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
-  Factory, Store, Menu, X, LogOut, ChevronDown
+  Factory, Store, Menu, X, LogOut, ChevronDown, Coins
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -23,6 +23,7 @@ const nav = [
   { href: '/vendors',         icon: Store,           label: 'Vendors',       module: 'vendors'       },
   { href: '/circuits',        icon: Map,             label: 'Circuits',      module: 'circuits'      },
   { href: '/analytics',       icon: BarChart2,       label: 'Analytics',     module: 'analytics'     },
+  { href: '/profitability',   icon: Coins,           label: 'Profitability', module: 'profitability' },
   { href: '/settings',        icon: Settings,        label: 'Settings',      module: 'settings'      },
 ]
 
@@ -69,10 +70,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden">
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-56 bg-[#1C1A17] flex-col shrink-0">
+      <aside className="hidden lg:flex w-56 bg-[#1A1F2E] flex-col shrink-0">
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#C49C64] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
               <Diamond className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -89,7 +90,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <Link key={href} href={href}
                 className={cn(
                   'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
-                  active ? 'bg-[#C49C64] text-white font-medium' : 'text-white/60 hover:text-white hover:bg-white/8'
+                  active ? 'bg-white/10 text-white font-medium ring-1 ring-white/15' : 'text-white/60 hover:text-white hover:bg-white/5'
                 )}>
                 <Icon className="w-4 h-4 shrink-0" />
                 {label}
@@ -104,8 +105,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-white/8 transition-colors text-left">
-              <div className="w-7 h-7 rounded-full bg-[#C49C64]/20 border border-[#C49C64]/30 flex items-center justify-center shrink-0">
-                <span className="text-[#C49C64] text-xs font-semibold">{initials}</span>
+              <div className="w-7 h-7 rounded-full bg-[#1E3A5F]/20 border border-[#1E3A5F]/30 flex items-center justify-center shrink-0">
+                <span className="text-[#1E3A5F] text-xs font-semibold">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white text-xs font-medium truncate">{displayName}</p>
@@ -114,7 +115,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <ChevronDown className={cn('w-3 h-3 text-white/30 shrink-0 transition-transform', userMenuOpen && 'rotate-180')} />
             </button>
             {userMenuOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#2A2825] border border-white/10 rounded-xl p-1 z-50">
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#252B3D] border border-white/10 rounded-xl p-1 z-50">
                 {role === 'master' && (
                   <Link href="/settings" onClick={() => setUserMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/8 rounded-lg">
@@ -133,10 +134,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile full menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-[#1C1A17] flex flex-col">
+        <div className="lg:hidden fixed inset-0 z-50 bg-[#1A1F2E] flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#C49C64] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
                 <Diamond className="w-4 h-4 text-white" />
               </div>
               <p className="text-white font-semibold text-sm">Shewah</p>
@@ -154,7 +155,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'flex items-center gap-3 px-4 py-3.5 rounded-xl text-base transition-colors',
-                    active ? 'bg-[#C49C64] text-white font-medium' : 'text-white/60'
+                    active ? 'bg-white/10 text-white font-medium ring-1 ring-white/15' : 'text-white/60'
                   )}>
                   <Icon className="w-5 h-5 shrink-0" />
                   {label}
@@ -165,8 +166,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="px-4 py-4 border-t border-white/10 space-y-2">
             <div className="flex items-center gap-3 px-3 py-2">
-              <div className="w-9 h-9 rounded-full bg-[#C49C64]/20 border border-[#C49C64]/30 flex items-center justify-center">
-                <span className="text-[#C49C64] text-sm font-semibold">{initials}</span>
+              <div className="w-9 h-9 rounded-full bg-[#1E3A5F]/20 border border-[#1E3A5F]/30 flex items-center justify-center">
+                <span className="text-[#1E3A5F] text-sm font-semibold">{initials}</span>
               </div>
               <div>
                 <p className="text-white text-sm font-medium">{displayName}</p>
@@ -184,9 +185,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile header */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#1C1A17] shrink-0">
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#1A1F2E] shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#C49C64] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
               <Diamond className="w-3.5 h-3.5 text-white" />
             </div>
             <p className="text-white font-semibold text-sm">Shewah Admin</p>
@@ -208,7 +209,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <Link key={href} href={href}
                 className={cn(
                   'flex-1 flex flex-col items-center gap-0.5 py-2 text-xs transition-colors',
-                  active ? 'text-[#C49C64]' : 'text-stone-400'
+                  active ? 'text-[#1E3A5F]' : 'text-stone-400'
                 )}>
                 <Icon className={cn('w-5 h-5', active && 'stroke-[2.5]')} />
                 <span className="text-[10px] leading-none">{short}</span>

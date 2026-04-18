@@ -50,11 +50,11 @@ export default async function TrackOrderPage({ params }: { params: { orderId: st
       <div className="bg-stone-900 border-b border-stone-800">
         <div className="max-w-lg mx-auto px-4 py-5">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-8 h-8 rounded-xl bg-[#C49C64] flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-[#1E3A5F] flex items-center justify-center shrink-0">
               <Diamond className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-[#C49C64] text-xs font-medium tracking-wider uppercase">Shewah Jewellery</p>
+              <p className="text-[#B7C8DD] text-xs font-medium tracking-wider uppercase">Shewah Jewellery</p>
               <p className="text-stone-400 text-xs">Order Tracking</p>
             </div>
           </div>
@@ -114,25 +114,25 @@ export default async function TrackOrderPage({ params }: { params: { orderId: st
                   <div className="flex flex-col items-center">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 border-2 transition-colors ${
                       isDone
-                        ? 'bg-[#C49C64] border-[#C49C64] text-white'
+                        ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white'
                         : isActive
-                        ? 'bg-stone-950 border-[#C49C64] text-[#C49C64]'
+                        ? 'bg-stone-950 border-[#1E3A5F] text-[#B7C8DD]'
                         : 'bg-stone-950 border-stone-700 text-stone-600'
                     }`}>
                       {isDone ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                     </div>
                     {!isLast && (
-                      <div className={`w-0.5 flex-1 min-h-5 mt-1 mb-1 transition-colors ${isDone ? 'bg-[#C49C64]/60' : 'bg-stone-800'}`} />
+                      <div className={`w-0.5 flex-1 min-h-5 mt-1 mb-1 transition-colors ${isDone ? 'bg-[#B7C8DD]/60' : 'bg-stone-800'}`} />
                     )}
                   </div>
                   {/* Label column */}
                   <div className={`${isLast ? 'pb-0' : 'pb-4'} pt-1 flex-1`}>
                     <p className={`text-sm font-medium ${
-                      isActive ? 'text-[#C49C64]' : isDone ? 'text-stone-400' : 'text-stone-600'
+                      isActive ? 'text-[#B7C8DD]' : isDone ? 'text-stone-400' : 'text-stone-600'
                     }`}>
                       {stage.label}
                       {isActive && (
-                        <span className="ml-2 text-xs bg-[#C49C64]/20 text-[#C49C64] px-2 py-0.5 rounded-full border border-[#C49C64]/30 font-normal">
+                        <span className="ml-2 text-xs bg-[#B7C8DD]/20 text-[#B7C8DD] px-2 py-0.5 rounded-full border border-[#B7C8DD]/40 font-normal">
                           Current
                         </span>
                       )}

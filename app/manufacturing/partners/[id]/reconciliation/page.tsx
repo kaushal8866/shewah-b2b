@@ -149,7 +149,7 @@ export default function ReconciliationPage() {
         {PRESETS.map(p => (
           <button key={p.key} onClick={() => setPreset(p.key)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              preset === p.key ? 'bg-[#C49C64] text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+              preset === p.key ? 'bg-[#1E3A5F] text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
             {p.label}
           </button>
         ))}
@@ -211,7 +211,7 @@ export default function ReconciliationPage() {
                   <tr key={r.orderId} className={r.anyNegative ? 'bg-red-50/40' : ''}>
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <Link href={`/orders/${r.orderId}`} className="text-[#C49C64] hover:underline font-medium">
+                        <Link href={`/orders/${r.orderId}`} className="text-[#1E3A5F] hover:underline font-medium">
                           {r.order?.order_number || r.orderId.slice(0, 8)}
                         </Link>
                         {r.anyNegative && (
@@ -268,7 +268,7 @@ export default function ReconciliationPage() {
                   <p className="text-xs text-stone-400 truncate mt-0.5">
                     {formatDate(t.date)}
                     {t.order_id && orders[t.order_id] && (
-                      <> · <Link href={`/orders/${t.order_id}`} className="text-[#C49C64] hover:underline">{orders[t.order_id].order_number}</Link></>
+                      <> · <Link href={`/orders/${t.order_id}`} className="text-[#1E3A5F] hover:underline">{orders[t.order_id].order_number}</Link></>
                     )}
                     {t.reference && ` · ${t.reference}`}
                     {t.notes && ` · ${t.notes}`}

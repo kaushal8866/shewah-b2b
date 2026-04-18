@@ -61,7 +61,7 @@ export default function VendorsPage() {
             <Plus className="w-4 h-4" /> Stock item
           </Link>
           <Link href="/vendors/new"
-            className="flex items-center gap-1.5 bg-[#C49C64] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40]">
+            className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47]">
             <Plus className="w-4 h-4" /> Add vendor
           </Link>
         </div>
@@ -129,7 +129,7 @@ export default function VendorsPage() {
             <div className="flex gap-1 overflow-x-auto">
               {CATEGORIES.map(c => (
                 <button key={c} onClick={() => setCatFilter(c)}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${catFilter === c ? 'bg-[#C49C64] text-white' : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300'}`}>
+                  className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${catFilter === c ? 'bg-[#1E3A5F] text-white' : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300'}`}>
                   {c === 'all' ? 'All' : c.charAt(0).toUpperCase() + c.slice(1)}
                 </button>
               ))}
@@ -144,7 +144,7 @@ export default function VendorsPage() {
               <div className="py-12 text-center">
                 <Store className="w-10 h-10 text-stone-200 mx-auto mb-3" />
                 <p className="text-stone-400 text-sm">No vendors yet</p>
-                <Link href="/vendors/new" className="inline-block mt-3 text-sm text-[#C49C64] hover:underline">Add first vendor →</Link>
+                <Link href="/vendors/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">Add first vendor →</Link>
               </div>
             ) : (
               <table className="w-full">
@@ -200,7 +200,7 @@ export default function VendorsPage() {
               <div className="py-12 text-center">
                 <Store className="w-10 h-10 text-stone-200 mx-auto mb-3" />
                 <p className="text-stone-400 text-sm">No vendors yet</p>
-                <Link href="/vendors/new" className="inline-block mt-3 text-sm text-[#C49C64] hover:underline">Add first vendor →</Link>
+                <Link href="/vendors/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">Add first vendor →</Link>
               </div>
             ) : (
               <div className="divide-y divide-stone-50">
@@ -240,7 +240,7 @@ export default function VendorsPage() {
           ) : inventory.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl border border-stone-200">
               <p className="text-stone-400 text-sm">No inventory items yet</p>
-              <Link href="/vendors/inventory/new" className="inline-block mt-3 text-sm text-[#C49C64] hover:underline">Add first item →</Link>
+              <Link href="/vendors/inventory/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">Add first item →</Link>
             </div>
           ) : (
             <>

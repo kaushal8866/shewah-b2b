@@ -28,7 +28,7 @@ export default function NewCollectionPage() {
     router.push(`/catalog/collections/${data.id}`)
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -70,7 +70,7 @@ export default function NewCollectionPage() {
           Cancel
         </Link>
         <button onClick={handleSave} disabled={saving}
-          className="flex items-center gap-2 bg-[#C49C64] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+          className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
           <Save className="w-4 h-4" />
           {saving ? 'Creating...' : 'Create & add products'}
         </button>

@@ -33,8 +33,8 @@ export default function NewPartnerPage() {
     router.push(`/partners/${data.id}`)
   }
 
-  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] focus:ring-1 focus:ring-[#C49C64] outline-none"
-  const select = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-[#C49C64] outline-none"
+  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] outline-none"
+  const select = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-[#1E3A5F] outline-none"
   const label = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -187,7 +187,7 @@ export default function NewPartnerPage() {
             Cancel
           </Link>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 bg-[#C49C64] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Save partner'}
           </button>

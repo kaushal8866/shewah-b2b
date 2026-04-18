@@ -81,7 +81,7 @@ export default function CadRequestDetailPage() {
     router.push('/cad-requests')
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
@@ -115,7 +115,7 @@ export default function CadRequestDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
@@ -222,7 +222,7 @@ export default function CadRequestDetailPage() {
               <div className="space-y-2">
                 {req.cad_files.map((url: string, i: number) => (
                   <a key={i} href={url} target="_blank" rel="noreferrer"
-                    className="flex items-center gap-2 text-sm text-[#C49C64] hover:underline break-all">
+                    className="flex items-center gap-2 text-sm text-[#1E3A5F] hover:underline break-all">
                     {url}
                   </a>
                 ))}

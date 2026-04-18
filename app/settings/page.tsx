@@ -167,9 +167,9 @@ export default function SettingsPage() {
     loadUsers()
   }
 
-  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none"
+  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
   const label = "block text-xs font-medium text-stone-500 mb-1"
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
 
   return (
     <div className="p-4 lg:p-7 max-w-2xl">
@@ -180,7 +180,7 @@ export default function SettingsPage() {
         </div>
         {tab === 'general' && (
           <button onClick={saveAll} disabled={saving}
-            className="flex items-center gap-2 bg-[#C49C64] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
             {saved ? 'Saved!' : saving ? 'Saving...' : 'Save all'}
           </button>
@@ -209,7 +209,7 @@ export default function SettingsPage() {
         <div className="space-y-5">
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <div className="flex items-center gap-2 mb-4">
-              <User className="w-4 h-4 text-[#C49C64]" />
+              <User className="w-4 h-4 text-[#1E3A5F]" />
               <h2 className="font-medium text-stone-900">Business information</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -222,7 +222,7 @@ export default function SettingsPage() {
 
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Calculator className="w-4 h-4 text-[#C49C64]" />
+              <Calculator className="w-4 h-4 text-[#1E3A5F]" />
               <h2 className="font-medium text-stone-900">Default pricing parameters</h2>
             </div>
             <p className="text-xs text-stone-400 mb-4">Used in the gold rate calculator and new product forms.</p>
@@ -244,7 +244,7 @@ export default function SettingsPage() {
 
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Settings2 className="w-4 h-4 text-[#C49C64]" />
+              <Settings2 className="w-4 h-4 text-[#1E3A5F]" />
               <h2 className="font-medium text-stone-900">Gold karat multipliers</h2>
             </div>
             <p className="text-xs text-stone-400 mb-4">Used to calculate gold cost per gram for each karat from the 24K base rate.</p>
@@ -264,7 +264,7 @@ export default function SettingsPage() {
 
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Phone className="w-4 h-4 text-[#C49C64]" />
+              <Phone className="w-4 h-4 text-[#1E3A5F]" />
               <h2 className="font-medium text-stone-900">Operations defaults</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -287,7 +287,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-stone-500">Manage who can access this admin panel and what they can see.</p>
             <button onClick={() => { setShowNewUser(true); setUserError('') }}
-              className="flex items-center gap-2 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40]">
+              className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47]">
               <Plus className="w-4 h-4" /> Add user
             </button>
           </div>
@@ -310,7 +310,7 @@ export default function SettingsPage() {
                     <button key={r.id} type="button"
                       onClick={() => setNewUser(prev => ({ ...prev, role: r.id as any }))}
                       className={`text-left px-3 py-2.5 rounded-lg border transition-colors ${
-                        newUser.role === r.id ? 'border-[#C49C64] bg-[#C49C64]/8' : 'border-stone-200 hover:bg-stone-50'
+                        newUser.role === r.id ? 'border-[#1E3A5F] bg-[#1E3A5F]/8' : 'border-stone-200 hover:bg-stone-50'
                       }`}>
                       <p className="text-sm font-medium text-stone-800">{r.label}</p>
                       <p className="text-xs text-stone-400 mt-0.5">{r.desc}</p>
@@ -375,13 +375,13 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
                   {ALL_MODULES.map(m => (
                     <label key={m.id} className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors text-sm ${
-                      newUser.permissions.includes(m.id) ? 'border-[#C49C64] bg-[#C49C64]/8 text-stone-800' : 'border-stone-200 text-stone-500'
+                      newUser.permissions.includes(m.id) ? 'border-[#1E3A5F] bg-[#1E3A5F]/8 text-stone-800' : 'border-stone-200 text-stone-500'
                     }`}>
                       <input type="checkbox" className="sr-only"
                         checked={newUser.permissions.includes(m.id)}
                         onChange={() => setNewUser(prev => ({ ...prev, permissions: togglePermission(prev.permissions, m.id) }))} />
                       <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                        newUser.permissions.includes(m.id) ? 'bg-[#C49C64] border-[#C49C64]' : 'border-stone-300'
+                        newUser.permissions.includes(m.id) ? 'bg-[#1E3A5F] border-[#1E3A5F]' : 'border-stone-300'
                       }`}>
                         {newUser.permissions.includes(m.id) && <Check className="w-2.5 h-2.5 text-white" />}
                       </div>
@@ -396,7 +396,7 @@ export default function SettingsPage() {
                 <button onClick={() => { setShowNewUser(false); setUserError('') }}
                   className="px-4 py-2 text-sm text-stone-500 border border-stone-200 rounded-lg hover:bg-stone-50">Cancel</button>
                 <button onClick={createUser} disabled={userSaving}
-                  className="px-4 py-2 text-sm bg-[#C49C64] text-white rounded-lg hover:bg-[#9B7A40] disabled:opacity-50">
+                  className="px-4 py-2 text-sm bg-[#1E3A5F] text-white rounded-lg hover:bg-[#162B47] disabled:opacity-50">
                   {userSaving ? 'Creating...' : 'Create user'}
                 </button>
               </div>
@@ -438,13 +438,13 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-2 gap-2">
                     {ALL_MODULES.map(m => (
                       <label key={m.id} className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-sm ${
-                        editingUser.permissions.includes(m.id) ? 'border-[#C49C64] bg-[#C49C64]/8 text-stone-800' : 'border-stone-200 text-stone-500'
+                        editingUser.permissions.includes(m.id) ? 'border-[#1E3A5F] bg-[#1E3A5F]/8 text-stone-800' : 'border-stone-200 text-stone-500'
                       }`}>
                         <input type="checkbox" className="sr-only"
                           checked={editingUser.permissions.includes(m.id)}
                           onChange={() => setEditingUser(prev => prev ? { ...prev, permissions: togglePermission(prev.permissions, m.id) } : null)} />
                         <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                          editingUser.permissions.includes(m.id) ? 'bg-[#C49C64] border-[#C49C64]' : 'border-stone-300'
+                          editingUser.permissions.includes(m.id) ? 'bg-[#1E3A5F] border-[#1E3A5F]' : 'border-stone-300'
                         }`}>
                           {editingUser.permissions.includes(m.id) && <Check className="w-2.5 h-2.5 text-white" />}
                         </div>
@@ -458,7 +458,7 @@ export default function SettingsPage() {
                   <button onClick={() => { setEditingUser(null); setEditPassword(''); setUserError('') }}
                     className="flex-1 px-4 py-2.5 text-sm text-stone-500 border border-stone-200 rounded-xl hover:bg-stone-50">Cancel</button>
                   <button onClick={updateUser} disabled={userSaving}
-                    className="flex-1 px-4 py-2.5 text-sm bg-[#C49C64] text-white rounded-xl hover:bg-[#9B7A40] disabled:opacity-50">
+                    className="flex-1 px-4 py-2.5 text-sm bg-[#1E3A5F] text-white rounded-xl hover:bg-[#162B47] disabled:opacity-50">
                     {userSaving ? 'Saving...' : 'Save changes'}
                   </button>
                 </div>
@@ -477,7 +477,7 @@ export default function SettingsPage() {
                 {users.map(u => (
                   <div key={u.id} className="flex items-center gap-4 px-5 py-4">
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold ${
-                      u.role === 'master' ? 'bg-[#C49C64]/15 text-[#C49C64]' : 'bg-stone-100 text-stone-600'
+                      u.role === 'master' ? 'bg-[#1E3A5F]/15 text-[#1E3A5F]' : 'bg-stone-100 text-stone-600'
                     }`}>
                       {(u.display_name || u.username).split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                     </div>
@@ -486,7 +486,7 @@ export default function SettingsPage() {
                         <p className="text-sm font-medium text-stone-800">{u.display_name || u.username}</p>
                         <span className="text-xs text-stone-400">@{u.username}</span>
                         {u.role === 'master' && (
-                          <span className="text-[10px] bg-[#C49C64]/15 text-[#C49C64] px-1.5 py-0.5 rounded font-medium">MASTER</span>
+                          <span className="text-[10px] bg-[#1E3A5F]/15 text-[#1E3A5F] px-1.5 py-0.5 rounded font-medium">MASTER</span>
                         )}
                         {u.role === 'manufacturer' && (
                           <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">MANUFACTURER</span>

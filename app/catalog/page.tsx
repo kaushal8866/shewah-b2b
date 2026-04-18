@@ -64,13 +64,13 @@ function CatalogContent() {
         </div>
         {activeTab === 'products' && (
           <Link href="/catalog/new"
-            className="flex items-center gap-2 bg-[#C49C64] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors shrink-0">
+            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors shrink-0">
             <Plus className="w-4 h-4" /><span className="hidden sm:inline">Add product</span><span className="sm:hidden">Add</span>
           </Link>
         )}
         {activeTab === 'collections' && (
           <Link href="/catalog/collections/new"
-            className="flex items-center gap-2 bg-[#C49C64] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors shrink-0">
+            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors shrink-0">
             <Plus className="w-4 h-4" /><span className="hidden sm:inline">New collection</span><span className="sm:hidden">New</span>
           </Link>
         )}
@@ -230,7 +230,7 @@ function ProductsTab() {
         <div className="text-center py-16">
           <Package className="w-10 h-10 text-stone-200 mx-auto mb-3" />
           <p className="text-stone-400 text-sm">{products.length === 0 ? 'No products yet — add your first ring design' : 'No products match your filters'}</p>
-          {products.length === 0 && <Link href="/catalog/new" className="inline-block mt-3 text-sm text-[#C49C64] hover:underline">Add first product →</Link>}
+          {products.length === 0 && <Link href="/catalog/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">Add first product →</Link>}
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -399,7 +399,7 @@ function CollectionsTab() {
           <Library className="w-10 h-10 text-stone-200 mx-auto mb-3" />
           <p className="text-stone-400 text-sm mb-4">No collections yet. Create your first lookbook to share with partners.</p>
           <Link href="/catalog/collections/new"
-            className="inline-flex items-center gap-2 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40]">
+            className="inline-flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47]">
             <Plus className="w-4 h-4" /> Create first collection
           </Link>
         </div>
@@ -419,7 +419,7 @@ function CollectionsTab() {
                   <div className="flex items-center gap-3 text-xs text-stone-400 flex-wrap">
                     {c.circuit_target && <span>📍 {c.circuit_target}</span>}
                     <span>{c.product_count} product{c.product_count !== 1 ? 's' : ''}</span>
-                    <span className="text-[#C49C64] font-medium">{c.response_count} response{c.response_count !== 1 ? 's' : ''}</span>
+                    <span className="text-[#1E3A5F] font-medium">{c.response_count} response{c.response_count !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
                 <button onClick={() => handleDelete(c.id)} disabled={deleting === c.id}
@@ -572,7 +572,7 @@ function InterestTab() {
                       <div className="flex justify-end gap-2">
                         <Link
                           href={`/orders/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
-                          className="text-xs px-2.5 py-1.5 rounded-lg bg-[#C49C64] text-white hover:bg-[#9B7A40] transition-colors whitespace-nowrap">
+                          className="text-xs px-2.5 py-1.5 rounded-lg bg-[#1E3A5F] text-white hover:bg-[#162B47] transition-colors whitespace-nowrap">
                           → Order
                         </Link>
                         <Link
@@ -606,7 +606,7 @@ function InterestTab() {
                   <div className="flex gap-2 mt-2.5">
                     <Link
                       href={`/orders/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
-                      className="text-xs px-2.5 py-1.5 rounded-lg bg-[#C49C64] text-white hover:bg-[#9B7A40] transition-colors">
+                      className="text-xs px-2.5 py-1.5 rounded-lg bg-[#1E3A5F] text-white hover:bg-[#162B47] transition-colors">
                       → Order
                     </Link>
                     <Link

@@ -74,7 +74,7 @@ export default function ManufacturingPage() {
         </div>
         <div className="flex gap-2">
           <Link href="/manufacturing/orders/new"
-            className="flex items-center gap-2 bg-[#C49C64] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] transition-colors">
+            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Issue order</span>
             <span className="sm:hidden">Order</span>
@@ -93,7 +93,7 @@ export default function ManufacturingPage() {
         <div className="bg-white rounded-xl border border-stone-200 mb-5 overflow-hidden">
           <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
             <h2 className="font-medium text-stone-900 text-sm">Active manufacturing orders</h2>
-            <Link href="/manufacturing/orders" className="text-xs text-[#C49C64] hover:underline">View all</Link>
+            <Link href="/manufacturing/orders" className="text-xs text-[#1E3A5F] hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-stone-50">
             {activeOrders.slice(0, 5).map(o => (
@@ -122,7 +122,7 @@ export default function ManufacturingPage() {
           <div className="text-center py-12 bg-white rounded-xl border border-stone-200">
             <Factory className="w-10 h-10 text-stone-200 mx-auto mb-3" />
             <p className="text-stone-400 text-sm">No manufacturing partners yet</p>
-            <Link href="/manufacturing/partners/new" className="inline-block mt-3 text-sm text-[#C49C64] hover:underline">
+            <Link href="/manufacturing/partners/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">
               Add your first partner →
             </Link>
           </div>
@@ -176,7 +176,7 @@ export default function ManufacturingPage() {
                           </div>
                         ))}
                         <Link href={`/manufacturing/partners/${p.id}/float`}
-                          className="rounded-lg border border-dashed border-stone-200 p-2.5 flex items-center justify-center text-xs text-stone-400 hover:border-[#C49C64] hover:text-[#C49C64] transition-colors">
+                          className="rounded-lg border border-dashed border-stone-200 p-2.5 flex items-center justify-center text-xs text-stone-400 hover:border-[#1E3A5F] hover:text-[#1E3A5F] transition-colors">
                           <Plus className="w-3.5 h-3.5 mr-1" /> Deposit / Return
                         </Link>
                       </div>
@@ -184,7 +184,7 @@ export default function ManufacturingPage() {
                       <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between">
                         <p className="text-xs text-stone-400">No material float yet</p>
                         <Link href={`/manufacturing/partners/${p.id}/float`}
-                          className="text-xs text-[#C49C64] hover:underline">
+                          className="text-xs text-[#1E3A5F] hover:underline">
                           Set up material float →
                         </Link>
                       </div>
@@ -194,7 +194,7 @@ export default function ManufacturingPage() {
                   {/* Quick actions */}
                   <div className="flex gap-2 mt-3 pt-3 border-t border-stone-100">
                     <Link href={`/manufacturing/orders/new?partner=${p.id}`}
-                      className="flex-1 text-center text-xs bg-[#C49C64] text-white py-2 rounded-lg hover:bg-[#9B7A40] transition-colors">
+                      className="flex-1 text-center text-xs bg-[#1E3A5F] text-white py-2 rounded-lg hover:bg-[#162B47] transition-colors">
                       Issue order
                     </Link>
                     <a href={`tel:${p.phone}`}

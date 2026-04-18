@@ -58,7 +58,7 @@ export default function RetailerCustomOrderPage() {
     router.push(`/portal/retailer/orders/${data.order.id}`)
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -68,7 +68,7 @@ export default function RetailerCustomOrderPage() {
       </Link>
 
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-10 h-10 rounded-xl bg-[#C49C64]/15 text-[#C49C64] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/15 text-[#1E3A5F] flex items-center justify-center">
           <Sparkles className="w-5 h-5" />
         </div>
         <div>
@@ -132,7 +132,7 @@ export default function RetailerCustomOrderPage() {
 
         <div className="flex justify-end">
           <button onClick={submit} disabled={submitting || uploading}
-            className="flex items-center gap-2 bg-[#C49C64] hover:bg-[#9B7A40] text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">
+            className="flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">
             <Sparkles className="w-4 h-4" />
             {submitting ? 'Submitting...' : 'Submit custom request'}
           </button>

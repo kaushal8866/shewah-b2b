@@ -162,7 +162,7 @@ export default function CollectionDetailPage() {
     ? activePartners.filter(p => !p.circuit || p.circuit === collection.circuit_target)
     : activePartners
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
@@ -216,7 +216,7 @@ export default function CollectionDetailPage() {
               </div>
             </div>
             <button onClick={handleSave} disabled={saving}
-              className="mt-4 w-full flex items-center justify-center gap-2 bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+              className="mt-4 w-full flex items-center justify-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
               <Save className="w-4 h-4" /> {saving ? 'Saving…' : 'Save changes'}
             </button>
           </div>
@@ -297,7 +297,7 @@ export default function CollectionDetailPage() {
                   )}
                 </div>
                 <button onClick={saveProducts} disabled={savingProducts}
-                  className="flex items-center gap-1.5 bg-[#C49C64] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors whitespace-nowrap">
+                  className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors whitespace-nowrap">
                   <Save className="w-3.5 h-3.5" /> {savingProducts ? 'Saving…' : 'Save selection'}
                 </button>
               </div>
@@ -315,7 +315,7 @@ export default function CollectionDetailPage() {
                   return (
                     <label key={p.id} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-stone-50 ${selected ? 'bg-amber-50/50' : ''}`}>
                       <input type="checkbox" checked={selected} onChange={() => toggleProduct(p.id)}
-                        className="w-4 h-4 rounded border-stone-300 text-[#C49C64] accent-[#C49C64]" />
+                        className="w-4 h-4 rounded border-stone-300 text-[#1E3A5F] accent-[#1E3A5F]" />
                       {p.photo_urls && p.photo_urls.length > 0 ? (
                         <img src={p.photo_urls[0]} alt="" className="w-10 h-10 rounded-lg object-cover border border-stone-100 shrink-0" />
                       ) : (

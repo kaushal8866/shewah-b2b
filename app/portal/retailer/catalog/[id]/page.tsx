@@ -82,7 +82,7 @@ export default function RetailerProductDetail() {
 
   const photos = product.photo_urls && product.photo_urls.length > 0 ? product.photo_urls : []
   const total = (Number(product.trade_price) || 0) * (parseInt(qty) || 1)
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -105,7 +105,7 @@ export default function RetailerProductDetail() {
             <div className="grid grid-cols-5 gap-2 mt-3">
               {photos.map((u, i) => (
                 <button key={u} onClick={() => setActiveImg(i)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${i === activeImg ? 'border-[#C49C64]' : 'border-stone-200'}`}>
+                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${i === activeImg ? 'border-[#1E3A5F]' : 'border-stone-200'}`}>
                   <img src={u} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
@@ -175,7 +175,7 @@ export default function RetailerProductDetail() {
             {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
             <button onClick={placeOrder} disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 bg-[#C49C64] hover:bg-[#9B7A40] text-white px-5 py-3 rounded-lg text-sm font-medium disabled:opacity-50">
+              className="w-full flex items-center justify-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white px-5 py-3 rounded-lg text-sm font-medium disabled:opacity-50">
               <ShoppingBag className="w-4 h-4" />
               {submitting ? 'Placing order...' : 'Place order'}
             </button>

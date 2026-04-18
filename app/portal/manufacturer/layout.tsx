@@ -15,9 +15,9 @@ export default function ManufacturerPortalLayout({ children }: { children: React
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col">
-      <header className="bg-[#1C1A17] text-white px-4 lg:px-6 py-3 flex items-center justify-between shrink-0">
+      <header className="bg-[#1A1F2E] text-white px-4 lg:px-6 py-3 flex items-center justify-between shrink-0">
         <Link href="/portal/manufacturer" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#C49C64] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
             <Diamond className="w-4 h-4 text-white" />
           </div>
           <div>
@@ -29,8 +29,8 @@ export default function ManufacturerPortalLayout({ children }: { children: React
         </Link>
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#C49C64]/20 border border-[#C49C64]/30 flex items-center justify-center">
-              <span className="text-[#C49C64] text-xs font-semibold">{initials}</span>
+            <div className="w-8 h-8 rounded-full bg-[#1E3A5F]/20 border border-[#1E3A5F]/30 flex items-center justify-center">
+              <span className="text-[#1E3A5F] text-xs font-semibold">{initials}</span>
             </div>
             <p className="text-white text-sm">{displayName}</p>
           </div>

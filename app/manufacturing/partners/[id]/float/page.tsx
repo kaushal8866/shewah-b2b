@@ -140,7 +140,7 @@ function MaterialFloatInner() {
     load()
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   const txColors: Record<string, string> = {
@@ -194,7 +194,7 @@ function MaterialFloatInner() {
                 {f.balance?.toFixed(3)}{info?.unit === 'carats' ? 'ct' : 'g'}
               </p>
               <div className="h-1.5 bg-stone-100 rounded-full mt-2 overflow-hidden">
-                <div className={`h-full rounded-full ${f.balance < 1 ? 'bg-amber-400' : 'bg-[#C49C64]'}`}
+                <div className={`h-full rounded-full ${f.balance < 1 ? 'bg-amber-400' : 'bg-[#1E3A5F]'}`}
                   style={{ width: `${Math.min(Math.max(pct,0), 100)}%` }} />
               </div>
               <p className="text-xs text-stone-400 mt-1">of {f.total_deposited}{info?.unit === 'carats' ? 'ct' : 'g'} deposited</p>
@@ -331,7 +331,7 @@ function MaterialFloatInner() {
                   <p className="text-xs text-stone-400 truncate">
                     {t.material_float?.material_type?.replace(/_/g, ' ')}
                     {t.orders?.order_number && (
-                      <> · <Link href={`/orders/${t.order_id}`} className="text-[#C49C64] hover:underline">{t.orders.order_number}</Link></>
+                      <> · <Link href={`/orders/${t.order_id}`} className="text-[#1E3A5F] hover:underline">{t.orders.order_number}</Link></>
                     )}
                     {t.reference && ` · ${t.reference}`}
                     {t.notes && ` · ${t.notes}`}

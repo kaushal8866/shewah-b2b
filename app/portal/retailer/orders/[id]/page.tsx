@@ -109,7 +109,7 @@ export default function RetailerOrderDetail() {
               return (
                 <div key={s.value} className="flex items-center gap-3">
                   {done || active ? (
-                    <CheckCircle2 className={`w-5 h-5 shrink-0 ${active ? 'text-[#C49C64]' : 'text-green-500'}`} />
+                    <CheckCircle2 className={`w-5 h-5 shrink-0 ${active ? 'text-[#1E3A5F]' : 'text-green-500'}`} />
                   ) : (
                     <Circle className="w-5 h-5 text-stone-200 shrink-0" />
                   )}

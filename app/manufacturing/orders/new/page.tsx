@@ -136,7 +136,7 @@ function NewMfgOrderForm() {
     router.push('/manufacturing')
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
   const selectedPartner = partners.find(p => p.id === form.manufacturing_partner_id)
 
@@ -145,9 +145,9 @@ function NewMfgOrderForm() {
       {/* Print-only order sheet */}
       <div className="hidden print:block" ref={printRef}>
         <div style={{ fontFamily: 'sans-serif', padding: '20px', maxWidth: '700px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #C49C64', paddingBottom: '12px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #1E3A5F', paddingBottom: '12px', marginBottom: '16px' }}>
             <div>
-              <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1C1A17' }}>SHEWAH</h1>
+              <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1A1F2E' }}>SHEWAH</h1>
               <p style={{ fontSize: '12px', color: '#666' }}>Manufacturing Order</p>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -178,7 +178,7 @@ function NewMfgOrderForm() {
           </table>
 
           {form.special_notes && (
-            <div style={{ background: '#FFF8EC', border: '1px solid #C49C64', padding: '10px', borderRadius: '6px', marginBottom: '16px' }}>
+            <div style={{ background: '#FFF8EC', border: '1px solid #1E3A5F', padding: '10px', borderRadius: '6px', marginBottom: '16px' }}>
               <p style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>Special Instructions:</p>
               <p style={{ fontSize: '12px' }}>{form.special_notes}</p>
             </div>
@@ -191,7 +191,7 @@ function NewMfgOrderForm() {
               <tr><td style={{ padding: '6px 8px', fontSize: '12px' }}>Weight (min 1g)</td><td style={{ padding: '6px 8px', fontSize: '12px', textAlign: 'right' }}>{effectiveWeight}g</td></tr>
               <tr><td style={{ padding: '6px 8px', fontSize: '12px' }}>Labour amount</td><td style={{ padding: '6px 8px', fontSize: '12px', textAlign: 'right' }}>₹{labourAmount.toLocaleString('en-IN')}</td></tr>
               {otherCharges > 0 && <tr><td style={{ padding: '6px 8px', fontSize: '12px' }}>Other charges</td><td style={{ padding: '6px 8px', fontSize: '12px', textAlign: 'right' }}>₹{otherCharges.toLocaleString('en-IN')}</td></tr>}
-              <tr style={{ borderTop: '2px solid #C49C64' }}>
+              <tr style={{ borderTop: '2px solid #1E3A5F' }}>
                 <td style={{ padding: '8px', fontWeight: 'bold', fontSize: '13px' }}>Total</td>
                 <td style={{ padding: '8px', fontWeight: 'bold', fontSize: '13px', textAlign: 'right' }}>₹{totalMfgCost.toLocaleString('en-IN')}</td>
               </tr>
@@ -287,7 +287,7 @@ function NewMfgOrderForm() {
                   </button>
                 </div>
               ))}
-              <label className="aspect-square border-2 border-dashed border-stone-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#C49C64] hover:bg-yellow-50 transition-colors">
+              <label className="aspect-square border-2 border-dashed border-stone-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#1E3A5F] hover:bg-yellow-50 transition-colors">
                 <input type="file" accept="image/*" multiple className="hidden"
                   onChange={e => { Array.from(e.target.files || []).forEach(f => uploadImage(f)); e.target.value = '' }} />
                 <Upload className="w-5 h-5 text-stone-300" />
@@ -304,7 +304,7 @@ function NewMfgOrderForm() {
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" checked={form.material_from_float}
                   onChange={e => set('material_from_float', e.target.checked)}
-                  className="w-4 h-4 accent-[#C49C64]" />
+                  className="w-4 h-4 accent-[#1E3A5F]" />
                 <div>
                   <p className="text-sm font-medium text-stone-700">Use material from float (deposited gold)</p>
                   <p className="text-xs text-stone-400">Deduct gold weight from this partner's deposited material balance</p>
@@ -384,7 +384,7 @@ function NewMfgOrderForm() {
               )}
               <div className="flex justify-between font-semibold text-stone-900 pt-2 border-t border-stone-200">
                 <span>Total manufacturing cost</span>
-                <span className="text-[#C49C64]">₹{totalMfgCost.toLocaleString('en-IN')}</span>
+                <span className="text-[#1E3A5F]">₹{totalMfgCost.toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>
@@ -399,7 +399,7 @@ function NewMfgOrderForm() {
               <Printer className="w-4 h-4" /> Save & Print
             </button>
             <button onClick={handleSave} disabled={saving}
-              className="flex items-center gap-2 bg-[#C49C64] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+              className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
               <Save className="w-4 h-4" />
               {saving ? 'Issuing...' : 'Issue order'}
             </button>

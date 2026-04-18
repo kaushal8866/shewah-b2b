@@ -145,7 +145,7 @@ function NewOrderForm() {
     router.push('/orders')
   }
 
-  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none"
+  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
   const label = "block text-xs font-medium text-stone-500 mb-1"
   const balanceDue = (parseFloat(form.total_amount) || 0) - (parseFloat(form.advance_paid) || 0)
 
@@ -280,7 +280,7 @@ function NewOrderForm() {
               </div>
               <div className="flex justify-between font-semibold text-stone-900 border-t border-stone-200 pt-1">
                 <span>Estimated COGS</span>
-                <span className="text-[#C49C64]">₹{Math.round(estCogs.total_cogs).toLocaleString('en-IN')}</span>
+                <span className="text-[#1E3A5F]">₹{Math.round(estCogs.total_cogs).toLocaleString('en-IN')}</span>
               </div>
               {parseFloat(form.total_amount) > 0 && (
                 <div className="flex justify-between font-medium">
@@ -347,7 +347,7 @@ function NewOrderForm() {
             Cancel
           </Link>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 bg-[#C49C64] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
             {saving ? 'Creating...' : 'Create order'}
           </button>
