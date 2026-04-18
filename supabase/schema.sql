@@ -534,3 +534,106 @@ create policy "service_role_all" on mfg_share_links
 --   • mfg_reserve_float() — locks the float row, recomputes Available, and
 --     inserts a pending consumption atomically (prevents over-issue race).
 --   • mfg_share_link_record_download() / _record_visit() — atomic counters.
+
+create index if not exists material_transactions_mfg_order_idx
+  on material_transactions(manufacturing_order_id)
+  where manufacturing_order_id is not null;
+create index if not exists material_transactions_partner_lifecycle_idx
+  on material_transactions(manufacturing_partner_id, lifecycle);
+create index if not exists mfg_share_links_order_idx
+  on mfg_share_links(manufacturing_order_id, created_at desc);
+
+-- Negative-balance flag trigger (skips lifecycle='pending' reservations).
+create or replace function mt_flag_negative_balance()
+returns trigger as $func$
+declare v_balance numeric := 0; v_delta numeric := 0;
+begin
+  if new.lifecycle = 'pending' then
+    new.creates_negative_balance := false;
+    return new;
+  end if;
+  select coalesce(mf.balance, 0) into v_balance from material_float mf where mf.id = new.float_id;
+  v_delta := case new.transaction_type
+               when 'deposit'     then  new.quantity
+               when 'consumption' then -new.quantity
+               when 'return'      then -new.quantity
+               when 'adjustment'  then  new.quantity
+               else 0 end;
+  new.creates_negative_balance := ((v_balance + v_delta) < 0);
+  return new;
+end;
+$func$ language plpgsql;
+
+drop trigger if exists mt_flag_negative_balance_trg on material_transactions;
+create trigger mt_flag_negative_balance_trg
+  before insert on material_transactions
+  for each row execute function mt_flag_negative_balance();
+
+-- Atomic float reservation: locks the float row, recomputes Available from
+-- the ledger inside the txn, and inserts the pending consumption. Raises
+-- 'over_issue' (caught as 409 by the API) when Available < required.
+create or replace function mfg_reserve_float(
+  p_partner_id uuid, p_material_type text, p_quantity numeric,
+  p_mfg_order_id uuid, p_customer_order_id uuid, p_notes text
+) returns uuid as $func$
+declare
+  v_float_id uuid; v_unit text;
+  v_in_custody numeric; v_reserved numeric; v_available numeric;
+  v_tx_id uuid;
+begin
+  if p_quantity is null or p_quantity <= 0 then raise exception 'invalid_quantity'; end if;
+
+  select id, unit into v_float_id, v_unit
+    from material_float
+   where manufacturing_partner_id = p_partner_id and material_type = p_material_type
+   for update;
+
+  if v_float_id is null then
+    insert into material_float (manufacturing_partner_id, material_type, unit, total_deposited, total_consumed)
+      values (p_partner_id, p_material_type,
+              case when p_material_type like 'diamond%' then 'carats' else 'grams' end, 0, 0)
+      returning id, unit into v_float_id, v_unit;
+    perform 1 from material_float where id = v_float_id for update;
+  end if;
+
+  select coalesce(sum(case
+           when transaction_type = 'deposit'                              then  quantity
+           when transaction_type = 'return'                               then -quantity
+           when transaction_type = 'adjustment'                           then  quantity
+           when transaction_type = 'consumption' and lifecycle = 'final'  then -quantity
+           else 0 end), 0)
+    into v_in_custody
+    from material_transactions
+   where manufacturing_partner_id = p_partner_id and float_id = v_float_id;
+
+  select coalesce(sum(quantity), 0) into v_reserved
+    from material_transactions
+   where manufacturing_partner_id = p_partner_id and float_id = v_float_id
+     and transaction_type = 'consumption' and lifecycle = 'pending';
+
+  v_available := v_in_custody - v_reserved;
+  if v_available + 1e-9 < p_quantity then
+    raise exception 'over_issue: available=% required=%', v_available, p_quantity using errcode = 'P0001';
+  end if;
+
+  insert into material_transactions (
+    float_id, manufacturing_partner_id, manufacturing_order_id, order_id,
+    transaction_type, lifecycle, quantity, unit, notes
+  ) values (
+    v_float_id, p_partner_id, p_mfg_order_id, p_customer_order_id,
+    'consumption', 'pending', p_quantity, coalesce(v_unit, 'grams'), p_notes
+  ) returning id into v_tx_id;
+  return v_tx_id;
+end;
+$func$ language plpgsql;
+
+-- Atomic share-link counters.
+create or replace function mfg_share_link_record_download(p_token uuid) returns void as $func$
+  update mfg_share_links
+     set download_count = download_count + 1, last_accessed_at = now()
+   where token = p_token;
+$func$ language sql;
+
+create or replace function mfg_share_link_record_visit(p_token uuid) returns void as $func$
+  update mfg_share_links set last_accessed_at = now() where token = p_token;
+$func$ language sql;

@@ -24,8 +24,14 @@ function MaterialFloatInner() {
 
   // Pre-fill from order context (e.g. "Record gold consumption for this order")
   const orderIdParam = searchParams.get('order_id') || ''
-  const typeParam = (searchParams.get('type') as Tab) || 'deposit'
-  const materialParam = searchParams.get('material_type') || 'gold_18k'
+  // Accept both `type` (full word) and `deposit` (just the material type for
+  // the over-issue shortcut from the new-order page).
+  const depositShortcut = searchParams.get('deposit')
+  const typeParam = depositShortcut
+    ? ('deposit' as Tab)
+    : ((searchParams.get('type') as Tab) || 'deposit')
+  const materialParam = depositShortcut || searchParams.get('material_type') || 'gold_18k'
+  const amountParam = searchParams.get('amount') || ''
 
   const [partner, setPartner] = useState<any>(null)
   const [floats, setFloats] = useState<any[]>([])
@@ -39,10 +45,10 @@ function MaterialFloatInner() {
 
   const [form, setForm] = useState({
     material_type: MATERIAL_TYPES.find(m => m.value === materialParam) ? materialParam : 'gold_18k',
-    quantity: '',
+    quantity: amountParam || '',
     rate_per_unit: '',
     reference: '',
-    notes: '',
+    notes: depositShortcut ? 'Top-up before issuing manufacturing order' : '',
     date: new Date().toISOString().split('T')[0],
     order_id: orderIdParam,
   })
