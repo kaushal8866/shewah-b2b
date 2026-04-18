@@ -38,7 +38,6 @@ export default function ManufacturerOrderDetail() {
   const [uploading, setUploading] = useState(false)
   const [status, setStatus] = useState('')
   const [notes, setNotes] = useState('')
-  const [actualWeight, setActualWeight] = useState('')
   const [photos, setPhotos] = useState<string[]>([])
   const [savedAt, setSavedAt] = useState<number | null>(null)
 
@@ -52,7 +51,6 @@ export default function ManufacturerOrderDetail() {
     setOrder(data.order)
     setStatus(data.order.status || '')
     setNotes(data.order.manufacturer_notes || '')
-    setActualWeight(data.order.gold_weight_actual ?? '')
     setPhotos(data.order.reference_images || [])
   }
 
@@ -65,7 +63,6 @@ export default function ManufacturerOrderDetail() {
       body: JSON.stringify({
         status,
         manufacturer_notes: notes,
-        gold_weight_actual: actualWeight === '' ? null : actualWeight,
         reference_images: photos,
       }),
     })
@@ -193,7 +190,7 @@ export default function ManufacturerOrderDetail() {
         {/* Update */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4">Update production</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className={lbl}>Status</label>
               <select className={inp} value={status} onChange={e => setStatus(e.target.value)}>
@@ -203,11 +200,6 @@ export default function ManufacturerOrderDetail() {
               </select>
             </div>
             <div>
-              <label className={lbl}>Actual gold weight (g)</label>
-              <input type="number" inputMode="decimal" step="0.01" className={inp}
-                value={actualWeight} onChange={e => setActualWeight(e.target.value)} />
-            </div>
-            <div className="sm:col-span-2">
               <label className={lbl}>Notes for Shewah</label>
               <textarea rows={4} className={`${inp} resize-none`}
                 placeholder="Production updates, issues, QC observations..."

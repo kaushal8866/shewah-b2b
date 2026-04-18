@@ -28,13 +28,16 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
   const supabaseAdmin = getAdminClient()
-  let { data, error } = await supabaseAdmin
+  const full = await supabaseAdmin
     .from('app_users')
     .select(SELECT_COLS_FULL)
     .order('created_at')
 
+  let data: any = full.data
+  let error: any = full.error
+
   // Fallback for environments where the Task #6 migration has not yet been applied.
-  if (error && (error.message.includes('manufacturing_partner_id') || error.message.includes('partner_id'))) {
+  if (error && (error.message?.includes('manufacturing_partner_id') || error.message?.includes('partner_id'))) {
     const fallback = await supabaseAdmin
       .from('app_users')
       .select(SELECT_COLS_BASE)
@@ -89,7 +92,7 @@ export async function POST(req: Request) {
   const { data, error } = await supabaseAdmin
     .from('app_users')
     .insert([insert])
-    .select(SELECT_COLS)
+    .select(SELECT_COLS_FULL)
     .single()
 
   if (error) {

@@ -69,10 +69,8 @@ export async function PATCH(req: Request, ctx: { params: { id: string } }) {
     const safe = body.reference_images.filter((u: any) => typeof u === 'string').slice(0, 30)
     updates.reference_images = safe
   }
-  if (body.gold_weight_actual !== undefined) {
-    const n = parseFloat(body.gold_weight_actual)
-    updates.gold_weight_actual = isNaN(n) ? null : n
-  }
+  // Note: gold weights, labour, and other material/cost fields are admin-only
+  // (per spec — manufacturer gold consumption entry is out of scope).
 
   // Server-side scope guard: only update rows belonging to this manufacturer.
   const { data, error } = await supabaseAdmin

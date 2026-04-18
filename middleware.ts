@@ -1,5 +1,9 @@
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
+// NOTE: middleware matcher in `config` excludes most /api/* routes, but we need
+// /api/portal/* to be reachable for manufacturers. The matcher below is updated
+// to keep /api/portal/* in scope while still excluding /api/auth, /api/setup,
+// /api/showcase, /api/track.
 
 export default withAuth(
   function middleware(req) {
@@ -10,16 +14,25 @@ export default withAuth(
 
     const role = token.role as string
 
-    // Manufacturer portal — only manufacturers may enter, and they may go nowhere else.
-    if (pathname.startsWith('/portal/manufacturer')) {
+    const isMfgPortal = pathname.startsWith('/portal/manufacturer')
+    const isMfgApi    = pathname.startsWith('/api/portal/manufacturer')
+
+    // Manufacturer-only namespaces (page + API).
+    if (isMfgPortal || isMfgApi) {
       if (role !== 'manufacturer') {
+        if (isMfgApi) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
         return NextResponse.redirect(new URL('/', req.url))
       }
       return NextResponse.next()
     }
 
-    // Manufacturers are sandboxed to their portal.
+    // Manufacturers are sandboxed to their portal — block every other admin URL/API.
     if (role === 'manufacturer') {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
       return NextResponse.redirect(new URL('/portal/manufacturer', req.url))
     }
 
