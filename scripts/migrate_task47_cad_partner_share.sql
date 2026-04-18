@@ -56,3 +56,51 @@ create policy "service_role_all" on cad_partner_responses
 create or replace function cad_partner_share_record_visit(p_token uuid) returns void as $func$
   update cad_partner_share_links set last_opened_at = now() where token = p_token;
 $func$ language sql;
+
+-- Task 49: CAD partners can upload draft renders / STL / PDF directly through
+-- their share link. Each uploaded file becomes a row in `cad_partner_uploads`
+-- and is also surfaced in `cad_revisions` (kind = 'partner_upload') so it
+-- appears inline in the admin revision timeline.
+create table if not exists cad_partner_uploads (
+  id              uuid        primary key default gen_random_uuid(),
+  link_id         uuid        not null references cad_partner_share_links(token) on delete cascade,
+  cad_request_id  uuid        not null references cad_requests(id) on delete cascade,
+  partner_name    text,
+  url             text        not null,
+  filename        text        not null,
+  resource_type   text        not null check (resource_type in ('image','raw')),
+  bytes           bigint,
+  ip              text,
+  user_agent      text,
+  uploaded_at     timestamptz not null default now()
+);
+
+create index if not exists cad_partner_uploads_request_idx
+  on cad_partner_uploads(cad_request_id, uploaded_at desc);
+create index if not exists cad_partner_uploads_link_idx
+  on cad_partner_uploads(link_id, uploaded_at desc);
+
+alter table cad_partner_uploads enable row level security;
+drop policy if exists "service_role_all" on cad_partner_uploads;
+create policy "service_role_all" on cad_partner_uploads
+  for all using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
+
+-- Extend cad_revisions kind check to include 'partner_upload' so the partner
+-- file drop appears inline in the existing admin / retailer timeline.
+do $$
+declare
+  cname text;
+begin
+  for cname in
+    select conname from pg_constraint
+    where conrelid = 'cad_revisions'::regclass
+      and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%kind%'
+  loop
+    execute format('alter table cad_revisions drop constraint %I', cname);
+  end loop;
+  alter table cad_revisions
+    add constraint cad_revisions_kind_check
+    check (kind in ('render','revision_request','approval','partner_upload'));
+end $$;

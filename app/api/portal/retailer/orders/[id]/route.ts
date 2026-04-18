@@ -60,6 +60,7 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
         .from('cad_revisions')
         .select('id, created_at, kind, author, note, render_images, reference_images, reference_captions, acknowledged_at')
         .eq('cad_request_id', cad.id)
+        .in('kind', ['render', 'revision_request', 'approval'])
         .order('created_at', { ascending: true })
       cad_revisions = revs || []
     }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Link2, Send, Copy, Check, RefreshCw, X, Clock, ExternalLink, MessageSquareWarning, CheckCircle2, BookUser } from 'lucide-react'
+import { Link2, Send, Copy, Check, RefreshCw, X, Clock, ExternalLink, MessageSquareWarning, CheckCircle2, BookUser, FileIcon, Download, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 
@@ -36,6 +36,24 @@ type DirectoryPartner = {
 
 const ADHOC = '__adhoc__'
 
+type PartnerUpload = {
+  id: string
+  url: string
+  filename: string
+  resource_type: 'image' | 'raw'
+  bytes: number | null
+  partner_name: string | null
+  uploaded_at: string
+  link_id: string
+}
+
+function fmtBytes(n: number | null | undefined): string {
+  if (!n || n <= 0) return ''
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default function CadPartnerSharePanel({
   cadRequestId,
   hasReferenceImages,
@@ -50,6 +68,7 @@ export default function CadPartnerSharePanel({
   const [links, setLinks] = useState<ShareLink[]>([])
   const [responses, setResponses] = useState<Response[]>([])
   const [directory, setDirectory] = useState<DirectoryPartner[]>([])
+  const [uploads, setUploads] = useState<PartnerUpload[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -70,6 +89,7 @@ export default function CadPartnerSharePanel({
       setLinks(j.links || [])
       setResponses(j.responses || [])
       setDirectory(j.directory || [])
+      setUploads(j.uploads || [])
     } catch { /* ignore */ }
     setLoading(false)
   }
@@ -400,6 +420,66 @@ export default function CadPartnerSharePanel({
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Files the partner uploaded through the share link */}
+      {uploads.length > 0 && (
+        <div className="mt-3 border border-stone-200 rounded-xl p-3 bg-white">
+          <p className="text-sm font-medium text-stone-800 mb-2 flex items-center gap-2">
+            <FileIcon className="w-4 h-4 text-[#1E3A5F]" />
+            CAD partner uploads ({uploads.length})
+          </p>
+          <ul className="space-y-2">
+            {uploads.map(u => (
+              <li
+                key={u.id}
+                className="flex items-center gap-3 border border-stone-100 rounded-lg px-2.5 py-2"
+              >
+                {u.resource_type === 'image' ? (
+                  <a
+                    href={u.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-10 h-10 rounded-md overflow-hidden border border-stone-200 shrink-0 bg-stone-50"
+                  >
+                    <img
+                      src={u.url}
+                      alt={u.filename}
+                      className="w-full h-full object-cover"
+                    />
+                  </a>
+                ) : (
+                  <div className="w-10 h-10 rounded-md border border-stone-200 shrink-0 bg-stone-50 flex items-center justify-center">
+                    <FileIcon className="w-4 h-4 text-stone-500" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-stone-800 truncate" title={u.filename}>
+                    {u.filename}
+                  </p>
+                  <p className="text-[11px] text-stone-500">
+                    {u.resource_type === 'image' ? (
+                      <ImageIcon className="w-3 h-3 inline -mt-0.5 mr-1" />
+                    ) : null}
+                    {fmtBytes(u.bytes)}
+                    {u.bytes ? ' · ' : ''}
+                    {u.partner_name ? `${u.partner_name} · ` : ''}
+                    {formatDate(u.uploaded_at)}
+                  </p>
+                </div>
+                <a
+                  href={u.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-stone-500 hover:text-[#1E3A5F] p-1.5 rounded-md hover:bg-stone-50"
+                  title="Download"
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

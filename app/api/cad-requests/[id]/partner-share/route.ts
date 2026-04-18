@@ -49,10 +49,19 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
     .eq('is_active', true)
     .order('name', { ascending: true })
 
+  // Files the partner has uploaded through any link for this request.
+  const { data: uploads } = await supabaseAdmin
+    .from('cad_partner_uploads')
+    .select('id, url, filename, resource_type, bytes, partner_name, uploaded_at, link_id')
+    .eq('cad_request_id', ctx.params.id)
+    .order('uploaded_at', { ascending: false })
+    .limit(50)
+
   return NextResponse.json({
     links,
     responses: responses || [],
     directory: directory || [],
+    uploads: uploads || [],
   })
 }
 

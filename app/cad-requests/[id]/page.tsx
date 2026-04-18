@@ -346,12 +346,16 @@ export default function CadRequestDetailPage() {
                       ? 'bg-green-500'
                       : r.kind === 'revision_request'
                       ? 'bg-amber-500'
+                      : r.kind === 'partner_upload'
+                      ? 'bg-blue-500'
                       : 'bg-[#C49C64]'
                   const label =
                     r.kind === 'approval'
                       ? 'Retailer approved the design'
                       : r.kind === 'revision_request'
                       ? 'Retailer requested a revision'
+                      : r.kind === 'partner_upload'
+                      ? 'CAD partner uploaded draft files'
                       : 'You shared a new CAD render'
                   const imgs: string[] = Array.isArray(r.render_images) ? r.render_images : []
                   const refs: string[] = Array.isArray(r.reference_images) ? r.reference_images : []

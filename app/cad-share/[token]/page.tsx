@@ -81,6 +81,13 @@ export default async function CadPartnerSharePage({ params }: { params: { token:
   const zipUrl = `/api/cad-share/${token}/zip`
   const pdfUrl = `/api/cad-share/${token}/pdf`
 
+  // Files this partner has already uploaded through this link.
+  const { data: priorUploads } = await supabaseAdmin
+    .from('cad_partner_uploads')
+    .select('id, url, filename, resource_type, bytes, uploaded_at')
+    .eq('link_id', token)
+    .order('uploaded_at', { ascending: false })
+
   const specs: [string, string][] = [
     ['Quantity', order.quantity != null ? String(order.quantity) : '—'],
     ['Ring size', order.ring_size || '—'],
@@ -202,8 +209,8 @@ export default async function CadPartnerSharePage({ params }: { params: { token:
           </div>
         )}
 
-        {/* Approve / request revision form */}
-        <RespondPanel token={token} />
+        {/* Attach draft files + Approve / request revision form */}
+        <RespondPanel token={token} initialUploads={priorUploads || []} />
 
         <p className="text-center text-stone-600 text-xs pt-2">
           This link is private and will expire on {fmtDate((link as any).expires_at)}.
