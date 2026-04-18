@@ -316,6 +316,7 @@ function CollectionsTab() {
   const [loading, setLoading] = useState(true)
   const [needsSetup, setNeedsSetup] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [avgMargins, setAvgMargins] = useState<Map<string, number>>(new Map())
 
   useEffect(() => { load() }, [])
 
@@ -336,10 +337,48 @@ function CollectionsTab() {
         response_count: c.design_interests?.[0]?.count ?? 0,
       }))
       setCollections(mapped)
+      void loadMargins()
     } catch {
       setNeedsSetup(true)
     }
     setLoading(false)
+  }
+
+  async function loadMargins() {
+    try {
+      const [{ data: links, error: linksErr }, { data: g, error: gErr }] = await Promise.all([
+        supabase.from('design_collection_products').select('collection_id, products(gold_karat, gold_weight_g, making_charges, diamond_cost, trade_price)'),
+        supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
+      ])
+      if (linksErr) { console.warn('loadMargins links error', linksErr.message); return }
+      if (gErr) { console.warn('loadMargins gold rate error', gErr.message); return }
+      const goldRate = g?.[0]?.rate_24k as number | undefined
+      if (!goldRate || !links) return
+      type LinkProduct = { gold_karat?: number; gold_weight_g?: number; making_charges?: number; diamond_cost?: number; trade_price?: number }
+      type LinkRow = { collection_id: string; products: LinkProduct | LinkProduct[] | null }
+      const buckets = new Map<string, number[]>()
+      ;(links as unknown as LinkRow[]).forEach(l => {
+        const p = Array.isArray(l.products) ? l.products[0] : l.products
+        if (!p || !p.gold_weight_g || !p.gold_karat || !p.trade_price) return
+        const { margin } = computeOrderCogs({
+          gold_weight_actual: p.gold_weight_g,
+          gold_rate_at_order: goldRate,
+          gold_karat: p.gold_karat,
+          making_charges: p.making_charges || 0,
+          stone_cost: p.diamond_cost || 0,
+          total_amount: p.trade_price,
+        })
+        const pct = p.trade_price > 0 ? (margin / p.trade_price) * 100 : 0
+        const arr = buckets.get(l.collection_id) || []
+        arr.push(pct)
+        buckets.set(l.collection_id, arr)
+      })
+      const out = new Map<string, number>()
+      buckets.forEach((arr, k) => out.set(k, arr.reduce((a, b) => a + b, 0) / arr.length))
+      setAvgMargins(out)
+    } catch (e) {
+      console.warn('loadMargins failed', e)
+    }
   }
 
   async function togglePublish(id: string, current: boolean) {
@@ -420,6 +459,18 @@ function CollectionsTab() {
                     {c.circuit_target && <span>📍 {c.circuit_target}</span>}
                     <span>{c.product_count} product{c.product_count !== 1 ? 's' : ''}</span>
                     <span className="text-[#1E3A5F] font-medium">{c.response_count} response{c.response_count !== 1 ? 's' : ''}</span>
+                    {avgMargins.has(c.id) && (() => {
+                      const m = avgMargins.get(c.id)!
+                      const cls = m >= 25 ? 'bg-green-100 text-green-700'
+                        : m >= 10 ? 'bg-amber-100 text-amber-700'
+                        : 'bg-red-100 text-red-700'
+                      return (
+                        <span className={`px-2 py-0.5 rounded-full font-medium ${cls}`}
+                          title="Avg estimated margin across products in this collection (today's 24K gold rate)">
+                          Avg margin {m.toFixed(0)}%
+                        </span>
+                      )
+                    })()}
                   </div>
                 </div>
                 <button onClick={() => handleDelete(c.id)} disabled={deleting === c.id}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, computeOrderCogs } from '@/lib/supabase'
 import { ArrowLeft, Save, Globe, Lock, Trash2, Copy, Check, Search, Package, X, Eye } from 'lucide-react'
 import Link from 'next/link'
 
@@ -20,6 +20,9 @@ type Product = {
   code: string
   name: string
   gold_karat?: number
+  gold_weight_g?: number
+  making_charges?: number
+  diamond_cost?: number
   diamond_shape?: string
   trade_price?: number
   photo_urls?: string[]
@@ -47,6 +50,7 @@ export default function CollectionDetailPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [partners, setPartners] = useState<Partner[]>([])
   const [viewCounts, setViewCounts] = useState<Map<string, number>>(new Map())
+  const [goldRate, setGoldRate] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savingProducts, setSavingProducts] = useState(false)
@@ -60,12 +64,13 @@ export default function CollectionDetailPage() {
 
   async function load() {
     setLoading(true)
-    const [{ data: coll }, { data: prods }, { data: collProds }, { data: parts }, viewsRes] = await Promise.all([
+    const [{ data: coll }, { data: prods }, { data: collProds }, { data: parts }, viewsRes, { data: g }] = await Promise.all([
       supabase.from('design_collections').select('*').eq('id', id).single(),
-      supabase.from('products').select('id, code, name, gold_karat, diamond_shape, trade_price, photo_urls, is_active').order('code'),
+      supabase.from('products').select('id, code, name, gold_karat, gold_weight_g, making_charges, diamond_cost, diamond_shape, trade_price, photo_urls, is_active').order('code'),
       supabase.from('design_collection_products').select('product_id').eq('collection_id', id),
       supabase.from('partners').select('id, store_name, owner_name, city, circuit, stage').order('store_name'),
       fetch(`/api/collections/${id}/views`).then(r => r.ok ? r.json() as Promise<{ partner_id: string | null }[]> : Promise.resolve([])),
+      supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
     ])
     if (!coll) { router.push('/catalog?tab=collections'); return }
     setCollection(coll)
@@ -81,7 +86,22 @@ export default function CollectionDetailPage() {
       })
       setViewCounts(counts)
     }
+    if (g?.[0]) setGoldRate(g[0].rate_24k)
     setLoading(false)
+  }
+
+  function estimateForProduct(p: Product) {
+    if (!goldRate || !p.gold_weight_g || !p.gold_karat || !p.trade_price) return null
+    const { total_cogs, margin } = computeOrderCogs({
+      gold_weight_actual: p.gold_weight_g,
+      gold_rate_at_order: goldRate,
+      gold_karat: p.gold_karat,
+      making_charges: p.making_charges || 0,
+      stone_cost: p.diamond_cost || 0,
+      total_amount: p.trade_price,
+    })
+    const marginPct = p.trade_price > 0 ? (margin / p.trade_price) * 100 : 0
+    return { total_cogs, margin, marginPct }
   }
 
   function setF(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
@@ -157,6 +177,18 @@ export default function CollectionDetailPage() {
     p.code.toLowerCase().includes(productSearch.toLowerCase())
   )
 
+  const selectedAvgMargin = (() => {
+    if (!goldRate) return null
+    const pcts: number[] = []
+    allProducts.forEach(p => {
+      if (!selectedIds.has(p.id)) return
+      const est = estimateForProduct(p)
+      if (est) pcts.push(est.marginPct)
+    })
+    if (!pcts.length) return null
+    return pcts.reduce((a, b) => a + b, 0) / pcts.length
+  })()
+
   const activePartners = partners.filter(p => p.stage === 'active' || p.stage === 'sample_sent')
   const filteredPartners = collection?.circuit_target
     ? activePartners.filter(p => !p.circuit || p.circuit === collection.circuit_target)
@@ -177,7 +209,18 @@ export default function CollectionDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-semibold text-stone-900 truncate">{collection.name}</h1>
-          <p className="text-stone-400 text-sm">{selectedIds.size} product{selectedIds.size !== 1 ? 's' : ''} · {collection.is_published ? 'Published' : 'Draft'}</p>
+          <p className="text-stone-400 text-sm">
+            {selectedIds.size} product{selectedIds.size !== 1 ? 's' : ''} · {collection.is_published ? 'Published' : 'Draft'}
+            {selectedAvgMargin != null && (
+              <span className={`ml-2 inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${
+                selectedAvgMargin >= 25 ? 'bg-green-100 text-green-700'
+                : selectedAvgMargin >= 10 ? 'bg-amber-100 text-amber-700'
+                : 'bg-red-100 text-red-700'
+              }`} title="Average estimated margin across selected products at today's 24K gold rate">
+                Avg margin {selectedAvgMargin.toFixed(0)}%
+              </span>
+            )}
+          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button onClick={handlePublishToggle}
@@ -312,6 +355,13 @@ export default function CollectionDetailPage() {
               <div className="divide-y divide-stone-100 max-h-[520px] overflow-y-auto">
                 {filteredProducts.map(p => {
                   const selected = selectedIds.has(p.id)
+                  const est = estimateForProduct(p)
+                  const pct = est?.marginPct
+                  const badgeClass = pct == null
+                    ? 'bg-stone-100 text-stone-400'
+                    : pct >= 25 ? 'bg-green-100 text-green-700'
+                    : pct >= 10 ? 'bg-amber-100 text-amber-700'
+                    : 'bg-red-100 text-red-700'
                   return (
                     <label key={p.id} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-stone-50 ${selected ? 'bg-amber-50/50' : ''}`}>
                       <input type="checkbox" checked={selected} onChange={() => toggleProduct(p.id)}
@@ -328,6 +378,11 @@ export default function CollectionDetailPage() {
                         </div>
                         <p className="text-sm text-stone-800 truncate">{p.name}</p>
                         <p className="text-xs text-stone-400">{p.gold_karat}K{p.diamond_shape ? ` · ${p.diamond_shape}` : ''}{p.trade_price ? ` · ₹${Math.round(p.trade_price / 1000)}K` : ''}</p>
+                      </div>
+                      <div className={`shrink-0 rounded-lg px-2 py-1 text-center ${badgeClass}`}
+                        title={est ? `Est. margin ≈ ₹${(est.margin/1000).toFixed(1)}K at today's 24K rate` : 'Add gold rate, gold weight & trade price to estimate margin'}>
+                        <p className="text-[10px] leading-none uppercase tracking-wide opacity-70">Margin</p>
+                        <p className="text-xs font-semibold leading-tight mt-0.5">{est ? `${est.marginPct.toFixed(0)}%` : '—'}</p>
                       </div>
                     </label>
                   )
