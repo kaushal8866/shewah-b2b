@@ -32,6 +32,11 @@ export default function CadRequestDetailPage() {
   const [form, setForm] = useState<any>({})
   const [uploading, setUploading] = useState(false)
   const [renderNote, setRenderNote] = useState('')
+  // Staged reference image URLs uploaded ahead of the render share. They get
+  // attached to the next render upload (saved on the same cad_revisions row)
+  // so retailers see annotations / before-after sketches alongside the render.
+  const [stagedRefs, setStagedRefs] = useState<string[]>([])
+  const [refUploading, setRefUploading] = useState(false)
 
   // Live updates: when the retailer acts on the CAD they're currently
   // viewing, splice the new fields into local state so the badges, dates and
@@ -44,7 +49,7 @@ export default function CadRequestDetailPage() {
       // Refresh the revisions timeline to show the retailer's new entry.
       supabase
         .from('cad_revisions')
-        .select('id, created_at, kind, author, note, render_images')
+        .select('id, created_at, kind, author, note, render_images, reference_images')
         .eq('cad_request_id', id)
         .order('created_at', { ascending: true })
         .then(({ data }: any) => setRevisions(data || []))
@@ -65,7 +70,7 @@ export default function CadRequestDetailPage() {
     setForm(data)
     const { data: revs } = await supabase
       .from('cad_revisions')
-      .select('id, created_at, kind, author, note, render_images')
+      .select('id, created_at, kind, author, note, render_images, reference_images')
       .eq('cad_request_id', id)
       .order('created_at', { ascending: true })
     setRevisions(revs || [])
@@ -114,6 +119,7 @@ export default function CadRequestDetailPage() {
         author: 'admin',
         note: renderNote.trim() || null,
         render_images: newUrls,
+        reference_images: stagedRefs.length > 0 ? stagedRefs : null,
       })
       if (e2) { alert('Saved render but failed to log revision: ' + e2.message) }
 
@@ -123,10 +129,36 @@ export default function CadRequestDetailPage() {
       }
 
       setRenderNote('')
+      setStagedRefs([])
       load()
     } finally {
       setUploading(false)
     }
+  }
+
+  // Stage reference / annotation images that will be attached to the next
+  // render share. They live only in local state until the team clicks
+  // "Upload render images". Task 36.
+  async function handleReferenceUpload(files: FileList | null) {
+    if (!files || files.length === 0) return
+    setRefUploading(true)
+    try {
+      const newUrls: string[] = []
+      for (const file of Array.from(files)) {
+        try {
+          newUrls.push(await uploadToCloudinary(file))
+        } catch (err) {
+          alert('Reference upload failed: ' + (err instanceof Error ? err.message : String(err)))
+        }
+      }
+      if (newUrls.length > 0) setStagedRefs(prev => [...prev, ...newUrls])
+    } finally {
+      setRefUploading(false)
+    }
+  }
+
+  function removeStagedRef(url: string) {
+    setStagedRefs(prev => prev.filter(u => u !== url))
   }
 
   async function handleSave() {
@@ -301,6 +333,7 @@ export default function CadRequestDetailPage() {
                       ? 'Retailer requested a revision'
                       : 'You shared a new CAD render'
                   const imgs: string[] = Array.isArray(r.render_images) ? r.render_images : []
+                  const refs: string[] = Array.isArray(r.reference_images) ? r.reference_images : []
                   return (
                     <li key={r.id} className="relative">
                       <span className={`absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full ${dot} ring-2 ring-white`} />
@@ -321,6 +354,19 @@ export default function CadRequestDetailPage() {
                           ))}
                         </div>
                       )}
+                      {refs.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-[11px] text-stone-400 mb-1">Reference / annotation images</p>
+                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                            {refs.map((src, i) => (
+                              <a key={i} href={src} target="_blank" rel="noreferrer"
+                                className="block aspect-square bg-stone-50 rounded-md overflow-hidden border border-dashed border-stone-300">
+                                <img src={src} alt={`Reference ${i + 1}`} className="w-full h-full object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </li>
                   )
                 })}
@@ -338,20 +384,57 @@ export default function CadRequestDetailPage() {
                 className={`${inp} resize-none mb-2`}
                 disabled={uploading}
               />
-              <label className={`flex items-center gap-2 border border-dashed border-stone-200 rounded-lg px-3 py-2 text-sm cursor-pointer w-fit ${uploading ? 'text-stone-300' : 'text-stone-600 hover:bg-stone-50'}`}>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  disabled={uploading}
-                  onChange={e => { handleRenderUpload(e.target.files); e.currentTarget.value = '' }}
-                />
-                <Upload className={`w-4 h-4 ${uploading ? 'animate-pulse' : ''}`} />
-                {uploading ? 'Uploading...' : 'Upload render images'}
-              </label>
+              {stagedRefs.length > 0 && (
+                <div className="mb-2">
+                  <p className="text-[11px] text-stone-500 mb-1">
+                    {stagedRefs.length} reference image{stagedRefs.length === 1 ? '' : 's'} attached to this round
+                  </p>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+                    {stagedRefs.map((src, i) => (
+                      <div key={src} className="relative aspect-square bg-stone-50 rounded-md overflow-hidden border border-dashed border-stone-300 group">
+                        <img src={src} alt={`Reference ${i + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeStagedRef(src)}
+                          disabled={uploading}
+                          className="absolute top-0.5 right-0.5 bg-white/90 text-stone-600 rounded-full p-0.5 hover:bg-white hover:text-red-500 disabled:opacity-50"
+                          aria-label="Remove reference"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <label className={`flex items-center gap-2 border border-dashed border-stone-200 rounded-lg px-3 py-2 text-sm cursor-pointer ${uploading || refUploading ? 'text-stone-300 pointer-events-none' : 'text-stone-600 hover:bg-stone-50'}`}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    disabled={uploading || refUploading}
+                    onChange={e => { handleReferenceUpload(e.target.files); e.currentTarget.value = '' }}
+                  />
+                  <Upload className={`w-4 h-4 ${refUploading ? 'animate-pulse' : ''}`} />
+                  {refUploading ? 'Uploading...' : 'Add reference / annotation'}
+                </label>
+                <label className={`flex items-center gap-2 border border-dashed border-[#1E3A5F]/30 bg-[#1E3A5F]/5 rounded-lg px-3 py-2 text-sm cursor-pointer ${uploading || refUploading ? 'text-stone-300 pointer-events-none' : 'text-[#1E3A5F] hover:bg-[#1E3A5F]/10'}`}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    disabled={uploading || refUploading}
+                    onChange={e => { handleRenderUpload(e.target.files); e.currentTarget.value = '' }}
+                  />
+                  <Upload className={`w-4 h-4 ${uploading ? 'animate-pulse' : ''}`} />
+                  {uploading ? 'Sharing...' : 'Upload render images'}
+                </label>
+              </div>
               <p className="text-[11px] text-stone-400 mt-2">
-                Each upload is logged as a new revision so the retailer can see how the design evolved. The request will be marked as sent.
+                Add any reference / annotation images first, then upload renders to share. They'll be saved together as one revision so the retailer can compare side by side. The request will be marked as sent.
               </p>
             </div>
           </div>

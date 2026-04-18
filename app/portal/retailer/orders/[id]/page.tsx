@@ -191,6 +191,7 @@ export default function RetailerOrderDetail() {
                       ? 'You requested a revision'
                       : 'New CAD render shared'
                   const imgs: string[] = Array.isArray(r.render_images) ? r.render_images : []
+                  const refs: string[] = Array.isArray(r.reference_images) ? r.reference_images : []
                   return (
                     <li key={r.id} className="relative">
                       <span className={`absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full ${dot} ring-2 ring-white`} />
@@ -209,6 +210,19 @@ export default function RetailerOrderDetail() {
                               <img src={src} alt={`Render ${i + 1}`} className="w-full h-full object-cover" />
                             </a>
                           ))}
+                        </div>
+                      )}
+                      {refs.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-[11px] text-stone-400 mb-1">References / annotations</p>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                            {refs.map((src, i) => (
+                              <a key={i} href={src} target="_blank" rel="noopener noreferrer"
+                                className="block aspect-square bg-stone-50 rounded-md overflow-hidden border border-dashed border-stone-300">
+                                <img src={src} alt={`Reference ${i + 1}`} className="w-full h-full object-cover" />
+                              </a>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </li>

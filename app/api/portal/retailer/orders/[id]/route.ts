@@ -37,7 +37,10 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
 
   // If a CAD request is linked and has reached the retailer-visible stages,
   // surface a trimmed view. Internal SLAs (due_date), costs, revision_notes
-  // (internal-only), reference images, and other partners' work are excluded.
+  // (internal-only), the brief-side reference images on cad_requests, and
+  // other partners' work are excluded. NOTE: per-revision reference images
+  // attached by the design team to a render share (cad_revisions.reference_images,
+  // Task 36) ARE intentionally exposed in the revisions history below.
   let cad_request: any = null
   let cad_revisions: any[] = []
   if (cad_request_id) {
@@ -55,7 +58,7 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
       // retailer can see how the design evolved across rounds.
       const { data: revs } = await supabaseAdmin
         .from('cad_revisions')
-        .select('id, created_at, kind, author, note, render_images')
+        .select('id, created_at, kind, author, note, render_images, reference_images')
         .eq('cad_request_id', cad.id)
         .order('created_at', { ascending: true })
       cad_revisions = revs || []

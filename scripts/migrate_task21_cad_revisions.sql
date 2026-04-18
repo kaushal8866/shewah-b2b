@@ -14,8 +14,15 @@ create table if not exists cad_revisions (
   -- 'admin' for internal team, 'retailer' for the partner
   author          text not null check (author in ('admin','retailer')),
   note            text,
-  render_images   text[]
+  render_images   text[],
+  -- Optional extra images attached alongside a render (annotated sketches,
+  -- before/after comparisons, mood references). Shown in the timeline next to
+  -- the renders. Task 36.
+  reference_images text[]
 );
+
+alter table cad_revisions
+  add column if not exists reference_images text[];
 
 create index if not exists cad_revisions_request_id_idx
   on cad_revisions(cad_request_id, created_at);

@@ -34,6 +34,7 @@ A Next.js 14 B2B admin panel for Shewah jewelry, built with Supabase as the data
 - `scripts/setup_collections.sql` - Migration for 4 new tables (must run manually in Supabase Dashboard)
 - `scripts/setup_material_ledger.sql` - **Task 5 migration: must run manually in Supabase SQL Editor.** Adds COGS/gold columns to `orders` (gold_weight_estimated/actual, gold_source, making_charges, cad_cost, stone_cost, total_cogs, margin, assigned_manufacturer_id), ensures `material_transactions.order_id` FK + negative-balance flag columns + BEFORE-INSERT trigger that flags (does not block) negative-balance rows, renames `total_withdrawn`→`total_returned` on `material_float`, and migrates the `transaction_type` value `withdrawal`→`return`. Canonical 4-type set: `deposit`, `consumption`, `return`, `adjustment`.
 - `scripts/migrate_task14_whatsapp_notifications.sql` - **Task 14 migration: must run manually.** Adds `partners.notify_whatsapp boolean default true` and seeds settings keys `whatsapp_notifications_enabled`, `whatsapp_webhook_url`, `whatsapp_webhook_token`, `public_base_url`.
+- `scripts/migrate_task21_cad_revisions.sql` - **Tasks 21 & 36 migration: must run manually.** Creates `cad_revisions` (per-round timeline of renders + retailer feedback) and adds `cad_revisions.reference_images text[]` so the design team can attach annotated sketches / before-after comparisons to a render share. Both render and reference images are rendered in the timeline on the admin CAD detail page and the retailer order portal.
 
 ## Retailer WhatsApp notifications (Task 14)
 
