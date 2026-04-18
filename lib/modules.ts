@@ -3,6 +3,7 @@ export const MODULES = [
   { id: 'partners',        label: 'Partners CRM',        href: '/partners' },
   { id: 'orders',          label: 'Orders',              href: '/orders' },
   { id: 'cad_requests',    label: 'CAD Requests',        href: '/cad-requests' },
+  { id: 'cad_partners',    label: 'CAD Partners',        href: '/cad-partners' },
   { id: 'manufacturing',   label: 'Manufacturing',       href: '/manufacturing' },
   { id: 'catalog',         label: 'Catalog',             href: '/catalog' },
   { id: 'gold_rates',      label: 'Gold Rates',          href: '/gold-rates' },

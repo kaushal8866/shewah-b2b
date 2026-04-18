@@ -8,7 +8,7 @@ import { canAccess } from '@/lib/modules'
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
-  Factory, Store, Menu, X, LogOut, ChevronDown, Coins
+  Factory, Store, Menu, X, LogOut, ChevronDown, Coins, BookUser
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -17,6 +17,7 @@ const nav = [
   { href: '/partners',        icon: Users,           label: 'Partners',      module: 'partners'      },
   { href: '/orders',          icon: ShoppingBag,     label: 'Orders',        module: 'orders'        },
   { href: '/cad-requests',    icon: Pen,             label: 'CAD Requests',  module: 'cad_requests'  },
+  { href: '/cad-partners',    icon: BookUser,        label: 'CAD Partners',  module: 'cad_partners'  },
   { href: '/manufacturing',   icon: Factory,         label: 'Manufacturing', module: 'manufacturing' },
   { href: '/catalog',         icon: Package,         label: 'Catalog',       module: 'catalog'       },
   { href: '/gold-rates',      icon: TrendingUp,      label: 'Gold Rates',    module: 'gold_rates'    },

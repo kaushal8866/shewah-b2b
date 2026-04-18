@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Link2, Send, Copy, Check, RefreshCw, X, Clock, ExternalLink, MessageSquareWarning, CheckCircle2 } from 'lucide-react'
+import { Link2, Send, Copy, Check, RefreshCw, X, Clock, ExternalLink, MessageSquareWarning, CheckCircle2, BookUser } from 'lucide-react'
+import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 
 type ShareLink = {
   token: string
   partner_name: string | null
   partner_phone: string | null
+  cad_partner_id: string | null
   created_at: string
   expires_at: string
   revoked_at: string | null
@@ -23,6 +25,17 @@ type Response = {
   responded_at: string
 }
 
+type DirectoryPartner = {
+  id: string
+  name: string
+  phone: string | null
+  notes: string | null
+  default_ttl_days: number
+  is_active: boolean
+}
+
+const ADHOC = '__adhoc__'
+
 export default function CadPartnerSharePanel({
   cadRequestId,
   hasReferenceImages,
@@ -36,11 +49,13 @@ export default function CadPartnerSharePanel({
 }) {
   const [links, setLinks] = useState<ShareLink[]>([])
   const [responses, setResponses] = useState<Response[]>([])
+  const [directory, setDirectory] = useState<DirectoryPartner[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>(ADHOC)
   const [partnerName, setPartnerName] = useState(defaultPartnerName || '')
   const [partnerPhone, setPartnerPhone] = useState(defaultPartnerPhone || '')
   const [ttlDays, setTtlDays] = useState(7)
@@ -54,6 +69,7 @@ export default function CadPartnerSharePanel({
       const j = await r.json()
       setLinks(j.links || [])
       setResponses(j.responses || [])
+      setDirectory(j.directory || [])
     } catch { /* ignore */ }
     setLoading(false)
   }
@@ -63,9 +79,20 @@ export default function CadPartnerSharePanel({
     return `${window.location.origin}/cad-share/${token}`
   }
 
+  function pickDirectoryPartner(id: string) {
+    setSelectedPartnerId(id)
+    if (id === ADHOC) return
+    const p = directory.find(d => d.id === id)
+    if (!p) return
+    setPartnerName(p.name)
+    setPartnerPhone(p.phone || '')
+    setTtlDays(p.default_ttl_days || 7)
+  }
+
   const active = links.find(l => l.status === 'active')
   const latestLink = links[0]
   const inactiveLatest = !active && latestLink ? latestLink : null
+  const directoryById = new Map(directory.map(d => [d.id, d]))
 
   async function generate(sendWhatsapp: boolean) {
     setBusy(true)
@@ -75,6 +102,7 @@ export default function CadPartnerSharePanel({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          partner_id: selectedPartnerId !== ADHOC ? selectedPartnerId : null,
           partner_name: partnerName.trim(),
           partner_phone: partnerPhone.trim(),
           ttl_days: ttlDays,
@@ -120,6 +148,7 @@ export default function CadPartnerSharePanel({
   }
 
   const latestResponse = responses[0]
+  const activeDirEntry = active?.cad_partner_id ? directoryById.get(active.cad_partner_id) : null
 
   return (
     <div className="bg-white rounded-xl border border-stone-200 p-5">
@@ -135,6 +164,12 @@ export default function CadPartnerSharePanel({
             directly.
           </p>
         </div>
+        <Link
+          href="/cad-partners"
+          className="shrink-0 flex items-center gap-1 text-[11px] text-stone-500 hover:text-[#1E3A5F] border border-stone-200 hover:border-[#1E3A5F]/40 rounded-lg px-2 py-1"
+        >
+          <BookUser className="w-3 h-3" /> Manage directory
+        </Link>
       </div>
 
       {!hasReferenceImages && (
@@ -149,7 +184,16 @@ export default function CadPartnerSharePanel({
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-3">
           <div className="flex items-center gap-2 mb-2 text-emerald-800 text-sm font-medium">
             <Check className="w-4 h-4" /> Active link
-            {active.partner_name && <span className="text-xs text-emerald-700 font-normal">· {active.partner_name}</span>}
+            {(activeDirEntry?.name || active.partner_name) && (
+              <span className="text-xs text-emerald-700 font-normal">
+                · {activeDirEntry?.name || active.partner_name}
+                {activeDirEntry && (
+                  <span className="ml-1 inline-block text-[9px] uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 align-middle">
+                    Directory
+                  </span>
+                )}
+              </span>
+            )}
           </div>
           <div className="bg-white rounded-lg border border-emerald-200 px-3 py-2 mb-2 text-xs text-stone-700 font-mono break-all">
             {shareUrl(active.token)}
@@ -261,6 +305,28 @@ export default function CadPartnerSharePanel({
       {showForm && hasReferenceImages && (
         <div className="border border-stone-200 rounded-xl p-3 bg-stone-50 mb-3">
           <p className="text-xs font-medium text-stone-600 mb-2">Generate a new partner link</p>
+          <div className="mb-2">
+            <label className="block text-[11px] text-stone-500 mb-1">CAD partner</label>
+            <select
+              value={selectedPartnerId}
+              onChange={e => pickDirectoryPartner(e.target.value)}
+              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-[#1E3A5F] outline-none"
+            >
+              <option value={ADHOC}>Ad-hoc — type details below</option>
+              {directory.map(d => (
+                <option key={d.id} value={d.id}>
+                  {d.name}{d.phone ? ` · ${d.phone}` : ''}
+                </option>
+              ))}
+            </select>
+            {directory.length === 0 && (
+              <p className="text-[11px] text-stone-400 mt-1">
+                Tip: add recurring partners in the{' '}
+                <Link href="/cad-partners" className="underline hover:text-[#1E3A5F]">CAD partners directory</Link>{' '}
+                to skip retyping next time.
+              </p>
+            )}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
             <input
               type="text"
