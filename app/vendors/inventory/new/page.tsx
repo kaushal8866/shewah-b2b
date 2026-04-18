@@ -145,7 +145,7 @@ export default function NewInventoryItemPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={lbl}>Quantity in stock</label>
-              <input type="number" step="0.001" className={inp} value={form.quantity_in_stock} onChange={e => set('quantity_in_stock', e.target.value)} />
+              <input type="number" inputMode="decimal" step="0.001" className={inp} value={form.quantity_in_stock} onChange={e => set('quantity_in_stock', e.target.value)} />
             </div>
             <div>
               <label className={lbl}>Unit</label>
@@ -158,11 +158,11 @@ export default function NewInventoryItemPage() {
             </div>
             <div>
               <label className={lbl}>Avg purchase price (₹/{form.unit === 'carats' ? 'ct' : form.unit === 'grams' ? 'g' : 'unit'})</label>
-              <input type="number" className={inp} value={form.avg_purchase_price} onChange={e => set('avg_purchase_price', e.target.value)} />
+              <input type="number" inputMode="decimal" className={inp} value={form.avg_purchase_price} onChange={e => set('avg_purchase_price', e.target.value)} />
             </div>
             <div>
               <label className={lbl}>Low stock alert threshold</label>
-              <input type="number" step="0.001" className={inp} value={form.low_stock_alert} onChange={e => set('low_stock_alert', e.target.value)} />
+              <input type="number" inputMode="decimal" step="0.001" className={inp} value={form.low_stock_alert} onChange={e => set('low_stock_alert', e.target.value)} />
             </div>
             <div className="sm:col-span-2">
               <label className={lbl}>Notes</label>

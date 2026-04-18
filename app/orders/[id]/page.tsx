@@ -316,7 +316,7 @@ export default function OrderDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Quantity</label>
-                <input type="number" min="1" className={inp} value={form.quantity || ''} onChange={e => set('quantity', e.target.value)} />
+                <input type="number" inputMode="decimal" min="1" className={inp} value={form.quantity || ''} onChange={e => set('quantity', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Ring size</label>
@@ -324,15 +324,15 @@ export default function OrderDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Trade price (₹)</label>
-                <input type="number" className={inp} value={form.trade_price || ''} onChange={e => set('trade_price', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.trade_price || ''} onChange={e => set('trade_price', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Total amount (₹)</label>
-                <input type="number" className={inp} value={form.total_amount || ''} onChange={e => set('total_amount', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.total_amount || ''} onChange={e => set('total_amount', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Advance paid (₹)</label>
-                <input type="number" className={inp} value={form.advance_paid || ''} onChange={e => set('advance_paid', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.advance_paid || ''} onChange={e => set('advance_paid', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Expected delivery</label>

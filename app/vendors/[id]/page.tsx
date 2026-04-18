@@ -272,11 +272,11 @@ export default function VendorDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Credit limit (₹)</label>
-                <input type="number" className={inp} value={form.credit_limit || '0'} onChange={e => set('credit_limit', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.credit_limit || '0'} onChange={e => set('credit_limit', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Outstanding (₹)</label>
-                <input type="number" className={inp} value={form.outstanding || '0'} onChange={e => set('outstanding', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.outstanding || '0'} onChange={e => set('outstanding', e.target.value)} />
               </div>
               <div className="sm:col-span-2">
                 <label className={lbl}>Notes</label>

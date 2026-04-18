@@ -299,19 +299,19 @@ export default function ManufacturingPartnerDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Labour rate 14K (₹/g)</label>
-                <input type="number" className={inp} value={form.labour_rate_14k || ''} onChange={e => set('labour_rate_14k', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_14k || ''} onChange={e => set('labour_rate_14k', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Labour rate 18K (₹/g)</label>
-                <input type="number" className={inp} value={form.labour_rate_18k || ''} onChange={e => set('labour_rate_18k', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_18k || ''} onChange={e => set('labour_rate_18k', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Labour rate 22K (₹/g)</label>
-                <input type="number" className={inp} value={form.labour_rate_22k || ''} onChange={e => set('labour_rate_22k', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_22k || ''} onChange={e => set('labour_rate_22k', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Min chargeable weight (g)</label>
-                <input type="number" step="0.1" className={inp} value={form.min_labour_grams || '1'} onChange={e => set('min_labour_grams', e.target.value)} />
+                <input type="number" inputMode="decimal" step="0.1" className={inp} value={form.min_labour_grams || '1'} onChange={e => set('min_labour_grams', e.target.value)} />
               </div>
               <div className="sm:col-span-2">
                 <label className={lbl}>Specialities (comma separated)</label>

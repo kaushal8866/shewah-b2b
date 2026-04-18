@@ -279,7 +279,7 @@ export default function ManufacturingOrderDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Quantity</label>
-                <input type="number" min="1" className={inp} value={form.quantity || ''} onChange={e => set('quantity', e.target.value)} />
+                <input type="number" inputMode="decimal" min="1" className={inp} value={form.quantity || ''} onChange={e => set('quantity', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Ring size</label>
@@ -293,23 +293,23 @@ export default function ManufacturingOrderDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Gold weight required (g)</label>
-                <input type="number" step="0.01" className={inp} value={form.gold_weight_required || ''} onChange={e => set('gold_weight_required', e.target.value)} />
+                <input type="number" inputMode="decimal" step="0.01" className={inp} value={form.gold_weight_required || ''} onChange={e => set('gold_weight_required', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Gold weight actual (g)</label>
-                <input type="number" step="0.01" className={inp} value={form.gold_weight_actual || ''} onChange={e => set('gold_weight_actual', e.target.value)} />
+                <input type="number" inputMode="decimal" step="0.01" className={inp} value={form.gold_weight_actual || ''} onChange={e => set('gold_weight_actual', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Diamond weight (ct)</label>
-                <input type="number" step="0.01" className={inp} value={form.diamond_weight || ''} onChange={e => set('diamond_weight', e.target.value)} />
+                <input type="number" inputMode="decimal" step="0.01" className={inp} value={form.diamond_weight || ''} onChange={e => set('diamond_weight', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Labour rate (₹/g)</label>
-                <input type="number" className={inp} value={form.labour_per_gram || ''} onChange={e => set('labour_per_gram', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.labour_per_gram || ''} onChange={e => set('labour_per_gram', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Other charges (₹)</label>
-                <input type="number" className={inp} value={form.other_charges || '0'} onChange={e => set('other_charges', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.other_charges || '0'} onChange={e => set('other_charges', e.target.value)} />
               </div>
 
               {/* Cost preview */}

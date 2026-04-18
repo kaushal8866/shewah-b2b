@@ -129,19 +129,19 @@ export default function NewManufacturingPartnerPage() {
             </div>
             <div>
               <label className={lbl}>Labour rate 14K (₹/gram)</label>
-              <input type="number" className={inp} value={form.labour_rate_14k} onChange={e => set('labour_rate_14k', e.target.value)} placeholder="e.g. 900" />
+              <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_14k} onChange={e => set('labour_rate_14k', e.target.value)} placeholder="e.g. 900" />
             </div>
             <div>
               <label className={lbl}>Labour rate 18K (₹/gram)</label>
-              <input type="number" className={inp} value={form.labour_rate_18k} onChange={e => set('labour_rate_18k', e.target.value)} placeholder="e.g. 1200" />
+              <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_18k} onChange={e => set('labour_rate_18k', e.target.value)} placeholder="e.g. 1200" />
             </div>
             <div>
               <label className={lbl}>Labour rate 22K (₹/gram)</label>
-              <input type="number" className={inp} value={form.labour_rate_22k} onChange={e => set('labour_rate_22k', e.target.value)} placeholder="e.g. 1500" />
+              <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_22k} onChange={e => set('labour_rate_22k', e.target.value)} placeholder="e.g. 1500" />
             </div>
             <div>
               <label className={lbl}>Minimum chargeable weight (grams)</label>
-              <input type="number" step="0.1" className={inp} value={form.min_labour_grams} onChange={e => set('min_labour_grams', e.target.value)} />
+              <input type="number" inputMode="decimal" step="0.1" className={inp} value={form.min_labour_grams} onChange={e => set('min_labour_grams', e.target.value)} />
             </div>
             <div className="sm:col-span-2">
               <label className={lbl}>Notes</label>

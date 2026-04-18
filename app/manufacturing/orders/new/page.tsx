@@ -255,7 +255,7 @@ function NewMfgOrderForm() {
               </div>
               <div>
                 <label className={lbl}>Quantity</label>
-                <input type="number" min="1" className={inp} value={form.quantity} onChange={e => set('quantity', e.target.value)} />
+                <input type="number" inputMode="decimal" min="1" className={inp} value={form.quantity} onChange={e => set('quantity', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Ring size</label>
@@ -332,11 +332,11 @@ function NewMfgOrderForm() {
               </div>
               <div>
                 <label className={lbl}>Gold weight needed (g)</label>
-                <input type="number" step="0.01" className={inp} value={form.gold_weight_required} onChange={e => set('gold_weight_required', e.target.value)} placeholder="e.g. 3.5" />
+                <input type="number" inputMode="decimal" step="0.01" className={inp} value={form.gold_weight_required} onChange={e => set('gold_weight_required', e.target.value)} placeholder="e.g. 3.5" />
               </div>
               <div>
                 <label className={lbl}>Diamond weight (ct)</label>
-                <input type="number" step="0.01" className={inp} value={form.diamond_weight} onChange={e => set('diamond_weight', e.target.value)} placeholder="e.g. 0.5" />
+                <input type="number" inputMode="decimal" step="0.01" className={inp} value={form.diamond_weight} onChange={e => set('diamond_weight', e.target.value)} placeholder="e.g. 0.5" />
               </div>
               <div className="col-span-1 sm:col-span-2 lg:col-span-4">
                 <label className={lbl}>Material notes</label>
@@ -351,18 +351,18 @@ function NewMfgOrderForm() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
               <div>
                 <label className={lbl}>Labour rate (₹/gram)</label>
-                <input type="number" className={inp} value={form.labour_per_gram} onChange={e => set('labour_per_gram', e.target.value)}
+                <input type="number" inputMode="decimal" className={inp} value={form.labour_per_gram} onChange={e => set('labour_per_gram', e.target.value)}
                   placeholder={`Default: ₹${labourRates[parseInt(form.gold_karat)] || '—'}`} />
                 <p className="text-xs text-stone-400 mt-1">Auto-filled from karat settings</p>
               </div>
               <div>
                 <label className={lbl}>Actual gold weight (g)</label>
-                <input type="number" step="0.01" className={inp} value={form.gold_weight_actual} onChange={e => set('gold_weight_actual', e.target.value)} placeholder="Fill after making" />
+                <input type="number" inputMode="decimal" step="0.01" className={inp} value={form.gold_weight_actual} onChange={e => set('gold_weight_actual', e.target.value)} placeholder="Fill after making" />
                 <p className="text-xs text-stone-400 mt-1">Min 1g rule applies</p>
               </div>
               <div>
                 <label className={lbl}>Other charges (₹)</label>
-                <input type="number" className={inp} value={form.other_charges} onChange={e => set('other_charges', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.other_charges} onChange={e => set('other_charges', e.target.value)} />
               </div>
             </div>
 

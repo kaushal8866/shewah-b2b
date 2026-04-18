@@ -184,7 +184,7 @@ export default function MaterialFloatPage() {
           {activeTab === 'deposit' && (
             <div>
               <label className={lbl}>Rate per gram (₹) — optional</label>
-              <input type="number" className={inp} value={form.rate_per_unit} onChange={e => set('rate_per_unit', e.target.value)} placeholder="Gold rate today" />
+              <input type="number" inputMode="decimal" className={inp} value={form.rate_per_unit} onChange={e => set('rate_per_unit', e.target.value)} placeholder="Gold rate today" />
             </div>
           )}
           <div>

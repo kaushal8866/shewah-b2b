@@ -134,11 +134,11 @@ export default function NewVendorPage() {
             </div>
             <div>
               <label className={lbl}>Credit limit (₹)</label>
-              <input type="number" className={inp} value={form.credit_limit} onChange={e => set('credit_limit', e.target.value)} placeholder="0" />
+              <input type="number" inputMode="decimal" className={inp} value={form.credit_limit} onChange={e => set('credit_limit', e.target.value)} placeholder="0" />
             </div>
             <div>
               <label className={lbl}>Current outstanding (₹)</label>
-              <input type="number" className={inp} value={form.outstanding} onChange={e => set('outstanding', e.target.value)} />
+              <input type="number" inputMode="decimal" className={inp} value={form.outstanding} onChange={e => set('outstanding', e.target.value)} />
             </div>
             <div className="sm:col-span-2">
               <label className={lbl}>Notes</label>

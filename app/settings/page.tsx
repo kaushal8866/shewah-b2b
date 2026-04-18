@@ -200,16 +200,16 @@ export default function SettingsPage() {
             </div>
             <p className="text-xs text-stone-400 mb-4">Used in the gold rate calculator and new product forms.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label className={label}>Default IGI cert cost (₹)</label><input type="number" className={input} value={settings.default_igi_cost || ''} onChange={e => set('default_igi_cost', e.target.value)} /></div>
-              <div><label className={label}>Default making charges (₹)</label><input type="number" className={input} value={settings.default_making_charges || ''} onChange={e => set('default_making_charges', e.target.value)} /></div>
+              <div><label className={label}>Default IGI cert cost (₹)</label><input type="number" inputMode="decimal" className={input} value={settings.default_igi_cost || ''} onChange={e => set('default_igi_cost', e.target.value)} /></div>
+              <div><label className={label}>Default making charges (₹)</label><input type="number" inputMode="decimal" className={input} value={settings.default_making_charges || ''} onChange={e => set('default_making_charges', e.target.value)} /></div>
               <div>
                 <label className={label}>Trade margin target (% above COGS)</label>
-                <input type="number" className={input} value={settings.trade_margin_target || ''} onChange={e => set('trade_margin_target', e.target.value)} placeholder="28" />
+                <input type="number" inputMode="decimal" className={input} value={settings.trade_margin_target || ''} onChange={e => set('trade_margin_target', e.target.value)} placeholder="28" />
                 <p className="text-xs text-stone-400 mt-1">e.g. 28 = trade price × 1.28</p>
               </div>
               <div>
                 <label className={label}>MRP markup target (% above trade)</label>
-                <input type="number" className={input} value={settings.mrp_markup_target || ''} onChange={e => set('mrp_markup_target', e.target.value)} placeholder="40" />
+                <input type="number" inputMode="decimal" className={input} value={settings.mrp_markup_target || ''} onChange={e => set('mrp_markup_target', e.target.value)} placeholder="40" />
                 <p className="text-xs text-stone-400 mt-1">e.g. 40 = MRP × 1.40</p>
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function SettingsPage() {
               ].map(f => (
                 <div key={f.key}>
                   <label className={label}>{f.label}</label>
-                  <input type="number" step="0.001" className={input} value={settings[f.key] || f.default} onChange={e => set(f.key, e.target.value)} />
+                  <input type="number" inputMode="decimal" step="0.001" className={input} value={settings[f.key] || f.default} onChange={e => set(f.key, e.target.value)} />
                 </div>
               ))}
             </div>
@@ -241,14 +241,14 @@ export default function SettingsPage() {
               <h2 className="font-medium text-stone-900">Operations defaults</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label className={label}>CAD turnaround SLA (hours)</label><input type="number" className={input} value={settings.cad_sla_hours || '48'} onChange={e => set('cad_sla_hours', e.target.value)} /></div>
-              <div><label className={label}>Default catalog delivery (days)</label><input type="number" className={input} value={settings.default_delivery_days || '14'} onChange={e => set('default_delivery_days', e.target.value)} /></div>
+              <div><label className={label}>CAD turnaround SLA (hours)</label><input type="number" inputMode="decimal" className={input} value={settings.cad_sla_hours || '48'} onChange={e => set('cad_sla_hours', e.target.value)} /></div>
+              <div><label className={label}>Default catalog delivery (days)</label><input type="number" inputMode="decimal" className={input} value={settings.default_delivery_days || '14'} onChange={e => set('default_delivery_days', e.target.value)} /></div>
               <div>
                 <label className={label}>Advance payment required (%)</label>
-                <input type="number" className={input} value={settings.advance_pct || '50'} onChange={e => set('advance_pct', e.target.value)} />
+                <input type="number" inputMode="decimal" className={input} value={settings.advance_pct || '50'} onChange={e => set('advance_pct', e.target.value)} />
                 <p className="text-xs text-stone-400 mt-1">% of order value required upfront</p>
               </div>
-              <div><label className={label}>Follow-up reminder (days after visit)</label><input type="number" className={input} value={settings.followup_days || '3'} onChange={e => set('followup_days', e.target.value)} /></div>
+              <div><label className={label}>Follow-up reminder (days after visit)</label><input type="number" inputMode="decimal" className={input} value={settings.followup_days || '3'} onChange={e => set('followup_days', e.target.value)} /></div>
             </div>
           </div>
         </div>

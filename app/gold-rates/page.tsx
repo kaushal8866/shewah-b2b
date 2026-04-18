@@ -201,7 +201,7 @@ export default function GoldRatesPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-stone-500 mb-1">Diamond cost (₹)</label>
-                <input type="number" className={input} value={calcDiamond} onChange={e => setCalcDiamond(e.target.value)} />
+                <input type="number" inputMode="decimal" className={input} value={calcDiamond} onChange={e => setCalcDiamond(e.target.value)} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-stone-500 mb-1">Gold karat</label>
@@ -213,19 +213,19 @@ export default function GoldRatesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-stone-500 mb-1">Gold weight (g)</label>
-                <input type="number" className={input} value={calcGoldWeight} onChange={e => setCalcGoldWeight(e.target.value)} />
+                <input type="number" inputMode="decimal" className={input} value={calcGoldWeight} onChange={e => setCalcGoldWeight(e.target.value)} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-stone-500 mb-1">Making charges (₹)</label>
-                <input type="number" className={input} value={calcMaking} onChange={e => setCalcMaking(e.target.value)} />
+                <input type="number" inputMode="decimal" className={input} value={calcMaking} onChange={e => setCalcMaking(e.target.value)} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-stone-500 mb-1">IGI cert cost (₹)</label>
-                <input type="number" className={input} value={calcIGI} onChange={e => setCalcIGI(e.target.value)} />
+                <input type="number" inputMode="decimal" className={input} value={calcIGI} onChange={e => setCalcIGI(e.target.value)} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-stone-500 mb-1">Margin above COGS (%)</label>
-                <input type="number" className={input} value={calcMargin} onChange={e => setCalcMargin(e.target.value)} />
+                <input type="number" inputMode="decimal" className={input} value={calcMargin} onChange={e => setCalcMargin(e.target.value)} />
               </div>
             </div>
 

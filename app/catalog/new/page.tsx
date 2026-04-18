@@ -247,11 +247,11 @@ export default function NewProductPage() {
                   </div>
                   <div>
                     <label className={lbl}>Weight (ct)</label>
-                    <input type="number" step="0.01" className={inp} value={d.weight} onChange={e => updateDiamond(d.id, 'weight', e.target.value)} placeholder="0.50" />
+                    <input type="number" inputMode="decimal" step="0.01" className={inp} value={d.weight} onChange={e => updateDiamond(d.id, 'weight', e.target.value)} placeholder="0.50" />
                   </div>
                   <div>
                     <label className={lbl}>Pieces</label>
-                    <input type="number" min="1" className={inp} value={d.pieces} onChange={e => updateDiamond(d.id, 'pieces', e.target.value)} placeholder="1" />
+                    <input type="number" inputMode="decimal" min="1" className={inp} value={d.pieces} onChange={e => updateDiamond(d.id, 'pieces', e.target.value)} placeholder="1" />
                   </div>
                   <div>
                     <label className={lbl}>Quality</label>
@@ -274,7 +274,7 @@ export default function NewProductPage() {
                   </div>
                   <div>
                     <label className={lbl}>Cost/pc (₹)</label>
-                    <input type="number" className={inp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} placeholder="8000" />
+                    <input type="number" inputMode="decimal" className={inp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} placeholder="8000" />
                   </div>
                 </div>
                 {d.cost && parseInt(d.pieces) > 1 && (
@@ -305,15 +305,15 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className={lbl}>Gold weight (g)</label>
-              <input type="number" step="0.01" className={inp} value={form.gold_weight_g} onChange={e => set('gold_weight_g', e.target.value)} placeholder="3.0" />
+              <input type="number" inputMode="decimal" step="0.01" className={inp} value={form.gold_weight_g} onChange={e => set('gold_weight_g', e.target.value)} placeholder="3.0" />
             </div>
             <div>
               <label className={lbl}>Making charges (₹)</label>
-              <input type="number" className={inp} value={form.making_charges} onChange={e => set('making_charges', e.target.value)} />
+              <input type="number" inputMode="decimal" className={inp} value={form.making_charges} onChange={e => set('making_charges', e.target.value)} />
             </div>
             <div>
               <label className={lbl}>IGI cert cost (₹)</label>
-              <input type="number" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} />
+              <input type="number" inputMode="decimal" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} />
             </div>
           </div>
           {goldRate > 0 && goldWeightG > 0 && (
@@ -349,17 +349,17 @@ export default function NewProductPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <div>
               <label className={lbl}>Trade price (₹) *</label>
-              <input type="number" className={inp} value={form.trade_price} onChange={e => set('trade_price', e.target.value)}
+              <input type="number" inputMode="decimal" className={inp} value={form.trade_price} onChange={e => set('trade_price', e.target.value)}
                 placeholder={autoTradePrice > 0 ? `Auto: ₹${autoTradePrice.toLocaleString('en-IN')}` : 'Your price to jeweler'} />
             </div>
             <div>
               <label className={lbl}>Suggested MRP (₹)</label>
-              <input type="number" className={inp} value={form.mrp_suggested} onChange={e => set('mrp_suggested', e.target.value)}
+              <input type="number" inputMode="decimal" className={inp} value={form.mrp_suggested} onChange={e => set('mrp_suggested', e.target.value)}
                 placeholder={autoMRP > 0 ? `Auto: ₹${autoMRP.toLocaleString('en-IN')}` : "Jeweler's price to customer"} />
             </div>
             <div>
               <label className={lbl}>Delivery (days)</label>
-              <input type="number" className={inp} value={form.delivery_days} onChange={e => set('delivery_days', e.target.value)} />
+              <input type="number" inputMode="decimal" className={inp} value={form.delivery_days} onChange={e => set('delivery_days', e.target.value)} />
             </div>
           </div>
 

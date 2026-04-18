@@ -178,7 +178,7 @@ function NewOrderForm() {
             )}
             <div>
               <label className={label}>Quantity</label>
-              <input type="number" min="1" className={input} value={form.quantity} onChange={e => set('quantity', e.target.value)} />
+              <input type="number" inputMode="decimal" min="1" className={input} value={form.quantity} onChange={e => set('quantity', e.target.value)} />
             </div>
             <div>
               <label className={label}>Ring size</label>
@@ -202,15 +202,15 @@ function NewOrderForm() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={label}>Trade price (₹) *</label>
-              <input type="number" className={input} value={form.trade_price} onChange={e => set('trade_price', e.target.value)} />
+              <input type="number" inputMode="decimal" className={input} value={form.trade_price} onChange={e => set('trade_price', e.target.value)} />
             </div>
             <div>
               <label className={label}>Total amount (₹) *</label>
-              <input type="number" className={input} value={form.total_amount} onChange={e => set('total_amount', e.target.value)} />
+              <input type="number" inputMode="decimal" className={input} value={form.total_amount} onChange={e => set('total_amount', e.target.value)} />
             </div>
             <div>
               <label className={label}>Advance paid (₹)</label>
-              <input type="number" className={input} value={form.advance_paid} onChange={e => set('advance_paid', e.target.value)} />
+              <input type="number" inputMode="decimal" className={input} value={form.advance_paid} onChange={e => set('advance_paid', e.target.value)} />
             </div>
           </div>
           {form.total_amount && (

@@ -236,19 +236,19 @@ export default function CircuitDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Target visits</label>
-                <input type="number" className={inp} value={form.target_visits || ''} onChange={e => set('target_visits', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.target_visits || ''} onChange={e => set('target_visits', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Target samples</label>
-                <input type="number" className={inp} value={form.target_samples || ''} onChange={e => set('target_samples', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.target_samples || ''} onChange={e => set('target_samples', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Target partners</label>
-                <input type="number" className={inp} value={form.target_partners || ''} onChange={e => set('target_partners', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.target_partners || ''} onChange={e => set('target_partners', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Budget (₹)</label>
-                <input type="number" className={inp} value={form.budget_inr || ''} onChange={e => set('budget_inr', e.target.value)} />
+                <input type="number" inputMode="decimal" className={inp} value={form.budget_inr || ''} onChange={e => set('budget_inr', e.target.value)} />
               </div>
               <div className="sm:col-span-2">
                 <label className={lbl}>Notes</label>

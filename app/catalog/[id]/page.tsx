@@ -247,12 +247,12 @@ export default function CatalogProductEditPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
                   <div><label className={lbl}>Role</label><select className={inp} value={d.role} onChange={e => updateDiamond(d.id, 'role', e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}</select></div>
                   <div><label className={lbl}>Shape</label><select className={inp} value={d.shape} onChange={e => updateDiamond(d.id, 'shape', e.target.value)}>{SHAPES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}</select></div>
-                  <div><label className={lbl}>Weight (ct)</label><input type="number" step="0.01" className={inp} value={d.weight} onChange={e => updateDiamond(d.id, 'weight', e.target.value)} /></div>
-                  <div><label className={lbl}>Pieces</label><input type="number" min="1" className={inp} value={d.pieces} onChange={e => updateDiamond(d.id, 'pieces', e.target.value)} /></div>
+                  <div><label className={lbl}>Weight (ct)</label><input type="number" inputMode="decimal" step="0.01" className={inp} value={d.weight} onChange={e => updateDiamond(d.id, 'weight', e.target.value)} /></div>
+                  <div><label className={lbl}>Pieces</label><input type="number" inputMode="decimal" min="1" className={inp} value={d.pieces} onChange={e => updateDiamond(d.id, 'pieces', e.target.value)} /></div>
                   <div><label className={lbl}>Quality</label><select className={inp} value={d.quality} onChange={e => updateDiamond(d.id, 'quality', e.target.value)}>{QUALITIES.map(q => <option key={q} value={q}>{q}</option>)}</select></div>
                   <div><label className={lbl}>Color</label><select className={inp} value={d.color} onChange={e => updateDiamond(d.id, 'color', e.target.value)}>{COLORS.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
                   <div><label className={lbl}>Type</label><select className={inp} value={d.type} onChange={e => updateDiamond(d.id, 'type', e.target.value)}><option value="lgd">LGD</option><option value="natural">Natural</option></select></div>
-                  <div><label className={lbl}>Cost/pc (₹)</label><input type="number" className={inp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} /></div>
+                  <div><label className={lbl}>Cost/pc (₹)</label><input type="number" inputMode="decimal" className={inp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} /></div>
                 </div>
               </div>
             ))}
@@ -263,9 +263,9 @@ export default function CatalogProductEditPage() {
           <h2 className="font-medium text-stone-900 mb-4">Gold specifications</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div><label className={lbl}>Gold karat</label><select className={inp} value={form.gold_karat} onChange={e => set('gold_karat', e.target.value)}>{KARATS.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}</select></div>
-            <div><label className={lbl}>Gold weight (g)</label><input type="number" step="0.01" className={inp} value={form.gold_weight_g} onChange={e => set('gold_weight_g', e.target.value)} /></div>
-            <div><label className={lbl}>Making charges (₹)</label><input type="number" className={inp} value={form.making_charges} onChange={e => set('making_charges', e.target.value)} /></div>
-            <div><label className={lbl}>IGI cert cost (₹)</label><input type="number" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} /></div>
+            <div><label className={lbl}>Gold weight (g)</label><input type="number" inputMode="decimal" step="0.01" className={inp} value={form.gold_weight_g} onChange={e => set('gold_weight_g', e.target.value)} /></div>
+            <div><label className={lbl}>Making charges (₹)</label><input type="number" inputMode="decimal" className={inp} value={form.making_charges} onChange={e => set('making_charges', e.target.value)} /></div>
+            <div><label className={lbl}>IGI cert cost (₹)</label><input type="number" inputMode="decimal" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} /></div>
           </div>
         </div>
 
