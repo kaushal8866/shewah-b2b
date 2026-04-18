@@ -71,7 +71,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-56 bg-[#1A1F2E] flex-col shrink-0">
-        <div className="px-5 py-5 border-b border-white/10">
+        <div className="px-5 py-5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
               <Diamond className="w-4 h-4 text-white" />
@@ -100,7 +100,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* User section */}
-        <div className="px-3 py-3 border-t border-white/10">
+        <div className="px-3 py-3 bg-black/15">
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -135,7 +135,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile full menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 bg-[#1A1F2E] flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
                 <Diamond className="w-4 h-4 text-white" />
@@ -164,7 +164,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <div className="px-4 py-4 border-t border-white/10 space-y-2">
+          <div className="px-4 py-4 bg-black/15 space-y-2">
             <div className="flex items-center gap-3 px-3 py-2">
               <div className="w-9 h-9 rounded-full bg-[#1E3A5F]/20 border border-[#1E3A5F]/30 flex items-center justify-center">
                 <span className="text-[#1E3A5F] text-sm font-semibold">{initials}</span>
@@ -197,12 +197,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-stone-50 pb-20 lg:pb-0">
+        <main className="flex-1 overflow-y-auto bg-surface-base pb-20 lg:pb-0">
           {children}
         </main>
 
-        {/* Mobile bottom nav */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 flex z-40 safe-area-pb">
+        {/* Mobile bottom nav — glass */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/85 backdrop-blur-md flex z-40 safe-area-pb shadow-[0_-1px_24px_rgba(30,58,95,0.06)]">
           {visibleBottom.map(({ href, icon: Icon, short }) => {
             const active = pathname === href || (href !== '/' && pathname.startsWith(href))
             return (
