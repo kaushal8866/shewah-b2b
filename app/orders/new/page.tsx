@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, computeOrderCogs } from '@/lib/supabase'
 import { ArrowLeft, Save, Heart } from 'lucide-react'
 import Link from 'next/link'
 
@@ -14,7 +14,8 @@ function NewOrderForm() {
 
   const [saving, setSaving] = useState(false)
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
-  const [products, setProducts] = useState<{ id: string; code: string; name: string; trade_price: number; delivery_days: number }[]>([])
+  const [products, setProducts] = useState<{ id: string; code: string; name: string; trade_price: number; delivery_days: number; gold_karat?: number; gold_weight_g?: number; making_charges?: number }[]>([])
+  const [mfgPartners, setMfgPartners] = useState<{ id: string; name: string; city: string }[]>([])
   const [goldRate, setGoldRate] = useState(0)
   const [fromInterest, setFromInterest] = useState(false)
 
@@ -28,18 +29,28 @@ function NewOrderForm() {
     order_date: new Date().toISOString().split('T')[0],
     expected_delivery: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
     internal_notes: '',
+    // COGS / gold
+    gold_source: 'self' as 'self' | 'manufacturer',
+    gold_karat: '18',
+    gold_weight_estimated: '',
+    making_charges: '',
+    cad_cost: '0',
+    stone_cost: '0',
+    assigned_manufacturer_id: '',
   })
 
   useEffect(() => {
     if (prePartner || preProduct) setFromInterest(true)
     Promise.all([
       supabase.from('partners').select('id, store_name, city').order('store_name'),
-      supabase.from('products').select('id, code, name, trade_price, delivery_days').eq('is_active', true).order('code'),
+      supabase.from('products').select('id, code, name, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges').eq('is_active', true).order('code'),
       supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
-    ]).then(([{ data: p }, { data: pr }, { data: g }]) => {
+      supabase.from('manufacturing_partners').select('id, name, city').eq('status', 'active').order('name'),
+    ]).then(([{ data: p }, { data: pr }, { data: g }, { data: mp }]) => {
       setPartners(p || [])
       const prods = pr || []
       setProducts(prods)
+      setMfgPartners(mp || [])
       if (g?.[0]) setGoldRate(g[0].rate_24k)
       if (preProduct) {
         const product = prods.find(x => x.id === preProduct)
@@ -50,6 +61,9 @@ function NewOrderForm() {
             trade_price: String(product.trade_price || ''),
             total_amount: String(product.trade_price || ''),
             expected_delivery: new Date(Date.now() + days * 86400000).toISOString().split('T')[0],
+            gold_karat: product.gold_karat ? String(product.gold_karat) : prev.gold_karat,
+            gold_weight_estimated: product.gold_weight_g ? String(product.gold_weight_g) : prev.gold_weight_estimated,
+            making_charges: product.making_charges ? String(product.making_charges) : prev.making_charges,
           }))
         }
       }
@@ -69,11 +83,25 @@ function NewOrderForm() {
         trade_price: String(product.trade_price || ''),
         total_amount: String(product.trade_price || ''),
         expected_delivery: delivery,
+        gold_karat: product.gold_karat ? String(product.gold_karat) : prev.gold_karat,
+        gold_weight_estimated: product.gold_weight_g ? String(product.gold_weight_g) : prev.gold_weight_estimated,
+        making_charges: product.making_charges ? String(product.making_charges) : prev.making_charges,
       }))
     } else {
       set('product_id', productId)
     }
   }
+
+  // Estimated COGS preview
+  const estCogs = computeOrderCogs({
+    gold_weight_actual: parseFloat(form.gold_weight_estimated) || 0,
+    gold_rate_at_order: goldRate,
+    gold_karat: parseInt(form.gold_karat),
+    making_charges: parseFloat(form.making_charges) || 0,
+    cad_cost: parseFloat(form.cad_cost) || 0,
+    stone_cost: parseFloat(form.stone_cost) || 0,
+    total_amount: parseFloat(form.total_amount) || 0,
+  })
 
   async function handleSave() {
     if (!form.partner_id) { alert('Select a partner'); return }
@@ -83,7 +111,7 @@ function NewOrderForm() {
     const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true })
     const orderNumber = `SH-ORD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
 
-    const payload = {
+    const payload: any = {
       order_number: orderNumber,
       partner_id: form.partner_id,
       product_id: form.product_id || null,
@@ -102,6 +130,13 @@ function NewOrderForm() {
       expected_delivery: form.expected_delivery,
       internal_notes: form.internal_notes || null,
       status: 'brief_received',
+      // COGS / gold
+      gold_source: form.gold_source,
+      gold_weight_estimated: parseFloat(form.gold_weight_estimated) || null,
+      making_charges: parseFloat(form.making_charges) || null,
+      cad_cost: parseFloat(form.cad_cost) || 0,
+      stone_cost: parseFloat(form.stone_cost) || 0,
+      assigned_manufacturer_id: form.assigned_manufacturer_id || null,
     }
 
     const { error } = await supabase.from('orders').insert([payload]).select().single()
@@ -192,8 +227,75 @@ function NewOrderForm() {
           </div>
         </div>
 
+        {/* Costing & gold */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
-          <h2 className="font-medium text-stone-900 mb-4">Pricing & payment</h2>
+          <h2 className="font-medium text-stone-900 mb-4">Costing &amp; gold source</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={label}>Gold source</label>
+              <select className={input} value={form.gold_source} onChange={e => set('gold_source', e.target.value)}>
+                <option value="self">Self (consumed from our float)</option>
+                <option value="manufacturer">Manufacturer (karigar supplies)</option>
+              </select>
+            </div>
+            <div>
+              <label className={label}>Assigned manufacturer{form.gold_source === 'self' ? ' *' : ''}</label>
+              <select className={input} value={form.assigned_manufacturer_id} onChange={e => set('assigned_manufacturer_id', e.target.value)}>
+                <option value="">Select manufacturer...</option>
+                {mfgPartners.map(p => <option key={p.id} value={p.id}>{p.name} — {p.city}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={label}>Gold karat</label>
+              <select className={input} value={form.gold_karat} onChange={e => set('gold_karat', e.target.value)}>
+                {[9,10,14,18,22,24].map(k => <option key={k} value={k}>{k}K</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={label}>Estimated gold weight (g)</label>
+              <input type="number" inputMode="decimal" step="0.01" className={input}
+                value={form.gold_weight_estimated} onChange={e => set('gold_weight_estimated', e.target.value)} />
+            </div>
+            <div>
+              <label className={label}>Making charges (₹)</label>
+              <input type="number" inputMode="decimal" className={input}
+                value={form.making_charges} onChange={e => set('making_charges', e.target.value)} />
+            </div>
+            <div>
+              <label className={label}>CAD cost (₹)</label>
+              <input type="number" inputMode="decimal" className={input}
+                value={form.cad_cost} onChange={e => set('cad_cost', e.target.value)} />
+            </div>
+            <div>
+              <label className={label}>Stone cost (₹)</label>
+              <input type="number" inputMode="decimal" className={input}
+                value={form.stone_cost} onChange={e => set('stone_cost', e.target.value)} />
+            </div>
+          </div>
+          {(parseFloat(form.gold_weight_estimated) > 0 || parseFloat(form.making_charges) > 0) && (
+            <div className="mt-3 bg-stone-50 rounded-lg p-3 text-sm space-y-1">
+              <div className="flex justify-between text-stone-500">
+                <span>Estimated gold cost</span>
+                <span>₹{Math.round(estCogs.gold_cost).toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-stone-900 border-t border-stone-200 pt-1">
+                <span>Estimated COGS</span>
+                <span className="text-[#C49C64]">₹{Math.round(estCogs.total_cogs).toLocaleString('en-IN')}</span>
+              </div>
+              {parseFloat(form.total_amount) > 0 && (
+                <div className="flex justify-between font-medium">
+                  <span>Estimated margin</span>
+                  <span className={estCogs.margin >= 0 ? 'text-green-600' : 'text-red-500'}>
+                    ₹{Math.round(estCogs.margin).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-stone-200 p-5">
+          <h2 className="font-medium text-stone-900 mb-4">Pricing &amp; payment</h2>
           {goldRate > 0 && (
             <p className="text-xs text-amber-600 mb-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
               Gold rate locked at: ₹{goldRate.toLocaleString('en-IN')}/g (24K)

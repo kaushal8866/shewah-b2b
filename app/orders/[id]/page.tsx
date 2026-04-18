@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase, ORDER_STATUSES } from '@/lib/supabase'
+import { supabase, ORDER_STATUSES, computeOrderCogs } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
-import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
+
+const STAGES_REQUIRING_ACTUALS = new Set(['qc', 'dispatched', 'delivered'])
 
 export default function OrderDetailPage() {
   const params = useParams()
@@ -13,35 +15,68 @@ export default function OrderDetailPage() {
   const id = params.id as string
 
   const [order, setOrder] = useState<any>(null)
+  const [mfgPartners, setMfgPartners] = useState<any[]>([])
+  const [consumptionTxn, setConsumptionTxn] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [advancing, setAdvancing] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [form, setForm] = useState<any>({})
+  const [guardError, setGuardError] = useState<string | null>(null)
 
   useEffect(() => { load() }, [id])
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase
-      .from('orders')
-      .select('*, partners(store_name, owner_name, phone, city), products(code, name)')
-      .eq('id', id)
-      .single()
+    const [{ data }, { data: mp }] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('*, partners(store_name, owner_name, phone, city), products(code, name)')
+        .eq('id', id)
+        .single(),
+      supabase.from('manufacturing_partners').select('id, name, city').order('name'),
+    ])
     if (!data) { router.push('/orders'); return }
     setOrder(data)
     setForm(data)
+    setMfgPartners(mp || [])
+
+    // Look for a consumption transaction for this order (used by the
+    // completion guard when gold_source = self).
+    const { data: tx } = await supabase
+      .from('material_transactions')
+      .select('id, transaction_type, quantity, manufacturing_partner_id')
+      .eq('order_id', id)
+      .eq('transaction_type', 'consumption')
+      .limit(1)
+      .maybeSingle()
+    setConsumptionTxn(tx || null)
+
     setLoading(false)
   }
 
-  function set(k: string, v: string) { setForm((prev: any) => ({ ...prev, [k]: v })) }
+  function set(k: string, v: any) { setForm((prev: any) => ({ ...prev, [k]: v })) }
 
   const currentStageIdx = ORDER_STATUSES.findIndex(s => s.value === order?.status)
   const nextStage = currentStageIdx < ORDER_STATUSES.length - 1 ? ORDER_STATUSES[currentStageIdx + 1] : null
 
+  // Integrity rule check — returns null when OK, otherwise an error message.
+  function checkCompletionGuard(targetStatus: string): string | null {
+    if (!STAGES_REQUIRING_ACTUALS.has(targetStatus)) return null
+    if (!order?.gold_weight_actual) return 'Gold weight (actual) must be filled before this stage.'
+    if (!order?.making_charges) return 'Making charges must be filled before this stage.'
+    if ((order?.gold_source || 'self') === 'self' && !consumptionTxn) {
+      return 'A gold consumption entry must exist for this order before it can be moved to this stage.'
+    }
+    return null
+  }
+
   async function advanceStage() {
     if (!nextStage) return
+    const err = checkCompletionGuard(nextStage.value)
+    if (err) { setGuardError(err); return }
+    setGuardError(null)
     setAdvancing(true)
     const update: any = { status: nextStage.value }
     if (nextStage.value === 'dispatched') {
@@ -57,8 +92,26 @@ export default function OrderDetailPage() {
   }
 
   async function handleSave() {
+    // If status is being changed to a guarded stage, run integrity check.
+    if (form.status !== order.status) {
+      const err = checkCompletionGuard(form.status)
+      if (err) { setGuardError(err); return }
+    }
+    setGuardError(null)
     setSaving(true)
     const balanceDue = (parseFloat(form.total_amount) || 0) - (parseFloat(form.advance_paid) || 0)
+
+    // Recompute COGS + margin
+    const cogs = computeOrderCogs({
+      gold_weight_actual: parseFloat(form.gold_weight_actual) || 0,
+      gold_rate_at_order: order.gold_rate_at_order,
+      gold_karat: parseInt(form.gold_karat) || 18,
+      making_charges: parseFloat(form.making_charges) || 0,
+      cad_cost: parseFloat(form.cad_cost) || 0,
+      stone_cost: parseFloat(form.stone_cost) || 0,
+      total_amount: parseFloat(form.total_amount) || 0,
+    })
+
     const { error } = await supabase.from('orders').update({
       status: form.status,
       quantity: parseInt(form.quantity) || 1,
@@ -72,6 +125,17 @@ export default function OrderDetailPage() {
       internal_notes: form.internal_notes || null,
       tracking_number: form.tracking_number || null,
       courier: form.courier || null,
+      // COGS / gold ledger
+      gold_source: form.gold_source || 'self',
+      gold_karat: parseInt(form.gold_karat) || null,
+      gold_weight_estimated: parseFloat(form.gold_weight_estimated) || null,
+      gold_weight_actual: parseFloat(form.gold_weight_actual) || null,
+      making_charges: parseFloat(form.making_charges) || null,
+      cad_cost: parseFloat(form.cad_cost) || 0,
+      stone_cost: parseFloat(form.stone_cost) || 0,
+      assigned_manufacturer_id: form.assigned_manufacturer_id || null,
+      total_cogs: Math.round(cogs.total_cogs) || null,
+      margin: Math.round(cogs.margin) || null,
     }).eq('id', id)
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }
@@ -80,7 +144,6 @@ export default function OrderDetailPage() {
   }
 
   async function handleDelete() {
-    // Clear FK references first to avoid constraint violations
     await Promise.all([
       supabase.from('manufacturing_orders').update({ customer_order_id: null }).eq('customer_order_id', id),
       supabase.from('cad_requests').update({ order_id: null }).eq('order_id', id),
@@ -97,6 +160,22 @@ export default function OrderDetailPage() {
 
   const isDelivered = order.status === 'delivered'
   const isCancelled = order.status === 'cancelled'
+
+  // Live computed COGS (from saved actuals)
+  const savedCogs = computeOrderCogs({
+    gold_weight_actual: order.gold_weight_actual,
+    gold_rate_at_order: order.gold_rate_at_order,
+    gold_karat: order.gold_karat,
+    making_charges: order.making_charges,
+    cad_cost: order.cad_cost,
+    stone_cost: order.stone_cost,
+    total_amount: order.total_amount,
+  })
+
+  // Build link for "Record gold consumption for this order"
+  const consumptionHref = order.assigned_manufacturer_id
+    ? `/manufacturing/partners/${order.assigned_manufacturer_id}/float?order_id=${id}&type=consumption&material_type=gold_${order.gold_karat || 18}k`
+    : null
 
   return (
     <div className="p-4 lg:p-7 max-w-3xl">
@@ -123,7 +202,7 @@ export default function OrderDetailPage() {
             </>
           ) : (
             <>
-              <button onClick={() => { setEditing(false); setForm(order) }}
+              <button onClick={() => { setEditing(false); setForm(order); setGuardError(null) }}
                 className="flex items-center gap-1.5 border border-stone-200 text-stone-500 px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
                 <X className="w-4 h-4" /> Cancel
               </button>
@@ -136,7 +215,6 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {/* Delete confirm */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
@@ -154,9 +232,19 @@ export default function OrderDetailPage() {
         </div>
       )}
 
+      {guardError && (
+        <div className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium">Cannot advance order</p>
+            <p>{guardError}</p>
+          </div>
+        </div>
+      )}
+
       {!editing ? (
         <div className="space-y-4">
-          {/* ── Pipeline stepper ── */}
+          {/* Pipeline stepper */}
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-medium text-stone-900">Pipeline stage</h2>
@@ -174,7 +262,6 @@ export default function OrderDetailPage() {
               )}
             </div>
 
-            {/* Step indicators */}
             <div className="flex items-center gap-0">
               {ORDER_STATUSES.map((stage, idx) => {
                 const isDone = currentStageIdx > idx
@@ -237,9 +324,63 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
+          {/* Costing & gold ledger */}
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-medium text-stone-900">Costing &amp; gold</h2>
+              {(order.gold_source || 'self') === 'self' && consumptionHref && !consumptionTxn && (
+                <Link href={consumptionHref}
+                  className="flex items-center gap-1.5 bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-amber-600">
+                  <Layers className="w-3.5 h-3.5" /> Record gold consumption
+                </Link>
+              )}
+              {consumptionTxn && (
+                <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-lg">
+                  <Check className="w-3 h-3" /> Consumption recorded ({consumptionTxn.quantity}g)
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 text-sm">
+              {[
+                ['Gold source', (order.gold_source || 'self') === 'self' ? 'Self (our float)' : 'Manufacturer'],
+                ['Assigned manufacturer', mfgPartners.find(m => m.id === order.assigned_manufacturer_id)?.name || '—'],
+                ['Karat', order.gold_karat ? `${order.gold_karat}K` : '—'],
+                ['Gold wt — estimated', order.gold_weight_estimated ? `${order.gold_weight_estimated}g` : '—'],
+                ['Gold wt — actual', order.gold_weight_actual ? `${order.gold_weight_actual}g` : '—'],
+                ['Making charges', order.making_charges ? `₹${Number(order.making_charges).toLocaleString('en-IN')}` : '—'],
+                ['CAD cost', order.cad_cost ? `₹${Number(order.cad_cost).toLocaleString('en-IN')}` : '—'],
+                ['Stone cost', order.stone_cost ? `₹${Number(order.stone_cost).toLocaleString('en-IN')}` : '—'],
+              ].map(([k, v]) => (
+                <div key={String(k)}>
+                  <p className="text-xs text-stone-400">{k}</p>
+                  <p className="text-stone-800 mt-0.5 capitalize">{String(v)}</p>
+                </div>
+              ))}
+            </div>
+
+            {(order.gold_weight_actual || order.making_charges) && (
+              <div className="mt-4 bg-stone-50 rounded-lg p-3 text-sm space-y-1">
+                <div className="flex justify-between text-stone-500">
+                  <span>Gold cost ({order.gold_weight_actual || 0}g × ₹{order.gold_rate_at_order || 0}/g × purity)</span>
+                  <span>₹{Math.round(savedCogs.gold_cost).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-stone-900 border-t border-stone-200 pt-1">
+                  <span>Total COGS</span>
+                  <span className="text-[#C49C64]">₹{Math.round(savedCogs.total_cogs).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between font-medium">
+                  <span>Margin vs selling price</span>
+                  <span className={savedCogs.margin >= 0 ? 'text-green-600' : 'text-red-500'}>
+                    ₹{Math.round(savedCogs.margin).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Pricing */}
           <div className="bg-white rounded-xl border border-stone-200 p-5">
-            <h2 className="font-medium text-stone-900 mb-4">Pricing & payment</h2>
+            <h2 className="font-medium text-stone-900 mb-4">Pricing &amp; payment</h2>
             <div className="grid grid-cols-3 gap-4 text-sm mb-3">
               {[
                 ['Trade price', `₹${order.trade_price?.toLocaleString('en-IN') || '—'}`],
@@ -268,7 +409,6 @@ export default function OrderDetailPage() {
             )}
           </div>
 
-          {/* Dispatch info (shown once dispatched or beyond) */}
           {(currentStageIdx >= ORDER_STATUSES.findIndex(s => s.value === 'dispatched')) && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
@@ -290,7 +430,6 @@ export default function OrderDetailPage() {
             </div>
           )}
 
-          {/* Internal notes */}
           {order.internal_notes && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <h2 className="font-medium text-stone-900 mb-2">Internal notes</h2>
@@ -300,7 +439,6 @@ export default function OrderDetailPage() {
         </div>
 
       ) : (
-        /* Edit mode */
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-4">Update order</h2>
@@ -355,6 +493,61 @@ export default function OrderDetailPage() {
                 <textarea className={`${inp} resize-none`} rows={2} value={form.internal_notes || ''} onChange={e => set('internal_notes', e.target.value)} />
               </div>
             </div>
+          </div>
+
+          {/* Costing edit */}
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <h2 className="font-medium text-stone-900 mb-4">Costing &amp; gold</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={lbl}>Gold source</label>
+                <select className={inp} value={form.gold_source || 'self'} onChange={e => set('gold_source', e.target.value)}>
+                  <option value="self">Self (our float)</option>
+                  <option value="manufacturer">Manufacturer</option>
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>Assigned manufacturer</label>
+                <select className={inp} value={form.assigned_manufacturer_id || ''} onChange={e => set('assigned_manufacturer_id', e.target.value)}>
+                  <option value="">—</option>
+                  {mfgPartners.map(m => <option key={m.id} value={m.id}>{m.name} — {m.city}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>Gold karat</label>
+                <select className={inp} value={form.gold_karat || '18'} onChange={e => set('gold_karat', e.target.value)}>
+                  {[9,10,14,18,22,24].map(k => <option key={k} value={k}>{k}K</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>Gold weight estimated (g)</label>
+                <input type="number" inputMode="decimal" step="0.01" className={inp}
+                  value={form.gold_weight_estimated || ''} onChange={e => set('gold_weight_estimated', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Gold weight actual (g)</label>
+                <input type="number" inputMode="decimal" step="0.01" className={inp}
+                  value={form.gold_weight_actual || ''} onChange={e => set('gold_weight_actual', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Making charges (₹)</label>
+                <input type="number" inputMode="decimal" className={inp}
+                  value={form.making_charges || ''} onChange={e => set('making_charges', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>CAD cost (₹)</label>
+                <input type="number" inputMode="decimal" className={inp}
+                  value={form.cad_cost || ''} onChange={e => set('cad_cost', e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Stone cost (₹)</label>
+                <input type="number" inputMode="decimal" className={inp}
+                  value={form.stone_cost || ''} onChange={e => set('stone_cost', e.target.value)} />
+              </div>
+            </div>
+            <p className="text-xs text-stone-400 mt-3">
+              COGS = (gold weight × rate × karat purity) + making + CAD + stone. Margin recalculated against total amount.
+            </p>
           </div>
         </div>
       )}

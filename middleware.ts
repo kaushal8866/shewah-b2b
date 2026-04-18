@@ -41,6 +41,11 @@ export default withAuth(
       return NextResponse.redirect(new URL('/', req.url))
     }
 
+    // Material ledger / float pages are master-only
+    if (/^\/manufacturing\/partners\/[^/]+\/float/.test(pathname) && token.role !== 'master') {
+      return NextResponse.redirect(new URL('/manufacturing', req.url))
+    }
+
     return NextResponse.next()
   },
   {

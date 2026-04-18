@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/lib/utils'
-import { ArrowLeft, Plus, ArrowDown, ArrowUp, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Plus, ArrowDown, ArrowUp, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 const MATERIAL_TYPES = [
@@ -15,26 +15,53 @@ const MATERIAL_TYPES = [
   { value: 'diamond_natural', label: 'Natural Diamond', unit: 'carats' },
 ]
 
-export default function MaterialFloatPage() {
+type Tab = 'deposit' | 'return' | 'consumption' | 'adjust'
+
+function MaterialFloatInner() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const partnerId = params.id as string
+
+  // Pre-fill from order context (e.g. "Record gold consumption for this order")
+  const orderIdParam = searchParams.get('order_id') || ''
+  const typeParam = (searchParams.get('type') as Tab) || 'deposit'
+  const materialParam = searchParams.get('material_type') || 'gold_18k'
+
   const [partner, setPartner] = useState<any>(null)
   const [floats, setFloats] = useState<any[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
+  const [orderInfo, setOrderInfo] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw' | 'adjust'>('deposit')
+  const [activeTab, setActiveTab] = useState<Tab>(['deposit','return','consumption','adjust'].includes(typeParam) ? typeParam : 'deposit')
+  const [pendingNegative, setPendingNegative] = useState(false)
 
   const [form, setForm] = useState({
-    material_type: 'gold_18k',
+    material_type: MATERIAL_TYPES.find(m => m.value === materialParam) ? materialParam : 'gold_18k',
     quantity: '',
     rate_per_unit: '',
     reference: '',
     notes: '',
     date: new Date().toISOString().split('T')[0],
+    order_id: orderIdParam,
   })
 
   useEffect(() => { load() }, [partnerId])
+
+  useEffect(() => {
+    if (orderIdParam) {
+      supabase.from('orders').select('id, order_number, gold_weight_estimated, gold_weight_actual, gold_karat')
+        .eq('id', orderIdParam).maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            setOrderInfo(data)
+            // Pre-fill quantity from order's actual or estimated weight
+            const w = data.gold_weight_actual || data.gold_weight_estimated
+            if (w) setForm(prev => ({ ...prev, quantity: String(w) }))
+          }
+        })
+    }
+  }, [orderIdParam])
 
   async function load() {
     setLoading(true)
@@ -42,7 +69,7 @@ export default function MaterialFloatPage() {
       supabase.from('manufacturing_partners').select('*').eq('id', partnerId).single(),
       supabase.from('material_float').select('*').eq('manufacturing_partner_id', partnerId),
       supabase.from('material_transactions')
-        .select('*, material_float(material_type)')
+        .select('*, material_float(material_type), orders(order_number)')
         .eq('manufacturing_partner_id', partnerId)
         .order('created_at', { ascending: false })
         .limit(30),
@@ -55,13 +82,27 @@ export default function MaterialFloatPage() {
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
 
+  // Compute the would-be new balance for the current form input
+  const qty = parseFloat(form.quantity) || 0
+  const currentFloat = floats.find(f => f.material_type === form.material_type)
+  const currentBal = currentFloat?.balance ?? 0
+  const delta = activeTab === 'deposit' ? qty
+              : activeTab === 'return' ? -qty
+              : activeTab === 'consumption' ? -qty
+              : qty   // adjustment: signed by user (positive only here; warn anyway if neg)
+  const projectedBal = currentBal + delta
+  const willGoNegative = qty > 0 && projectedBal < 0
+
   async function handleTransaction() {
-    const qty = parseFloat(form.quantity)
     if (!qty || qty <= 0) { alert('Enter a valid quantity'); return }
+
+    if (willGoNegative && !pendingNegative) {
+      setPendingNegative(true)
+      return
+    }
 
     setSaving(true)
 
-    // Find or create float record for this material type
     let floatRecord = floats.find(f => f.material_type === form.material_type)
     if (!floatRecord) {
       const materialInfo = MATERIAL_TYPES.find(m => m.value === form.material_type)
@@ -71,17 +112,17 @@ export default function MaterialFloatPage() {
         unit: materialInfo?.unit || 'grams',
         total_deposited: 0,
         total_consumed: 0,
-        total_withdrawn: 0,
       }]).select().single()
       floatRecord = data
     }
 
-    const txType = activeTab === 'deposit' ? 'deposit' : activeTab === 'withdraw' ? 'withdrawal' : 'adjustment'
+    const txType = activeTab // 'deposit' | 'return' | 'consumption' | 'adjustment'
+    const transactionType = activeTab === 'adjust' ? 'adjustment' : activeTab
 
     await supabase.from('material_transactions').insert([{
       float_id: floatRecord.id,
       manufacturing_partner_id: partnerId,
-      transaction_type: txType,
+      transaction_type: transactionType,
       quantity: qty,
       unit: floatRecord.unit,
       rate_per_unit: parseFloat(form.rate_per_unit) || null,
@@ -89,9 +130,12 @@ export default function MaterialFloatPage() {
       reference: form.reference || null,
       notes: form.notes || null,
       date: form.date,
+      order_id: form.order_id || null,
+      negative_confirmed: willGoNegative,
     }])
 
     setSaving(false)
+    setPendingNegative(false)
     setForm(prev => ({ ...prev, quantity: '', reference: '', notes: '' }))
     load()
   }
@@ -99,16 +143,16 @@ export default function MaterialFloatPage() {
   const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
-  const txColors = {
+  const txColors: Record<string, string> = {
     deposit: 'text-green-600',
     consumption: 'text-red-500',
-    withdrawal: 'text-orange-500',
+    return: 'text-orange-500',
     adjustment: 'text-blue-500',
   }
-  const txIcons = {
+  const txIcons: Record<string, JSX.Element> = {
     deposit: <ArrowDown className="w-3.5 h-3.5 text-green-500" />,
     consumption: <RefreshCw className="w-3.5 h-3.5 text-red-400" />,
-    withdrawal: <ArrowUp className="w-3.5 h-3.5 text-orange-400" />,
+    return: <ArrowUp className="w-3.5 h-3.5 text-orange-400" />,
     adjustment: <Plus className="w-3.5 h-3.5 text-blue-400" />,
   }
 
@@ -124,7 +168,21 @@ export default function MaterialFloatPage() {
         </div>
       </div>
 
-      {/* Balance cards */}
+      {orderInfo && (
+        <div className="mb-4 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
+          <div>
+            <p className="text-amber-800 font-medium">Recording for order {orderInfo.order_number}</p>
+            <p className="text-amber-700 text-xs">
+              {orderInfo.gold_karat ? `${orderInfo.gold_karat}K · ` : ''}
+              estimated {orderInfo.gold_weight_estimated || '—'}g, actual {orderInfo.gold_weight_actual || '—'}g
+            </p>
+          </div>
+          <Link href={`/orders/${orderInfo.id}`} className="text-xs text-amber-700 hover:underline flex items-center gap-1">
+            <ExternalLink className="w-3 h-3" /> Order
+          </Link>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         {floats.map(f => {
           const info = MATERIAL_TYPES.find(m => m.value === f.material_type)
@@ -137,7 +195,7 @@ export default function MaterialFloatPage() {
               </p>
               <div className="h-1.5 bg-stone-100 rounded-full mt-2 overflow-hidden">
                 <div className={`h-full rounded-full ${f.balance < 1 ? 'bg-amber-400' : 'bg-[#C49C64]'}`}
-                  style={{ width: `${Math.min(pct, 100)}%` }} />
+                  style={{ width: `${Math.min(Math.max(pct,0), 100)}%` }} />
               </div>
               <p className="text-xs text-stone-400 mt-1">of {f.total_deposited}{info?.unit === 'carats' ? 'ct' : 'g'} deposited</p>
             </div>
@@ -150,17 +208,17 @@ export default function MaterialFloatPage() {
         )}
       </div>
 
-      {/* Transaction form */}
       <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
         <div className="flex gap-1 mb-4 bg-stone-100 rounded-lg p-1">
           {[
-            { key: 'deposit', label: 'Deposit', color: 'text-green-700' },
-            { key: 'withdraw', label: 'Withdraw', color: 'text-orange-700' },
-            { key: 'adjust', label: 'Adjust', color: 'text-blue-700' },
+            { key: 'deposit',     label: 'Deposit',     color: 'text-green-700' },
+            { key: 'consumption', label: 'Consumption', color: 'text-red-700' },
+            { key: 'return',      label: 'Return',      color: 'text-orange-700' },
+            { key: 'adjust',      label: 'Adjust',      color: 'text-blue-700' },
           ].map(t => (
             <button key={t.key}
-              onClick={() => setActiveTab(t.key as any)}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === t.key ? `bg-white shadow-sm ${t.color}` : 'text-stone-500 hover:text-stone-700'}`}>
+              onClick={() => { setActiveTab(t.key as Tab); setPendingNegative(false) }}
+              className={`flex-1 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${activeTab === t.key ? `bg-white shadow-sm ${t.color}` : 'text-stone-500 hover:text-stone-700'}`}>
               {t.label}
             </button>
           ))}
@@ -169,7 +227,7 @@ export default function MaterialFloatPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className={lbl}>Material type</label>
-            <select className={inp} value={form.material_type} onChange={e => set('material_type', e.target.value)}>
+            <select className={inp} value={form.material_type} onChange={e => { set('material_type', e.target.value); setPendingNegative(false) }}>
               {MATERIAL_TYPES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
@@ -178,8 +236,8 @@ export default function MaterialFloatPage() {
               Quantity ({MATERIAL_TYPES.find(m => m.value === form.material_type)?.unit})
             </label>
             <input type="number" step="0.001" className={inp}
-              value={form.quantity} onChange={e => set('quantity', e.target.value)}
-              placeholder={activeTab === 'deposit' ? 'e.g. 10' : 'Amount to withdraw'} />
+              value={form.quantity} onChange={e => { set('quantity', e.target.value); setPendingNegative(false) }}
+              placeholder={activeTab === 'deposit' ? 'e.g. 10' : 'Quantity'} />
           </div>
           {activeTab === 'deposit' && (
             <div>
@@ -193,29 +251,63 @@ export default function MaterialFloatPage() {
           </div>
           <div className="col-span-2">
             <label className={lbl}>Notes</label>
-            <input className={inp} value={form.notes} onChange={e => set('notes', e.target.value)}
-              placeholder={activeTab === 'deposit' ? 'e.g. Initial deposit for April orders' : 'Reason for withdrawal'} />
+            <input className={inp} value={form.notes} onChange={e => set('notes', e.target.value)} />
           </div>
           <div>
             <label className={lbl}>Date</label>
             <input type="date" className={inp} value={form.date} onChange={e => set('date', e.target.value)} />
           </div>
+          {form.order_id && (
+            <div>
+              <label className={lbl}>Linked order ID</label>
+              <input className={`${inp} bg-stone-50`} value={form.order_id} readOnly />
+            </div>
+          )}
         </div>
+
+        {/* Projected balance preview / warning */}
+        {qty > 0 && activeTab !== 'deposit' && (
+          <div className={`mt-3 rounded-lg p-3 text-sm border ${willGoNegative ? 'bg-red-50 border-red-200' : 'bg-stone-50 border-stone-200'}`}>
+            <div className="flex justify-between text-stone-500">
+              <span>Current balance</span>
+              <span>{currentBal.toFixed(3)}</span>
+            </div>
+            <div className="flex justify-between text-stone-500">
+              <span>After this transaction</span>
+              <span className={willGoNegative ? 'text-red-600 font-semibold' : 'text-stone-800 font-medium'}>
+                {projectedBal.toFixed(3)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {willGoNegative && pendingNegative && (
+          <div className="mt-3 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <p>
+              This will push the {MATERIAL_TYPES.find(m => m.value === form.material_type)?.label} balance to{' '}
+              <strong>{projectedBal.toFixed(3)}</strong>. Click the button again to confirm and save anyway.
+            </p>
+          </div>
+        )}
 
         <button onClick={handleTransaction} disabled={saving}
           className={`w-full mt-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
-            activeTab === 'deposit' ? 'bg-green-600 text-white hover:bg-green-700'
-            : activeTab === 'withdraw' ? 'bg-orange-500 text-white hover:bg-orange-600'
+            willGoNegative && pendingNegative ? 'bg-red-600 text-white hover:bg-red-700'
+            : activeTab === 'deposit' ? 'bg-green-600 text-white hover:bg-green-700'
+            : activeTab === 'consumption' ? 'bg-red-500 text-white hover:bg-red-600'
+            : activeTab === 'return' ? 'bg-orange-500 text-white hover:bg-orange-600'
             : 'bg-blue-500 text-white hover:bg-blue-600'
           }`}>
           {saving ? 'Saving...'
+            : willGoNegative && pendingNegative ? 'Confirm and save (negative balance)'
             : activeTab === 'deposit' ? 'Record deposit'
-            : activeTab === 'withdraw' ? 'Record withdrawal'
+            : activeTab === 'consumption' ? 'Record consumption'
+            : activeTab === 'return' ? 'Record return'
             : 'Record adjustment'}
         </button>
       </div>
 
-      {/* Transaction history */}
       <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
         <div className="px-4 py-3 border-b border-stone-100">
           <h2 className="font-medium text-stone-900 text-sm">Transaction history</h2>
@@ -227,19 +319,27 @@ export default function MaterialFloatPage() {
             transactions.map(t => (
               <div key={t.id} className="flex items-center gap-3 px-4 py-3">
                 <div className="w-7 h-7 rounded-full bg-stone-50 flex items-center justify-center shrink-0">
-                  {txIcons[t.transaction_type as keyof typeof txIcons]}
+                  {txIcons[t.transaction_type as string]}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-stone-800 capitalize">{t.transaction_type}</p>
+                  <p className="text-sm font-medium text-stone-800 capitalize flex items-center gap-2">
+                    {t.transaction_type}
+                    {t.creates_negative_balance && (
+                      <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full uppercase">neg</span>
+                    )}
+                  </p>
                   <p className="text-xs text-stone-400 truncate">
                     {t.material_float?.material_type?.replace(/_/g, ' ')}
+                    {t.orders?.order_number && (
+                      <> · <Link href={`/orders/${t.order_id}`} className="text-[#C49C64] hover:underline">{t.orders.order_number}</Link></>
+                    )}
                     {t.reference && ` · ${t.reference}`}
                     {t.notes && ` · ${t.notes}`}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className={`text-sm font-semibold ${txColors[t.transaction_type as keyof typeof txColors]}`}>
-                    {['consumption','withdrawal'].includes(t.transaction_type) ? '-' : '+'}{t.quantity}g
+                  <p className={`text-sm font-semibold ${txColors[t.transaction_type as string]}`}>
+                    {['consumption','return'].includes(t.transaction_type) ? '-' : '+'}{t.quantity}
                   </p>
                   <p className="text-xs text-stone-400">{formatDate(t.date)}</p>
                 </div>
@@ -249,5 +349,13 @@ export default function MaterialFloatPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function MaterialFloatPage() {
+  return (
+    <Suspense fallback={<div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>}>
+      <MaterialFloatInner />
+    </Suspense>
   )
 }

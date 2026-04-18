@@ -232,6 +232,16 @@ export type Order = {
   courier?: string
   dispatch_date?: string
   internal_notes?: string
+  // COGS / gold ledger
+  gold_source?: 'self' | 'manufacturer'
+  gold_weight_estimated?: number
+  gold_weight_actual?: number
+  making_charges?: number
+  cad_cost?: number
+  stone_cost?: number
+  total_cogs?: number
+  margin?: number
+  assigned_manufacturer_id?: string
 }
 
 export type CADRequest = {
@@ -313,6 +323,34 @@ export function calculateTradePrice(
   const goldCost = goldWeightG * goldRatePerGram * (karatMultipliers[goldKarat] || 0.75)
   const cogs = diamondCost + goldCost + makingCharges + igiCost
   return Math.round(cogs * marginMultiplier)
+}
+
+// Compute COGS + margin for an order using actual gold weight, gold-rate at order,
+// karat purity, making charges, CAD cost and stone cost. Returns 0 when actuals
+// are missing.
+export function computeOrderCogs(opts: {
+  gold_weight_actual?: number | null
+  gold_rate_at_order?: number | null
+  gold_karat?: number | null
+  making_charges?: number | null
+  cad_cost?: number | null
+  stone_cost?: number | null
+  total_amount?: number | null
+  trade_price?: number | null
+}) {
+  const karatMultipliers: Record<number, number> = { 24: 1, 22: 0.916, 18: 0.750, 14: 0.585, 10: 0.417, 9: 0.375 }
+  const w = Number(opts.gold_weight_actual) || 0
+  const rate = Number(opts.gold_rate_at_order) || 0
+  const karat = Number(opts.gold_karat) || 18
+  const mult = karatMultipliers[karat] ?? 0.75
+  const goldCost = w * rate * mult
+  const total_cogs = goldCost
+    + (Number(opts.making_charges) || 0)
+    + (Number(opts.cad_cost) || 0)
+    + (Number(opts.stone_cost) || 0)
+  const sellingPrice = Number(opts.total_amount ?? opts.trade_price) || 0
+  const margin = sellingPrice - total_cogs
+  return { gold_cost: goldCost, total_cogs, margin }
 }
 
 export const ORDER_STATUSES = [

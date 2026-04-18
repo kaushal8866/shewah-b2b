@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, Phone, Package, Layers } from 'lucide-react'
@@ -11,6 +12,8 @@ export default function ManufacturingPartnerDetailPage() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
+  const { data: session } = useSession()
+  const isMaster = (session?.user as any)?.role === 'master'
 
   const [partner, setPartner] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
@@ -21,20 +24,22 @@ export default function ManufacturingPartnerDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [form, setForm] = useState<any>({})
 
-  useEffect(() => { load() }, [id])
+  useEffect(() => { load() }, [id, isMaster])
 
   async function load() {
     setLoading(true)
-    const [{ data: p }, { data: o }, { data: f }] = await Promise.all([
+    const calls: Promise<any>[] = [
       supabase.from('manufacturing_partners').select('*').eq('id', id).single(),
       supabase.from('manufacturing_orders').select('*').eq('manufacturing_partner_id', id).order('created_at', { ascending: false }).limit(10),
-      supabase.from('material_float').select('*').eq('manufacturing_partner_id', id),
-    ])
+    ]
+    if (isMaster) calls.push(supabase.from('material_float').select('*').eq('manufacturing_partner_id', id))
+    const results = await Promise.all(calls)
+    const p = results[0].data
     if (!p) { router.push('/manufacturing'); return }
     setPartner(p)
     setForm(p)
-    setOrders(o || [])
-    setFloats(f || [])
+    setOrders(results[1].data || [])
+    setFloats(isMaster ? (results[2]?.data || []) : [])
     setLoading(false)
   }
 
@@ -159,10 +164,12 @@ export default function ManufacturingPartnerDetailPage() {
               className="flex items-center gap-2 bg-[#C49C64] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#9B7A40]">
               <Package className="w-4 h-4" /> New order
             </Link>
-            <Link href={`/manufacturing/partners/${id}/float`}
-              className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
-              <Layers className="w-4 h-4" /> Manage float
-            </Link>
+            {isMaster && (
+              <Link href={`/manufacturing/partners/${id}/float`}
+                className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
+                <Layers className="w-4 h-4" /> Manage float
+              </Link>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-3">
@@ -209,7 +216,7 @@ export default function ManufacturingPartnerDetailPage() {
             )}
           </div>
 
-          {floats.length > 0 && (
+          {isMaster && floats.length > 0 && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-medium text-stone-900">Material float balance</h2>

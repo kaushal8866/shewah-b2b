@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import { Plus, Factory, ChevronRight, Phone, Layers, AlertCircle } from 'lucide-react'
@@ -26,23 +27,26 @@ type FloatSummary = {
 }
 
 export default function ManufacturingPage() {
+  const { data: session } = useSession()
+  const isMaster = (session?.user as any)?.role === 'master'
   const [partners, setPartners] = useState<MfgPartner[]>([])
   const [floats, setFloats] = useState<FloatSummary[]>([])
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [isMaster])
 
   async function load() {
     setLoading(true)
-    const [{ data: p }, { data: f }, { data: o }] = await Promise.all([
+    const calls: Promise<any>[] = [
       supabase.from('manufacturing_partners').select('*').order('name'),
-      supabase.from('material_float').select('*'),
       supabase.from('manufacturing_orders').select('*, manufacturing_partners(name)').order('created_at', { ascending: false }).limit(10),
-    ])
-    setPartners(p || [])
-    setFloats(f || [])
-    setOrders(o || [])
+    ]
+    if (isMaster) calls.push(supabase.from('material_float').select('*'))
+    const results = await Promise.all(calls)
+    setPartners(results[0].data || [])
+    setOrders(results[1].data || [])
+    setFloats(isMaster ? (results[2]?.data || []) : [])
     setLoading(false)
   }
 
@@ -158,31 +162,33 @@ export default function ManufacturingPage() {
                     </div>
                   </div>
 
-                  {/* Material float cards */}
-                  {pFloats.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-stone-100">
-                      {pFloats.map(f => (
-                        <div key={f.material_type} className={`rounded-lg p-2.5 ${f.balance < 1 ? 'bg-amber-50 border border-amber-200' : 'bg-stone-50'}`}>
-                          <p className="text-xs text-stone-400 capitalize">{f.material_type.replace(/_/g, ' ')}</p>
-                          <p className={`text-base font-semibold mt-0.5 ${f.balance < 1 ? 'text-amber-700' : 'text-stone-800'}`}>
-                            {f.balance?.toFixed(2)}g
-                          </p>
-                          <p className="text-xs text-stone-400">of {f.total_deposited}g</p>
-                        </div>
-                      ))}
-                      <Link href={`/manufacturing/partners/${p.id}/float`}
-                        className="rounded-lg border border-dashed border-stone-200 p-2.5 flex items-center justify-center text-xs text-stone-400 hover:border-[#C49C64] hover:text-[#C49C64] transition-colors">
-                        <Plus className="w-3.5 h-3.5 mr-1" /> Deposit / Withdraw
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between">
-                      <p className="text-xs text-stone-400">No material float yet</p>
-                      <Link href={`/manufacturing/partners/${p.id}/float`}
-                        className="text-xs text-[#C49C64] hover:underline">
-                        Set up material float →
-                      </Link>
-                    </div>
+                  {/* Material float cards (master-only) */}
+                  {isMaster && (
+                    pFloats.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-stone-100">
+                        {pFloats.map(f => (
+                          <div key={f.material_type} className={`rounded-lg p-2.5 ${f.balance < 1 ? 'bg-amber-50 border border-amber-200' : 'bg-stone-50'}`}>
+                            <p className="text-xs text-stone-400 capitalize">{f.material_type.replace(/_/g, ' ')}</p>
+                            <p className={`text-base font-semibold mt-0.5 ${f.balance < 1 ? 'text-amber-700' : 'text-stone-800'}`}>
+                              {f.balance?.toFixed(2)}g
+                            </p>
+                            <p className="text-xs text-stone-400">of {f.total_deposited}g</p>
+                          </div>
+                        ))}
+                        <Link href={`/manufacturing/partners/${p.id}/float`}
+                          className="rounded-lg border border-dashed border-stone-200 p-2.5 flex items-center justify-center text-xs text-stone-400 hover:border-[#C49C64] hover:text-[#C49C64] transition-colors">
+                          <Plus className="w-3.5 h-3.5 mr-1" /> Deposit / Return
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between">
+                        <p className="text-xs text-stone-400">No material float yet</p>
+                        <Link href={`/manufacturing/partners/${p.id}/float`}
+                          className="text-xs text-[#C49C64] hover:underline">
+                          Set up material float →
+                        </Link>
+                      </div>
+                    )
                   )}
 
                   {/* Quick actions */}

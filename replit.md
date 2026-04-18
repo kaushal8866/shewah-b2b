@@ -32,6 +32,17 @@ A Next.js 14 B2B admin panel for Shewah jewelry, built with Supabase as the data
 - `lib/` - Shared utilities and Supabase client
 - `middleware.ts` - Auth guard (excludes /showcase/* and /api/showcase/*)
 - `scripts/setup_collections.sql` - Migration for 4 new tables (must run manually in Supabase Dashboard)
+- `scripts/setup_material_ledger.sql` - **Task 5 migration: must run manually in Supabase SQL Editor.** Adds COGS/gold columns to `orders` (gold_weight_estimated/actual, gold_source, making_charges, cad_cost, stone_cost, total_cogs, margin, assigned_manufacturer_id), ensures `material_transactions.order_id` FK + negative-balance flag columns + BEFORE-INSERT trigger that flags (does not block) negative-balance rows, renames `total_withdrawn`→`total_returned` on `material_float`, and migrates the `transaction_type` value `withdrawal`→`return`. Canonical 4-type set: `deposit`, `consumption`, `return`, `adjustment`.
+
+## Material ledger access control
+
+`material_float` and `material_transactions` are master-only via the `/api/db` proxy and the float route is gated in `middleware.ts` (`/manufacturing/partners/*/float`). Sub users see no float widgets, no "Manage float" button, and the float page redirects them back to `/manufacturing`.
+
+## Order COGS / gold integrity rules
+
+Order detail / new pages collect COGS inputs and compute `total_cogs = (gold weight × gold rate × karat purity) + making + CAD + stone` and `margin = total_amount − total_cogs` via `computeOrderCogs()` in `lib/supabase.ts`.
+
+Completion guard: an order **cannot** advance to `qc`, `dispatched` or `delivered` unless `gold_weight_actual` and `making_charges` are filled. When `gold_source = 'self'` it additionally requires a row in `material_transactions` with `order_id = <this order>` and `transaction_type = 'consumption'`. The order detail page surfaces a "Record gold consumption for this order" action that deep-links into the assigned manufacturer's float page with `?order_id=…&type=consumption&material_type=gold_<karat>k`. The float page reads those params and pre-fills the consumption form.
 
 ## Environment Variables
 
