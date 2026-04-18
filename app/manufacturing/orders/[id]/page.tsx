@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
-import { ArrowLeft, Save, Trash2, Edit2, X, Printer, Send, Copy, RefreshCw, FileDown, Check, Clock, Link2 } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Edit2, X, Printer, Send, Copy, RefreshCw, FileDown, Check, Clock, Link2, FileUp } from 'lucide-react'
 import Link from 'next/link'
+import { uploadFileToCloudinary } from '@/lib/cloudinaryUpload'
 
 const MFG_STATUSES = ['issued', 'in_progress', 'quality_check', 'completed', 'returned', 'cancelled']
 
@@ -24,6 +25,7 @@ export default function ManufacturingOrderDetailPage() {
   const [shareBusy, setShareBusy] = useState(false)
   const [shareToast, setShareToast] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [uploadingCad, setUploadingCad] = useState(false)
 
   useEffect(() => { load() }, [id])
   useEffect(() => { loadShareLink() }, [id])
@@ -94,7 +96,7 @@ export default function ManufacturingOrderDetailPage() {
     setLoading(true)
     const { data } = await supabase
       .from('manufacturing_orders')
-      .select('*, manufacturing_partners(name, city), orders(order_number, partners(store_name))')
+      .select('*, manufacturing_partners(name, city, phone), orders(order_number, partners(store_name))')
       .eq('id', id)
       .single()
     if (!data) { router.push('/manufacturing'); return }
@@ -104,6 +106,29 @@ export default function ManufacturingOrderDetailPage() {
   }
 
   function set(k: string, v: string | boolean) { setForm((prev: any) => ({ ...prev, [k]: v })) }
+
+  async function uploadCadFile(file: File) {
+    setUploadingCad(true)
+    try {
+      const r = await uploadFileToCloudinary(file)
+      setForm((prev: any) => ({
+        ...prev,
+        cad_files: [...(prev.cad_files || []), r.url],
+        cad_file_names: [...(prev.cad_file_names || []), r.filename],
+      }))
+    } catch (e) {
+      alert('Upload failed: ' + (e instanceof Error ? e.message : String(e)))
+    }
+    setUploadingCad(false)
+  }
+
+  function removeCadFile(idx: number) {
+    setForm((prev: any) => ({
+      ...prev,
+      cad_files: (prev.cad_files || []).filter((_: string, i: number) => i !== idx),
+      cad_file_names: (prev.cad_file_names || []).filter((_: string, i: number) => i !== idx),
+    }))
+  }
 
   async function handleSave() {
     setSaving(true)
@@ -434,24 +459,49 @@ export default function ManufacturingOrderDetailPage() {
             )}
           </div>
 
-          {order.cad_files && order.cad_files.length > 0 && (
+          {(editing || (order.cad_files && order.cad_files.length > 0)) && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
-              <h2 className="font-medium text-stone-900 mb-3">CAD &amp; design files</h2>
-              <ul className="divide-y divide-stone-100">
-                {order.cad_files.map((url: string, i: number) => {
-                  const name = (order.cad_file_names || [])[i] || `file-${i + 1}`
-                  return (
-                    <li key={i} className="py-2 flex items-center gap-3">
-                      <FileDown className="w-4 h-4 text-stone-400 shrink-0" />
-                      <span className="flex-1 text-sm text-stone-700 truncate">{name}</span>
-                      <a href={url} download={name} target="_blank" rel="noreferrer"
-                        className="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1 rounded-md">
-                        Download
-                      </a>
-                    </li>
-                  )
-                })}
-              </ul>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-medium text-stone-900">CAD &amp; design files</h2>
+                {editing && (
+                  <label className="text-xs bg-stone-900 hover:bg-stone-800 text-white px-3 py-1.5 rounded-md cursor-pointer inline-flex items-center gap-1.5">
+                    <FileUp className="w-3.5 h-3.5" />
+                    {uploadingCad ? 'Uploading…' : 'Add file'}
+                    <input type="file" className="hidden" accept=".stl,.pdf,.zip,.dwg,.3dm,.obj,image/*"
+                      disabled={uploadingCad}
+                      onChange={async e => {
+                        const f = e.target.files?.[0]
+                        if (f) await uploadCadFile(f)
+                        e.target.value = ''
+                      }} />
+                  </label>
+                )}
+              </div>
+              {((editing ? form.cad_files : order.cad_files) || []).length === 0 ? (
+                <p className="text-sm text-stone-400">No CAD files uploaded yet.</p>
+              ) : (
+                <ul className="divide-y divide-stone-100">
+                  {((editing ? form.cad_files : order.cad_files) || []).map((url: string, i: number) => {
+                    const name = ((editing ? form.cad_file_names : order.cad_file_names) || [])[i] || `file-${i + 1}`
+                    return (
+                      <li key={i} className="py-2 flex items-center gap-3">
+                        <FileDown className="w-4 h-4 text-stone-400 shrink-0" />
+                        <span className="flex-1 text-sm text-stone-700 truncate">{name}</span>
+                        <a href={url} download={name} target="_blank" rel="noreferrer"
+                          className="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1 rounded-md">
+                          Download
+                        </a>
+                        {editing && (
+                          <button type="button" onClick={() => removeCadFile(i)}
+                            className="text-xs text-red-600 hover:bg-red-50 px-2 py-1 rounded-md inline-flex items-center gap-1">
+                            <X className="w-3 h-3" /> Remove
+                          </button>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </div>
           )}
 

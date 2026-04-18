@@ -20,6 +20,28 @@ function urlBasename(url: string, fallback: string): string {
   }
 }
 
+// SSRF guard: only allow https URLs whose host is on the asset-CDN allowlist.
+// Reference image / CAD URLs are user-writable in app flows, so unrestricted
+// server-side fetches would let a caller probe internal services.
+const ALLOWED_HOST_SUFFIXES = [
+  '.cloudinary.com',
+  'res.cloudinary.com',
+  '.supabase.co',
+  '.supabase.in',
+]
+function isAllowedAssetUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw)
+    if (u.protocol !== 'https:') return false
+    const host = u.hostname.toLowerCase()
+    return ALLOWED_HOST_SUFFIXES.some(s =>
+      s.startsWith('.') ? host.endsWith(s) : host === s
+    )
+  } catch {
+    return false
+  }
+}
+
 export async function GET(_: Request, ctx: { params: { token: string } }) {
   const token = ctx.params.token
 
@@ -52,6 +74,7 @@ export async function GET(_: Request, ctx: { params: { token: string } }) {
     const refFolder = root.folder('reference-images')!
     await Promise.all(refs.map(async (url, i) => {
       try {
+        if (!isAllowedAssetUrl(url)) return
         const res = await fetch(url)
         if (!res.ok) return
         const buf = Buffer.from(await res.arrayBuffer())
@@ -68,6 +91,7 @@ export async function GET(_: Request, ctx: { params: { token: string } }) {
     const cadFolder = root.folder('cad-files')!
     await Promise.all(cads.map(async (url, i) => {
       try {
+        if (!isAllowedAssetUrl(url)) return
         const res = await fetch(url)
         if (!res.ok) return
         const buf = Buffer.from(await res.arrayBuffer())
