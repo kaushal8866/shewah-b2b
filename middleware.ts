@@ -58,6 +58,15 @@ export default withAuth(
       return NextResponse.redirect(new URL('/', req.url))
     }
 
+    // Profitability dashboard exposes COGS / margin and is gated by the
+    // 'profitability' module permission for sub admins (master always sees it).
+    if (pathname.startsWith('/profitability') && role !== 'master') {
+      const perms = (token.permissions as string[] | undefined) || []
+      if (!perms.includes('profitability')) {
+        return NextResponse.redirect(new URL('/', req.url))
+      }
+    }
+
     // Material ledger / float pages are master-only
     if (/^\/manufacturing\/partners\/[^/]+\/float/.test(pathname) && token.role !== 'master') {
       return NextResponse.redirect(new URL('/manufacturing', req.url))

@@ -9,6 +9,7 @@ export const MODULES = [
   { id: 'vendors',         label: 'Vendors & Inventory', href: '/vendors' },
   { id: 'circuits',        label: 'Circuits',            href: '/circuits' },
   { id: 'analytics',       label: 'Analytics',           href: '/analytics' },
+  { id: 'profitability',   label: 'Profitability',       href: '/profitability' },
 ] as const
 
 export type ModuleId = typeof MODULES[number]['id']
