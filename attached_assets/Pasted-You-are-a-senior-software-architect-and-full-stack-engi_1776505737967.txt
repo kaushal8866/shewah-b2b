@@ -1,0 +1,230 @@
+You are a senior software architect and full-stack engineer.
+
+You are reviewing an existing B2B jewelry operations system built with:
+- Next.js (App Router)
+- Supabase (PostgreSQL, Auth, Realtime)
+- TypeScript
+
+## Context
+
+This system is used by a jewelry B2B business that operates as an intermediary between:
+- Retail jewelers (customers)
+- CAD designers
+- Manufacturers
+- Material suppliers (gold, diamonds, etc.)
+
+The system currently includes:
+- Dashboard (KPIs, pipeline)
+- Partners CRM (retailers)
+- Orders (Brief → CAD → Production → Dispatch → Delivered)
+- CAD request tracking (with SLA timers)
+- Catalog management
+- Gold rate management
+- Circuits (sales visits)
+- Analytics
+
+## Goal
+
+Your task is to:
+1. Audit the current system (codebase, schema, and features)
+2. Identify missing or weak areas
+3. Propose a concrete implementation plan
+
+---
+
+## Critical Business Requirements (MUST SUPPORT)
+
+### 1. Order Management
+- Support both:
+  - Catalog-based orders
+  - Custom design orders
+- Full lifecycle tracking:
+  Brief → CAD → Production → Dispatch → Delivered
+
+---
+
+### 2. Multi-Role Access
+- Admin (full control)
+- Retailer:
+  - View catalog
+  - Place orders
+  - Track status
+- Manufacturer:
+  - View assigned orders
+  - Update production status
+
+---
+
+### 3. CAD Workflow
+- CAD requests linked to orders
+- Status tracking (Pending / In Progress / Done)
+- SLA tracking (e.g., 48-hour deadline)
+- File uploads (CAD files, images)
+
+---
+
+### 4. GOLD / MATERIAL LEDGER (CRITICAL)
+
+The business uses a mixed gold model:
+- Sometimes gold is provided by the business (deposit to manufacturer)
+- Sometimes manufacturer uses their own gold
+
+You MUST ensure system supports:
+
+#### Material Ledger Requirements:
+- Track gold deposits to manufacturers
+- Track gold consumption per order
+- Track returns or adjustments
+- Maintain manufacturer-wise running balance
+
+#### Ledger Rules:
+- Use transaction-based ledger (no direct balance updates)
+- Transaction types:
+  - DEPOSIT
+  - CONSUMPTION
+  - RETURN
+  - ADJUSTMENT
+
+#### Each transaction must include:
+- manufacturer_id
+- order_id (optional)
+- weight_grams
+- rate_per_gram
+- timestamp
+
+#### System Constraints:
+- Only ADMIN can:
+  - View gold balances
+  - Add transactions
+- Manufacturers CANNOT see gold balances
+- Manufacturers CANNOT enter gold consumption
+
+---
+
+### 5. COGS (Costing System)
+
+Each order must support:
+
+Fields:
+- gold_weight_estimated
+- gold_weight_actual
+- gold_source (SELF / MANUFACTURER)
+- making_charges
+- cad_cost
+- stone_cost
+
+COGS formula:
+COGS = (gold_weight_actual × gold_rate) + making_charges + cad_cost + stone_cost
+
+System must:
+- Store total_cogs
+- Calculate margin = selling_price - total_cogs
+
+---
+
+### 6. System Integrity Rules (IMPORTANT)
+
+- No order can be marked “Completed” without:
+  - gold_weight_actual
+  - making_charges
+
+- If gold_source = SELF:
+  - A CONSUMPTION transaction MUST exist for that order
+
+- Manufacturer gold balance should NEVER silently go negative
+  - Must trigger warning or validation
+
+---
+
+## Your Tasks
+
+### Step 1: Audit
+- Review database schema
+- Review APIs / backend logic
+- Review frontend flows
+- Identify:
+  - Missing tables
+  - Missing fields
+  - Broken logic
+  - Manual processes that should be system-driven
+
+---
+
+### Step 2: Gap Analysis
+
+Produce a list:
+
+- ✅ Already implemented correctly
+- ⚠️ Partially implemented / needs improvement
+- ❌ Missing completely
+
+Focus especially on:
+- Material ledger
+- Order costing
+- Role-based access control
+- Data integrity constraints
+
+---
+
+### Step 3: Implementation Plan
+
+Create a step-by-step plan including:
+
+#### Database Changes
+- New tables
+- Altered tables
+- Indexes and constraints
+
+#### Backend Logic
+- Functions / services to implement
+- Validation rules
+- Transaction handling
+
+#### Frontend Changes
+- New screens (e.g., Gold Ledger)
+- Updates to order form
+- Role-based UI restrictions
+
+#### Suggested Structure
+- API routes / services organization
+- Supabase usage (policies, RLS)
+
+---
+
+### Step 4: Deliverables Format
+
+Respond in structured markdown:
+
+1. System Audit Summary  
+2. Gap Analysis Table  
+3. Database Migration Plan (SQL)  
+4. Backend Implementation Plan  
+5. Frontend Implementation Plan  
+6. Risks & Edge Cases  
+
+---
+
+## Constraints
+
+- Do NOT suggest a full rewrite
+- Build on top of existing system
+- Keep MVP-first approach
+- Prioritize correctness over complexity
+
+---
+
+## Important
+
+This is NOT just an e-commerce system.
+
+It is a:
+→ Order + Production + Material Control System
+
+Focus heavily on:
+- Gold tracking (ledger)
+- Cost accuracy
+- Manufacturer accountability
+
+---
+
+Now begin the audit and produce the full report.
