@@ -1,0 +1,82 @@
+# Design System Specification: The Architectural Authority
+
+## 1. Overview & Creative North Star
+**Creative North Star: "The Silent Partner"**
+
+This design system is built on the philosophy of **Architectural Authority**. In the B2B sector, trust is not earned through loud colors or trendy gimmicks, but through precision, intentionality, and a sense of permanence. We move beyond the "template" look by treating the interface as a physical workspace—layers of high-end materials stacked with mathematical rigor.
+
+By utilizing **intentional asymmetry** (e.g., placing oversized Display type against compact, high-density data modules) and **tonal layering** (depth without shadows), we create a high-performance environment that feels bespoke. The design system prioritizes the "breath" between elements, ensuring that even the most complex corporate data feels accessible and calm.
+
+---
+
+## 2. Colors: Tonal Depth & The "No-Line" Rule
+The palette is rooted in deep, authoritative blues (`primary`) and sophisticated neutrals (`surface`). We do not use color as decoration; we use it as information architecture.
+
+### The "No-Line" Rule
+**Explicit Instruction:** Prohibit the use of 1px solid borders for sectioning or layout containment. 
+Boundaries must be defined solely through background color shifts.
+- **Example:** A sidebar using `surface-container-low` (#f2f4f6) sitting against a main content area of `surface` (#f7f9fb). 
+- This creates a seamless, "molded" look that feels more premium than a grid of boxes.
+
+### Surface Hierarchy & Nesting
+Treat the UI as a series of physical layers. Use the tier system to create focus:
+1.  **Base Layer:** `background` (#f7f9fb)
+2.  **Sectioning:** `surface-container-low` (#f2f4f6) for large structural areas.
+3.  **Active Modules:** `surface-container-lowest` (#ffffff) for primary content cards or workspace areas.
+4.  **Emphasis/Floating:** `surface-container-highest` (#e0e3e5) for temporary overlays or high-contrast navigation.
+
+### The "Glass & Gradient" Rule
+To inject "soul" into the corporate environment:
+- **CTAs & Heroes:** Use subtle linear gradients from `primary` (#00236f) to `primary_container` (#1e3a8a).
+- **Floating Elements:** For navigation bars or top-level alerts, use Glassmorphism. Apply `surface_container_lowest` at 80% opacity with a `backdrop-blur` of 12px to 20px.
+
+---
+
+## 3. Typography: Editorial Reliability
+We pair the geometric precision of **Manrope** for high-level communication with the functional clarity of **Inter** for data and utility.
+
+*   **Display & Headline (Manrope):** These are your "Editorial" voices. Use `display-lg` (3.5rem) with tight letter-spacing (-0.02em) to create an authoritative, magazine-like feel in hero sections.
+*   **Title & Body (Inter):** These are your "Functional" voices. `body-md` (0.875rem) is the workhorse for B2B data entry, providing a dense but readable rhythm.
+*   **Hierarchy as Identity:** Always maintain a significant scale jump between headlines and body text. An authoritative interface should never have "middle-ground" sizing; it should be clear what is a statement and what is detail.
+
+---
+
+## 4. Elevation & Depth: Tonal Layering
+Traditional drop shadows are often messy. This design system achieves depth through **Materiality**.
+
+*   **The Layering Principle:** Place a `surface-container-lowest` card on a `surface-container-low` section. The change from #f2f4f6 to #ffffff provides a "soft lift" that feels architectural.
+*   **Ambient Shadows:** If a floating state (like a Modal) is required, use a shadow with a blur radius of 40px and 4% opacity. The color must be a tinted version of `on-surface` (#191c1e) to ensure the shadow feels like a natural obstruction of light, not a grey smudge.
+*   **The "Ghost Border" Fallback:** If accessibility requires a border (e.g., in high-glare environments), use `outline-variant` (#c5c5d3) at **20% opacity**. It should be felt, not seen.
+
+---
+
+## 5. Components: Precision Primitives
+
+### Buttons
+*   **Primary:** A solid `primary` (#00236f) fill with `on-primary` (#ffffff) text. Use the `md` (0.375rem) corner radius. For high-end touch points, apply a 5% inner-glow gradient to the top edge.
+*   **Tertiary:** No background, no border. Use `primary` text weight 600. These must be used for secondary actions to avoid "button fatigue."
+
+### Input Fields
+*   **Structure:** No bottom line or full border. Use a subtle `surface-container-high` (#e6e8ea) fill.
+*   **Interaction:** On focus, the background shifts to `surface-container-lowest` (#ffffff) with a 1px "Ghost Border" using the `primary` color at 40% opacity.
+
+### Cards & Lists
+*   **Anti-Divider Policy:** Forbid 1px dividers between list items. Use vertical white space (1.5rem to 2rem) or alternating tonal shifts (Zebra striping using `surface` and `surface-container-low`).
+*   **Bespoke Module:** **The Data Feature Card.** A `surface-container-lowest` card with an asymmetric `primary` accent bar (4px wide) on the left side to denote "active" or "verified" status.
+
+### Status Chips
+*   Instead of bright "traffic light" colors, use low-saturation variants. For success, use `on-tertiary-container` text on a `surface-container-highest` background to maintain the sophisticated palette.
+
+---
+
+## 6. Do’s and Don’ts
+
+### Do
+*   **Do** embrace negative space. If a layout feels "empty," it’s likely working. High-end B2B clients value the efficiency of clarity.
+*   **Do** use `manrope` for numbers. Its geometric nature makes metrics look like precision-engineered stats.
+*   **Do** stack containers. A `lowest` card on a `low` section on a `background` page creates three tiers of focus without a single line.
+
+### Don't
+*   **Don't** use pure black (#000000) for text. Always use `on-surface` (#191c1e) to maintain a soft, premium contrast.
+*   **Don't** use standard "Material Design" shadows. They are too aggressive for this design system's "Architectural" aesthetic.
+*   **Don't** use fully rounded (pill) buttons for primary actions; stay with the `md` (0.375rem) radius to maintain a corporate, structured feel.
