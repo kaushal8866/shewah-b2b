@@ -189,6 +189,25 @@ create table cad_requests (
   partner_feedback text
 );
 
+-- ── CAD REVISIONS (history of renders + retailer feedback) ──────────
+-- See scripts/migrate_task21_cad_revisions.sql.
+create table if not exists cad_revisions (
+  id              uuid primary key default gen_random_uuid(),
+  created_at      timestamptz not null default now(),
+  cad_request_id  uuid not null references cad_requests(id) on delete cascade,
+  kind            text not null check (kind in ('render','revision_request','approval')),
+  author          text not null check (author in ('admin','retailer')),
+  note            text,
+  render_images   text[]
+);
+
+create index if not exists cad_revisions_request_id_idx
+  on cad_revisions(cad_request_id, created_at);
+
+alter table cad_revisions enable row level security;
+create policy "Authenticated users can do everything" on cad_revisions
+  for all using (auth.role() = 'authenticated');
+
 -- ── GOLD RATES ───────────────────────────────────────────
 create table gold_rates (
   id              uuid primary key default uuid_generate_v4(),

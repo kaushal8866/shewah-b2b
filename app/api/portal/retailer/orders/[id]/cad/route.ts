@@ -80,6 +80,14 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
       .eq('id', order.id)
     if (e2) return NextResponse.json({ error: e2.message }, { status: 500 })
 
+    // Append to the revisions log so both sides keep a record of approval.
+    await supabaseAdmin.from('cad_revisions').insert({
+      cad_request_id: cad.id,
+      kind: 'approval',
+      author: 'retailer',
+      note: feedback || null,
+    })
+
     // Fire-and-forget internal ping to the design team. Errors are swallowed
     // inside the helper — never block the retailer's success response.
     notifyInternalCadAction({
@@ -109,6 +117,15 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
     .update({ status: 'cad_in_progress' })
     .eq('id', order.id)
   if (e2) return NextResponse.json({ error: e2.message }, { status: 500 })
+
+  // Persist this round of feedback as its own revision row so future rounds
+  // don't overwrite it.
+  await supabaseAdmin.from('cad_revisions').insert({
+    cad_request_id: cad.id,
+    kind: 'revision_request',
+    author: 'retailer',
+    note: feedback,
+  })
 
   // Fire-and-forget internal ping to the design team so they can jump on the
   // revision immediately rather than waiting for a screen refresh.

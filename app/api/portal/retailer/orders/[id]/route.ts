@@ -39,6 +39,7 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
   // surface a trimmed view. Internal SLAs (due_date), costs, revision_notes
   // (internal-only), reference images, and other partners' work are excluded.
   let cad_request: any = null
+  let cad_revisions: any[] = []
   if (cad_request_id) {
     const { data: cad } = await supabaseAdmin
       .from('cad_requests')
@@ -49,8 +50,17 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
     if (cad && ['sent', 'revision_requested', 'approved'].includes(cad.status)) {
       const { partner_id: _p, ...cadSafe } = cad as any
       cad_request = cadSafe
+
+      // Pull the full revisions history (renders + retailer feedback) so the
+      // retailer can see how the design evolved across rounds.
+      const { data: revs } = await supabaseAdmin
+        .from('cad_revisions')
+        .select('id, created_at, kind, author, note, render_images')
+        .eq('cad_request_id', cad.id)
+        .order('created_at', { ascending: true })
+      cad_revisions = revs || []
     }
   }
 
-  return NextResponse.json({ order: safe, cad_request })
+  return NextResponse.json({ order: safe, cad_request, cad_revisions })
 }

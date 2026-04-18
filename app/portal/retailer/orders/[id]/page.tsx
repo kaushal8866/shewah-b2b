@@ -37,6 +37,7 @@ export default function RetailerOrderDetail() {
   const { id } = useParams<{ id: string }>()
   const [order, setOrder] = useState<any>(null)
   const [cad, setCad] = useState<any>(null)
+  const [revisions, setRevisions] = useState<any[]>([])
   const [error, setError] = useState('')
 
   // CAD action state
@@ -50,7 +51,11 @@ export default function RetailerOrderDetail() {
       .then(r => r.json())
       .then(d => {
         if (d.error) setError(d.error)
-        else { setOrder(d.order); setCad(d.cad_request || null) }
+        else {
+          setOrder(d.order)
+          setCad(d.cad_request || null)
+          setRevisions(Array.isArray(d.cad_revisions) ? d.cad_revisions : [])
+        }
       })
       .catch(e => setError(e.message))
   }
@@ -168,10 +173,48 @@ export default function RetailerOrderDetail() {
             ))}
           </div>
 
-          {cad.partner_feedback && (
-            <div className="mb-4 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2">
-              <p className="text-xs text-stone-400 mb-0.5">Your feedback</p>
-              <p className="text-sm text-stone-700 whitespace-pre-line">{cad.partner_feedback}</p>
+          {revisions.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs text-stone-400 mb-2">Revision history</p>
+              <ol className="space-y-3 border-l border-stone-200 pl-4">
+                {revisions.map((r) => {
+                  const dot =
+                    r.kind === 'approval'
+                      ? 'bg-green-500'
+                      : r.kind === 'revision_request'
+                      ? 'bg-amber-500'
+                      : 'bg-[#C49C64]'
+                  const label =
+                    r.kind === 'approval'
+                      ? 'You approved the design'
+                      : r.kind === 'revision_request'
+                      ? 'You requested a revision'
+                      : 'New CAD render shared'
+                  const imgs: string[] = Array.isArray(r.render_images) ? r.render_images : []
+                  return (
+                    <li key={r.id} className="relative">
+                      <span className={`absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full ${dot} ring-2 ring-white`} />
+                      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-stone-800">{label}</p>
+                        <p className="text-[11px] text-stone-400">{fmtDate(r.created_at)}</p>
+                      </div>
+                      {r.note && (
+                        <p className="text-sm text-stone-600 whitespace-pre-line mt-1">{r.note}</p>
+                      )}
+                      {imgs.length > 0 && (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 mt-2">
+                          {imgs.map((src, i) => (
+                            <a key={i} href={src} target="_blank" rel="noopener noreferrer"
+                              className="block aspect-square bg-stone-100 rounded-md overflow-hidden border border-stone-200">
+                              <img src={src} alt={`Render ${i + 1}`} className="w-full h-full object-cover" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ol>
             </div>
           )}
 

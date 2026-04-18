@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
-import { ArrowLeft, Save, Trash2, Edit2, X } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Edit2, X, Upload, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
 
 const CAD_STATUSES = [
   { value: 'brief_received', label: 'Brief Received' },
@@ -22,11 +23,14 @@ export default function CadRequestDetailPage() {
   const id = params.id as string
 
   const [req, setReq] = useState<any>(null)
+  const [revisions, setRevisions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [form, setForm] = useState<any>({})
+  const [uploading, setUploading] = useState(false)
+  const [renderNote, setRenderNote] = useState('')
 
   useEffect(() => { load() }, [id])
 
@@ -40,10 +44,71 @@ export default function CadRequestDetailPage() {
     if (!data) { router.push('/cad-requests'); return }
     setReq(data)
     setForm(data)
+    const { data: revs } = await supabase
+      .from('cad_revisions')
+      .select('id, created_at, kind, author, note, render_images')
+      .eq('cad_request_id', id)
+      .order('created_at', { ascending: true })
+    setRevisions(revs || [])
     setLoading(false)
   }
 
   function set(k: string, v: string) { setForm((prev: any) => ({ ...prev, [k]: v })) }
+
+  // Upload one or more new render images. We append them to render_images and
+  // also write a single `render` row to cad_revisions so the retailer sees a
+  // new entry in the timeline (with the optional note that goes with this
+  // round). After saving, the request flips to `sent` so the retailer can
+  // act on it.
+  async function handleRenderUpload(files: FileList | null) {
+    if (!files || files.length === 0) return
+    setUploading(true)
+    const newUrls: string[] = []
+    try {
+      for (const file of Array.from(files)) {
+        try {
+          newUrls.push(await uploadToCloudinary(file))
+        } catch (err) {
+          alert('Render upload failed: ' + (err instanceof Error ? err.message : String(err)))
+        }
+      }
+      if (newUrls.length === 0) return
+
+      const merged = [...(req.render_images || []), ...newUrls]
+      const today = new Date().toISOString().split('T')[0]
+      const cadUpdate: any = {
+        render_images: merged,
+        status: 'sent',
+        partner_feedback: null, // clear stale prior-round feedback for the new round
+      }
+      if (!req.sent_date) cadUpdate.sent_date = today
+
+      const { error: e1 } = await supabase
+        .from('cad_requests')
+        .update(cadUpdate)
+        .eq('id', id)
+      if (e1) { alert('Error: ' + e1.message); return }
+
+      const { error: e2 } = await supabase.from('cad_revisions').insert({
+        cad_request_id: id,
+        kind: 'render',
+        author: 'admin',
+        note: renderNote.trim() || null,
+        render_images: newUrls,
+      })
+      if (e2) { alert('Saved render but failed to log revision: ' + e2.message) }
+
+      // Move the order back into the cad_sent state so the retailer sees it.
+      if (req.order_id) {
+        await supabase.from('orders').update({ status: 'cad_sent' }).eq('id', req.order_id)
+      }
+
+      setRenderNote('')
+      load()
+    } finally {
+      setUploading(false)
+    }
+  }
 
   async function handleSave() {
     setSaving(true)
@@ -185,22 +250,91 @@ export default function CadRequestDetailPage() {
             )}
           </div>
 
-          {(req.revision_notes || req.partner_feedback) && (
-            <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
-              {req.revision_notes && (
-                <div>
-                  <p className="text-xs text-stone-400 mb-1">Revision notes</p>
-                  <p className="text-sm text-stone-700 leading-relaxed">{req.revision_notes}</p>
-                </div>
-              )}
-              {req.partner_feedback && (
-                <div>
-                  <p className="text-xs text-stone-400 mb-1">Partner feedback</p>
-                  <p className="text-sm text-stone-700 leading-relaxed">{req.partner_feedback}</p>
-                </div>
-              )}
+          {req.revision_notes && (
+            <div className="bg-white rounded-xl border border-stone-200 p-5">
+              <p className="text-xs text-stone-400 mb-1">Internal revision notes</p>
+              <p className="text-sm text-stone-700 leading-relaxed">{req.revision_notes}</p>
             </div>
           )}
+
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#C49C64]" /> Revision history
+            </h2>
+            {revisions.length === 0 ? (
+              <p className="text-sm text-stone-400">
+                No revisions yet. Upload a render below to share the first round with the retailer.
+              </p>
+            ) : (
+              <ol className="space-y-3 border-l border-stone-200 pl-4">
+                {revisions.map((r) => {
+                  const dot =
+                    r.kind === 'approval'
+                      ? 'bg-green-500'
+                      : r.kind === 'revision_request'
+                      ? 'bg-amber-500'
+                      : 'bg-[#C49C64]'
+                  const label =
+                    r.kind === 'approval'
+                      ? 'Retailer approved the design'
+                      : r.kind === 'revision_request'
+                      ? 'Retailer requested a revision'
+                      : 'You shared a new CAD render'
+                  const imgs: string[] = Array.isArray(r.render_images) ? r.render_images : []
+                  return (
+                    <li key={r.id} className="relative">
+                      <span className={`absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full ${dot} ring-2 ring-white`} />
+                      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-stone-800">{label}</p>
+                        <p className="text-[11px] text-stone-400">{formatDate(r.created_at)}</p>
+                      </div>
+                      {r.note && (
+                        <p className="text-sm text-stone-600 whitespace-pre-line mt-1">{r.note}</p>
+                      )}
+                      {imgs.length > 0 && (
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 mt-2">
+                          {imgs.map((src, i) => (
+                            <a key={i} href={src} target="_blank" rel="noreferrer"
+                              className="block aspect-square bg-stone-100 rounded-md overflow-hidden border border-stone-200">
+                              <img src={src} alt={`Render ${i + 1}`} className="w-full h-full object-cover" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
+
+            <div className="mt-5 pt-4 border-t border-stone-100">
+              <p className="text-xs font-medium text-stone-500 mb-2">Share a new render with the retailer</p>
+              <textarea
+                value={renderNote}
+                onChange={e => setRenderNote(e.target.value)}
+                rows={2}
+                maxLength={1000}
+                placeholder="Optional: what changed in this round (e.g. 'Enlarged centre stone, switched to hidden halo')"
+                className={`${inp} resize-none mb-2`}
+                disabled={uploading}
+              />
+              <label className={`flex items-center gap-2 border border-dashed border-stone-200 rounded-lg px-3 py-2 text-sm cursor-pointer w-fit ${uploading ? 'text-stone-300' : 'text-stone-600 hover:bg-stone-50'}`}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={e => { handleRenderUpload(e.target.files); e.currentTarget.value = '' }}
+                />
+                <Upload className={`w-4 h-4 ${uploading ? 'animate-pulse' : ''}`} />
+                {uploading ? 'Uploading...' : 'Upload render images'}
+              </label>
+              <p className="text-[11px] text-stone-400 mt-2">
+                Each upload is logged as a new revision so the retailer can see how the design evolved. The request will be marked as sent.
+              </p>
+            </div>
+          </div>
 
           {req.reference_images && req.reference_images.length > 0 && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
