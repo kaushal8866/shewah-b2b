@@ -165,10 +165,16 @@ export default function ManufacturingPartnerDetailPage() {
               <Package className="w-4 h-4" /> New order
             </Link>
             {isMaster && (
-              <Link href={`/manufacturing/partners/${id}/float`}
-                className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
-                <Layers className="w-4 h-4" /> Manage float
-              </Link>
+              <>
+                <Link href={`/manufacturing/partners/${id}/float`}
+                  className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
+                  <Layers className="w-4 h-4" /> Manage float
+                </Link>
+                <Link href={`/manufacturing/partners/${id}/reconciliation`}
+                  className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
+                  <Layers className="w-4 h-4" /> Reconciliation
+                </Link>
+              </>
             )}
           </div>
 

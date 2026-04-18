@@ -72,6 +72,11 @@ export default withAuth(
       return NextResponse.redirect(new URL('/manufacturing', req.url))
     }
 
+    // Gold reconciliation report is master-only
+    if (/^\/manufacturing\/partners\/[^/]+\/reconciliation/.test(pathname) && token.role !== 'master') {
+      return NextResponse.redirect(new URL('/manufacturing', req.url))
+    }
+
     return NextResponse.next()
   },
   {
