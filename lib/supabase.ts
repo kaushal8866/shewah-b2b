@@ -3,7 +3,143 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Used for non-DB features (storage, auth, realtime). DB operations route through /api/db.
+const baseClient = createClient(supabaseUrl, supabaseAnonKey)
+
+type Op = 'select' | 'insert' | 'update' | 'delete' | 'upsert'
+
+class QueryBuilder implements PromiseLike<{ data: any; error: any; count?: number | null }> {
+  private filters: any[] = []
+  private orderList: any[] = []
+  private limitN: number | undefined
+  private rangeFromTo: { from: number; to: number } | undefined
+  private selectCols: string | undefined
+  private singleRow = false
+  private maybeSingleRow = false
+  private returning = false
+  private headOnly = false
+  private countMode: 'exact' | 'planned' | 'estimated' | undefined
+  private executed: Promise<any> | null = null
+
+  constructor(
+    private table: string,
+    private op: Op,
+    private values: any = undefined,
+    private opts: any = undefined
+  ) {}
+
+  // Filters
+  eq(col: string, val: any) { this.filters.push({ type: 'eq', col, val }); return this }
+  neq(col: string, val: any) { this.filters.push({ type: 'neq', col, val }); return this }
+  gt(col: string, val: any) { this.filters.push({ type: 'gt', col, val }); return this }
+  gte(col: string, val: any) { this.filters.push({ type: 'gte', col, val }); return this }
+  lt(col: string, val: any) { this.filters.push({ type: 'lt', col, val }); return this }
+  lte(col: string, val: any) { this.filters.push({ type: 'lte', col, val }); return this }
+  in(col: string, val: any[]) { this.filters.push({ type: 'in', col, val }); return this }
+  is(col: string, val: any) { this.filters.push({ type: 'is', col, val }); return this }
+  like(col: string, val: any) { this.filters.push({ type: 'like', col, val }); return this }
+  ilike(col: string, val: any) { this.filters.push({ type: 'ilike', col, val }); return this }
+  contains(col: string, val: any) { this.filters.push({ type: 'contains', col, val }); return this }
+  containedBy(col: string, val: any) { this.filters.push({ type: 'containedBy', col, val }); return this }
+  match(obj: Record<string, any>) { this.filters.push({ type: 'match', col: '__match__', val: obj }); return this }
+  or(filters: string) { this.filters.push({ type: 'or', col: '__or__', val: filters }); return this }
+  not(col: string, opr: string, val: any) { this.filters.push({ type: 'not', col, opr, val }); return this }
+
+  // Modifiers
+  select(cols?: string, opts?: { count?: 'exact' | 'planned' | 'estimated'; head?: boolean }) {
+    if (this.op === 'select') {
+      this.selectCols = cols || '*'
+    } else {
+      this.returning = true
+      this.selectCols = cols || '*'
+    }
+    if (opts?.count) this.countMode = opts.count
+    if (opts?.head) this.headOnly = true
+    return this
+  }
+  order(col: string, opts?: { ascending?: boolean; nullsFirst?: boolean }) {
+    this.orderList.push({ col, ascending: opts?.ascending !== false, nullsFirst: opts?.nullsFirst })
+    return this
+  }
+  limit(n: number) { this.limitN = n; return this }
+  range(from: number, to: number) { this.rangeFromTo = { from, to }; return this }
+  single() { this.singleRow = true; return this }
+  maybeSingle() { this.maybeSingleRow = true; return this }
+
+  private exec(): Promise<{ data: any; error: any; count?: number | null }> {
+    if (this.executed) return this.executed
+    this.executed = (async () => {
+      try {
+        const res = await fetch('/api/db', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            table: this.table,
+            op: this.op,
+            values: this.values,
+            opts: this.opts,
+            filters: this.filters,
+            select: this.selectCols,
+            order: this.orderList,
+            limit: this.limitN,
+            range: this.rangeFromTo,
+            single: this.singleRow,
+            maybeSingle: this.maybeSingleRow,
+            returning: this.returning,
+            head: this.headOnly,
+            count: this.countMode,
+          }),
+        })
+        let json: any = null
+        try { json = await res.json() } catch { /* non-json */ }
+        if (!res.ok) {
+          return {
+            data: null,
+            error: { message: json?.error?.message || `Request failed (${res.status})`, status: res.status },
+          }
+        }
+        return { data: json?.data ?? null, error: json?.error ?? null, count: json?.count ?? null }
+      } catch (err: any) {
+        return { data: null, error: { message: err?.message || 'Network error' } }
+      }
+    })()
+    return this.executed
+  }
+
+  then<TResult1 = { data: any; error: any }, TResult2 = never>(
+    onfulfilled?: ((value: any) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
+  ): Promise<TResult1 | TResult2> {
+    return this.exec().then(onfulfilled, onrejected)
+  }
+  catch(onrejected: any) { return this.exec().catch(onrejected) }
+  finally(onfinally: any) { return this.exec().finally(onfinally) }
+}
+
+class TableProxy {
+  constructor(private table: string) {}
+
+  select(cols: string = '*', opts?: { count?: 'exact' | 'planned' | 'estimated'; head?: boolean }) {
+    const b = new QueryBuilder(this.table, 'select')
+    b.select(cols, opts)
+    return b
+  }
+  insert(values: any) { return new QueryBuilder(this.table, 'insert', values) }
+  update(values: any) { return new QueryBuilder(this.table, 'update', values) }
+  delete() { return new QueryBuilder(this.table, 'delete') }
+  upsert(values: any, opts?: any) { return new QueryBuilder(this.table, 'upsert', values, opts) }
+}
+
+export const supabase: any = {
+  from(table: string) { return new TableProxy(table) },
+  storage: baseClient.storage,
+  auth: baseClient.auth,
+  rpc: baseClient.rpc.bind(baseClient),
+  channel: baseClient.channel.bind(baseClient),
+  removeChannel: baseClient.removeChannel.bind(baseClient),
+  removeAllChannels: baseClient.removeAllChannels.bind(baseClient),
+}
 
 // ── Type definitions ──────────────────────────────────────
 

@@ -87,3 +87,4 @@ Public routes (no auth):
 - AppShell skips rendering for `/login`, `/setup/*`, and `/showcase/*` paths
 - `order_pipeline` view used for orders list
 - Auth: username/password via `app_users` table (service role key required for RLS bypass)
+- All client-side `supabase.from(...)` calls go through `/api/db` (NextAuth-gated DB proxy at `app/api/db/route.ts`) using service role; client wrapper in `lib/supabase.ts` is a thenable QueryBuilder. `app_users` is master-only. Public `/showcase/*` and `/api/showcase/*` use their own server routes with `supabaseAdmin`.
