@@ -32,10 +32,12 @@ export default function CadRequestDetailPage() {
   const [form, setForm] = useState<any>({})
   const [uploading, setUploading] = useState(false)
   const [renderNote, setRenderNote] = useState('')
-  // Staged reference image URLs uploaded ahead of the render share. They get
+  // Staged reference images uploaded ahead of the render share. They get
   // attached to the next render upload (saved on the same cad_revisions row)
   // so retailers see annotations / before-after sketches alongside the render.
-  const [stagedRefs, setStagedRefs] = useState<string[]>([])
+  // Each item carries an optional caption (Task 42) so the retailer knows what
+  // they're looking at (e.g. "Before halo change", "Inspiration").
+  const [stagedRefs, setStagedRefs] = useState<{ url: string; caption: string }[]>([])
   const [refUploading, setRefUploading] = useState(false)
 
   // Live updates: when the retailer acts on the CAD they're currently
@@ -49,7 +51,7 @@ export default function CadRequestDetailPage() {
       // Refresh the revisions timeline to show the retailer's new entry.
       supabase
         .from('cad_revisions')
-        .select('id, created_at, kind, author, note, render_images, reference_images')
+        .select('id, created_at, kind, author, note, render_images, reference_images, reference_captions')
         .eq('cad_request_id', id)
         .order('created_at', { ascending: true })
         .then(({ data }: any) => setRevisions(data || []))
@@ -70,7 +72,7 @@ export default function CadRequestDetailPage() {
     setForm(data)
     const { data: revs } = await supabase
       .from('cad_revisions')
-      .select('id, created_at, kind, author, note, render_images, reference_images, acknowledged_at')
+      .select('id, created_at, kind, author, note, render_images, reference_images, reference_captions, acknowledged_at')
       .eq('cad_request_id', id)
       .order('created_at', { ascending: true })
     setRevisions(revs || [])
@@ -119,7 +121,12 @@ export default function CadRequestDetailPage() {
         author: 'admin',
         note: renderNote.trim() || null,
         render_images: newUrls,
-        reference_images: stagedRefs.length > 0 ? stagedRefs : null,
+        reference_images: stagedRefs.length > 0 ? stagedRefs.map(r => r.url) : null,
+        // Parallel array of captions; preserve length/index alignment with
+        // reference_images so empty captions don't shift other entries.
+        reference_captions: stagedRefs.length > 0
+          ? stagedRefs.map(r => r.caption.trim() || null)
+          : null,
       })
       if (e2) { alert('Saved render but failed to log revision: ' + e2.message) }
 
@@ -151,14 +158,20 @@ export default function CadRequestDetailPage() {
           alert('Reference upload failed: ' + (err instanceof Error ? err.message : String(err)))
         }
       }
-      if (newUrls.length > 0) setStagedRefs(prev => [...prev, ...newUrls])
+      if (newUrls.length > 0) {
+        setStagedRefs(prev => [...prev, ...newUrls.map(url => ({ url, caption: '' }))])
+      }
     } finally {
       setRefUploading(false)
     }
   }
 
   function removeStagedRef(url: string) {
-    setStagedRefs(prev => prev.filter(u => u !== url))
+    setStagedRefs(prev => prev.filter(r => r.url !== url))
+  }
+
+  function setStagedRefCaption(url: string, caption: string) {
+    setStagedRefs(prev => prev.map(r => (r.url === url ? { ...r, caption } : r)))
   }
 
   async function handleSave() {
@@ -335,6 +348,7 @@ export default function CadRequestDetailPage() {
                   const imgs: string[] = Array.isArray(r.render_images) ? r.render_images : []
                   const refs: string[] = Array.isArray(r.reference_images) ? r.reference_images : []
                   const ackedAt: string | null = r.kind === 'revision_request' ? (r.acknowledged_at || null) : null
+                  const refCaps: (string | null)[] = Array.isArray(r.reference_captions) ? r.reference_captions : []
                   return (
                     <li key={r.id} className="relative">
                       <span className={`absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full ${dot} ring-2 ring-white`} />
@@ -370,12 +384,20 @@ export default function CadRequestDetailPage() {
                         <div className="mt-2">
                           <p className="text-[11px] text-stone-400 mb-1">Reference / annotation images</p>
                           <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-                            {refs.map((src, i) => (
-                              <a key={i} href={src} target="_blank" rel="noreferrer"
-                                className="block aspect-square bg-stone-50 rounded-md overflow-hidden border border-dashed border-stone-300">
-                                <img src={src} alt={`Reference ${i + 1}`} className="w-full h-full object-cover" />
-                              </a>
-                            ))}
+                            {refs.map((src, i) => {
+                              const caption = (refCaps[i] || '').trim()
+                              return (
+                                <div key={i} className="flex flex-col gap-0.5">
+                                  <a href={src} target="_blank" rel="noreferrer"
+                                    className="block aspect-square bg-stone-50 rounded-md overflow-hidden border border-dashed border-stone-300">
+                                    <img src={src} alt={caption || `Reference ${i + 1}`} className="w-full h-full object-cover" />
+                                  </a>
+                                  {caption && (
+                                    <p className="text-[10px] text-stone-500 leading-snug line-clamp-2" title={caption}>{caption}</p>
+                                  )}
+                                </div>
+                              )
+                            })}
                           </div>
                         </div>
                       )}
@@ -399,21 +421,32 @@ export default function CadRequestDetailPage() {
               {stagedRefs.length > 0 && (
                 <div className="mb-2">
                   <p className="text-[11px] text-stone-500 mb-1">
-                    {stagedRefs.length} reference image{stagedRefs.length === 1 ? '' : 's'} attached to this round
+                    {stagedRefs.length} reference image{stagedRefs.length === 1 ? '' : 's'} attached to this round · add an optional caption so the retailer knows what each one shows
                   </p>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
-                    {stagedRefs.map((src, i) => (
-                      <div key={src} className="relative aspect-square bg-stone-50 rounded-md overflow-hidden border border-dashed border-stone-300 group">
-                        <img src={src} alt={`Reference ${i + 1}`} className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeStagedRef(src)}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {stagedRefs.map((ref, i) => (
+                      <div key={ref.url} className="border border-dashed border-stone-300 rounded-md p-1.5 bg-stone-50">
+                        <div className="relative aspect-square bg-white rounded overflow-hidden border border-stone-200 mb-1.5">
+                          <img src={ref.url} alt={`Reference ${i + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeStagedRef(ref.url)}
+                            disabled={uploading}
+                            className="absolute top-0.5 right-0.5 bg-white/90 text-stone-600 rounded-full p-0.5 hover:bg-white hover:text-red-500 disabled:opacity-50"
+                            aria-label="Remove reference"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={ref.caption}
+                          onChange={e => setStagedRefCaption(ref.url, e.target.value)}
+                          maxLength={120}
                           disabled={uploading}
-                          className="absolute top-0.5 right-0.5 bg-white/90 text-stone-600 rounded-full p-0.5 hover:bg-white hover:text-red-500 disabled:opacity-50"
-                          aria-label="Remove reference"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
+                          placeholder='Caption (e.g. "Before halo change")'
+                          className="w-full border border-stone-200 rounded px-2 py-1 text-xs focus:border-[#1E3A5F] outline-none bg-white"
+                        />
                       </div>
                     ))}
                   </div>

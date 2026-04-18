@@ -198,7 +198,9 @@ create table if not exists cad_revisions (
   kind            text not null check (kind in ('render','revision_request','approval')),
   author          text not null check (author in ('admin','retailer')),
   note            text,
-  render_images   text[]
+  render_images   text[],
+  reference_images text[],
+  reference_captions text[]
 );
 
 create index if not exists cad_revisions_request_id_idx

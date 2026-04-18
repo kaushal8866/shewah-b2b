@@ -206,6 +206,7 @@ export default function RetailerOrderDetail() {
                   const imgs: string[] = Array.isArray(r.render_images) ? r.render_images : []
                   const refs: string[] = Array.isArray(r.reference_images) ? r.reference_images : []
                   const ackedAt: string | null = r.kind === 'revision_request' ? (r.acknowledged_at || null) : null
+                  const refCaps: (string | null)[] = Array.isArray(r.reference_captions) ? r.reference_captions : []
                   return (
                     <li key={r.id} className="relative">
                       <span className={`absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full ${dot} ring-2 ring-white`} />
@@ -236,12 +237,20 @@ export default function RetailerOrderDetail() {
                         <div className="mt-2">
                           <p className="text-[11px] text-stone-400 mb-1">References / annotations</p>
                           <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-                            {refs.map((src, i) => (
-                              <a key={i} href={src} target="_blank" rel="noopener noreferrer"
-                                className="block aspect-square bg-stone-50 rounded-md overflow-hidden border border-dashed border-stone-300">
-                                <img src={src} alt={`Reference ${i + 1}`} className="w-full h-full object-cover" />
-                              </a>
-                            ))}
+                            {refs.map((src, i) => {
+                              const caption = (refCaps[i] || '').trim()
+                              return (
+                                <div key={i} className="flex flex-col gap-0.5">
+                                  <a href={src} target="_blank" rel="noopener noreferrer"
+                                    className="block aspect-square bg-stone-50 rounded-md overflow-hidden border border-dashed border-stone-300">
+                                    <img src={src} alt={caption || `Reference ${i + 1}`} className="w-full h-full object-cover" />
+                                  </a>
+                                  {caption && (
+                                    <p className="text-[11px] text-stone-600 leading-snug" title={caption}>{caption}</p>
+                                  )}
+                                </div>
+                              )
+                            })}
                           </div>
                         </div>
                       )}

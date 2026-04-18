@@ -58,7 +58,7 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
       // retailer can see how the design evolved across rounds.
       const { data: revs } = await supabaseAdmin
         .from('cad_revisions')
-        .select('id, created_at, kind, author, note, render_images, reference_images, acknowledged_at')
+        .select('id, created_at, kind, author, note, render_images, reference_images, reference_captions, acknowledged_at')
         .eq('cad_request_id', cad.id)
         .order('created_at', { ascending: true })
       cad_revisions = revs || []
