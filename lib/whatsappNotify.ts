@@ -124,6 +124,101 @@ async function postToWebhook(
 }
 
 /**
+ * Notifies the internal design team (the shop's configured WhatsApp number)
+ * the instant a retailer approves a CAD or requests a revision from the
+ * portal. Re-uses the same webhook plumbing as retailer-facing pings.
+ * Always swallows errors — never throws.
+ */
+export async function notifyInternalCadAction(opts: {
+  orderId: string
+  action: 'approve' | 'revise'
+  feedback?: string | null
+}): Promise<void> {
+  try {
+    const { orderId, action, feedback } = opts
+
+    const settings = await loadSettings()
+    if (!settings.enabled) {
+      console.log('[whatsappNotify:internal] skipped: globally disabled', { orderId, action })
+      return
+    }
+
+    // Look up shop / design team WhatsApp number + a friendly business name.
+    const { data: settingRows } = await supabaseAdmin
+      .from('settings')
+      .select('key, value')
+      .in('key', ['whatsapp_number', 'business_name', 'owner_name'])
+    const cfg: Record<string, string> = {}
+    for (const row of settingRows || []) cfg[(row as any).key] = (row as any).value || ''
+
+    const phone = (cfg.whatsapp_number || '').toString().replace(/\D/g, '')
+    if (!phone) {
+      console.log('[whatsappNotify:internal] skipped: no shop whatsapp_number set', { orderId })
+      return
+    }
+
+    const { data: order } = await supabaseAdmin
+      .from('orders')
+      .select('id, order_number, partner_id, cad_request_id')
+      .eq('id', orderId)
+      .maybeSingle()
+    if (!order) {
+      console.log('[whatsappNotify:internal] skipped: order missing', { orderId })
+      return
+    }
+
+    let storeName = ''
+    if (order.partner_id) {
+      const { data: partner } = await supabaseAdmin
+        .from('partners')
+        .select('store_name')
+        .eq('id', order.partner_id)
+        .maybeSingle()
+      storeName = (partner as any)?.store_name || ''
+    }
+
+    const orderNum = order.order_number || order.id.slice(0, 8)
+    const baseUrl = (settings.publicBaseUrl || '').replace(/\/$/, '')
+    const adminUrl = order.cad_request_id
+      ? `${baseUrl}/cad-requests/${order.cad_request_id}`
+      : `${baseUrl}/cad-requests`
+    const greet = cfg.owner_name ? `Hi ${cfg.owner_name.split(' ')[0]}` : 'Heads up'
+    const who = storeName ? ` from ${storeName}` : ''
+
+    const lines: string[] = []
+    if (action === 'approve') {
+      lines.push(`${greet}, the retailer${who} just APPROVED the CAD on order ${orderNum}.`)
+      if (feedback) lines.push(`Their note: ${feedback}`)
+      lines.push(`Open: ${adminUrl}`)
+    } else {
+      lines.push(`${greet}, the retailer${who} requested a CAD REVISION on order ${orderNum}.`)
+      if (feedback) lines.push(`Their feedback: ${feedback}`)
+      lines.push(`Open: ${adminUrl}`)
+    }
+
+    const trigger = action === 'approve' ? 'cad_approved_internal' : 'cad_revision_internal'
+    const result = await postToWebhook(settings, {
+      phone,
+      message: lines.join('\n'),
+      orderId: order.id,
+      trigger,
+    })
+    if (!result.ok) {
+      console.error('[whatsappNotify:internal] send failed', {
+        orderId,
+        action,
+        status: result.status,
+        body: result.body,
+      })
+    } else {
+      console.log('[whatsappNotify:internal] sent', { orderId, action, phone: phone.slice(-4) })
+    }
+  } catch (err: any) {
+    console.error('[whatsappNotify:internal] unexpected error', err?.message || err)
+  }
+}
+
+/**
  * Detects retailer-facing milestone changes between a previous order row and
  * the new values that were just written, then fires a WhatsApp notification
  * per change. Always swallows errors — never throws.
