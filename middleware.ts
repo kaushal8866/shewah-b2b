@@ -16,11 +16,24 @@ export default withAuth(
 
     const isMfgPortal = pathname.startsWith('/portal/manufacturer')
     const isMfgApi    = pathname.startsWith('/api/portal/manufacturer')
+    const isRetPortal = pathname.startsWith('/portal/retailer')
+    const isRetApi    = pathname.startsWith('/api/portal/retailer')
 
     // Manufacturer-only namespaces (page + API).
     if (isMfgPortal || isMfgApi) {
       if (role !== 'manufacturer') {
         if (isMfgApi) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+        return NextResponse.redirect(new URL('/', req.url))
+      }
+      return NextResponse.next()
+    }
+
+    // Retailer-only namespaces (page + API).
+    if (isRetPortal || isRetApi) {
+      if (role !== 'retailer') {
+        if (isRetApi) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
         return NextResponse.redirect(new URL('/', req.url))
@@ -34,6 +47,14 @@ export default withAuth(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
       return NextResponse.redirect(new URL('/portal/manufacturer', req.url))
+    }
+
+    // Retailers are sandboxed to their portal.
+    if (role === 'retailer') {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      return NextResponse.redirect(new URL('/portal/retailer', req.url))
     }
 
     // Settings is master-only

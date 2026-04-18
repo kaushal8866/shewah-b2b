@@ -1,0 +1,228 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowLeft, Package, Truck, Clock, FileText } from 'lucide-react'
+
+const STATUS_STYLES: Record<string, string> = {
+  brief_received: 'bg-blue-100 text-blue-700',
+  cad_in_progress: 'bg-purple-100 text-purple-700',
+  cad_approved: 'bg-purple-100 text-purple-700',
+  in_production: 'bg-amber-100 text-amber-700',
+  qc: 'bg-amber-100 text-amber-700',
+  dispatched: 'bg-indigo-100 text-indigo-700',
+  delivered: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
+}
+
+const PIPELINE = [
+  { value: 'brief_received', label: 'Brief received' },
+  { value: 'cad_in_progress', label: 'CAD in progress' },
+  { value: 'cad_approved', label: 'CAD approved' },
+  { value: 'in_production', label: 'In production' },
+  { value: 'qc', label: 'Quality check' },
+  { value: 'dispatched', label: 'Dispatched' },
+  { value: 'delivered', label: 'Delivered' },
+]
+
+function fmtDate(d?: string | null) {
+  if (!d) return '—'
+  try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return d }
+}
+
+export default function RetailerOrderDetail() {
+  const { id } = useParams<{ id: string }>()
+  const [order, setOrder] = useState<any>(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch(`/api/portal/retailer/orders/${id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) setError(d.error)
+        else setOrder(d.order)
+      })
+      .catch(e => setError(e.message))
+  }, [id])
+
+  if (error) {
+    return (
+      <div className="p-4 lg:p-7 max-w-3xl mx-auto">
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>
+        <Link href="/portal/retailer/orders" className="inline-block mt-3 text-sm text-[#C49C64]">← Back to orders</Link>
+      </div>
+    )
+  }
+
+  if (!order) {
+    return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
+  }
+
+  const currentIdx = PIPELINE.findIndex(p => p.value === order.status)
+  const isCancelled = order.status === 'cancelled'
+  const referenceImages: string[] = order.brief_images || []
+  const productImages: string[] = order.product?.photo_urls || []
+  const heroImage = productImages[0] || referenceImages[0]
+
+  return (
+    <div className="p-4 lg:p-7 max-w-4xl mx-auto">
+      <Link href="/portal/retailer/orders" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800 mb-4">
+        <ArrowLeft className="w-4 h-4" /> Back to orders
+      </Link>
+
+      <div className="bg-white rounded-xl border border-stone-200 p-5 mb-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-xl font-semibold text-stone-900">{order.order_number}</h1>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[order.status] || 'bg-stone-100 text-stone-600'}`}>
+                {order.status?.replace(/_/g, ' ')}
+              </span>
+              {order.type === 'custom' && (
+                <span className="text-[10px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded font-medium">CUSTOM</span>
+              )}
+            </div>
+            <p className="text-sm text-stone-500">
+              Ordered {fmtDate(order.order_date)} · Expected {fmtDate(order.expected_delivery)}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-stone-900">₹{(order.total_amount || 0).toLocaleString('en-IN')}</p>
+            {order.balance_due > 0 ? (
+              <p className="text-xs text-amber-600">₹{order.balance_due.toLocaleString('en-IN')} balance due</p>
+            ) : (
+              <p className="text-xs text-green-600">Paid in full</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {!isCancelled && (
+        <div className="bg-white rounded-xl border border-stone-200 p-5 mb-4">
+          <h2 className="font-medium text-stone-900 mb-4">Progress</h2>
+          <div className="space-y-2">
+            {PIPELINE.map((s, i) => {
+              const done = i < currentIdx
+              const active = i === currentIdx
+              return (
+                <div key={s.value} className="flex items-center gap-3">
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                    done ? 'bg-[#C49C64] border-[#C49C64] text-white' :
+                    active ? 'border-[#C49C64] text-[#C49C64]' :
+                    'border-stone-200 text-stone-300'
+                  }`}>
+                    {done ? '✓' : i + 1}
+                  </div>
+                  <p className={`text-sm ${done || active ? 'text-stone-900 font-medium' : 'text-stone-400'}`}>
+                    {s.label}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="bg-white rounded-xl border border-stone-200 p-5">
+          <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
+            <Package className="w-4 h-4 text-stone-400" /> What you ordered
+          </h2>
+          {heroImage && (
+            <div className="aspect-video bg-stone-100 rounded-lg overflow-hidden mb-3">
+              <img src={heroImage} alt="" className="w-full h-full object-cover" />
+            </div>
+          )}
+          {order.product && (
+            <div className="mb-3">
+              <p className="text-xs text-stone-400">{order.product.code}</p>
+              <p className="font-medium text-stone-800">{order.product.name}</p>
+            </div>
+          )}
+          {order.brief_text && (
+            <div className="mb-3">
+              <p className="text-xs text-stone-400 mb-1">Design brief</p>
+              <p className="text-sm text-stone-700 whitespace-pre-line">{order.brief_text}</p>
+            </div>
+          )}
+          <dl className="text-sm space-y-1.5">
+            <div className="flex justify-between">
+              <dt className="text-stone-400">Quantity</dt>
+              <dd className="text-stone-700">{order.quantity}</dd>
+            </div>
+            {order.ring_size && (
+              <div className="flex justify-between">
+                <dt className="text-stone-400">Ring size</dt>
+                <dd className="text-stone-700">{order.ring_size}</dd>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <dt className="text-stone-400">Trade price</dt>
+              <dd className="text-stone-700">₹{(order.trade_price || 0).toLocaleString('en-IN')}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-stone-400">Advance paid</dt>
+              <dd className="text-stone-700">₹{(order.advance_paid || 0).toLocaleString('en-IN')}</dd>
+            </div>
+          </dl>
+          {order.special_notes && (
+            <div className="mt-3 pt-3 border-t border-stone-100">
+              <p className="text-xs text-stone-400 mb-1">Your notes</p>
+              <p className="text-sm text-stone-700 whitespace-pre-line">{order.special_notes}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-stone-200 p-5">
+          <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
+            <Truck className="w-4 h-4 text-stone-400" /> Dispatch &amp; delivery
+          </h2>
+          {order.dispatch_date || order.tracking_number || order.courier ? (
+            <dl className="text-sm space-y-1.5">
+              <div className="flex justify-between">
+                <dt className="text-stone-400">Dispatch date</dt>
+                <dd className="text-stone-700">{fmtDate(order.dispatch_date)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-stone-400">Courier</dt>
+                <dd className="text-stone-700">{order.courier || '—'}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-stone-400">Tracking number</dt>
+                <dd className="text-stone-700 font-mono text-xs">{order.tracking_number || '—'}</dd>
+              </div>
+              {order.actual_delivery && (
+                <div className="flex justify-between">
+                  <dt className="text-stone-400">Delivered on</dt>
+                  <dd className="text-green-600 font-medium">{fmtDate(order.actual_delivery)}</dd>
+                </div>
+              )}
+            </dl>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center py-6 text-stone-400">
+              <Clock className="w-8 h-8 mb-2 text-stone-300" />
+              <p className="text-sm">Tracking details will appear once your order is dispatched.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {referenceImages.length > 0 && (
+        <div className="bg-white rounded-xl border border-stone-200 p-5">
+          <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-stone-400" /> Reference images
+          </h2>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {referenceImages.map((src, i) => (
+              <a key={i} href={src} target="_blank" rel="noopener noreferrer"
+                className="block aspect-square bg-stone-100 rounded-lg overflow-hidden">
+                <img src={src} alt="" className="w-full h-full object-cover" />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

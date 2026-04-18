@@ -1,0 +1,130 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { ShoppingBag, ChevronRight, Clock } from 'lucide-react'
+
+const STATUS_STYLES: Record<string, string> = {
+  brief_received: 'bg-blue-100 text-blue-700',
+  cad_in_progress: 'bg-purple-100 text-purple-700',
+  cad_approved: 'bg-purple-100 text-purple-700',
+  in_production: 'bg-amber-100 text-amber-700',
+  qc: 'bg-amber-100 text-amber-700',
+  dispatched: 'bg-indigo-100 text-indigo-700',
+  delivered: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
+}
+
+function fmtDate(d?: string | null) {
+  if (!d) return '—'
+  try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return d }
+}
+
+export default function RetailerOrders() {
+  const [orders, setOrders] = useState<any[] | null>(null)
+  const [error, setError] = useState('')
+  const [filter, setFilter] = useState<'open' | 'delivered' | 'all'>('open')
+
+  useEffect(() => {
+    fetch('/api/portal/retailer/orders')
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) setError(d.error)
+        else setOrders(d.orders || [])
+      })
+      .catch(e => setError(e.message))
+  }, [])
+
+  const filtered = (orders || []).filter(o => {
+    if (filter === 'open') return !['delivered', 'cancelled'].includes(o.status)
+    if (filter === 'delivered') return o.status === 'delivered'
+    return true
+  })
+
+  const counts = {
+    open: (orders || []).filter(o => !['delivered', 'cancelled'].includes(o.status)).length,
+    delivered: (orders || []).filter(o => o.status === 'delivered').length,
+    all: (orders || []).length,
+  }
+
+  return (
+    <div className="p-4 lg:p-7 max-w-4xl mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl bg-[#C49C64]/15 text-[#C49C64] flex items-center justify-center">
+          <ShoppingBag className="w-5 h-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-stone-900">Your orders</h1>
+          <p className="text-stone-500 text-sm">Track every order placed by your store</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-4">{error}</div>
+      )}
+
+      <div className="flex gap-1 bg-stone-100 rounded-xl p-1 mb-5 w-fit">
+        {[
+          { id: 'open' as const, label: `Open (${counts.open})` },
+          { id: 'delivered' as const, label: `Delivered (${counts.delivered})` },
+          { id: 'all' as const, label: `All (${counts.all})` },
+        ].map(t => (
+          <button key={t.id} onClick={() => setFilter(t.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              filter === t.id ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+            }`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {orders === null ? (
+        <p className="text-stone-400 text-sm">Loading...</p>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white rounded-xl border border-stone-200 p-10 text-center">
+          <p className="text-stone-400 text-sm">No orders to show.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(o => (
+            <Link key={o.id} href={`/portal/retailer/orders/${o.id}`}
+              className="block bg-white border border-stone-200 hover:border-[#C49C64] rounded-xl px-4 py-3.5 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="font-medium text-stone-900 text-sm">{o.order_number}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[o.status] || 'bg-stone-100 text-stone-600'}`}>
+                      {o.status?.replace(/_/g, ' ')}
+                    </span>
+                    {o.type === 'custom' && (
+                      <span className="text-[10px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded font-medium">CUSTOM</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-stone-600 truncate">
+                    {o.product?.name || o.brief_text || '—'}
+                  </p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs text-stone-400">
+                    <span>Ordered {fmtDate(o.order_date)}</span>
+                    {o.quantity > 1 && <span>Qty {o.quantity}</span>}
+                    {o.expected_delivery && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Due {fmtDate(o.expected_delivery)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-semibold text-stone-900">₹{(o.total_amount || 0).toLocaleString('en-IN')}</p>
+                  {o.balance_due > 0 && (
+                    <p className="text-[10px] text-amber-600">₹{o.balance_due.toLocaleString('en-IN')} due</p>
+                  )}
+                </div>
+                <ChevronRight className="w-4 h-4 text-stone-300 shrink-0" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

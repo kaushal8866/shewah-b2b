@@ -66,10 +66,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
   }
 
-  const role: 'sub' | 'manufacturer' = requestedRole === 'manufacturer' ? 'manufacturer' : 'sub'
+  const role: 'sub' | 'manufacturer' | 'retailer' =
+    requestedRole === 'manufacturer' ? 'manufacturer'
+    : requestedRole === 'retailer'   ? 'retailer'
+    : 'sub'
+
   if (role === 'manufacturer' && !manufacturingPartnerId) {
     return NextResponse.json(
       { error: 'manufacturingPartnerId required for manufacturer logins' },
+      { status: 400 }
+    )
+  }
+  if (role === 'retailer' && !partnerId) {
+    return NextResponse.json(
+      { error: 'partnerId required for retailer logins' },
       { status: 400 }
     )
   }
@@ -82,12 +92,12 @@ export async function POST(req: Request) {
     password_hash: hash,
     display_name: displayName?.trim() || username.trim(),
     role,
-    permissions: role === 'manufacturer' ? [] : (permissions || []),
+    permissions: role === 'sub' ? (permissions || []) : [],
     is_active: true,
     created_by: session.user.id,
   }
   if (role === 'manufacturer') insert.manufacturing_partner_id = manufacturingPartnerId
-  if (partnerId) insert.partner_id = partnerId
+  if (role === 'retailer')     insert.partner_id = partnerId
 
   const { data, error } = await supabaseAdmin
     .from('app_users')
@@ -108,7 +118,7 @@ export async function PATCH(req: Request) {
   const session = await requireMaster()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
-  const { id, displayName, permissions, isActive, password, manufacturingPartnerId } = await req.json()
+  const { id, displayName, permissions, isActive, password, manufacturingPartnerId, partnerId } = await req.json()
   if (!id) return NextResponse.json({ error: 'User ID required' }, { status: 400 })
 
   const supabaseAdmin = getAdminClient()
@@ -118,6 +128,7 @@ export async function PATCH(req: Request) {
   if (permissions !== undefined) updates.permissions = permissions
   if (isActive !== undefined) updates.is_active = isActive
   if (manufacturingPartnerId !== undefined) updates.manufacturing_partner_id = manufacturingPartnerId
+  if (partnerId !== undefined) updates.partner_id = partnerId
   if (password) {
     if (password.length < 6) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })

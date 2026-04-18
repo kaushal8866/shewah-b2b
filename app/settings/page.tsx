@@ -43,10 +43,12 @@ export default function SettingsPage() {
   const [newUser, setNewUser] = useState({
     username: '', displayName: '', password: '',
     permissions: [] as string[],
-    role: 'sub' as 'sub' | 'manufacturer',
+    role: 'sub' as 'sub' | 'manufacturer' | 'retailer',
     manufacturingPartnerId: '',
+    partnerId: '',
   })
   const [mfgPartners, setMfgPartners] = useState<MfgPartner[]>([])
+  const [retailPartners, setRetailPartners] = useState<{ id: string; store_name: string; city?: string }[]>([])
   const [userSaving, setUserSaving] = useState(false)
   const [userError, setUserError] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -65,6 +67,9 @@ export default function SettingsPage() {
       loadUsers()
       supabase.from('manufacturing_partners').select('id, name, city').order('name').then(({ data }) => {
         setMfgPartners(data || [])
+      })
+      supabase.from('partners').select('id, store_name, city').order('store_name').then(({ data }) => {
+        setRetailPartners(data || [])
       })
     }
   }, [tab])
@@ -98,6 +103,9 @@ export default function SettingsPage() {
     if (newUser.role === 'manufacturer' && !newUser.manufacturingPartnerId) {
       setUserError('Pick a manufacturing partner for this login'); return
     }
+    if (newUser.role === 'retailer' && !newUser.partnerId) {
+      setUserError('Pick a retailer (partner) for this login'); return
+    }
     setUserSaving(true)
     setUserError('')
     const res = await fetch('/api/users', {
@@ -109,7 +117,7 @@ export default function SettingsPage() {
     setUserSaving(false)
     if (!res.ok) { setUserError(data.error || 'Failed to create user'); return }
     setShowNewUser(false)
-    setNewUser({ username: '', displayName: '', password: '', permissions: [], role: 'sub', manufacturingPartnerId: '' })
+    setNewUser({ username: '', displayName: '', password: '', permissions: [], role: 'sub', manufacturingPartnerId: '', partnerId: '' })
     loadUsers()
   }
 
@@ -292,10 +300,11 @@ export default function SettingsPage() {
               </div>
               <div className="mb-4">
                 <label className={label}>User type</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {[
                     { id: 'sub', label: 'Staff (admin)', desc: 'Internal team member' },
                     { id: 'manufacturer', label: 'Manufacturer', desc: 'Workshop / karigar login' },
+                    { id: 'retailer', label: 'Retailer', desc: 'Partner store login' },
                   ].map(r => (
                     <button key={r.id} type="button"
                       onClick={() => setNewUser(prev => ({ ...prev, role: r.id as any }))}
@@ -330,6 +339,19 @@ export default function SettingsPage() {
                       ))}
                     </select>
                     <p className="text-xs text-stone-400 mt-1">Manufacturer will only see orders assigned to this partner.</p>
+                  </div>
+                )}
+                {newUser.role === 'retailer' && (
+                  <div className="sm:col-span-2">
+                    <label className={label}>Retailer (partner store) *</label>
+                    <select className={inp} value={newUser.partnerId}
+                      onChange={e => setNewUser(prev => ({ ...prev, partnerId: e.target.value }))}>
+                      <option value="">Select retailer...</option>
+                      {retailPartners.map(p => (
+                        <option key={p.id} value={p.id}>{p.store_name}{p.city ? ` — ${p.city}` : ''}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-stone-400 mt-1">Retailer will only see their own orders and the catalog. They cannot see costs, manufacturers or ledger.</p>
                   </div>
                 )}
                 <div className="sm:col-span-2">
@@ -468,6 +490,9 @@ export default function SettingsPage() {
                         {u.role === 'manufacturer' && (
                           <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">MANUFACTURER</span>
                         )}
+                        {u.role === 'retailer' && (
+                          <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-medium">RETAILER</span>
+                        )}
                         {!u.is_active && (
                           <span className="text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded font-medium">INACTIVE</span>
                         )}
@@ -486,6 +511,14 @@ export default function SettingsPage() {
                           {(() => {
                             const p = mfgPartners.find(x => x.id === u.manufacturing_partner_id)
                             return p ? `Linked to ${p.name}` : 'Linked manufacturing partner'
+                          })()}
+                        </p>
+                      )}
+                      {u.role === 'retailer' && (
+                        <p className="text-xs text-stone-400 mt-0.5 truncate">
+                          {(() => {
+                            const p = retailPartners.find(x => x.id === u.partner_id)
+                            return p ? `Linked to ${p.store_name}` : 'Linked retailer partner'
                           })()}
                         </p>
                       )}
