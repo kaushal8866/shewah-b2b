@@ -323,6 +323,19 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
+                <label className={label}>Inbound webhook bearer token (optional)</label>
+                <input
+                  type="password"
+                  className={input}
+                  value={settings.whatsapp_inbound_token || ''}
+                  onChange={e => set('whatsapp_inbound_token', e.target.value)}
+                  placeholder="Verifies inbound replies posted to /api/whatsapp/inbound"
+                />
+                <p className="text-xs text-stone-400 mt-1">
+                  Used by the inbound webhook so the design team can reply <code>ACK &lt;order#&gt;</code> to a CAD revision ping and have it marked acknowledged. Configure your gateway to forward replies to <code>/api/whatsapp/inbound</code> with this token as <code>Authorization: Bearer ...</code>.
+                </p>
+              </div>
+              <div>
                 <label className={label}>Public app URL (used in message links)</label>
                 <input
                   className={input}

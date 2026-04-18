@@ -136,3 +136,11 @@ Retailer Portal (Task #7 — uses the same `partner_id` column added in Task #6 
 - `order_pipeline` view used for orders list
 - Auth: username/password via `app_users` table (service role key required for RLS bypass)
 - All client-side `supabase.from(...)` calls go through `/api/db` (NextAuth-gated DB proxy at `app/api/db/route.ts`) using service role; client wrapper in `lib/supabase.ts` is a thenable QueryBuilder. `app_users` is master-only. Public `/showcase/*` and `/api/showcase/*` use their own server routes with `supabaseAdmin`. The `/api/db` proxy is restricted to roles `master | sub` only — manufacturer/retailer logins must use their own portal API endpoints.
+
+## CAD revision WhatsApp acknowledgement (Task #40 — extends `scripts/migrate_task21_cad_revisions.sql`)
+
+- Outbound revision ping in `lib/whatsappNotify.ts → notifyInternalCadAction('revise')` now appends `Reply "ACK <order#>" to mark this revision as acknowledged.` so the design team can close the loop without opening the dashboard.
+- New inbound webhook `POST /api/whatsapp/inbound` parses `ACK <order#>` (case-insensitive, allows `#`/`:`/`-` separators), looks up the order by `order_number`, finds the latest unacknowledged `revision_request` row in `cad_revisions` for that order's CAD request, and stamps `acknowledged_at = now()`. Verifies sender phone (last 10 digits) against `settings.whatsapp_number` and, if `settings.whatsapp_inbound_token` is set, requires `Authorization: Bearer <token>`. `GET` echoes `hub.challenge` for Meta-style webhook verification.
+- Excluded from NextAuth via the middleware matcher (`api/whatsapp` added).
+- Migration extension adds `cad_revisions.acknowledged_at timestamptz` and seeds `settings.whatsapp_inbound_token`.
+- Retailer order page (`/portal/retailer/orders/[id]`) and admin CAD detail page show an "Acknowledged by design team · <date>" indicator on the revision row (and as a header pill on the retailer side); admin page also shows an "Awaiting acknowledgement" hint with the reply command. Settings → Retailer WhatsApp notifications gains the inbound bearer token field.

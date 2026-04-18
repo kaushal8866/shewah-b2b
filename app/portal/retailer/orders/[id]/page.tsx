@@ -152,11 +152,24 @@ export default function RetailerOrderDetail() {
                 Approved {cad.approved_date ? `· ${fmtDate(cad.approved_date)}` : ''}
               </span>
             )}
-            {cadStatus === 'revision_requested' && (
-              <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">
-                Revision requested
-              </span>
-            )}
+            {cadStatus === 'revision_requested' && (() => {
+              // Surface latest revision_request acknowledgement next to the pill
+              // so the retailer immediately sees the design team is on it.
+              const lastRev = [...revisions]
+                .reverse()
+                .find((r: any) => r.kind === 'revision_request')
+              const ackedAt: string | null = lastRev?.acknowledged_at || null
+              return ackedAt ? (
+                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700 inline-flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Acknowledged by design team · {fmtDate(ackedAt)}
+                </span>
+              ) : (
+                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">
+                  Revision requested
+                </span>
+              )
+            })()}
             {cadStatus === 'sent' && (
               <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">
                 Awaiting your decision
@@ -192,6 +205,7 @@ export default function RetailerOrderDetail() {
                       : 'New CAD render shared'
                   const imgs: string[] = Array.isArray(r.render_images) ? r.render_images : []
                   const refs: string[] = Array.isArray(r.reference_images) ? r.reference_images : []
+                  const ackedAt: string | null = r.kind === 'revision_request' ? (r.acknowledged_at || null) : null
                   return (
                     <li key={r.id} className="relative">
                       <span className={`absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full ${dot} ring-2 ring-white`} />
@@ -201,6 +215,12 @@ export default function RetailerOrderDetail() {
                       </div>
                       {r.note && (
                         <p className="text-sm text-stone-600 whitespace-pre-line mt-1">{r.note}</p>
+                      )}
+                      {ackedAt && (
+                        <p className="text-[11px] text-green-700 mt-1 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Acknowledged by design team · {fmtDate(ackedAt)}
+                        </p>
                       )}
                       {imgs.length > 0 && (
                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 mt-2">

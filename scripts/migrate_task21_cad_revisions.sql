@@ -31,3 +31,16 @@ alter table cad_revisions enable row level security;
 
 create policy "Authenticated users can do everything" on cad_revisions
   for all using (auth.role() = 'authenticated');
+
+-- Task 40: design team can ACK a revision request via inbound WhatsApp reply.
+-- Stamped on the matching `revision_request` row when the design team replies
+-- "ACK <order#>" to the outbound ping. Null = not yet acknowledged.
+alter table cad_revisions
+  add column if not exists acknowledged_at timestamptz;
+
+-- Shared bearer token used by the inbound WhatsApp webhook to verify that
+-- requests are coming from the configured gateway. Empty = no auth required
+-- (development only — set this in production).
+insert into settings (key, value) values
+  ('whatsapp_inbound_token', '')
+on conflict (key) do nothing;

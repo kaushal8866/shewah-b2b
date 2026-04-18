@@ -194,6 +194,9 @@ export async function notifyInternalCadAction(opts: {
       lines.push(`${greet}, the retailer${who} requested a CAD REVISION on order ${orderNum}.`)
       if (feedback) lines.push(`Their feedback: ${feedback}`)
       lines.push(`Open: ${adminUrl}`)
+      // Quick reply hook — see app/api/whatsapp/inbound/route.ts. The retailer
+      // sees an "acknowledged by design team" indicator once this is replied to.
+      lines.push(`Reply "ACK ${orderNum}" to mark this revision as acknowledged.`)
     }
 
     const trigger = action === 'approve' ? 'cad_approved_internal' : 'cad_revision_internal'

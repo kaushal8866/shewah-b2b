@@ -62,7 +62,7 @@ export default function CadRequestDetailPage() {
     setLoading(true)
     const { data } = await supabase
       .from('cad_requests')
-      .select('*, partners(store_name, owner_name, city)')
+      .select('*, partners(store_name, owner_name, city), orders(order_number)')
       .eq('id', id)
       .single()
     if (!data) { router.push('/cad-requests'); return }
@@ -70,7 +70,7 @@ export default function CadRequestDetailPage() {
     setForm(data)
     const { data: revs } = await supabase
       .from('cad_revisions')
-      .select('id, created_at, kind, author, note, render_images, reference_images')
+      .select('id, created_at, kind, author, note, render_images, reference_images, acknowledged_at')
       .eq('cad_request_id', id)
       .order('created_at', { ascending: true })
     setRevisions(revs || [])
@@ -334,6 +334,7 @@ export default function CadRequestDetailPage() {
                       : 'You shared a new CAD render'
                   const imgs: string[] = Array.isArray(r.render_images) ? r.render_images : []
                   const refs: string[] = Array.isArray(r.reference_images) ? r.reference_images : []
+                  const ackedAt: string | null = r.kind === 'revision_request' ? (r.acknowledged_at || null) : null
                   return (
                     <li key={r.id} className="relative">
                       <span className={`absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full ${dot} ring-2 ring-white`} />
@@ -343,6 +344,17 @@ export default function CadRequestDetailPage() {
                       </div>
                       {r.note && (
                         <p className="text-sm text-stone-600 whitespace-pre-line mt-1">{r.note}</p>
+                      )}
+                      {r.kind === 'revision_request' && (
+                        ackedAt ? (
+                          <p className="text-[11px] text-green-700 mt-1">
+                            ✓ Acknowledged by design team · {formatDate(ackedAt)}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-amber-600 mt-1">
+                            Awaiting acknowledgement (reply "ACK {req.orders?.order_number || req.request_number}" to the WhatsApp ping)
+                          </p>
+                        )
                       )}
                       {imgs.length > 0 && (
                         <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 mt-2">
