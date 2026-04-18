@@ -426,3 +426,111 @@ alter table showcase_views enable row level security;
 -- Reads: /api/collections/[id]/views; Writes: /api/showcase/track (both server-side).
 create policy "service_role_all" on showcase_views
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- ── MANUFACTURING + MATERIAL FLOAT (Tasks 5 & 46) ──────────────────────
+-- These tables back the Manufacturing module, the float ledger, and the
+-- karigar-handoff WhatsApp link feature. Fresh installs get them from this
+-- file; existing installs apply scripts/setup_material_ledger.sql and
+-- scripts/setup_mfg_handoff_lifecycle.sql in order.
+
+create table if not exists manufacturing_partners (
+  id            uuid        primary key default gen_random_uuid(),
+  created_at    timestamptz default now(),
+  name          text        not null,
+  city          text,
+  phone         text,
+  status        text        default 'active',
+  notify_whatsapp boolean   default true
+);
+alter table manufacturing_partners enable row level security;
+create policy "service_role_all" on manufacturing_partners
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create table if not exists manufacturing_orders (
+  id                          uuid        primary key default gen_random_uuid(),
+  created_at                  timestamptz default now(),
+  order_number                text        unique,
+  manufacturing_partner_id    uuid        references manufacturing_partners(id) on delete set null,
+  customer_order_id           uuid        references orders(id) on delete set null,
+  description                 text,
+  quantity                    integer     default 1,
+  ring_size                   text,
+  special_notes               text,
+  reference_images            text[]      default '{}',
+  cad_files                   text[]      default '{}',
+  cad_file_names              text[]      default '{}',
+  material_from_float         boolean     default false,
+  gold_weight_required        numeric,
+  gold_weight_actual          numeric,
+  gold_karat                  integer,
+  diamond_weight              numeric,
+  material_notes              text,
+  labour_per_gram             numeric,
+  labour_amount               numeric,
+  other_charges               numeric     default 0,
+  total_manufacturing_cost    numeric,
+  expected_date               date,
+  issued_date                 date,
+  internal_notes              text,
+  status                      text        default 'issued'
+);
+alter table manufacturing_orders enable row level security;
+create policy "service_role_all" on manufacturing_orders
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create table if not exists material_float (
+  id                          uuid        primary key default gen_random_uuid(),
+  created_at                  timestamptz default now(),
+  manufacturing_partner_id    uuid        references manufacturing_partners(id) on delete cascade,
+  material_type               text        not null,    -- gold_14k|gold_18k|gold_22k|diamond_*
+  unit                        text        default 'grams',
+  total_deposited             numeric     default 0,
+  total_returned              numeric     default 0,
+  total_consumed              numeric     default 0,
+  balance                     numeric     default 0,
+  unique (manufacturing_partner_id, material_type)
+);
+alter table material_float enable row level security;
+create policy "service_role_all" on material_float
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create table if not exists material_transactions (
+  id                          uuid        primary key default gen_random_uuid(),
+  date                        timestamptz default now(),
+  float_id                    uuid        references material_float(id) on delete cascade,
+  manufacturing_partner_id    uuid        references manufacturing_partners(id) on delete cascade,
+  manufacturing_order_id      uuid        references manufacturing_orders(id) on delete set null,
+  order_id                    uuid        references orders(id) on delete set null,
+  transaction_type            text        not null check (transaction_type in ('deposit','consumption','return','adjustment')),
+  lifecycle                   text        not null default 'final' check (lifecycle in ('pending','final')),
+  quantity                    numeric     not null,
+  unit                        text        default 'grams',
+  reference                   text,
+  notes                       text,
+  creates_negative_balance    boolean     default false
+);
+alter table material_transactions enable row level security;
+create policy "service_role_all" on material_transactions
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- 48-hour public asset links for karigars (Task 46).
+create table if not exists mfg_share_links (
+  token                       uuid        primary key default gen_random_uuid(),
+  manufacturing_order_id      uuid        not null references manufacturing_orders(id) on delete cascade,
+  created_at                  timestamptz not null default now(),
+  created_by                  uuid        references app_users(id) on delete set null,
+  expires_at                  timestamptz not null,
+  revoked                     boolean     not null default false,
+  last_accessed_at            timestamptz,
+  download_count              integer     not null default 0
+);
+alter table mfg_share_links enable row level security;
+create policy "service_role_all" on mfg_share_links
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- Triggers + atomic helpers live in scripts/setup_mfg_handoff_lifecycle.sql:
+--   • mt_flag_negative_balance() / trigger — flags rows that would drive
+--     material_float.balance negative (skips lifecycle='pending').
+--   • mfg_reserve_float() — locks the float row, recomputes Available, and
+--     inserts a pending consumption atomically (prevents over-issue race).
+--   • mfg_share_link_record_download() / _record_visit() — atomic counters.

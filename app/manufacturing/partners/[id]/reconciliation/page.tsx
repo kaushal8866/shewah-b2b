@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/lib/utils'
 import { ArrowLeft, AlertTriangle, ArrowUpRight, ArrowDownRight, Minus, Layers, ExternalLink, Link2, X, Search } from 'lucide-react'
 
+type Bucket = { material_type: string; available: number; reserved: number; used: number }
+
 const PRESETS = [
   { key: '30',  label: 'Last 30 days' },
   { key: '90',  label: 'Last 90 days' },
@@ -38,6 +40,7 @@ export default function ReconciliationPage() {
   const [transactions, setTransactions] = useState<any[]>([])
   const [orders, setOrders] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
+  const [buckets, setBuckets] = useState<Bucket[]>([])
 
   // Attach-order modal state
   const [attachingTx, setAttachingTx] = useState<any>(null)
@@ -49,6 +52,10 @@ export default function ReconciliationPage() {
   useEffect(() => {
     supabase.from('manufacturing_partners').select('id,name,city').eq('id', partnerId).single()
       .then(({ data }: { data: any }) => setPartner(data))
+    fetch(`/api/manufacturing/partners/${partnerId}/buckets`)
+      .then(r => r.json())
+      .then(d => setBuckets(d.buckets || []))
+      .catch(() => setBuckets([]))
   }, [partnerId])
 
   useEffect(() => { load() }, [partnerId, preset])
@@ -215,6 +222,39 @@ export default function ReconciliationPage() {
           <Layers className="w-4 h-4" /> Float
         </Link>
       </div>
+
+      {/* Live three-bucket lifecycle (independent of period filter) */}
+      {buckets.length > 0 && (
+        <div className="bg-white rounded-xl border border-stone-200 p-4 mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-medium text-stone-900 text-sm">Live float lifecycle</h2>
+            <span className="text-xs text-stone-400">Available · Reserved · Used</span>
+          </div>
+          <div className="space-y-3">
+            {buckets.map(b => (
+              <div key={b.material_type} className="bg-stone-50 border border-stone-200 rounded-lg p-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-stone-700 mb-2">
+                  {b.material_type.replace(/_/g, ' ')}
+                </p>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-white rounded-md py-2 border border-stone-200">
+                    <p className="text-[10px] text-stone-500 uppercase">Available</p>
+                    <p className="text-sm font-semibold text-emerald-700">{b.available.toFixed(3)}g</p>
+                  </div>
+                  <div className="bg-white rounded-md py-2 border border-stone-200">
+                    <p className="text-[10px] text-stone-500 uppercase">Reserved</p>
+                    <p className="text-sm font-semibold text-amber-700">{b.reserved.toFixed(3)}g</p>
+                  </div>
+                  <div className="bg-white rounded-md py-2 border border-stone-200">
+                    <p className="text-[10px] text-stone-500 uppercase">Used</p>
+                    <p className="text-sm font-semibold text-stone-700">{b.used.toFixed(3)}g</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Period selector */}
       <div className="bg-white rounded-xl border border-stone-200 p-3 mb-5 flex flex-wrap gap-1">

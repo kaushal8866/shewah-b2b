@@ -22,6 +22,7 @@ function NewMfgOrderForm() {
   const [uploadingCad, setUploadingCad] = useState(false)
   const [labourRates, setLabourRates] = useState<Record<number, number>>({})
   const [floatError, setFloatError] = useState<string | null>(null)
+  const [overIssueModal, setOverIssueModal] = useState<{ available: number; required: number; shortfall: number } | null>(null)
 
   const defaultPartnerId = searchParams.get('partner') || ''
 
@@ -134,11 +135,11 @@ function NewMfgOrderForm() {
       return
     }
     if (overIssue) {
-      const avail = activeBucket?.available?.toFixed(3) || '0.000'
-      setFloatError(
-        `Available ${requiredMaterialType.replace('_', ' ')} float for this karigar is ${avail}g, but this order needs ${required.toFixed(3)}g. ` +
-        `Record a deposit of at least ${shortfall.toFixed(3)}g first, then come back to issue this order.`
-      )
+      setOverIssueModal({
+        available: activeBucket?.available || 0,
+        required,
+        shortfall,
+      })
       return
     }
     setSaving(true)
@@ -195,9 +196,11 @@ function NewMfgOrderForm() {
         await supabase.from('manufacturing_orders').delete().eq('id', data.id)
         setSaving(false)
         if (reserve.status === 409) {
-          setFloatError(
-            `Another order may have just consumed the float. Available is now ${(j.available || 0).toFixed(3)}g but this needs ${(j.required || required).toFixed(3)}g. Record a deposit and try again.`
-          )
+          setOverIssueModal({
+            available: Number(j.available || 0),
+            required: Number(j.required || required),
+            shortfall: Number(j.shortfall || Math.max(0, required - Number(j.available || 0))),
+          })
         } else {
           setFloatError(j.error || 'Failed to reserve float; order was rolled back.')
         }
@@ -445,32 +448,13 @@ function NewMfgOrderForm() {
                   )
                 })}
                 {overIssue && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <div className="flex gap-2 items-start">
-                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-red-700">
-                          Available {requiredMaterialType.replace(/_/g, ' ')}: {(activeBucket?.available || 0).toFixed(3)}g — short by {shortfall.toFixed(3)}g.
-                        </p>
-                        <p className="text-xs text-red-600 mt-1">
-                          Record a deposit before issuing this order.
-                        </p>
-                        {form.manufacturing_partner_id && (
-                          <Link
-                            href={`/manufacturing/partners/${form.manufacturing_partner_id}/float`}
-                            className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-red-700 underline">
-                            Record deposit now →
-                          </Link>
-                        )}
-                      </div>
-                    </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <span>
+                      Short by <strong>{shortfall.toFixed(3)}g</strong>. You'll be asked to record a deposit when you try to issue.
+                    </span>
                   </div>
                 )}
-              </div>
-            )}
-            {floatError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-sm text-red-700">
-                {floatError}
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -556,6 +540,56 @@ function NewMfgOrderForm() {
           </div>
         </div>
       </div>
+
+      {/* Over-issue blocking modal: prefilled deposit shortcut + clear copy */}
+      {overIssueModal && (
+        <div className="fixed inset-0 z-50 bg-stone-900/40 flex items-center justify-center p-4 print:hidden"
+             onClick={() => setOverIssueModal(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-stone-100 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4 text-amber-700" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-stone-900">Not enough float available</h3>
+                <p className="text-xs text-stone-500 mt-1">
+                  This karigar's available {requiredMaterialType.replace(/_/g, ' ')} float is short.
+                </p>
+              </div>
+            </div>
+            <div className="p-5 space-y-3 text-sm">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-stone-50 rounded-lg py-2">
+                  <p className="text-[10px] text-stone-500 uppercase">Available</p>
+                  <p className="font-semibold text-stone-700">{overIssueModal.available.toFixed(3)}g</p>
+                </div>
+                <div className="bg-stone-50 rounded-lg py-2">
+                  <p className="text-[10px] text-stone-500 uppercase">Needed</p>
+                  <p className="font-semibold text-stone-700">{overIssueModal.required.toFixed(3)}g</p>
+                </div>
+                <div className="bg-amber-50 rounded-lg py-2">
+                  <p className="text-[10px] text-amber-700 uppercase">Short by</p>
+                  <p className="font-semibold text-amber-700">{overIssueModal.shortfall.toFixed(3)}g</p>
+                </div>
+              </div>
+              <p className="text-xs text-stone-500">
+                Record a deposit of at least <strong>{overIssueModal.shortfall.toFixed(3)}g</strong> from your stock to this karigar, then come back to issue this order.
+              </p>
+            </div>
+            <div className="p-5 pt-0 flex flex-col gap-2">
+              <Link
+                href={`/manufacturing/partners/${form.manufacturing_partner_id}/float?deposit=${encodeURIComponent(requiredMaterialType)}&amount=${overIssueModal.shortfall.toFixed(3)}`}
+                className="bg-[#1E3A5F] hover:bg-[#162B47] text-white text-sm font-medium px-4 py-2.5 rounded-lg text-center">
+                Record {overIssueModal.shortfall.toFixed(3)}g deposit
+              </Link>
+              <button onClick={() => setOverIssueModal(null)}
+                className="text-stone-500 hover:text-stone-800 text-xs py-1.5">
+                Cancel and edit order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -79,15 +79,13 @@ export async function GET(_: Request, ctx: { params: { token: string } }) {
 
   const blob = await zip.generateAsync({ type: 'nodebuffer' })
 
-  // Bump access stats. Best-effort; failures don't block the download.
-  await supabaseAdmin
-    .from('mfg_share_links')
-    .update({
-      last_accessed_at: new Date().toISOString(),
-      download_count: ((link as any).download_count || 0) + 1,
-    } as any)
-    .eq('token', token)
-    .then(() => {}, () => {})
+  // Atomic increment via Postgres function — avoids the read-then-write race
+  // where two parallel downloads collapse to a single increment.
+  const bump = await supabaseAdmin.rpc('mfg_share_link_record_download', { p_token: token })
+  if (bump.error) {
+    // Don't block the download, but log so failed analytics are noticed.
+    console.error('mfg_share_link_record_download failed', bump.error)
+  }
 
   const filename = `${safeName(order.order_number || 'order', 'order')}.zip`
   return new NextResponse(blob, {

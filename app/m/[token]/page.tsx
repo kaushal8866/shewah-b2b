@@ -49,12 +49,10 @@ export default async function KarigarAssetPage({ params }: { params: { token: st
     return <ErrorPage title="Link expired" message="This 48-hour link has expired. Please contact Shewah for a fresh one." />
   }
 
-  // Best-effort access stamp (the zip download bumps download_count too).
-  await supabaseAdmin
-    .from('mfg_share_links')
-    .update({ last_accessed_at: new Date().toISOString() } as any)
-    .eq('token', token)
-    .then(() => {}, () => {})
+  // Atomic stamp via Postgres function (timestamp only — opening the page
+  // doesn't count as a download; the ZIP route bumps `download_count`).
+  const stamp = await supabaseAdmin.rpc('mfg_share_link_record_visit', { p_token: token })
+  if (stamp.error) console.error('mfg_share_link_record_visit failed', stamp.error)
 
   const { data: order } = await supabaseAdmin
     .from('manufacturing_orders')

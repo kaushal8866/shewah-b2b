@@ -379,6 +379,19 @@ export default function ManufacturingOrderDetailPage() {
                     className="flex items-center gap-1.5 text-xs bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 px-3 py-1.5 rounded-lg">
                     Preview as karigar
                   </a>
+                  {/* wa.me fallback — works even when the WhatsApp webhook
+                      isn't configured. Opens the karigar's chat with a
+                      prefilled message. */}
+                  {order.manufacturing_partners?.phone && (
+                    <a
+                      href={`https://wa.me/${String(order.manufacturing_partners.phone).replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                        `Shewah ${order.order_number} — ${order.description || 'order pack'}\n${shareUrl(shareLink.token)}\n(Link expires in 48h)`
+                      )}`}
+                      target="_blank" rel="noreferrer"
+                      className="flex items-center gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg">
+                      <Send className="w-3.5 h-3.5" /> Open WhatsApp
+                    </a>
+                  )}
                 </div>
                 <div className="grid grid-cols-3 text-xs text-emerald-800 gap-2 mb-3">
                   <div>
