@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/utils'
 import { BarChart2, TrendingUp, Users, ShoppingBag } from 'lucide-react'
+import ProfitabilityDashboard from '@/components/ProfitabilityDashboard'
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
@@ -293,6 +294,8 @@ export default function AnalyticsPage() {
           )}
         </div>
       </div>
+
+      <ProfitabilityDashboard />
     </div>
   )
 }
