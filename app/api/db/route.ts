@@ -22,6 +22,8 @@ const ALLOWED_TABLES = new Set([
   'showcase_views',
   'labour_rates',
   'settings',
+  'material_float',
+  'material_transactions',
 ])
 
 const MASTER_ONLY_TABLES = new Set(['app_users'])

@@ -71,6 +71,9 @@ export default function ManufacturingPartnerDetailPage() {
   async function handleDelete() {
     // Unlink manufacturing orders before deleting
     await supabase.from('manufacturing_orders').update({ manufacturing_partner_id: null }).eq('manufacturing_partner_id', id)
+    // Remove dependent material records (transactions must go before float rows)
+    await supabase.from('material_transactions').delete().eq('manufacturing_partner_id', id)
+    await supabase.from('material_float').delete().eq('manufacturing_partner_id', id)
     const { error } = await supabase.from('manufacturing_partners').delete().eq('id', id)
     if (error) { alert('Error: ' + error.message); return }
     router.push('/manufacturing')
