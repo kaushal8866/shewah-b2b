@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Package, Truck, Clock, FileText, Calendar, CheckCircle2, Circle } from 'lucide-react'
+import { ArrowLeft, Package, Truck, Clock, FileText, Calendar, CheckCircle2, Circle, Sparkles, X } from 'lucide-react'
 
 const PIPELINE = [
   { value: 'brief_received', label: 'Brief received' },
   { value: 'cad_in_progress', label: 'CAD in progress' },
-  { value: 'cad_approved', label: 'CAD approved' },
+  { value: 'cad_sent', label: 'CAD shared with you' },
+  { value: 'design_approved', label: 'Design approved' },
   { value: 'in_production', label: 'In production' },
   { value: 'qc', label: 'Quality check' },
   { value: 'dispatched', label: 'Dispatched' },
@@ -18,7 +19,9 @@ const PIPELINE = [
 const STATUS_STYLES: Record<string, string> = {
   brief_received: 'bg-blue-100 text-blue-700',
   cad_in_progress: 'bg-purple-100 text-purple-700',
+  cad_sent: 'bg-purple-100 text-purple-700',
   cad_approved: 'bg-purple-100 text-purple-700',
+  design_approved: 'bg-purple-100 text-purple-700',
   in_production: 'bg-amber-100 text-amber-700',
   qc: 'bg-amber-100 text-amber-700',
   dispatched: 'bg-indigo-100 text-indigo-700',
@@ -33,17 +36,47 @@ function fmtDate(d?: string | null) {
 export default function RetailerOrderDetail() {
   const { id } = useParams<{ id: string }>()
   const [order, setOrder] = useState<any>(null)
+  const [cad, setCad] = useState<any>(null)
   const [error, setError] = useState('')
 
-  useEffect(() => {
+  // CAD action state
+  const [reviseOpen, setReviseOpen] = useState(false)
+  const [feedback, setFeedback] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [actionError, setActionError] = useState('')
+
+  function load() {
     fetch(`/api/portal/retailer/orders/${id}`)
       .then(r => r.json())
       .then(d => {
         if (d.error) setError(d.error)
-        else setOrder(d.order)
+        else { setOrder(d.order); setCad(d.cad_request || null) }
       })
       .catch(e => setError(e.message))
-  }, [id])
+  }
+
+  useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id])
+
+  async function submitCadAction(action: 'approve' | 'revise') {
+    setSubmitting(true)
+    setActionError('')
+    try {
+      const res = await fetch(`/api/portal/retailer/orders/${id}/cad`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, feedback: action === 'revise' ? feedback.trim() : undefined }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setActionError(d.error || 'Something went wrong.'); return }
+      setReviseOpen(false)
+      setFeedback('')
+      load()
+    } catch (e: any) {
+      setActionError(e.message || 'Something went wrong.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   if (error && !order) {
     return (
@@ -65,6 +98,10 @@ export default function RetailerOrderDetail() {
   const referenceImages: string[] = order.brief_images || []
   const productImages: string[] = order.product?.photo_urls || []
   const heroImage = productImages[0] || referenceImages[0]
+
+  const cadRenders: string[] = cad?.render_images || []
+  const cadStatus: string | undefined = cad?.status
+  const canActOnCad = cadStatus === 'sent'
 
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto">
@@ -98,6 +135,76 @@ export default function RetailerOrderDetail() {
           </div>
         </div>
       </div>
+
+      {cad && cadRenders.length > 0 && (
+        <div className="bg-white rounded-xl border border-stone-200 p-5 mb-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+            <h2 className="font-medium text-stone-900 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#C49C64]" /> CAD design for your review
+            </h2>
+            {cadStatus === 'approved' && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
+                Approved {cad.approved_date ? `· ${fmtDate(cad.approved_date)}` : ''}
+              </span>
+            )}
+            {cadStatus === 'revision_requested' && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">
+                Revision requested
+              </span>
+            )}
+            {cadStatus === 'sent' && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">
+                Awaiting your decision
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+            {cadRenders.map((src, i) => (
+              <a key={i} href={src} target="_blank" rel="noopener noreferrer"
+                className="block aspect-square bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
+                <img src={src} alt={`CAD render ${i + 1}`} className="w-full h-full object-cover" />
+              </a>
+            ))}
+          </div>
+
+          {cad.partner_feedback && (
+            <div className="mb-4 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2">
+              <p className="text-xs text-stone-400 mb-0.5">Your feedback</p>
+              <p className="text-sm text-stone-700 whitespace-pre-line">{cad.partner_feedback}</p>
+            </div>
+          )}
+
+          {actionError && (
+            <div className="mb-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm">
+              {actionError}
+            </div>
+          )}
+
+          {canActOnCad ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => submitCadAction('approve')}
+                disabled={submitting}
+                className="bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50"
+              >
+                {submitting ? 'Saving...' : 'Approve design'}
+              </button>
+              <button
+                onClick={() => { setReviseOpen(true); setActionError('') }}
+                disabled={submitting}
+                className="border border-stone-200 text-stone-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-50 disabled:opacity-50"
+              >
+                Request revision
+              </button>
+            </div>
+          ) : cadStatus === 'revision_requested' ? (
+            <p className="text-xs text-stone-500">We've shared your feedback with the design team. You'll see an updated render here once it's ready.</p>
+          ) : cadStatus === 'approved' ? (
+            <p className="text-xs text-stone-500">Thanks — production will start using this approved design.</p>
+          ) : null}
+        </div>
+      )}
 
       {!isCancelled && (
         <div className="bg-white rounded-xl border border-stone-200 p-5 mb-4">
@@ -229,6 +336,48 @@ export default function RetailerOrderDetail() {
           )}
         </div>
       </div>
+
+      {reviseOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-stone-900">Request a revision</h3>
+                <p className="text-xs text-stone-500 mt-0.5">Tell the design team what you'd like changed.</p>
+              </div>
+              <button onClick={() => { setReviseOpen(false); setFeedback('') }}
+                className="text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <textarea
+              value={feedback}
+              onChange={e => setFeedback(e.target.value)}
+              rows={4}
+              maxLength={2000}
+              placeholder="e.g. Make the centre stone slightly larger and switch to a hidden halo."
+              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none resize-none mb-1"
+            />
+            <p className="text-[11px] text-stone-400 mb-4">{feedback.length}/2000</p>
+            {actionError && (
+              <div className="mb-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm">
+                {actionError}
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button onClick={() => { setReviseOpen(false); setFeedback('') }}
+                className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50">
+                Cancel
+              </button>
+              <button onClick={() => submitCadAction('revise')}
+                disabled={submitting || !feedback.trim()}
+                className="flex-1 bg-[#C49C64] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50">
+                {submitting ? 'Sending...' : 'Send to design team'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

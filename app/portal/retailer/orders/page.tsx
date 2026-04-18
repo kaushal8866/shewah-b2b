@@ -7,7 +7,9 @@ import { ShoppingBag, ChevronRight, Clock } from 'lucide-react'
 const STATUS_LABEL: Record<string, string> = {
   brief_received: 'Brief received',
   cad_in_progress: 'CAD in progress',
+  cad_sent: 'CAD ready to review',
   cad_approved: 'CAD approved',
+  design_approved: 'Design approved',
   in_production: 'In production',
   qc: 'Quality check',
   dispatched: 'Dispatched',
@@ -18,7 +20,9 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_STYLES: Record<string, string> = {
   brief_received: 'bg-blue-100 text-blue-700',
   cad_in_progress: 'bg-purple-100 text-purple-700',
+  cad_sent: 'bg-purple-100 text-purple-700',
   cad_approved: 'bg-purple-100 text-purple-700',
+  design_approved: 'bg-purple-100 text-purple-700',
   in_production: 'bg-amber-100 text-amber-700',
   qc: 'bg-amber-100 text-amber-700',
   dispatched: 'bg-indigo-100 text-indigo-700',
