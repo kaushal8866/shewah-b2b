@@ -25,13 +25,19 @@ export default function LoginPage() {
       redirect: false,
     })
 
-    setLoading(false)
     if (result?.error) {
+      setLoading(false)
       setError('Incorrect username or password')
-    } else {
-      router.replace('/')
-      router.refresh()
+      return
     }
+    const session = await getSession()
+    setLoading(false)
+    const role = session?.user?.role
+    let dest = '/'
+    if (role === 'manufacturer') dest = '/portal/manufacturer'
+    else if (role === 'retailer') dest = '/portal/retailer'
+    router.replace(dest)
+    router.refresh()
   }
 
   return (

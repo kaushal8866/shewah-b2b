@@ -97,6 +97,18 @@ Manufacturer Portal (Task #6 — requires `scripts/migrate_task6_manufacturer_po
 - Manufacturers cannot reach `/api/db` or any admin route — middleware redirects them to their portal
 - Master admins create manufacturer logins from Settings → User management → "Manufacturer" tile
 
+Retailer Portal (Task #7 — uses the same `partner_id` column added in Task #6 migration):
+- `/portal/retailer` - Catalog grid (active products, no internal cost / margin fields)
+- `/portal/retailer/catalog/[id]` - Product detail + inline catalog order form
+- `/portal/retailer/custom` - Custom design brief form (text + reference image uploads)
+- `/portal/retailer/orders` - List of the retailer's own orders with pipeline status
+- `/portal/retailer/orders/[id]` - Order detail with status pipeline and dispatch / tracking info
+- API: `/api/portal/retailer/catalog`, `/api/portal/retailer/catalog/[id]`,
+  `/api/portal/retailer/orders` (GET list / POST new), `/api/portal/retailer/orders/[id]` (GET)
+- Retailers cannot reach `/api/db` or any admin route — middleware redirects them to their portal
+- Master admins create retailer logins from Settings → User management → "Retailer" tile, picking
+  the linked row in `partners`
+
 ## Notes
 
 - Migrated from Vercel to Replit

@@ -3,12 +3,16 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
+// Fields the retailer is allowed to see on their own order detail. Internal
+// financials beyond what the retailer needs (gold_rate_at_order, internal_notes,
+// COGS) and any manufacturer-only data are intentionally excluded.
 const DETAIL_COLS = `
   id, order_number, status, type, model, quantity, ring_size, special_notes, brief_text,
   trade_price, total_amount, advance_paid, balance_due,
   order_date, expected_delivery, dispatch_date, actual_delivery,
   courier, tracking_number, brief_images, product_id, partner_id,
-  product:products ( id, code, name, category, photo_urls )
+  product:products ( id, code, name, category, photo_urls, gold_karat,
+    diamond_weight, diamond_shape, diamond_quality, diamond_color, delivery_days )
 `
 
 export async function GET(_: Request, ctx: { params: { id: string } }) {

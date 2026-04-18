@@ -60,7 +60,7 @@ export default function RetailerHome() {
             <p className="text-xs text-stone-400">View products and place orders</p>
           </div>
         </Link>
-        <Link href="/portal/retailer/orders/new"
+        <Link href="/portal/retailer/custom"
           className="bg-white border border-stone-200 hover:border-[#C49C64] rounded-xl p-4 flex items-center gap-3 transition-colors">
           <div className="w-10 h-10 rounded-lg bg-[#C49C64]/15 text-[#C49C64] flex items-center justify-center">
             <Plus className="w-5 h-5" />

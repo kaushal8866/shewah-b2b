@@ -3,18 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Package, Truck, Clock, FileText } from 'lucide-react'
-
-const STATUS_STYLES: Record<string, string> = {
-  brief_received: 'bg-blue-100 text-blue-700',
-  cad_in_progress: 'bg-purple-100 text-purple-700',
-  cad_approved: 'bg-purple-100 text-purple-700',
-  in_production: 'bg-amber-100 text-amber-700',
-  qc: 'bg-amber-100 text-amber-700',
-  dispatched: 'bg-indigo-100 text-indigo-700',
-  delivered: 'bg-green-100 text-green-700',
-  cancelled: 'bg-red-100 text-red-700',
-}
+import { ArrowLeft, Package, Truck, Clock, FileText, Calendar, CheckCircle2, Circle } from 'lucide-react'
 
 const PIPELINE = [
   { value: 'brief_received', label: 'Brief received' },
@@ -26,6 +15,16 @@ const PIPELINE = [
   { value: 'delivered', label: 'Delivered' },
 ]
 
+const STATUS_STYLES: Record<string, string> = {
+  brief_received: 'bg-blue-100 text-blue-700',
+  cad_in_progress: 'bg-purple-100 text-purple-700',
+  cad_approved: 'bg-purple-100 text-purple-700',
+  in_production: 'bg-amber-100 text-amber-700',
+  qc: 'bg-amber-100 text-amber-700',
+  dispatched: 'bg-indigo-100 text-indigo-700',
+  delivered: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
+}
 function fmtDate(d?: string | null) {
   if (!d) return '—'
   try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return d }
@@ -46,11 +45,13 @@ export default function RetailerOrderDetail() {
       .catch(e => setError(e.message))
   }, [id])
 
-  if (error) {
+  if (error && !order) {
     return (
-      <div className="p-4 lg:p-7 max-w-3xl mx-auto">
+      <div className="p-4 lg:p-7 max-w-4xl mx-auto">
+        <Link href="/portal/retailer/orders" className="text-stone-400 hover:text-stone-600 inline-flex items-center gap-1.5 text-sm mb-4">
+          <ArrowLeft className="w-4 h-4" /> My orders
+        </Link>
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>
-        <Link href="/portal/retailer/orders" className="inline-block mt-3 text-sm text-[#C49C64]">← Back to orders</Link>
       </div>
     )
   }
@@ -101,19 +102,17 @@ export default function RetailerOrderDetail() {
       {!isCancelled && (
         <div className="bg-white rounded-xl border border-stone-200 p-5 mb-4">
           <h2 className="font-medium text-stone-900 mb-4">Progress</h2>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {PIPELINE.map((s, i) => {
               const done = i < currentIdx
               const active = i === currentIdx
               return (
                 <div key={s.value} className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                    done ? 'bg-[#C49C64] border-[#C49C64] text-white' :
-                    active ? 'border-[#C49C64] text-[#C49C64]' :
-                    'border-stone-200 text-stone-300'
-                  }`}>
-                    {done ? '✓' : i + 1}
-                  </div>
+                  {done || active ? (
+                    <CheckCircle2 className={`w-5 h-5 shrink-0 ${active ? 'text-[#C49C64]' : 'text-green-500'}`} />
+                  ) : (
+                    <Circle className="w-5 h-5 text-stone-200 shrink-0" />
+                  )}
                   <p className={`text-sm ${done || active ? 'text-stone-900 font-medium' : 'text-stone-400'}`}>
                     {s.label}
                   </p>
@@ -138,6 +137,11 @@ export default function RetailerOrderDetail() {
             <div className="mb-3">
               <p className="text-xs text-stone-400">{order.product.code}</p>
               <p className="font-medium text-stone-800">{order.product.name}</p>
+              <p className="text-xs text-stone-500 mt-1">
+                {order.product.gold_karat ? `${order.product.gold_karat}K · ` : ''}
+                {order.product.diamond_weight ? `${order.product.diamond_weight}ct ${order.product.diamond_shape || ''}` : ''}
+                {order.product.diamond_quality ? ` · ${order.product.diamond_quality}/${order.product.diamond_color || ''}` : ''}
+              </p>
             </div>
           )}
           {order.brief_text && (
@@ -174,55 +178,57 @@ export default function RetailerOrderDetail() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-stone-200 p-5">
-          <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
-            <Truck className="w-4 h-4 text-stone-400" /> Dispatch &amp; delivery
-          </h2>
-          {order.dispatch_date || order.tracking_number || order.courier ? (
-            <dl className="text-sm space-y-1.5">
-              <div className="flex justify-between">
-                <dt className="text-stone-400">Dispatch date</dt>
-                <dd className="text-stone-700">{fmtDate(order.dispatch_date)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-stone-400">Courier</dt>
-                <dd className="text-stone-700">{order.courier || '—'}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-stone-400">Tracking number</dt>
-                <dd className="text-stone-700 font-mono text-xs">{order.tracking_number || '—'}</dd>
-              </div>
-              {order.actual_delivery && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
+              <Truck className="w-4 h-4 text-stone-400" /> Dispatch &amp; delivery
+            </h2>
+            {order.dispatch_date || order.tracking_number || order.courier ? (
+              <dl className="text-sm space-y-1.5">
                 <div className="flex justify-between">
-                  <dt className="text-stone-400">Delivered on</dt>
-                  <dd className="text-green-600 font-medium">{fmtDate(order.actual_delivery)}</dd>
+                  <dt className="text-stone-400">Dispatch date</dt>
+                  <dd className="text-stone-700">{fmtDate(order.dispatch_date)}</dd>
                 </div>
-              )}
-            </dl>
-          ) : (
-            <div className="flex flex-col items-center justify-center text-center py-6 text-stone-400">
-              <Clock className="w-8 h-8 mb-2 text-stone-300" />
-              <p className="text-sm">Tracking details will appear once your order is dispatched.</p>
+                <div className="flex justify-between">
+                  <dt className="text-stone-400">Courier</dt>
+                  <dd className="text-stone-700">{order.courier || '—'}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-stone-400">Tracking number</dt>
+                  <dd className="text-stone-700 font-mono text-xs">{order.tracking_number || '—'}</dd>
+                </div>
+                {order.actual_delivery && (
+                  <div className="flex justify-between">
+                    <dt className="text-stone-400">Delivered on</dt>
+                    <dd className="text-green-600 font-medium">{fmtDate(order.actual_delivery)}</dd>
+                  </div>
+                )}
+              </dl>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center py-6 text-stone-400">
+                <Clock className="w-8 h-8 mb-2 text-stone-300" />
+                <p className="text-sm">Tracking details will appear once your order is dispatched.</p>
+              </div>
+            )}
+          </div>
+
+          {referenceImages.length > 0 && (
+            <div className="bg-white rounded-xl border border-stone-200 p-5">
+              <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-stone-400" /> Reference images
+              </h2>
+              <div className="grid grid-cols-3 gap-2">
+                {referenceImages.map((src, i) => (
+                  <a key={i} href={src} target="_blank" rel="noopener noreferrer"
+                    className="block aspect-square bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
+                    <img src={src} alt="" className="w-full h-full object-cover" />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
         </div>
       </div>
-
-      {referenceImages.length > 0 && (
-        <div className="bg-white rounded-xl border border-stone-200 p-5">
-          <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-stone-400" /> Reference images
-          </h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {referenceImages.map((src, i) => (
-              <a key={i} href={src} target="_blank" rel="noopener noreferrer"
-                className="block aspect-square bg-stone-100 rounded-lg overflow-hidden">
-                <img src={src} alt="" className="w-full h-full object-cover" />
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

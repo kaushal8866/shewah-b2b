@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Diamond, LogOut, Store, Package, ShoppingBag, Plus } from 'lucide-react'
+import { Diamond, LogOut, Store, Package, ShoppingBag, Sparkles } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function RetailerPortalLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession()
@@ -16,9 +17,10 @@ export default function RetailerPortalLayout({ children }: { children: React.Rea
   }
 
   const tabs = [
-    { href: '/portal/retailer',          label: 'Home',    icon: Store, exact: true },
-    { href: '/portal/retailer/catalog',  label: 'Catalog', icon: Package },
-    { href: '/portal/retailer/orders',   label: 'Orders',  icon: ShoppingBag },
+    { href: '/portal/retailer',         label: 'Home',         icon: Store,      exact: true },
+    { href: '/portal/retailer/catalog',  label: 'Catalog',      icon: Package },
+    { href: '/portal/retailer/custom',   label: 'Custom order', icon: Sparkles },
+    { href: '/portal/retailer/orders',   label: 'Orders',       icon: ShoppingBag },
   ]
 
   function isActive(t: { href: string; exact?: boolean }) {
@@ -60,24 +62,18 @@ export default function RetailerPortalLayout({ children }: { children: React.Rea
           const active = isActive(t)
           return (
             <Link key={t.href} href={t.href}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              className={cn(
+                'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                 active
                   ? 'border-[#C49C64] text-stone-900'
                   : 'border-transparent text-stone-500 hover:text-stone-800'
-              }`}>
+              )}>
               <Icon className="w-4 h-4" />
               {t.label}
             </Link>
           )
         })}
-        <div className="ml-auto py-2">
-          <Link href="/portal/retailer/orders/new"
-            className="hidden sm:flex items-center gap-1.5 bg-[#C49C64] hover:bg-[#9B7A40] text-white text-sm px-3 py-1.5 rounded-lg">
-            <Plus className="w-4 h-4" /> Custom order
-          </Link>
-        </div>
       </nav>
-
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>

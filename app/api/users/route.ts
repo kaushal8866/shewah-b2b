@@ -85,6 +85,26 @@ export async function POST(req: Request) {
   }
 
   const supabaseAdmin = getAdminClient()
+
+  // Validate that the linked partner row actually exists. The DB FK should also
+  // catch this, but checking up-front gives a clean 400 instead of a 500.
+  if (role === 'manufacturer') {
+    const { data: mp } = await supabaseAdmin
+      .from('manufacturing_partners')
+      .select('id')
+      .eq('id', manufacturingPartnerId)
+      .maybeSingle()
+    if (!mp) return NextResponse.json({ error: 'Manufacturing partner not found' }, { status: 400 })
+  }
+  if (role === 'retailer') {
+    const { data: p } = await supabaseAdmin
+      .from('partners')
+      .select('id')
+      .eq('id', partnerId)
+      .maybeSingle()
+    if (!p) return NextResponse.json({ error: 'Partner not found' }, { status: 400 })
+  }
+
   const hash = await bcrypt.hash(password, 12)
 
   const insert: any = {
@@ -122,6 +142,23 @@ export async function PATCH(req: Request) {
   if (!id) return NextResponse.json({ error: 'User ID required' }, { status: 400 })
 
   const supabaseAdmin = getAdminClient()
+
+  if (manufacturingPartnerId) {
+    const { data: mp } = await supabaseAdmin
+      .from('manufacturing_partners')
+      .select('id')
+      .eq('id', manufacturingPartnerId)
+      .maybeSingle()
+    if (!mp) return NextResponse.json({ error: 'Manufacturing partner not found' }, { status: 400 })
+  }
+  if (partnerId) {
+    const { data: p } = await supabaseAdmin
+      .from('partners')
+      .select('id')
+      .eq('id', partnerId)
+      .maybeSingle()
+    if (!p) return NextResponse.json({ error: 'Partner not found' }, { status: 400 })
+  }
 
   const updates: any = {}
   if (displayName !== undefined) updates.display_name = displayName

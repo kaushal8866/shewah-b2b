@@ -24,6 +24,7 @@ type AppUser = {
 }
 
 type MfgPartner = { id: string; name: string; city?: string }
+type RetailPartner = { id: string; store_name: string; city?: string }
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -300,7 +301,7 @@ export default function SettingsPage() {
               </div>
               <div className="mb-4">
                 <label className={label}>User type</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
                     { id: 'sub', label: 'Staff (admin)', desc: 'Internal team member' },
                     { id: 'manufacturer', label: 'Manufacturer', desc: 'Workshop / karigar login' },

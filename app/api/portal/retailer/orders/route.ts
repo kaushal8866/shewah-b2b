@@ -50,9 +50,11 @@ export async function POST(req: Request) {
   const ringSize = typeof body.ring_size === 'string' && body.ring_size.trim() ? body.ring_size.trim() : null
   const specialNotes = typeof body.special_notes === 'string' && body.special_notes.trim() ? body.special_notes.trim() : null
   const briefText = type === 'custom' && typeof body.brief_text === 'string' ? body.brief_text.trim() : null
-  const briefImages = Array.isArray(body.reference_images)
-    ? body.reference_images.filter((u: any) => typeof u === 'string').slice(0, 20)
-    : []
+  // Accept both `reference_images` (HEAD UI) and `brief_images` (incoming UI).
+  const rawImages = Array.isArray(body.reference_images)
+    ? body.reference_images
+    : Array.isArray(body.brief_images) ? body.brief_images : []
+  const briefImages = rawImages.filter((u: any) => typeof u === 'string').slice(0, 20)
 
   if (type === 'catalog' && !body.product_id) {
     return NextResponse.json({ error: 'Pick a product' }, { status: 400 })
@@ -66,17 +68,16 @@ export async function POST(req: Request) {
   if (type === 'catalog') {
     const { data: p, error: pe } = await supabaseAdmin
       .from('products')
-      .select('id, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges')
+      .select('id, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges, is_active')
       .eq('id', body.product_id)
-      .eq('is_active', true)
       .maybeSingle()
     if (pe) return NextResponse.json({ error: pe.message }, { status: 500 })
-    if (!p) return NextResponse.json({ error: 'Product not available' }, { status: 400 })
+    if (!p || !p.is_active) return NextResponse.json({ error: 'Product not available' }, { status: 400 })
     productRow = p
   }
 
   // Latest gold rate (locks the rate at order time, same as admin order form).
-  let goldRate = 0
+  let goldRate: number | null = null
   const { data: g } = await supabaseAdmin
     .from('gold_rates')
     .select('rate_24k')
