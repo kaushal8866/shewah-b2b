@@ -28,6 +28,10 @@ const ALLOWED_TABLES = new Set([
 
 const MASTER_ONLY_TABLES = new Set(['app_users'])
 
+// Roles allowed to use the generic admin DB proxy at all.
+// Manufacturer / retailer portal users go through dedicated /api/portal/* endpoints.
+const ADMIN_ROLES = new Set(['master', 'sub'])
+
 function applyFilter(q: any, f: any) {
   if (!f || typeof f.col !== 'string') return q
   switch (f.type) {
@@ -56,6 +60,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { data: null, error: { message: 'Unauthorized' } },
       { status: 401 }
+    )
+  }
+
+  const role = (session.user as any).role
+  if (!ADMIN_ROLES.has(role)) {
+    return NextResponse.json(
+      { data: null, error: { message: 'Forbidden' } },
+      { status: 403 }
     )
   }
 
@@ -98,7 +110,7 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     )
   }
-  if (MASTER_ONLY_TABLES.has(table) && (session.user as any).role !== 'master') {
+  if (MASTER_ONLY_TABLES.has(table) && role !== 'master') {
     return NextResponse.json(
       { data: null, error: { message: 'Forbidden' } },
       { status: 403 }

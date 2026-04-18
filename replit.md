@@ -6,7 +6,7 @@ A Next.js 14 B2B admin panel for Shewah jewelry, built with Supabase as the data
 
 - **Framework**: Next.js 14 (App Router)
 - **Database**: Supabase (PostgreSQL)
-- **Auth**: NextAuth.js (credentials provider, JWT sessions, master/sub roles)
+- **Auth**: NextAuth.js (credentials provider, JWT sessions; roles: master / sub / manufacturer / retailer)
 - **Styling**: Tailwind CSS
 - **Charts**: Recharts
 - **Icons**: Lucide React
@@ -79,6 +79,13 @@ Admin routes (require login):
 Public routes (no auth):
 - `/showcase/[collectionId]/[partnerId]` - Partner design showcase portal
 
+Manufacturer Portal (Task #6 — requires `scripts/migrate_task6_manufacturer_portal.sql`):
+- `/portal/manufacturer` - Order list scoped to logged-in manufacturer's `manufacturing_partner_id`
+- `/portal/manufacturer/orders/[id]` - Detail: status update, manufacturer notes, progress photos
+- API: `/api/portal/manufacturer/orders` (GET list) and `/api/portal/manufacturer/orders/[id]` (GET / PATCH)
+- Manufacturers cannot reach `/api/db` or any admin route — middleware redirects them to their portal
+- Master admins create manufacturer logins from Settings → User management → "Manufacturer" tile
+
 ## Notes
 
 - Migrated from Vercel to Replit
@@ -87,4 +94,4 @@ Public routes (no auth):
 - AppShell skips rendering for `/login`, `/setup/*`, and `/showcase/*` paths
 - `order_pipeline` view used for orders list
 - Auth: username/password via `app_users` table (service role key required for RLS bypass)
-- All client-side `supabase.from(...)` calls go through `/api/db` (NextAuth-gated DB proxy at `app/api/db/route.ts`) using service role; client wrapper in `lib/supabase.ts` is a thenable QueryBuilder. `app_users` is master-only. Public `/showcase/*` and `/api/showcase/*` use their own server routes with `supabaseAdmin`.
+- All client-side `supabase.from(...)` calls go through `/api/db` (NextAuth-gated DB proxy at `app/api/db/route.ts`) using service role; client wrapper in `lib/supabase.ts` is a thenable QueryBuilder. `app_users` is master-only. Public `/showcase/*` and `/api/showcase/*` use their own server routes with `supabaseAdmin`. The `/api/db` proxy is restricted to roles `master | sub` only — manufacturer/retailer logins must use their own portal API endpoints.

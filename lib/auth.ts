@@ -42,6 +42,8 @@ export const authOptions: NextAuthOptions = {
           displayName: user.display_name || user.username,
           role: user.role,
           permissions: user.permissions || [],
+          manufacturingPartnerId: user.manufacturing_partner_id ?? null,
+          partnerId: user.partner_id ?? null,
         }
       },
     }),
@@ -54,6 +56,8 @@ export const authOptions: NextAuthOptions = {
         token.displayName = (user as any).displayName || (user as any).username
         token.role = (user as any).role
         token.permissions = (user as any).permissions
+        token.manufacturingPartnerId = (user as any).manufacturingPartnerId ?? null
+        token.partnerId = (user as any).partnerId ?? null
       }
       return token
     },
@@ -64,6 +68,8 @@ export const authOptions: NextAuthOptions = {
         session.user.displayName = token.displayName
         session.user.role = token.role
         session.user.permissions = token.permissions
+        session.user.manufacturingPartnerId = token.manufacturingPartnerId ?? null
+        session.user.partnerId = token.partnerId ?? null
       }
       return session
     },

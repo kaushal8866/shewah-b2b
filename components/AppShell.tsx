@@ -41,7 +41,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
-  const isPublic = pathname === '/login' || pathname.startsWith('/setup') || pathname.startsWith('/showcase') || pathname.startsWith('/track')
+  const isPublic = pathname === '/login' || pathname.startsWith('/setup') || pathname.startsWith('/showcase') || pathname.startsWith('/track') || pathname.startsWith('/portal')
   if (isPublic) return <>{children}</>  
 
   const role = session?.user?.role || 'sub'

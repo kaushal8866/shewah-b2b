@@ -15,11 +15,15 @@ type AppUser = {
   id: string
   username: string
   display_name: string
-  role: 'master' | 'sub'
+  role: 'master' | 'sub' | 'manufacturer' | 'retailer'
   permissions: string[]
   is_active: boolean
   created_at: string
+  manufacturing_partner_id?: string | null
+  partner_id?: string | null
 }
+
+type MfgPartner = { id: string; name: string; city?: string }
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -36,7 +40,13 @@ export default function SettingsPage() {
   const [usersLoading, setUsersLoading] = useState(false)
   const [showNewUser, setShowNewUser] = useState(false)
   const [editingUser, setEditingUser] = useState<AppUser | null>(null)
-  const [newUser, setNewUser] = useState({ username: '', displayName: '', password: '', permissions: [] as string[] })
+  const [newUser, setNewUser] = useState({
+    username: '', displayName: '', password: '',
+    permissions: [] as string[],
+    role: 'sub' as 'sub' | 'manufacturer',
+    manufacturingPartnerId: '',
+  })
+  const [mfgPartners, setMfgPartners] = useState<MfgPartner[]>([])
   const [userSaving, setUserSaving] = useState(false)
   const [userError, setUserError] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -51,7 +61,12 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    if (tab === 'users' && isMaster) loadUsers()
+    if (tab === 'users' && isMaster) {
+      loadUsers()
+      supabase.from('manufacturing_partners').select('id, name, city').order('name').then(({ data }) => {
+        setMfgPartners(data || [])
+      })
+    }
   }, [tab])
 
   async function loadUsers() {
@@ -80,6 +95,9 @@ export default function SettingsPage() {
 
   async function createUser() {
     if (!newUser.username || !newUser.password) { setUserError('Username and password required'); return }
+    if (newUser.role === 'manufacturer' && !newUser.manufacturingPartnerId) {
+      setUserError('Pick a manufacturing partner for this login'); return
+    }
     setUserSaving(true)
     setUserError('')
     const res = await fetch('/api/users', {
@@ -91,7 +109,7 @@ export default function SettingsPage() {
     setUserSaving(false)
     if (!res.ok) { setUserError(data.error || 'Failed to create user'); return }
     setShowNewUser(false)
-    setNewUser({ username: '', displayName: '', password: '', permissions: [] })
+    setNewUser({ username: '', displayName: '', password: '', permissions: [], role: 'sub', manufacturingPartnerId: '' })
     loadUsers()
   }
 
@@ -272,6 +290,24 @@ export default function SettingsPage() {
                 <h3 className="font-medium text-stone-900">New user</h3>
                 <button onClick={() => { setShowNewUser(false); setUserError('') }}><X className="w-4 h-4 text-stone-400" /></button>
               </div>
+              <div className="mb-4">
+                <label className={label}>User type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'sub', label: 'Staff (admin)', desc: 'Internal team member' },
+                    { id: 'manufacturer', label: 'Manufacturer', desc: 'Workshop / karigar login' },
+                  ].map(r => (
+                    <button key={r.id} type="button"
+                      onClick={() => setNewUser(prev => ({ ...prev, role: r.id as any }))}
+                      className={`text-left px-3 py-2.5 rounded-lg border transition-colors ${
+                        newUser.role === r.id ? 'border-[#C49C64] bg-[#C49C64]/8' : 'border-stone-200 hover:bg-stone-50'
+                      }`}>
+                      <p className="text-sm font-medium text-stone-800">{r.label}</p>
+                      <p className="text-xs text-stone-400 mt-0.5">{r.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className={label}>Username *</label>
@@ -283,6 +319,19 @@ export default function SettingsPage() {
                   <input className={inp} placeholder="e.g. Rahul Shah" value={newUser.displayName}
                     onChange={e => setNewUser(prev => ({ ...prev, displayName: e.target.value }))} />
                 </div>
+                {newUser.role === 'manufacturer' && (
+                  <div className="sm:col-span-2">
+                    <label className={label}>Manufacturing partner *</label>
+                    <select className={inp} value={newUser.manufacturingPartnerId}
+                      onChange={e => setNewUser(prev => ({ ...prev, manufacturingPartnerId: e.target.value }))}>
+                      <option value="">Select partner...</option>
+                      {mfgPartners.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}{p.city ? ` — ${p.city}` : ''}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-stone-400 mt-1">Manufacturer will only see orders assigned to this partner.</p>
+                  </div>
+                )}
                 <div className="sm:col-span-2">
                   <label className={label}>Password *</label>
                   <div className="relative">
@@ -297,6 +346,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+              {newUser.role === 'sub' && (
               <div className="mb-4">
                 <label className={label}>Module access</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
@@ -317,6 +367,7 @@ export default function SettingsPage() {
                   ))}
                 </div>
               </div>
+              )}
               {userError && <p className="text-red-500 text-sm mb-3">{userError}</p>}
               <div className="flex justify-end gap-2">
                 <button onClick={() => { setShowNewUser(false); setUserError('') }}
@@ -414,6 +465,9 @@ export default function SettingsPage() {
                         {u.role === 'master' && (
                           <span className="text-[10px] bg-[#C49C64]/15 text-[#C49C64] px-1.5 py-0.5 rounded font-medium">MASTER</span>
                         )}
+                        {u.role === 'manufacturer' && (
+                          <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">MANUFACTURER</span>
+                        )}
                         {!u.is_active && (
                           <span className="text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded font-medium">INACTIVE</span>
                         )}
@@ -426,6 +480,14 @@ export default function SettingsPage() {
                       )}
                       {u.role === 'master' && (
                         <p className="text-xs text-stone-400 mt-0.5">Full access to all modules</p>
+                      )}
+                      {u.role === 'manufacturer' && (
+                        <p className="text-xs text-stone-400 mt-0.5 truncate">
+                          {(() => {
+                            const p = mfgPartners.find(x => x.id === u.manufacturing_partner_id)
+                            return p ? `Linked to ${p.name}` : 'Linked manufacturing partner'
+                          })()}
+                        </p>
                       )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
