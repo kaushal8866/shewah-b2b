@@ -93,9 +93,13 @@ CREATE INDEX IF NOT EXISTS mfg_share_links_order_idx
 
 ALTER TABLE mfg_share_links ENABLE ROW LEVEL SECURITY;
 
+-- Intentionally NO authenticated-role policy: share-link rows gate public
+-- 48h asset access. All admin reads/writes go through the service-role API
+-- routes (`/api/manufacturing/orders/[id]/share-link`); the public `/m/[token]`
+-- page also uses supabaseAdmin. service-role-only matches supabase/schema.sql
+-- and prevents over-broad RLS in existing installs.
 DROP POLICY IF EXISTS "Authenticated users can do everything" ON mfg_share_links;
-CREATE POLICY "Authenticated users can do everything" ON mfg_share_links
-  FOR ALL USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "deny_authenticated_default" ON mfg_share_links;
 DROP POLICY IF EXISTS "service_role_all" ON mfg_share_links;
 CREATE POLICY "service_role_all" ON mfg_share_links
   FOR ALL USING (auth.role() = 'service_role')
