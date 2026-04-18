@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/lib/utils'
-import { ArrowLeft, AlertTriangle, ArrowUpRight, ArrowDownRight, Minus, Layers, ExternalLink } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, ArrowUpRight, ArrowDownRight, Minus, Layers, ExternalLink, Link2, X, Search } from 'lucide-react'
 
 const PRESETS = [
   { key: '30',  label: 'Last 30 days' },
@@ -39,12 +39,26 @@ export default function ReconciliationPage() {
   const [orders, setOrders] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
 
+  // Attach-order modal state
+  const [attachingTx, setAttachingTx] = useState<any>(null)
+  const [partnerOrders, setPartnerOrders] = useState<any[] | null>(null)
+  const [partnerOrdersLoading, setPartnerOrdersLoading] = useState(false)
+  const [orderSearch, setOrderSearch] = useState('')
+  const [attachSavingId, setAttachSavingId] = useState<string | null>(null)
+
   useEffect(() => {
     supabase.from('manufacturing_partners').select('id,name,city').eq('id', partnerId).single()
       .then(({ data }: { data: any }) => setPartner(data))
   }, [partnerId])
 
   useEffect(() => { load() }, [partnerId, preset])
+
+  // Reset attach-modal cache if the partner changes (avoid stale cross-partner orders)
+  useEffect(() => {
+    setPartnerOrders(null)
+    setAttachingTx(null)
+    setOrderSearch('')
+  }, [partnerId])
 
   async function load() {
     setLoading(true)
@@ -110,6 +124,64 @@ export default function ReconciliationPage() {
     const unlinkedConsumed = unlinked.reduce((s, t) => s + (Number(t.quantity) || 0), 0)
     return { estTotal, actTotal, consumedTotal, varianceTotal, withBenchmark, unlinkedConsumed }
   }, [perOrder, unlinked])
+
+  async function openAttachModal(tx: any) {
+    setAttachingTx(tx)
+    setOrderSearch('')
+    if (partnerOrders !== null) return
+    setPartnerOrdersLoading(true)
+    // Orders this partner is working on, via manufacturing_orders link
+    const { data: mfgRows } = await supabase
+      .from('manufacturing_orders')
+      .select('customer_order_id')
+      .eq('manufacturing_partner_id', partnerId)
+      .not('customer_order_id', 'is', null)
+    const idsFromMfg = (mfgRows || []).map((r: any) => r.customer_order_id).filter(Boolean)
+    // Plus orders that already have transactions for this partner
+    const idsFromTx = Object.keys(orders)
+    const allIds = Array.from(new Set([...idsFromMfg, ...idsFromTx]))
+    if (allIds.length === 0) {
+      setPartnerOrders([])
+      setPartnerOrdersLoading(false)
+      return
+    }
+    const { data } = await supabase
+      .from('orders')
+      .select('id, order_number, status, gold_karat, gold_weight_estimated, gold_weight_actual, order_date')
+      .in('id', allIds)
+      .order('order_date', { ascending: false })
+    setPartnerOrders(data || [])
+    setPartnerOrdersLoading(false)
+  }
+
+  function closeAttachModal() {
+    setAttachingTx(null)
+    setOrderSearch('')
+  }
+
+  async function attachOrderToTx(orderId: string) {
+    if (!attachingTx) return
+    setAttachSavingId(orderId)
+    const { error } = await supabase
+      .from('material_transactions')
+      .update({ order_id: orderId })
+      .eq('id', attachingTx.id)
+      .eq('manufacturing_partner_id', partnerId)
+    setAttachSavingId(null)
+    if (error) { alert('Could not attach order: ' + error.message); return }
+    closeAttachModal()
+    load()
+  }
+
+  const filteredPartnerOrders = useMemo(() => {
+    if (!partnerOrders) return []
+    const q = orderSearch.trim().toLowerCase()
+    if (!q) return partnerOrders
+    return partnerOrders.filter(o =>
+      (o.order_number || '').toLowerCase().includes(q) ||
+      (o.status || '').toLowerCase().includes(q)
+    )
+  }, [partnerOrders, orderSearch])
 
   function VarianceCell({ v }: { v: number | null }) {
     if (v == null) return <span className="text-stone-400">—</span>
@@ -274,9 +346,91 @@ export default function ReconciliationPage() {
                     {t.notes && ` · ${t.notes}`}
                   </p>
                 </div>
-                <p className="text-sm font-semibold text-red-500 shrink-0">-{Number(t.quantity).toFixed(3)}{t.unit === 'carats' ? 'ct' : 'g'}</p>
+                <div className="flex items-center gap-3 shrink-0">
+                  <p className="text-sm font-semibold text-red-500">-{Number(t.quantity).toFixed(3)}{t.unit === 'carats' ? 'ct' : 'g'}</p>
+                  {!t.order_id && (
+                    <button
+                      onClick={() => openAttachModal(t)}
+                      className="inline-flex items-center gap-1 text-xs text-[#1E3A5F] border border-stone-200 hover:border-[#1E3A5F] hover:bg-stone-50 rounded-lg px-2 py-1 font-medium"
+                    >
+                      <Link2 className="w-3 h-3" /> Attach order
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {attachingTx && (
+        <div className="fixed inset-0 z-50 bg-stone-900/40 flex items-end sm:items-center justify-center p-0 sm:p-4"
+             onClick={closeAttachModal}>
+          <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[85vh] flex flex-col"
+               onClick={e => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-stone-100 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-stone-900 text-sm">Attach to order</h3>
+                <p className="text-xs text-stone-500 truncate">
+                  {attachingTx.material_float?.material_type?.replace(/_/g, ' ') || 'consumption'}
+                  {' · '}-{Number(attachingTx.quantity).toFixed(3)}{attachingTx.unit === 'carats' ? 'ct' : 'g'}
+                  {' · '}{formatDate(attachingTx.date)}
+                </p>
+              </div>
+              <button onClick={closeAttachModal} className="text-stone-400 hover:text-stone-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-4 py-3 border-b border-stone-100">
+              <div className="relative">
+                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  autoFocus
+                  value={orderSearch}
+                  onChange={e => setOrderSearch(e.target.value)}
+                  placeholder="Search order # or status…"
+                  className="w-full border border-stone-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+                />
+              </div>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {partnerOrdersLoading ? (
+                <p className="px-4 py-8 text-sm text-stone-400 text-center">Loading orders…</p>
+              ) : filteredPartnerOrders.length === 0 ? (
+                <p className="px-4 py-8 text-sm text-stone-400 text-center">
+                  {partnerOrders && partnerOrders.length === 0
+                    ? 'No orders are assigned to this partner yet.'
+                    : 'No orders match that search.'}
+                </p>
+              ) : (
+                <ul className="divide-y divide-stone-50">
+                  {filteredPartnerOrders.map(o => {
+                    const benchmark = o.gold_weight_actual ?? o.gold_weight_estimated
+                    const isSaving = attachSavingId === o.id
+                    return (
+                      <li key={o.id} className="px-4 py-3 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-stone-900 truncate">{o.order_number}</p>
+                          <p className="text-xs text-stone-500 truncate">
+                            {o.gold_karat ? `${o.gold_karat}K` : '—'}
+                            {benchmark != null ? ` · benchmark ${Number(benchmark).toFixed(3)}g` : ''}
+                            {o.status ? ` · ${o.status.replace(/_/g, ' ')}` : ''}
+                            {o.order_date ? ` · ${formatDate(o.order_date)}` : ''}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => attachOrderToTx(o.id)}
+                          disabled={isSaving || attachSavingId !== null}
+                          className="text-xs bg-[#1E3A5F] text-white rounded-lg px-3 py-1.5 font-medium disabled:opacity-50 hover:bg-[#172d49]"
+                        >
+                          {isSaving ? 'Attaching…' : 'Attach'}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       )}
