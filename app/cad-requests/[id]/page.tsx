@@ -7,6 +7,7 @@ import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, Upload, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
+import { useCadRequestRealtimeToasts, CadToastStack } from '@/components/CadRealtimeToasts'
 
 const CAD_STATUSES = [
   { value: 'brief_received', label: 'Brief Received' },
@@ -31,6 +32,24 @@ export default function CadRequestDetailPage() {
   const [form, setForm] = useState<any>({})
   const [uploading, setUploading] = useState(false)
   const [renderNote, setRenderNote] = useState('')
+
+  // Live updates: when the retailer acts on the CAD they're currently
+  // viewing, splice the new fields into local state so the badges, dates and
+  // feedback refresh, then refetch the revisions list to pick up the new
+  // timeline entry.
+  const { toasts, dismiss } = useCadRequestRealtimeToasts({
+    onChange: (row) => {
+      if (row.id !== id) return
+      setReq((prev: any) => (prev ? { ...prev, ...row } : prev))
+      // Refresh the revisions timeline to show the retailer's new entry.
+      supabase
+        .from('cad_revisions')
+        .select('id, created_at, kind, author, note, render_images')
+        .eq('cad_request_id', id)
+        .order('created_at', { ascending: true })
+        .then(({ data }: any) => setRevisions(data || []))
+    },
+  })
 
   useEffect(() => { load() }, [id])
 
@@ -153,6 +172,7 @@ export default function CadRequestDetailPage() {
 
   return (
     <div className="p-4 lg:p-7 max-w-3xl">
+      <CadToastStack toasts={toasts} onDismiss={dismiss} />
       <div className="flex items-center gap-3 mb-6">
         <Link href="/cad-requests" className="text-stone-400 hover:text-stone-600">
           <ArrowLeft className="w-5 h-5" />

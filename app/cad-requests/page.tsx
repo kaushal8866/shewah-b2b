@@ -5,6 +5,7 @@ import { supabase, CADRequest } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import { Plus, Search, Clock, AlertCircle, CheckCircle2, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { useCadRequestRealtimeToasts, CadToastStack } from '@/components/CadRealtimeToasts'
 
 type CADRow = CADRequest & { partner_name?: string; partner_city?: string }
 
@@ -14,6 +15,21 @@ export default function CADRequestsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [now, setNow] = useState(Date.now())
+
+  // Live updates: when a retailer approves or asks for a revision, patch the
+  // matching row in place and surface a toast. Falls back gracefully when the
+  // changed row hasn't been loaded yet (e.g. first page of a paginated view).
+  const { toasts, dismiss } = useCadRequestRealtimeToasts({
+    onChange: (row) => {
+      setRequests((prev) => {
+        const idx = prev.findIndex((r) => r.id === row.id)
+        if (idx === -1) return prev
+        const next = prev.slice()
+        next[idx] = { ...next[idx], ...row }
+        return next
+      })
+    },
+  })
 
   useEffect(() => {
     loadRequests()
@@ -104,6 +120,7 @@ export default function CADRequestsPage() {
 
   return (
     <div className="p-4 lg:p-7">
+      <CadToastStack toasts={toasts} onDismiss={dismiss} />
       <div className="flex items-center justify-between mb-5 lg:mb-6">
         <div>
           <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">CAD Requests</h1>
