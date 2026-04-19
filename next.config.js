@@ -14,6 +14,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    serverComponentsExternalPackages: ['pdfkit'],
+  },
 }
 
 module.exports = nextConfig
