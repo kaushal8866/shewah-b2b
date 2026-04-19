@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Diamond, LogOut, Store, Package, ShoppingBag, Sparkles } from 'lucide-react'
+import { Diamond, LogOut, Store, Package, ShoppingBag, Sparkles, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function RetailerPortalLayout({ children }: { children: React.ReactNode }) {
@@ -21,6 +21,7 @@ export default function RetailerPortalLayout({ children }: { children: React.Rea
     { href: '/portal/retailer/catalog',  label: 'Catalog',      icon: Package },
     { href: '/portal/retailer/custom',   label: 'Custom order', icon: Sparkles },
     { href: '/portal/retailer/orders',   label: 'Orders',       icon: ShoppingBag },
+    { href: '/portal/retailer/profile',  label: 'Profile',      icon: User },
   ]
 
   function isActive(t: { href: string; exact?: boolean }) {
