@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { safeDbError } from '@/lib/sanitizeDbError'
 
 const ALLOWED_STATUSES = new Set(['issued', 'in_progress', 'quality_check', 'completed'])
 
@@ -14,6 +15,10 @@ const DETAIL_COLS = `
   manufacturing_partner_id
 `
 
+// Fallback shape used when the `completed_date` column is missing on a
+// particular environment (Task #58 migration not yet applied).
+const DETAIL_COLS_BASE = DETAIL_COLS.replace(/,\s*completed_date/g, '')
+
 async function getMfgUser() {
   const session = await getServerSession(authOptions)
   const user: any = session?.user
@@ -25,18 +30,31 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
   const user = await getMfgUser()
   if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { data, error } = await supabaseAdmin
+  let resp = await supabaseAdmin
     .from('manufacturing_orders')
     .select(DETAIL_COLS + ', manufacturing_partners(name, city)')
     .eq('id', ctx.params.id)
     .eq('manufacturing_partner_id', user.manufacturingPartnerId)
     .maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (resp.error && (resp.error.code === '42703' || /completed_date/.test(resp.error.message || ''))) {
+    resp = await supabaseAdmin
+      .from('manufacturing_orders')
+      .select(DETAIL_COLS_BASE + ', manufacturing_partners(name, city)')
+      .eq('id', ctx.params.id)
+      .eq('manufacturing_partner_id', user.manufacturingPartnerId)
+      .maybeSingle()
+  }
 
-  // Strip the partner_id from the response — UI doesn't need it.
-  const { manufacturing_partner_id, ...safe } = data as any
+  if (resp.error) {
+    return NextResponse.json(
+      { error: safeDbError(resp.error, 'manufacturer.orders.get', 'Could not load order.') },
+      { status: 500 },
+    )
+  }
+  if (!resp.data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const { manufacturing_partner_id, ...safe } = resp.data as any
   return NextResponse.json({ order: safe })
 }
 
@@ -76,7 +94,7 @@ export async function PATCH(req: Request, ctx: { params: { id: string } }) {
   // (per spec — manufacturer gold consumption entry is out of scope).
 
   // Server-side scope guard: only update rows belonging to this manufacturer.
-  const { data, error } = await supabaseAdmin
+  let upd = await supabaseAdmin
     .from('manufacturing_orders')
     .update(updates)
     .eq('id', ctx.params.id)
@@ -84,7 +102,27 @@ export async function PATCH(req: Request, ctx: { params: { id: string } }) {
     .select(DETAIL_COLS)
     .maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (upd.error && (upd.error.code === '42703' || /completed_date/.test(upd.error.message || ''))) {
+    // The DB doesn't have completed_date yet — drop it from the update payload
+    // and the returning select, retry once. The status change still goes
+    // through; the date is just not recorded.
+    const { completed_date, ...withoutDate } = updates
+    upd = await supabaseAdmin
+      .from('manufacturing_orders')
+      .update(withoutDate)
+      .eq('id', ctx.params.id)
+      .eq('manufacturing_partner_id', user.manufacturingPartnerId)
+      .select(DETAIL_COLS_BASE)
+      .maybeSingle()
+  }
+
+  const { data, error } = upd
+  if (error) {
+    return NextResponse.json(
+      { error: safeDbError(error, 'manufacturer.orders.patch', 'Could not save changes.') },
+      { status: 500 },
+    )
+  }
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   // When the karigar marks this order completed, finalise any pending

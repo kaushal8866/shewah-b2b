@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Package, Truck, Clock, FileText, Calendar, CheckCircle2, Circle, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, Package, Truck, Clock, FileText, Calendar, CheckCircle2, Circle, Sparkles, X, Edit3, AlertCircle } from 'lucide-react'
 
 const PIPELINE = [
   { value: 'brief_received', label: 'Brief received' },
@@ -33,6 +33,25 @@ function fmtDate(d?: string | null) {
   try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return d }
 }
 
+function ChangeSummary({ changes, note }: { changes: Record<string, any>, note?: string | null }) {
+  const labels: Record<string, string> = {
+    quantity: 'Quantity', ring_size: 'Ring size', special_notes: 'Notes', brief_text: 'Brief',
+  }
+  const entries = Object.entries(changes || {})
+  if (entries.length === 0 && !note) return null
+  return (
+    <div className="text-[12px] text-stone-700 mt-1 space-y-0.5">
+      {entries.map(([k, v]) => (
+        <div key={k}>
+          <span className="text-stone-400">{labels[k] || k}:</span>{' '}
+          <span className="font-medium">{String(v ?? '—')}</span>
+        </div>
+      ))}
+      {note && <div className="text-stone-600 italic">"{note}"</div>}
+    </div>
+  )
+}
+
 export default function RetailerOrderDetail() {
   const { id } = useParams<{ id: string }>()
   const [order, setOrder] = useState<any>(null)
@@ -46,6 +65,17 @@ export default function RetailerOrderDetail() {
   const [submitting, setSubmitting] = useState(false)
   const [actionError, setActionError] = useState('')
 
+  // Order change-request state
+  const [changeRequests, setChangeRequests] = useState<any[]>([])
+  const [crOpen, setCrOpen] = useState(false)
+  const [crQty, setCrQty] = useState<string>('')
+  const [crRingSize, setCrRingSize] = useState<string>('')
+  const [crNotes, setCrNotes] = useState<string>('')
+  const [crBrief, setCrBrief] = useState<string>('')
+  const [crNote, setCrNote] = useState<string>('')
+  const [crSubmitting, setCrSubmitting] = useState(false)
+  const [crError, setCrError] = useState('')
+
   function load() {
     fetch(`/api/portal/retailer/orders/${id}`)
       .then(r => r.json())
@@ -55,9 +85,60 @@ export default function RetailerOrderDetail() {
           setOrder(d.order)
           setCad(d.cad_request || null)
           setRevisions(Array.isArray(d.cad_revisions) ? d.cad_revisions : [])
+          setChangeRequests(Array.isArray(d.change_requests) ? d.change_requests : [])
         }
       })
       .catch(e => setError(e.message))
+  }
+
+  function openChangeModal() {
+    if (!order) return
+    setCrQty(order.quantity != null ? String(order.quantity) : '')
+    setCrRingSize(order.ring_size || '')
+    setCrNotes(order.special_notes || '')
+    setCrBrief(order.brief_text || '')
+    setCrNote('')
+    setCrError('')
+    setCrOpen(true)
+  }
+
+  async function submitChangeRequest() {
+    if (!order) return
+    const changes: any = {}
+    const qNum = parseInt(crQty)
+    if (Number.isFinite(qNum) && qNum !== order.quantity) changes.quantity = qNum
+    if (crRingSize !== (order.ring_size || '')) changes.ring_size = crRingSize
+    if (crNotes !== (order.special_notes || '')) changes.special_notes = crNotes
+    if (order.type === 'custom' && crBrief !== (order.brief_text || '')) changes.brief_text = crBrief
+
+    if (Object.keys(changes).length === 0 && !crNote.trim()) {
+      setCrError('Please change at least one field, or describe what you need in the note.')
+      return
+    }
+    setCrSubmitting(true); setCrError('')
+    try {
+      const res = await fetch(`/api/portal/retailer/orders/${id}/change-request`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ changes, retailer_note: crNote.trim() }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setCrError(d.error || 'Could not submit your request.'); return }
+      setCrOpen(false)
+      load()
+    } catch (e: any) {
+      setCrError(e.message || 'Could not submit your request.')
+    } finally {
+      setCrSubmitting(false)
+    }
+  }
+
+  async function cancelChangeRequest(requestId: string) {
+    if (!confirm('Cancel this change request?')) return
+    const res = await fetch(`/api/portal/retailer/orders/${id}/change-request`, {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ request_id: requestId }),
+    })
+    if (res.ok) load()
   }
 
   useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id])
@@ -140,6 +221,72 @@ export default function RetailerOrderDetail() {
           </div>
         </div>
       </div>
+
+      {(() => {
+        // Editing is allowed only while the order is still in early stages.
+        // Once it goes into production / dispatch, changes need a phone call.
+        const LOCKED = new Set(['in_production', 'qc', 'dispatched', 'delivered', 'cancelled'])
+        const canEdit = !LOCKED.has(order.status)
+        const pending = changeRequests.find(r => r.status === 'pending')
+        const history = changeRequests.filter(r => r.status !== 'pending')
+        if (!canEdit && changeRequests.length === 0) return null
+        return (
+          <div className="bg-white rounded-xl border border-stone-200 p-5 mb-4">
+            <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+              <div>
+                <h2 className="font-medium text-stone-900 flex items-center gap-2">
+                  <Edit3 className="w-4 h-4 text-stone-400" /> Need to change something?
+                </h2>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  {canEdit
+                    ? 'You can request edits to quantity, ring size, notes or the brief. Shewah will review and confirm.'
+                    : 'This order has progressed too far for self-service edits. Please call Shewah.'}
+                </p>
+              </div>
+              {canEdit && !pending && (
+                <button onClick={openChangeModal}
+                  className="text-sm bg-[#1E3A5F] text-white px-3.5 py-2 rounded-lg hover:bg-[#16304F]">
+                  Request changes
+                </button>
+              )}
+            </div>
+            {pending && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2 text-amber-800 font-medium">
+                    <Clock className="w-4 h-4" /> Waiting for Shewah to review
+                  </div>
+                  <button onClick={() => cancelChangeRequest(pending.id)}
+                    className="text-xs text-stone-500 hover:text-red-600">Cancel request</button>
+                </div>
+                <ChangeSummary changes={pending.changes} note={pending.retailer_note} />
+                <p className="text-[11px] text-stone-500 mt-1">Submitted {fmtDate(pending.created_at)}</p>
+              </div>
+            )}
+            {history.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-stone-100 space-y-2">
+                <p className="text-xs text-stone-400">Past requests</p>
+                {history.map(h => (
+                  <div key={h.id} className="text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                        h.status === 'approved' ? 'bg-green-100 text-green-700' :
+                        h.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                        'bg-stone-100 text-stone-600'
+                      }`}>{h.status}</span>
+                      <span className="text-[11px] text-stone-400">{fmtDate(h.reviewed_at || h.created_at)}</span>
+                    </div>
+                    <ChangeSummary changes={h.changes} note={h.retailer_note} />
+                    {h.review_note && (
+                      <p className="text-[12px] text-stone-600 mt-1"><span className="text-stone-400">Shewah note:</span> {h.review_note}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {cad && cadRenders.length > 0 && (
         <div className="bg-white rounded-xl border border-stone-200 p-5 mb-4">
@@ -422,6 +569,67 @@ export default function RetailerOrderDetail() {
           )}
         </div>
       </div>
+
+      {crOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-stone-900">Request changes</h3>
+                <p className="text-xs text-stone-500 mt-0.5">Edit any field below. Shewah will review before applying.</p>
+              </div>
+              <button onClick={() => setCrOpen(false)} className="text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-stone-500 block mb-1">Quantity</label>
+                <input type="number" min={1} max={999} value={crQty} onChange={e => setCrQty(e.target.value)}
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none" />
+              </div>
+              <div>
+                <label className="text-xs text-stone-500 block mb-1">Ring size</label>
+                <input type="text" value={crRingSize} onChange={e => setCrRingSize(e.target.value)} maxLength={20}
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none" />
+              </div>
+              <div>
+                <label className="text-xs text-stone-500 block mb-1">Notes for Shewah</label>
+                <textarea value={crNotes} onChange={e => setCrNotes(e.target.value)} rows={2} maxLength={1000}
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none resize-none" />
+              </div>
+              {order.type === 'custom' && (
+                <div>
+                  <label className="text-xs text-stone-500 block mb-1">Brief / description</label>
+                  <textarea value={crBrief} onChange={e => setCrBrief(e.target.value)} rows={3} maxLength={2000}
+                    className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none resize-none" />
+                </div>
+              )}
+              <div>
+                <label className="text-xs text-stone-500 block mb-1">Why are you requesting this change? (optional)</label>
+                <textarea value={crNote} onChange={e => setCrNote(e.target.value)} rows={2} maxLength={1000}
+                  placeholder="e.g. End customer changed her mind on size."
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none resize-none" />
+              </div>
+            </div>
+            {crError && (
+              <div className="mt-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm flex gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" /> {crError}
+              </div>
+            )}
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setCrOpen(false)}
+                className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50">
+                Cancel
+              </button>
+              <button onClick={submitChangeRequest} disabled={crSubmitting}
+                className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#16304F] disabled:opacity-50">
+                {crSubmitting ? 'Submitting...' : 'Submit request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {reviseOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

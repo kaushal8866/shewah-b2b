@@ -471,11 +471,36 @@ create table if not exists manufacturing_orders (
   total_manufacturing_cost    numeric,
   expected_date               date,
   issued_date                 date,
+  completed_date              date,
   internal_notes              text,
   status                      text        default 'issued'
 );
 alter table manufacturing_orders enable row level security;
 create policy "service_role_all" on manufacturing_orders
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- Retailer-initiated order change requests (Task #58). Retailers submit a
+-- proposed change to their order from the portal; a master must approve it
+-- before the order row is updated.
+create table if not exists order_change_requests (
+  id              uuid        primary key default gen_random_uuid(),
+  created_at      timestamptz default now(),
+  order_id        uuid        not null references orders(id) on delete cascade,
+  partner_id      uuid        not null references partners(id) on delete cascade,
+  requested_by    uuid        references app_users(id) on delete set null,
+  changes         jsonb       not null default '{}'::jsonb,
+  retailer_note   text,
+  status          text        not null default 'pending'
+                              check (status in ('pending', 'approved', 'rejected', 'cancelled')),
+  reviewed_by     uuid        references app_users(id) on delete set null,
+  reviewed_at     timestamptz,
+  review_note     text
+);
+create index if not exists idx_ocr_order   on order_change_requests(order_id);
+create index if not exists idx_ocr_partner on order_change_requests(partner_id);
+create index if not exists idx_ocr_status  on order_change_requests(status);
+alter table order_change_requests enable row level security;
+create policy "service_role_all" on order_change_requests
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
 create table if not exists material_float (

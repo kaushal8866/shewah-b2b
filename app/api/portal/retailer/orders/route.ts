@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { safeDbError } from '@/lib/sanitizeDbError'
 
 // Fields the retailer is allowed to see. Internal financials (gold weights, COGS,
 // margin, manufacturer assignment, internal notes, locked gold rate) are excluded.
@@ -34,7 +35,12 @@ export async function GET(req: Request) {
     .order('order_date', { ascending: false })
     .limit(limit)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    return NextResponse.json(
+      { error: safeDbError(error, 'retailer.orders.list', 'Could not load your orders.') },
+      { status: 500 },
+    )
+  }
   return NextResponse.json({ orders: data || [] })
 }
 

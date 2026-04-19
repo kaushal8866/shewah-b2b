@@ -5,8 +5,134 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase, ORDER_STATUSES, computeOrderCogs } from '@/lib/supabase'
 import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
 import { formatDate, getStatusColor } from '@/lib/utils'
-import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
+
+function OrderChangeRequestsPanel({ orderId, onApplied }: { orderId: string, onApplied: () => void }) {
+  const [requests, setRequests] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [reviewNote, setReviewNote] = useState('')
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  async function load() {
+    setLoading(true)
+    try {
+      const r = await fetch(`/api/order-change-requests?order_id=${orderId}`)
+      const d = await r.json()
+      if (r.ok) setRequests(d.requests || [])
+    } finally { setLoading(false) }
+  }
+  useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [orderId])
+
+  async function review(id: string, action: 'approve' | 'reject') {
+    setBusyId(id)
+    try {
+      const r = await fetch(`/api/order-change-requests/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, review_note: reviewNote.trim() || null }),
+      })
+      const d = await r.json()
+      if (!r.ok) { alert(d.error || 'Could not save.'); return }
+      setReviewNote(''); setActiveId(null)
+      load()
+      if (action === 'approve') onApplied()
+    } finally { setBusyId(null) }
+  }
+
+  if (loading) return null
+  if (requests.length === 0) return null
+
+  const labels: Record<string, string> = {
+    quantity: 'Quantity', ring_size: 'Ring size', special_notes: 'Notes', brief_text: 'Brief',
+  }
+  const pending = requests.filter(r => r.status === 'pending')
+  const recent = requests.filter(r => r.status !== 'pending').slice(0, 3)
+
+  return (
+    <div className="mb-6 bg-white border border-stone-200 rounded-2xl p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <MessageSquare className="w-4 h-4 text-stone-500" />
+        <h3 className="font-medium text-stone-900">Change requests from retailer</h3>
+        {pending.length > 0 && (
+          <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+            {pending.length} pending
+          </span>
+        )}
+      </div>
+      <div className="space-y-3">
+        {pending.map(r => (
+          <div key={r.id} className="border border-amber-200 bg-amber-50 rounded-xl p-3">
+            <div className="text-[12px] text-stone-500 mb-2">
+              {r.partner?.store_name || 'Retailer'} · {r.requester?.display_name || r.requester?.username || ''} · {new Date(r.created_at).toLocaleString('en-IN')}
+            </div>
+            <div className="text-sm space-y-1 mb-2">
+              {Object.entries(r.changes || {}).map(([k, v]) => {
+                const current = r.order ? (r.order as any)[k] : undefined
+                return (
+                  <div key={k} className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-stone-500 text-xs w-20">{labels[k] || k}:</span>
+                    <span className="text-stone-400 line-through text-xs">{String(current ?? '—')}</span>
+                    <ChevronRight className="w-3 h-3 text-stone-400" />
+                    <span className="font-medium text-stone-900">{String(v ?? '—')}</span>
+                  </div>
+                )
+              })}
+              {Object.keys(r.changes || {}).length === 0 && (
+                <p className="text-xs text-stone-500 italic">No field changes — review the note below.</p>
+              )}
+            </div>
+            {r.retailer_note && (
+              <p className="text-[13px] text-stone-700 bg-white rounded-md p-2 border border-stone-200 mb-2">
+                <span className="text-stone-400 text-xs">Note: </span>{r.retailer_note}
+              </p>
+            )}
+            {activeId === r.id ? (
+              <div className="space-y-2">
+                <textarea value={reviewNote} onChange={e => setReviewNote(e.target.value)} rows={2}
+                  placeholder="Optional reply to the retailer"
+                  className="w-full text-sm border border-stone-200 rounded-md px-2 py-1.5 outline-none focus:border-[#1E3A5F] resize-none" />
+                <div className="flex gap-2">
+                  <button disabled={busyId === r.id} onClick={() => review(r.id, 'reject')}
+                    className="text-sm px-3 py-1.5 rounded-md border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
+                    Reject
+                  </button>
+                  <button disabled={busyId === r.id} onClick={() => review(r.id, 'approve')}
+                    className="text-sm px-3 py-1.5 rounded-md bg-[#1E3A5F] text-white hover:bg-[#16304F] disabled:opacity-50">
+                    {busyId === r.id ? 'Saving...' : 'Approve & apply'}
+                  </button>
+                  <button onClick={() => { setActiveId(null); setReviewNote('') }}
+                    className="text-sm px-3 py-1.5 rounded-md text-stone-500 hover:bg-stone-100">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setActiveId(r.id)}
+                className="text-sm bg-[#1E3A5F] text-white px-3 py-1.5 rounded-md hover:bg-[#16304F]">
+                Review
+              </button>
+            )}
+          </div>
+        ))}
+        {recent.length > 0 && (
+          <details className="text-sm">
+            <summary className="cursor-pointer text-stone-500 hover:text-stone-700 text-xs">Recent decisions</summary>
+            <div className="mt-2 space-y-2">
+              {recent.map(r => (
+                <div key={r.id} className="text-[12px] text-stone-600 border-l-2 pl-2"
+                  style={{ borderColor: r.status === 'approved' ? '#10b981' : '#ef4444' }}>
+                  <span className={`font-medium ${r.status === 'approved' ? 'text-green-700' : 'text-red-700'}`}>
+                    {r.status}
+                  </span>{' '}· {r.reviewer?.display_name || r.reviewer?.username || 'Admin'} · {new Date(r.reviewed_at || r.created_at).toLocaleDateString('en-IN')}
+                  {r.review_note && <span className="text-stone-500"> — {r.review_note}</span>}
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+    </div>
+  )
+}
 
 const STAGES_REQUIRING_ACTUALS = new Set(['qc', 'dispatched', 'delivered'])
 
@@ -224,6 +350,8 @@ export default function OrderDetailPage() {
           )}
         </div>
       </div>
+
+      <OrderChangeRequestsPanel orderId={id} onApplied={load} />
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

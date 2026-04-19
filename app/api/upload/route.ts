@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Allow up to ~25 MB uploads — needed for STEP/STL CAD exports and high-res
+// retailer reference photos taken on phones (HEIC originals are easily 8-12 MB).
+export const runtime = 'nodejs'
+export const maxDuration = 60
+const MAX_BYTES = 25 * 1024 * 1024
+
 const IMAGE_EXTS = new Set(['png','jpg','jpeg','webp','gif','heic','heif','avif','svg'])
 
 function pickResourceType(filename: string): 'image' | 'raw' {
@@ -34,6 +40,16 @@ export async function POST(req: NextRequest) {
   if (!file || !(file instanceof File)) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 })
   }
+  if (file.size > MAX_BYTES) {
+    const mb = (file.size / (1024 * 1024)).toFixed(1)
+    return NextResponse.json(
+      { error: `File is too large (${mb} MB). Maximum size is 25 MB. Please compress or resize and try again.` },
+      { status: 413 },
+    )
+  }
+  if (file.size === 0) {
+    return NextResponse.json({ error: 'File is empty.' }, { status: 400 })
+  }
 
   // Caller can override resource type, but default is auto-detected by extension.
   const requested = (formData.get('resource_type') as string | null) || ''
@@ -50,14 +66,28 @@ export async function POST(req: NextRequest) {
   // using `cad_file_names` and our API responses include the original
   // filename, so the asset URL itself doesn't need to carry the name.
 
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
-    { method: 'POST', body: upload }
-  )
+  let res: Response
+  try {
+    res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
+      { method: 'POST', body: upload },
+    )
+  } catch (e: any) {
+    console.error('[upload] network error:', e)
+    return NextResponse.json(
+      { error: 'Could not reach the image server. Please check your connection and try again.' },
+      { status: 502 },
+    )
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    const msg = (err as { error?: { message?: string } }).error?.message || `Cloudinary error (${res.status})`
+    const rawMsg = (err as { error?: { message?: string } }).error?.message || ''
+    console.error(`[upload] cloudinary ${res.status}:`, rawMsg, 'file=', file.name, 'size=', file.size)
+    // Surface a clean message to the retailer. Cloudinary's own messages
+    // (e.g. "File size too large", "Invalid image file") are user-friendly
+    // enough to pass through, but fall back to a generic line if missing.
+    const msg = rawMsg || `Upload failed (server returned ${res.status}). Please try again.`
     return NextResponse.json({ error: msg }, { status: 502 })
   }
 

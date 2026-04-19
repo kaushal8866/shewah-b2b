@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { safeDbError } from '@/lib/sanitizeDbError'
 import bcrypt from 'bcryptjs'
 
 async function getRetailerUser() {
@@ -21,7 +22,7 @@ export async function GET() {
     .eq('id', user.partnerId)
     .maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: safeDbError(error, 'retailer.profile.get', 'Could not load your profile.') }, { status: 500 })
   if (!data) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
   return NextResponse.json({
@@ -53,7 +54,7 @@ export async function PATCH(req: Request) {
       .select('id, password_hash')
       .eq('username', user.username)
       .maybeSingle()
-    if (ue) return NextResponse.json({ error: ue.message }, { status: 500 })
+    if (ue) return NextResponse.json({ error: safeDbError(ue, 'retailer.profile.pwd_lookup', 'Could not verify your account.') }, { status: 500 })
     if (!u) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
     const ok = await bcrypt.compare(current, u.password_hash)
@@ -64,7 +65,7 @@ export async function PATCH(req: Request) {
       .from('app_users')
       .update({ password_hash: newHash })
       .eq('id', u.id)
-    if (upd.error) return NextResponse.json({ error: upd.error.message }, { status: 500 })
+    if (upd.error) return NextResponse.json({ error: safeDbError(upd.error, 'retailer.profile.pwd_update', 'Could not update your password.') }, { status: 500 })
 
     return NextResponse.json({ ok: true })
   }
@@ -88,7 +89,7 @@ export async function PATCH(req: Request) {
     .eq('id', user.partnerId)
     .select('id, store_name, owner_name, phone, email, city, state, address, sarafa_bazaar, notify_whatsapp')
     .single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: safeDbError(error, 'retailer.profile.update', 'Could not save your profile.') }, { status: 500 })
 
   return NextResponse.json({ profile: data })
 }
