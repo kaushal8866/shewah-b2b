@@ -1,152 +1,48 @@
 # Shewah B2B
 
-A Next.js 14 B2B admin panel for Shewah jewelry, built with Supabase as the database backend.
+## Overview
+Shewah B2B is a comprehensive admin panel designed for the Shewah jewelry business. Built on Next.js 14 and Supabase, its primary purpose is to streamline and manage various aspects of the jewelry business, including product catalog management, order processing, CAD request handling, manufacturing tracking, and partner relations. The platform aims to enhance operational efficiency, improve communication with partners and manufacturers, and provide robust analytics for informed decision-making. Key capabilities include a public-facing design showcase for partners, a dedicated portal for manufacturers and retailers, and real-time gold rate tracking. The long-term vision is to establish a scalable and integrated digital ecosystem for Shewah's B2B operations, fostering better collaboration and accelerating business growth.
 
-## Architecture
+## User Preferences
+The user prefers clear and concise communication. When making changes, please ask for confirmation before implementing major architectural shifts or schema modifications. Iterative development is preferred, with frequent updates on progress. For any database migrations, explicit instructions and confirmation prompts are essential, as these often require manual execution.
 
+## System Architecture
+
+### UI/UX Decisions
+The application uses Tailwind CSS for styling, ensuring a consistent and modern look and feel. Analytics dashboards leverage Recharts for clear data visualization. Lucide React provides a comprehensive set of icons for intuitive navigation. The admin panel features a consistent `AppShell` with a sidebar navigation, bypassed for public-facing routes like the partner showcase.
+
+### Technical Implementations
 - **Framework**: Next.js 14 (App Router)
 - **Database**: Supabase (PostgreSQL)
-- **Auth**: NextAuth.js (credentials provider, JWT sessions; roles: master / sub / manufacturer / retailer)
-- **Styling**: Tailwind CSS
-- **Charts**: Recharts
-- **Icons**: Lucide React
+- **Authentication**: NextAuth.js with credentials provider and JWT sessions, supporting roles: master, sub, manufacturer, and retailer.
+- **API Proxy**: All client-side Supabase interactions for authenticated users are routed through an `app/api/db` proxy, enforcing role-based access control (master/sub only) and using the Supabase service role key for enhanced security. Public routes use `supabaseAdmin` directly.
+- **WhatsApp Notifications**: Integrated for retailer order updates and CAD revision acknowledgements, using a configurable webhook for outbound messages and an inbound endpoint for processing acknowledgements.
+- **Material Ledger**: Tracks gold and other materials, distinguishing between available, reserved, and used quantities. Access is restricted to master users.
+- **Order COGS and Gold Integrity**: Computes Cost of Goods Sold (COGS) and margin, with strict validation rules for order completion based on gold weight and consumption records.
+- **File Uploads**: Uses `/api/upload` to handle image and raw file uploads, routing non-image files to Cloudinary's `raw/upload` endpoint.
 
-## Project Structure
+### Feature Specifications
+- **Admin Panel**: Centralized management for partners, orders, CAD requests, manufacturing, product catalog, gold rates, vendors, circuits, analytics, and app settings.
+- **Partner Design Portal (Public)**: Allows partners to browse curated collections, shortlist products, and add notes without requiring a login. Tracks views and interests.
+- **Manufacturer Portal**: Dedicated interface for manufacturers to view and update their assigned orders, manage progress photos, and update status.
+- **Retailer Portal**: Provides retailers with access to the product catalog, custom design brief forms, and a view of their order history and status.
+- **CAD Management**: Comprehensive tracking of CAD requests, revisions, and sharing with partners, including file uploads and a timeline of changes.
+- **Karigar Handoff**: Secure sharing of manufacturing order specifications, reference images, and CAD/STL files with karigars (manufacturers) via time-limited WhatsApp links.
+- **Daily Reconciliation Digest**: Automated reporting for manufacturing partners to identify material float discrepancies, with configurable thresholds and optional email notifications.
 
-- `app/` - Next.js App Router pages
-  - `analytics/` - Analytics dashboard
-  - `cad-requests/` - CAD request management
-  - `catalog/` - Product catalog with 3 tabs (Products / Collections / Interest)
-    - `collections/new/` - Create new design collection
-    - `collections/[id]/` - Collection detail: product picker + partner link generator + view analytics
-  - `circuits/` - Sales circuits
-  - `gold-rates/` - Gold rate tracking
-  - `manufacturing/` - Manufacturing tracking
-  - `orders/` - Order management
-  - `partners/` - Partner/retailer management
-  - `settings/` - App settings (master only)
-  - `showcase/[collectionId]/[partnerId]/` - **Public** partner showcase portal (no auth)
-  - `vendors/` - Vendor management
-  - `api/showcase/track/` - POST endpoint for showcase view tracking
-- `components/AppShell.tsx` - Admin sidebar/nav (bypassed for /showcase/* routes)
-- `lib/` - Shared utilities and Supabase client
-- `middleware.ts` - Auth guard (excludes /showcase/* and /api/showcase/*)
-- `scripts/setup_collections.sql` - Migration for 4 new tables (must run manually in Supabase Dashboard)
-- `scripts/setup_material_ledger.sql` - **Task 5 migration: must run manually in Supabase SQL Editor.** Adds COGS/gold columns to `orders` (gold_weight_estimated/actual, gold_source, making_charges, cad_cost, stone_cost, total_cogs, margin, assigned_manufacturer_id), ensures `material_transactions.order_id` FK + negative-balance flag columns + BEFORE-INSERT trigger that flags (does not block) negative-balance rows, renames `total_withdrawn`→`total_returned` on `material_float`, and migrates the `transaction_type` value `withdrawal`→`return`. Canonical 4-type set: `deposit`, `consumption`, `return`, `adjustment`.
-- `scripts/setup_mfg_handoff_lifecycle.sql` - **Task 46 migration: must run manually in Supabase SQL Editor (idempotent).** Adds `cad_files` + `cad_file_names` arrays to `manufacturing_orders`; adds `lifecycle` (`pending`|`final`, default `final`) and `manufacturing_order_id` FK to `material_transactions`; updates the negative-balance trigger to skip pending reservations; creates `mfg_share_links` (token uuid PK, expires_at, revoked, last_accessed_at, download_count) with RLS policies. Lifecycle columns let the float ledger track three buckets: **Available** (in custody, free), **Reserved** (pending consumption tied to an in-flight mfg order), **Used** (final consumption). Issuing a mfg order with `material_from_float=true` writes a `consumption / lifecycle='pending'` row; flipping the order to `completed` promotes it to `final` (substituting `gold_weight_actual` if entered); flipping to `cancelled` deletes the reservation. The bucket math is computed by `lib/floatBuckets.ts` from `material_transactions` directly; the legacy `material_float.balance` column is unchanged.
-- **Karigar handoff via WhatsApp link**: `mfg_share_links` rows give karigars a 48-hour `/m/[token]` public page (server-rendered with `supabaseAdmin`, no auth — listed in middleware allowlist) showing the order spec, reference images, CAD/STL files, and a "Download all as ZIP" button (`/api/m/[token]/zip`, streams via `jszip`). Admin order detail (`/manufacturing/orders/[id]`) has a panel to "Send karigar pack on WhatsApp" — POSTs to `/api/manufacturing/orders/[id]/share-link`, which auto-revokes any prior active link, creates a fresh token, and (unless `sendWhatsapp:false` is passed) calls `lib/karigarShareNotify.ts` to push the link to the karigar's WhatsApp via the same webhook plumbing as `lib/whatsappNotify.ts`. The panel also surfaces last-opened time, download count, copy/preview/revoke/regenerate actions. Reference image and CAD upload both use `/api/upload`, which now auto-routes non-image extensions (.stl/.3dm/.step/.pdf/.zip/.dwg) to Cloudinary's `raw/upload` and preserves the original filename.
-- `scripts/migrate_task14_whatsapp_notifications.sql` - **Task 14 migration: must run manually.** Adds `partners.notify_whatsapp boolean default true` and seeds settings keys `whatsapp_notifications_enabled`, `whatsapp_webhook_url`, `whatsapp_webhook_token`, `public_base_url`.
-- `scripts/migrate_task47_cad_partner_share.sql` - **Tasks 47 & 49 migration: must run manually in Supabase SQL Editor (idempotent).** Creates `cad_partner_share_links` (token uuid PK, cad_request_id, partner_name/phone, expires_at, revoked_at, last_opened_at) and `cad_partner_responses` (link_id, decision: approved|revision, comment, partner_name, ip, user_agent). Both have RLS locked to service_role (only the public token route reads/writes them via supabaseAdmin). Adds `cad_partner_share_record_visit(token uuid)` for atomic last-opened stamping. Powers the public `/cad-share/<token>` brief page (PDF + ZIP + Approve/Revision form) and the "CAD partner" panel on `/cad-requests/<id>`. **Task 49** adds `cad_partner_uploads` (link_id, cad_request_id, partner_name, url, filename, resource_type image|raw, bytes, ip, user_agent, uploaded_at) — service_role-only RLS — that stores draft renders / STL / 3DM / STEP / OBJ / PDF / ZIP / DWG (≤25 MB each, 6 per request) the CAD partner uploads through `/api/cad-share/[token]/upload`. Each upload batch is mirrored as a `cad_revisions` row with `kind='partner_upload'` (kind check constraint extended) so it appears inline in the admin revision timeline; the retailer portal filters those entries out since they're internal. The admin "CAD partner" panel renders an inline file list with thumbnails + download links; the public share page lists files the partner has already uploaded for that token.
-- `scripts/migrate_production_catchup.sql` - **Combined catch-up migration (2026-04-18): run once on any older production DB.** Idempotent. Bundles every previously missed migration (`gold_karat` columns on orders/cad_requests/manufacturing_orders, `manufacturing_orders.order_id` FK, full Task 46 lifecycle + `mfg_share_links` + atomic `mfg_reserve_float`/share-link helpers, Task 47/49 `cad_partner_share_links`/`cad_partner_responses`/`cad_partner_uploads` + revisions kind constraint, Task 48 `cad_partners` directory + `cad_partner_id` FK, Task 40 `cad_revisions.acknowledged_at` + `whatsapp_inbound_token` setting). Ends with `NOTIFY pgrst, 'reload schema'` so PostgREST picks up the changes immediately.
-- `scripts/migrate_gold_karat_columns.sql` - **Superseded by `migrate_production_catchup.sql`** (left for history). Hotfix that adds `gold_karat integer` to orders/cad_requests/manufacturing_orders. Adds `gold_karat integer` to `orders`, `cad_requests`, and `manufacturing_orders` for older installs whose schema snapshot pre-dates the column. Without it, saving an order / CAD request / manufacturing order errors with `Could not find the 'gold_karat' column of 'orders' in the schema cache`.
-- `scripts/migrate_task48_cad_partners_directory.sql` - **Task 48 migration: must run manually in Supabase SQL Editor (idempotent).** Creates `cad_partners` (id, name, phone, notes, default_ttl_days 1-30, is_active) — a directory of recurring CAD vendors — with a unique index on `lower(name)` and service-role-only RLS. Adds nullable `cad_partner_id` FK to `cad_partner_share_links` (`on delete set null`) so links keep working even if the directory entry is removed. Powers the new admin `/cad-partners` page (CRUD + per-partner active links + recent decisions) and the partner dropdown on the "Share with CAD partner" panel — picking a directory entry pre-fills name/phone and applies the partner's default TTL. Existing ad-hoc share links continue to work unchanged. APIs: `/api/cad-partners` (GET list, GET `?stats=1` enriched, POST create) and `/api/cad-partners/[id]` (PATCH, DELETE — DELETE is blocked while active links exist). The partner-share POST accepts an optional `partner_id`; when provided it hydrates name/phone/TTL from the directory and stamps the share link with `cad_partner_id`.
-- `scripts/migrate_task21_cad_revisions.sql` - **Tasks 21 & 36 migration: must run manually.** Creates `cad_revisions` (per-round timeline of renders + retailer feedback) and adds `cad_revisions.reference_images text[]` so the design team can attach annotated sketches / before-after comparisons to a render share. Both render and reference images are rendered in the timeline on the admin CAD detail page and the retailer order portal.
+### System Design Choices
+- **App Router**: Utilizes Next.js 14's App Router for modern routing and data fetching patterns.
+- **Middleware**: `middleware.ts` handles authentication guards, redirecting unauthorized users and protecting admin routes.
+- **Database Migrations**: SQL scripts are provided for schema changes, designed to be run manually for control and idempotency.
+- **Environment Variables**: Key configurations are managed via environment variables for secure and flexible deployment.
 
-## Retailer WhatsApp notifications (Task 14)
-
-`lib/whatsappNotify.ts` is a server-only util that sends a WhatsApp ping to the linked retailer when an admin order update changes `status` to a milestone (`cad_sent`, `design_approved`, `dispatched`, `delivered`) or fills/changes `tracking_number` / `courier`. The dispatcher is wired into `app/api/db/route.ts`: for any `op=update` on `orders`, the route snapshots the prior rows, performs the update, and then fire-and-forget calls `notifyRetailerOrderUpdate` per affected order. Failures are logged and never block the admin save.
-
-Outbound delivery is a generic JSON POST to a configurable `whatsapp_webhook_url` (with optional `whatsapp_webhook_token` as `Authorization: Bearer ...`). Payload: `{ phone, message, orderId, trigger }`. Dispatch is gated by the global `whatsapp_notifications_enabled` setting and the per-retailer `partners.notify_whatsapp` flag (both editable from Settings → General and the partner edit page respectively). Message links use `public_base_url` and point at `/portal/retailer/orders/[id]`.
-
-## Material ledger access control
-
-`material_float` and `material_transactions` are master-only via the `/api/db` proxy and the float route is gated in `middleware.ts` (`/manufacturing/partners/*/float`). Sub users see no float widgets, no "Manage float" button, and the float page redirects them back to `/manufacturing`.
-
-## Order COGS / gold integrity rules
-
-Order detail / new pages collect COGS inputs and compute `total_cogs = (gold weight × gold rate × karat purity) + making + CAD + stone` and `margin = total_amount − total_cogs` via `computeOrderCogs()` in `lib/supabase.ts`.
-
-Completion guard: an order **cannot** advance to `qc`, `dispatched` or `delivered` unless `gold_weight_actual` and `making_charges` are filled. When `gold_source = 'self'` it additionally requires a row in `material_transactions` with `order_id = <this order>` and `transaction_type = 'consumption'`. The order detail page surfaces a "Record gold consumption for this order" action that deep-links into the assigned manufacturer's float page with `?order_id=…&type=consumption&material_type=gold_<karat>k`. The float page reads those params and pre-fills the consumption form.
-
-## Environment Variables
-
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
-- `SUPABASE_SERVICE_ROLE_KEY` - Service role key (used by NextAuth for user lookup)
-- `NEXTAUTH_SECRET` - Session signing secret
-- `NEXTAUTH_URL` - App URL for auth callbacks
-
-## Development
-
-- Runs on port 5000 (Replit compatible), host 0.0.0.0
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-
-## Database Tables
-
-Core tables: `partners`, `orders`, `order_items`, `cad_requests`, `products`, `gold_rates`, `vendors`, `vendor_inventory`, `circuits`, `manufacturing_partners`, `manufacturing_orders`, `app_users`
-
-Design Portal tables (run `scripts/setup_collections.sql` first):
-- `design_collections` - Curated product collections with publish status
-- `design_collection_products` - Junction: collection ↔ products with sort order
-- `design_interests` - Partner shortlists: partner + product + collection + note + quantity
-- `showcase_views` - Visit tracking: partner × collection × timestamp
-
-## Partner Design Portal Flow
-
-1. Admin creates a collection in `/catalog` → Collections tab
-2. Adds products to collection via product picker
-3. Publishes the collection (flips `is_published = true`)
-4. Copies a personalized link for each partner: `/showcase/[collectionId]/[partnerId]`
-5. Pastes link in WhatsApp; partner opens on phone (no login required)
-6. Partner browses product cards, taps heart to shortlist, optionally adds qty + notes
-7. Interests auto-saved to `design_interests`; view recorded in `showcase_views`
-8. Admin sees shortlisted items in `/catalog` → Interest tab with → Order / → CAD buttons
-9. View counts per partner shown in collection admin with eye icon badge
-
-## Pages
-
-Admin routes (require login):
-- List pages: `/partners`, `/orders`, `/cad-requests`, `/manufacturing`, `/catalog`, `/gold-rates`, `/vendors`, `/circuits`, `/analytics`, `/settings`
-- Create forms: `/partners/new`, `/orders/new`, `/cad-requests/new`, `/catalog/new`, `/catalog/collections/new`, `/circuits/new`, `/manufacturing/orders/new`, `/manufacturing/partners/new`, `/vendors/new`, `/vendors/inventory/new`
-- Detail pages: `/partners/[id]`, `/orders/[id]`, `/cad-requests/[id]`, `/circuits/[id]`, `/manufacturing/orders/[id]`, `/manufacturing/partners/[id]`, `/vendors/[id]`, `/catalog/collections/[id]`
-
-Public routes (no auth):
-- `/showcase/[collectionId]/[partnerId]` - Partner design showcase portal
-
-Manufacturer Portal (Task #6 — requires `scripts/migrate_task6_manufacturer_portal.sql`):
-- `/portal/manufacturer` - Order list scoped to logged-in manufacturer's `manufacturing_partner_id`
-- `/portal/manufacturer/orders/[id]` - Detail: status update, manufacturer notes, progress photos
-- API: `/api/portal/manufacturer/orders` (GET list) and `/api/portal/manufacturer/orders/[id]` (GET / PATCH)
-- Manufacturers cannot reach `/api/db` or any admin route — middleware redirects them to their portal
-- Master admins create manufacturer logins from Settings → User management → "Manufacturer" tile
-
-Retailer Portal (Task #7 — uses the same `partner_id` column added in Task #6 migration):
-- `/portal/retailer` - Catalog grid (active products, no internal cost / margin fields)
-- `/portal/retailer/catalog/[id]` - Product detail + inline catalog order form
-- `/portal/retailer/custom` - Custom design brief form (text + reference image uploads)
-- `/portal/retailer/orders` - List of the retailer's own orders with pipeline status
-- `/portal/retailer/orders/[id]` - Order detail with status pipeline and dispatch / tracking info
-- API: `/api/portal/retailer/catalog`, `/api/portal/retailer/catalog/[id]`,
-  `/api/portal/retailer/orders` (GET list / POST new), `/api/portal/retailer/orders/[id]` (GET)
-- Retailers cannot reach `/api/db` or any admin route — middleware redirects them to their portal
-- Master admins create retailer logins from Settings → User management → "Retailer" tile, picking
-  the linked row in `partners`
-
-## Daily karigar reconciliation digest (Task #17 — `scripts/setup_reconciliation_alerts.sql`)
-
-- Endpoint: `POST/GET /api/cron/reconciliation-digest` (excluded from NextAuth middleware via the matcher). Auth: master session **or** `Authorization: Bearer $CRON_SECRET`.
-- Mirrors the per-partner metrics on `/manufacturing/partners/[id]/reconciliation` over a configurable window for every active `manufacturing_partners` row, then upserts one row per flagged partner into `reconciliation_alerts` (unique on `partner_id, run_date`). Returns the digest message (with deep links into each per-partner reconciliation page) for WhatsApp/email.
-- Thresholds live in `settings`: `reconciliation_alert_window_days` (default 7), `reconciliation_alert_variance_g` (2.0), `reconciliation_alert_negative_count` (1), `reconciliation_alert_unlinked_count` (3). Set any count to `0` to disable that trigger.
-- Master-only dashboard: `/manufacturing/reconciliation-alerts` — runs the digest on demand, edits thresholds, copies the message or opens it in WhatsApp (via the `whatsapp_number` setting), and shows the recent history. Linked from the manufacturing landing page header for masters.
-- `reconciliation_alerts` is added to the master-only set in `app/api/db/route.ts`. To run the digest automatically, configure a Replit Scheduled Deployment that hits the endpoint daily with the `CRON_SECRET` bearer header.
-- Auto-send: when `RESEND_API_KEY` is set in env and `reconciliation_alert_email_to` + `reconciliation_alert_email_from` settings are filled, the cron route emails the digest to those recipients via Resend (https://api.resend.com/emails) for any run with at least one flagged karigar. Send result is persisted on the alert rows (`notified_at`, `notify_channel`, `notify_error`) and surfaced in the dashboard's history trail. With no Resend key the route still produces the message and persists snapshots so masters can copy or open in WhatsApp from the dashboard.
-- The route uses Asia/Kolkata for `run_date` (matches the schema default) and clears any rows for today's date before inserting the latest snapshot, so re-runs are idempotent and partners that no longer trip a threshold drop off the same-day list.
-
-## Notes
-
-- Migrated from Vercel to Replit
-- Dev server binds to 0.0.0.0:5000 for Replit preview pane compatibility
-- TypeScript target not set; use `Array.from(new Set(...))` instead of `[...new Set(...)]`
-- AppShell skips rendering for `/login`, `/setup/*`, and `/showcase/*` paths
-- `order_pipeline` view used for orders list
-- Auth: username/password via `app_users` table (service role key required for RLS bypass)
-- All client-side `supabase.from(...)` calls go through `/api/db` (NextAuth-gated DB proxy at `app/api/db/route.ts`) using service role; client wrapper in `lib/supabase.ts` is a thenable QueryBuilder. `app_users` is master-only. Public `/showcase/*` and `/api/showcase/*` use their own server routes with `supabaseAdmin`. The `/api/db` proxy is restricted to roles `master | sub` only — manufacturer/retailer logins must use their own portal API endpoints.
-
-## CAD revision WhatsApp acknowledgement (Task #40 — extends `scripts/migrate_task21_cad_revisions.sql`)
-
-- Outbound revision ping in `lib/whatsappNotify.ts → notifyInternalCadAction('revise')` now appends `Reply "ACK <order#>" to mark this revision as acknowledged.` so the design team can close the loop without opening the dashboard.
-- New inbound webhook `POST /api/whatsapp/inbound` parses `ACK <order#>` (case-insensitive, allows `#`/`:`/`-` separators), looks up the order by `order_number`, finds the latest unacknowledged `revision_request` row in `cad_revisions` for that order's CAD request, and stamps `acknowledged_at = now()`. Verifies sender phone (last 10 digits) against `settings.whatsapp_number` and, if `settings.whatsapp_inbound_token` is set, requires `Authorization: Bearer <token>`. `GET` echoes `hub.challenge` for Meta-style webhook verification.
-- Excluded from NextAuth via the middleware matcher (`api/whatsapp` added).
-- Migration extension adds `cad_revisions.acknowledged_at timestamptz` and seeds `settings.whatsapp_inbound_token`.
-- Retailer order page (`/portal/retailer/orders/[id]`) and admin CAD detail page show an "Acknowledged by design team · <date>" indicator on the revision row (and as a header pill on the retailer side); admin page also shows an "Awaiting acknowledgement" hint with the reply command. Settings → Retailer WhatsApp notifications gains the inbound bearer token field.
+## External Dependencies
+- **Supabase**: Primary database backend (PostgreSQL) for all application data, including authentication and real-time capabilities.
+- **NextAuth.js**: Authentication library integrated with Supabase for user management and session handling.
+- **Tailwind CSS**: Utility-first CSS framework for styling.
+- **Recharts**: JavaScript charting library for data visualization in analytics.
+- **Lucide React**: Icon library for UI elements.
+- **Cloudinary**: Used for storing and serving uploaded files, particularly non-image assets like CAD files.
+- **WhatsApp API (via Webhook)**: For sending outbound notifications to retailers and karigars, and receiving inbound acknowledgements for CAD revisions. The specific webhook provider is configurable.
+- **Resend**: Optional email service for sending reconciliation digests if `RESEND_API_KEY` and associated settings are configured.
+- **JSZip**: Used for dynamically generating ZIP archives of CAD/STL files for karigar downloads.

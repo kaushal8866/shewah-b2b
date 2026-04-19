@@ -45,10 +45,10 @@ export async function POST(req: NextRequest) {
   const upload = new FormData()
   upload.append('file', file)
   upload.append('upload_preset', UPLOAD_PRESET)
-  // Preserve the original filename in Cloudinary so the asset URL ends with a
-  // human-readable name (helps karigars who download the file).
-  upload.append('use_filename', 'true')
-  upload.append('unique_filename', 'true')
+  // NOTE: `use_filename` / `unique_filename` are NOT allowed on unsigned
+  // uploads (Cloudinary returns 400). The karigar ZIP route renames files
+  // using `cad_file_names` and our API responses include the original
+  // filename, so the asset URL itself doesn't need to carry the name.
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,

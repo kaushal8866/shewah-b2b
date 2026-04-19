@@ -93,8 +93,9 @@ export async function POST(req: NextRequest, ctx: { params: { token: string } })
     const upload = new FormData()
     upload.append('file', file)
     upload.append('upload_preset', UPLOAD_PRESET)
-    upload.append('use_filename', 'true')
-    upload.append('unique_filename', 'true')
+    // `use_filename` / `unique_filename` are forbidden on unsigned uploads
+    // (Cloudinary returns 400). The original filename is persisted in our
+    // DB row below and surfaced as the download name in the UI / ZIP.
 
     const cRes = await fetch(
       `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
