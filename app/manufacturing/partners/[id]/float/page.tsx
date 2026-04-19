@@ -246,7 +246,7 @@ function MaterialFloatInner() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className={lbl}>Material type</label>
             <select className={inp} value={form.material_type} onChange={e => { set('material_type', e.target.value); setPendingNegative(false) }}>
