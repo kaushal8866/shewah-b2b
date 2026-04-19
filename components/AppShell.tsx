@@ -8,14 +8,15 @@ import { canAccess } from '@/lib/modules'
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
-  Factory, Store, Menu, X, LogOut, ChevronDown, Coins, BookUser
+  Factory, Store, Menu, X, LogOut, ChevronDown, Coins, BookUser, MessageSquare
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const nav = [
   { href: '/',                icon: LayoutDashboard, label: 'Dashboard',     module: 'dashboard'     },
   { href: '/partners',        icon: Users,           label: 'Partners',      module: 'partners'      },
   { href: '/orders',          icon: ShoppingBag,     label: 'Orders',        module: 'orders'        },
+  { href: '/order-change-requests', icon: MessageSquare, label: 'Change Requests', module: 'orders'  },
   { href: '/cad-requests',    icon: Pen,             label: 'CAD Requests',  module: 'cad_requests'  },
   { href: '/cad-partners',    icon: BookUser,        label: 'CAD Partners',  module: 'cad_partners'  },
   { href: '/manufacturing',   icon: Factory,         label: 'Manufacturing', module: 'manufacturing' },
@@ -42,6 +43,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [pendingChangeRequests, setPendingChangeRequests] = useState<number>(0)
+
+  useEffect(() => {
+    if (!session) return
+    const role = session.user?.role
+    if (role !== 'master' && role !== 'sub') return
+    let cancelled = false
+    async function load() {
+      try {
+        const r = await fetch('/api/order-change-requests?status=pending')
+        if (!r.ok) return
+        const d = await r.json()
+        if (!cancelled) setPendingChangeRequests((d.requests || []).length)
+      } catch {}
+    }
+    load()
+    const t = setInterval(load, 60000)
+    return () => { cancelled = true; clearInterval(t) }
+  }, [session, pathname])
 
   const isPublic = pathname === '/login' || pathname.startsWith('/setup') || pathname.startsWith('/showcase') || pathname.startsWith('/track') || pathname.startsWith('/portal')
   if (isPublic) return <>{children}</>  
@@ -87,6 +107,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {visibleNav.map(({ href, icon: Icon, label }) => {
             const active = pathname === href || (href !== '/' && pathname.startsWith(href))
+            const badge = href === '/order-change-requests' && pendingChangeRequests > 0 ? pendingChangeRequests : 0
             return (
               <Link key={href} href={href}
                 className={cn(
@@ -94,7 +115,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   active ? 'bg-white/10 text-white font-medium ring-1 ring-white/15' : 'text-white/60 hover:text-white hover:bg-white/5'
                 )}>
                 <Icon className="w-4 h-4 shrink-0" />
-                {label}
+                <span className="flex-1">{label}</span>
+                {badge > 0 && (
+                  <span className="text-[10px] font-semibold bg-amber-400 text-stone-900 rounded-full px-1.5 py-0.5 leading-none min-w-[18px] text-center">
+                    {badge > 99 ? '99+' : badge}
+                  </span>
+                )}
               </Link>
             )
           })}
@@ -151,6 +177,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             {visibleNav.map(({ href, icon: Icon, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href))
+              const badge = href === '/order-change-requests' && pendingChangeRequests > 0 ? pendingChangeRequests : 0
               return (
                 <Link key={href} href={href}
                   onClick={() => setMobileMenuOpen(false)}
@@ -159,7 +186,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     active ? 'bg-white/10 text-white font-medium ring-1 ring-white/15' : 'text-white/60'
                   )}>
                   <Icon className="w-5 h-5 shrink-0" />
-                  {label}
+                  <span className="flex-1">{label}</span>
+                  {badge > 0 && (
+                    <span className="text-xs font-semibold bg-amber-400 text-stone-900 rounded-full px-2 py-0.5 leading-none min-w-[20px] text-center">
+                      {badge > 99 ? '99+' : badge}
+                    </span>
+                  )}
                 </Link>
               )
             })}
