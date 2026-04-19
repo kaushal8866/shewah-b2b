@@ -4,7 +4,7 @@
 -- as of 2026-04-18. Idempotent and safe to re-run. Paste the whole file
 -- into Supabase Dashboard → SQL Editor → New query → Run.
 --
--- Covers:
+-- Covers:migrate_production_catchup.sqlmigrate_production_catchup.sqlmigrate_production_catchup.sql
 --   • orders.gold_karat               (the order-save crash)
 --   • manufacturing_orders.order_id   (link to customer order)
 --   • Task 46: float lifecycle + karigar share links
