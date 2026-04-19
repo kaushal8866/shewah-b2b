@@ -59,7 +59,7 @@ export async function GET(_: Request, ctx: { params: { token: string } }) {
       request_number, brief_text, special_requests,
       diamond_shape, diamond_weight, gold_karat, setting_type,
       received_date, due_date, reference_images,
-      partners(store_name, owner_name, city),
+      partners(id, city),
       orders(order_number, quantity, ring_size)
     `)
     .eq('id', (link as any).cad_request_id)
@@ -104,9 +104,15 @@ export async function GET(_: Request, ctx: { params: { token: string } }) {
   doc.moveDown(0.6)
 
   // ── Spec table ────────────────────────────────────────────
+  // Anonymise the retailer to the CAD partner — show a derived reference
+  // code instead of the store / owner name. The code is deterministic from the
+  // partner's UUID so admins can trace it back internally without leaking the
+  // retailer's identity to the external CAD vendor.
+  const partnerRef = partner.id
+    ? `SH-PTR-${String(partner.id).replace(/-/g, '').slice(0, 8).toUpperCase()}`
+    : '—'
   const rows: [string, string][] = [
-    ['Retailer', partner.store_name || '—'],
-    ['Owner', partner.owner_name || '—'],
+    ['Partner ref', partnerRef],
     ['City', partner.city || '—'],
     ['Received', fmtDate(c.received_date)],
     ['Due date', fmtDate(c.due_date)],
