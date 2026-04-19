@@ -6,7 +6,8 @@ import { useSession } from 'next-auth/react'
 import { MODULES } from '@/lib/modules'
 import {
   Save, Settings2, Calculator, User, Phone, Users, Plus,
-  Edit2, Trash2, X, Check, Shield, ShieldOff, Eye, EyeOff, Lock, MessageCircle
+  Edit2, Trash2, X, Check, Shield, ShieldOff, Eye, EyeOff, Lock, MessageCircle,
+  AlertTriangle, RefreshCw
 } from 'lucide-react'
 
 const ALL_MODULES = MODULES.filter(m => m.id !== 'dashboard')
@@ -29,7 +30,24 @@ type RetailPartner = { id: string; store_name: string; city?: string }
 export default function SettingsPage() {
   const { data: session } = useSession()
   const isMaster = session?.user?.role === 'master'
-  const [tab, setTab] = useState<'general' | 'users'>('general')
+  const [tab, setTab] = useState<'general' | 'users' | 'upload_errors'>('general')
+
+  type UploadError = {
+    id: string
+    created_at: string
+    user_id: string | null
+    username: string | null
+    user_role: string | null
+    file_name: string | null
+    file_size: number | null
+    file_type: string | null
+    status_code: number | null
+    error_message: string | null
+    source: string | null
+  }
+  const [uploadErrors, setUploadErrors] = useState<UploadError[]>([])
+  const [uploadErrorsLoading, setUploadErrorsLoading] = useState(false)
+  const [uploadErrorsMigration, setUploadErrorsMigration] = useState<string | null>(null)
 
   // General settings
   const [settings, setSettings] = useState<Record<string, string>>({})
@@ -73,7 +91,39 @@ export default function SettingsPage() {
         setRetailPartners(data || [])
       })
     }
+    if (tab === 'upload_errors' && isMaster) {
+      loadUploadErrors()
+    }
   }, [tab])
+
+  async function loadUploadErrors() {
+    setUploadErrorsLoading(true)
+    setUploadErrorsMigration(null)
+    try {
+      const res = await fetch('/api/upload-errors')
+      const data = await res.json()
+      setUploadErrors(data.errors || [])
+      if (data.migrationRequired) setUploadErrorsMigration(data.message || 'Migration required')
+    } catch {
+      setUploadErrors([])
+    } finally {
+      setUploadErrorsLoading(false)
+    }
+  }
+
+  function fmtSize(bytes: number | null) {
+    if (!bytes && bytes !== 0) return '—'
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+  }
+
+  function fmtTime(iso: string) {
+    try {
+      const d = new Date(iso)
+      return d.toLocaleString()
+    } catch { return iso }
+  }
 
   async function loadUsers() {
     setUsersLoading(true)
@@ -193,6 +243,7 @@ export default function SettingsPage() {
           {[
             { id: 'general', label: 'General', icon: Settings2 },
             { id: 'users', label: 'User management', icon: Users },
+            { id: 'upload_errors', label: 'Upload errors', icon: AlertTriangle },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id as any)}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
@@ -618,6 +669,89 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Upload errors */}
+      {tab === 'upload_errors' && isMaster && (
+        <div className="space-y-4 max-w-5xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-stone-700 font-medium">Recent failed file uploads</p>
+              <p className="text-xs text-stone-400 mt-0.5">
+                Last 100 failures recorded by <code>/api/upload</code>. Use this to diagnose the next time a retailer reports a stuck upload.
+              </p>
+            </div>
+            <button onClick={loadUploadErrors}
+              className="flex items-center gap-2 text-sm text-stone-600 border border-stone-200 px-3 py-2 rounded-lg hover:bg-stone-50">
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh
+            </button>
+          </div>
+
+          {uploadErrorsMigration && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-sm">
+              <p className="font-medium mb-1">Migration required</p>
+              <p className="text-amber-700">{uploadErrorsMigration}</p>
+            </div>
+          )}
+
+          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+            {uploadErrorsLoading ? (
+              <div className="p-8 text-center text-stone-400 text-sm">Loading…</div>
+            ) : uploadErrors.length === 0 ? (
+              <div className="p-8 text-center text-stone-400 text-sm">
+                No upload failures recorded. {!uploadErrorsMigration && "That's a good thing."}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide">
+                    <tr>
+                      <th className="text-left px-4 py-2.5 font-medium">When</th>
+                      <th className="text-left px-4 py-2.5 font-medium">User</th>
+                      <th className="text-left px-4 py-2.5 font-medium">File</th>
+                      <th className="text-left px-4 py-2.5 font-medium">Size</th>
+                      <th className="text-left px-4 py-2.5 font-medium">Status</th>
+                      <th className="text-left px-4 py-2.5 font-medium">Error</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-50">
+                    {uploadErrors.map(e => (
+                      <tr key={e.id} className="align-top">
+                        <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{fmtTime(e.created_at)}</td>
+                        <td className="px-4 py-3 text-stone-600 whitespace-nowrap">
+                          {e.username ? (
+                            <>
+                              <span className="text-stone-800">@{e.username}</span>
+                              {e.user_role && (
+                                <span className="ml-1 text-[10px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">{e.user_role}</span>
+                              )}
+                            </>
+                          ) : <span className="text-stone-400">anonymous</span>}
+                          {e.source && <p className="text-[11px] text-stone-400 mt-0.5">via {e.source}</p>}
+                        </td>
+                        <td className="px-4 py-3 text-stone-700 break-all max-w-[220px]">
+                          {e.file_name || <span className="text-stone-400">—</span>}
+                          {e.file_type && <p className="text-[11px] text-stone-400 mt-0.5">{e.file_type}</p>}
+                        </td>
+                        <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{fmtSize(e.file_size)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                            (e.status_code || 0) >= 500 ? 'bg-red-100 text-red-700' :
+                            (e.status_code || 0) === 413 ? 'bg-amber-100 text-amber-700' :
+                            'bg-stone-100 text-stone-600'
+                          }`}>{e.status_code ?? '—'}</span>
+                        </td>
+                        <td className="px-4 py-3 text-stone-700 break-words max-w-[420px]">
+                          {e.error_message || <span className="text-stone-400">—</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

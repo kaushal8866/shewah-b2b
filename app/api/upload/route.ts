@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 // Allow up to ~25 MB uploads — needed for STEP/STL CAD exports and high-res
 // retailer reference photos taken on phones (HEIC originals are easily 8-12 MB).
@@ -13,6 +16,38 @@ function pickResourceType(filename: string): 'image' | 'raw' {
   return IMAGE_EXTS.has(ext) ? 'image' : 'raw'
 }
 
+type FailureMeta = {
+  fileName?: string | null
+  fileSize?: number | null
+  fileType?: string | null
+  source?: string | null
+}
+
+async function logFailure(
+  statusCode: number,
+  errorMessage: string,
+  meta: FailureMeta,
+) {
+  try {
+    const session = await getServerSession(authOptions).catch(() => null)
+    const user = session?.user
+    await supabaseAdmin.from('upload_errors').insert({
+      user_id: user?.id ?? null,
+      username: user?.username ?? null,
+      user_role: user?.role ?? null,
+      file_name: meta.fileName ?? null,
+      file_size: meta.fileSize ?? null,
+      file_type: meta.fileType ?? null,
+      status_code: statusCode,
+      error_message: errorMessage.slice(0, 1000),
+      source: meta.source ?? null,
+    })
+  } catch (e) {
+    // Logging must never break the user-facing response.
+    console.error('[upload] failed to record upload_error:', e)
+  }
+}
+
 export async function POST(req: NextRequest) {
   const CLOUD_NAME =
     process.env.CLOUDINARY_CLOUD_NAME ||
@@ -23,31 +58,42 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
 
   if (!CLOUD_NAME || !UPLOAD_PRESET) {
-    return NextResponse.json(
-      { error: 'Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET.' },
-      { status: 500 }
-    )
+    const msg = 'Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET.'
+    await logFailure(500, msg, {})
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 
   let formData: FormData
   try {
     formData = await req.formData()
   } catch {
+    await logFailure(400, 'Invalid form data', {})
     return NextResponse.json({ error: 'Invalid form data' }, { status: 400 })
   }
 
+  const sourceHint = (formData.get('source') as string | null) || null
+
   const file = formData.get('file')
   if (!file || !(file instanceof File)) {
+    await logFailure(400, 'No file provided', { source: sourceHint })
     return NextResponse.json({ error: 'No file provided' }, { status: 400 })
   }
+
+  const meta: FailureMeta = {
+    fileName: file.name || null,
+    fileSize: file.size,
+    fileType: file.type || null,
+    source: sourceHint,
+  }
+
   if (file.size > MAX_BYTES) {
     const mb = (file.size / (1024 * 1024)).toFixed(1)
-    return NextResponse.json(
-      { error: `File is too large (${mb} MB). Maximum size is 25 MB. Please compress or resize and try again.` },
-      { status: 413 },
-    )
+    const msg = `File is too large (${mb} MB). Maximum size is 25 MB. Please compress or resize and try again.`
+    await logFailure(413, msg, meta)
+    return NextResponse.json({ error: msg }, { status: 413 })
   }
   if (file.size === 0) {
+    await logFailure(400, 'File is empty.', meta)
     return NextResponse.json({ error: 'File is empty.' }, { status: 400 })
   }
 
@@ -74,10 +120,9 @@ export async function POST(req: NextRequest) {
     )
   } catch (e: any) {
     console.error('[upload] network error:', e)
-    return NextResponse.json(
-      { error: 'Could not reach the image server. Please check your connection and try again.' },
-      { status: 502 },
-    )
+    const msg = 'Could not reach the image server. Please check your connection and try again.'
+    await logFailure(502, `network error: ${e?.message || e}`, meta)
+    return NextResponse.json({ error: msg }, { status: 502 })
   }
 
   if (!res.ok) {
@@ -88,6 +133,7 @@ export async function POST(req: NextRequest) {
     // (e.g. "File size too large", "Invalid image file") are user-friendly
     // enough to pass through, but fall back to a generic line if missing.
     const msg = rawMsg || `Upload failed (server returned ${res.status}). Please try again.`
+    await logFailure(res.status, rawMsg || `cloudinary ${res.status}`, meta)
     return NextResponse.json({ error: msg }, { status: 502 })
   }
 

@@ -1,8 +1,8 @@
 // Uploads via the server-side /api/upload route, which reads CLOUDINARY_CLOUD_NAME
 // and CLOUDINARY_UPLOAD_PRESET secrets. No Cloudinary credentials are exposed to
 // the browser.
-export async function uploadToCloudinary(file: File): Promise<string> {
-  const r = await uploadFileToCloudinary(file)
+export async function uploadToCloudinary(file: File, source?: string): Promise<string> {
+  const r = await uploadFileToCloudinary(file, source)
   return r.url
 }
 
@@ -17,9 +17,10 @@ export type UploadResult = {
  * the server-side proxy. Returns the resulting URL plus the original filename
  * for display.
  */
-export async function uploadFileToCloudinary(file: File): Promise<UploadResult> {
+export async function uploadFileToCloudinary(file: File, source?: string): Promise<UploadResult> {
   const body = new FormData()
   body.append('file', file)
+  if (source) body.append('source', source)
 
   const res = await fetch('/api/upload', { method: 'POST', body })
 

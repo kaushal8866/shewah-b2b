@@ -23,7 +23,7 @@ export default function RetailerCustomOrderPage() {
     try {
       const urls: string[] = []
       for (const f of Array.from(files)) {
-        const u = await uploadToCloudinary(f)
+        const u = await uploadToCloudinary(f, 'retailer-custom')
         urls.push(u)
       }
       setImages(prev => [...prev, ...urls])
