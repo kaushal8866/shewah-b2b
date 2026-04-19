@@ -7,6 +7,7 @@ import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, Printer, Send, Copy, RefreshCw, FileDown, Check, Clock, Link2, FileUp } from 'lucide-react'
 import Link from 'next/link'
 import { uploadFileToCloudinary } from '@/lib/cloudinaryUpload'
+import { applyMfgStatusChange } from '@/lib/mfgOrderLifecycle'
 
 const MFG_STATUSES = ['issued', 'in_progress', 'quality_check', 'completed', 'returned', 'cancelled']
 
@@ -162,41 +163,17 @@ export default function ManufacturingOrderDetailPage() {
     }).eq('id', id)
     if (error) { setSaving(false); alert('Error: ' + error.message); return }
 
-    // Float lifecycle transitions for the pending consumption row that was
-    // created when this order was issued from float:
-    //   • → completed → flip to lifecycle='final' (use actual weight if entered)
-    //   • → cancelled → delete the reservation, gold returns to Available
-    if (prevStatus !== newStatus && order?.material_from_float) {
+    if (prevStatus !== newStatus) {
       try {
-        if (newStatus === 'completed') {
-          const finalQty = parseFloat(form.gold_weight_actual) || null
-          const upd: any = { lifecycle: 'final' }
-          if (finalQty && finalQty > 0) upd.quantity = finalQty
-          await supabase.from('material_transactions')
-            .update(upd)
-            .eq('manufacturing_order_id', id)
-            .eq('transaction_type', 'consumption')
-            .eq('lifecycle', 'pending')
-        } else if (prevStatus === 'completed' && newStatus !== 'completed' && newStatus !== 'cancelled') {
-          // Reverting from completed → revert the finalised consumption back
-          // to a pending reservation so the gold is no longer counted as Used.
-          // Restore the originally-required quantity.
-          const restoreQty = parseFloat(order.gold_weight_required) || null
-          const upd: any = { lifecycle: 'pending' }
-          if (restoreQty && restoreQty > 0) upd.quantity = restoreQty
-          await supabase.from('material_transactions')
-            .update(upd)
-            .eq('manufacturing_order_id', id)
-            .eq('transaction_type', 'consumption')
-            .eq('lifecycle', 'final')
-        } else if (newStatus === 'cancelled') {
-          // Cancellation drops both pending reservations AND a finalised one
-          // (because the order itself has been declared void).
-          await supabase.from('material_transactions')
-            .delete()
-            .eq('manufacturing_order_id', id)
-            .eq('transaction_type', 'consumption')
-        }
+        await applyMfgStatusChange({
+          mfgOrderId: id,
+          prevStatus,
+          newStatus,
+          goldWeightRequired: parseFloat(order.gold_weight_required) || null,
+          goldWeightActual: parseFloat(form.gold_weight_actual) || null,
+          materialFromFloat: !!order?.material_from_float,
+          partnerId: order?.manufacturing_partner_id,
+        })
       } catch (e) {
         console.error('lifecycle transition failed', e)
       }

@@ -5,6 +5,8 @@ export type OrderNotifyTrigger =
   | 'design_approved'
   | 'dispatched'
   | 'delivered'
+  | 'cancelled'
+  | 'returned'
   | 'tracking_added'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -14,6 +16,8 @@ const STATUS_LABELS: Record<string, string> = {
   qc: 'In quality check',
   dispatched: 'Dispatched',
   delivered: 'Delivered',
+  cancelled: 'Cancelled',
+  returned: 'Returned',
 }
 
 const MILESTONE_STATUSES = new Set([
@@ -21,6 +25,8 @@ const MILESTONE_STATUSES = new Set([
   'design_approved',
   'dispatched',
   'delivered',
+  'cancelled',
+  'returned',
 ])
 
 type OrderRow = {
@@ -79,6 +85,22 @@ function buildMessage(
       `${greet}, an update on your Shewah order ${orderNum}.`,
       `It has shipped via ${courier}${tracking ? ` (tracking: ${tracking})` : ''}.`,
       `Track here: ${orderUrl}`,
+    ].join('\n')
+  }
+
+  if (trigger === 'cancelled') {
+    return [
+      `${greet}, your Shewah order ${orderNum} has been cancelled.`,
+      `If this was unexpected, please reach out and we'll sort it out.`,
+      `Details: ${orderUrl}`,
+    ].join('\n')
+  }
+
+  if (trigger === 'returned') {
+    return [
+      `${greet}, we've recorded your Shewah order ${orderNum} as returned.`,
+      `Our team will be in touch about the next steps.`,
+      `Details: ${orderUrl}`,
     ].join('\n')
   }
 

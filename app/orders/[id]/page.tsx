@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase, ORDER_STATUSES, computeOrderCogs } from '@/lib/supabase'
+import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
@@ -137,8 +138,17 @@ export default function OrderDetailPage() {
       total_cogs: Math.round(cogs.total_cogs) || null,
       margin: Math.round(cogs.margin) || null,
     }).eq('id', id)
+    if (error) { setSaving(false); alert('Error: ' + error.message); return }
+
+    if (form.status !== order.status && (form.status === 'cancelled' || form.status === 'returned')) {
+      try {
+        await cascadeOrderStatusToMfg({ orderId: id, newStatus: form.status })
+      } catch (e) {
+        console.error('cascade to mfg failed', e)
+      }
+    }
+
     setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
     setEditing(false)
     load()
   }
@@ -450,6 +460,7 @@ export default function OrderDetailPage() {
                     <option key={s.value} value={s.value}>{s.label}</option>
                   ))}
                   <option value="cancelled">Cancelled</option>
+                  <option value="returned">Returned</option>
                 </select>
               </div>
               <div>
