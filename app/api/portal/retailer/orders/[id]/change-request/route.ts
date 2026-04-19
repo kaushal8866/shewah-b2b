@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { safeDbError } from '@/lib/sanitizeDbError'
+import { notifyInternalChangeRequestCreated } from '@/lib/whatsappNotify'
 
 // Statuses past which a retailer can no longer file a change request — once
 // the piece is in production / dispatch / delivery, the master needs to take
@@ -122,13 +123,26 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
       status: 'pending',
     }])
     .select('id, created_at, changes, retailer_note, status')
-    .single()
+    .single<{ id: string; created_at: string; changes: Record<string, any>; retailer_note: string | null; status: string }>()
   if (error) {
     return NextResponse.json(
       { error: safeDbError(error, 'retailer.change_request.insert', 'Could not submit your request.') },
       { status: 500 },
     )
   }
+
+  // Fire-and-forget WhatsApp ping to the master / sub-admin number so they
+  // see the request immediately rather than the next time they open the
+  // order. Errors are swallowed inside the helper — never block the response.
+  notifyInternalChangeRequestCreated({
+    orderId: order.id,
+    changeRequestId: data.id,
+    changes: proposed,
+    retailerNote: note || null,
+  }).catch(err => {
+    console.error('[whatsappNotify:internal:cr] dispatch error', err?.message || err)
+  })
+
   return NextResponse.json({ request: data })
 }
 

@@ -244,6 +244,215 @@ export async function notifyInternalCadAction(opts: {
 }
 
 /**
+ * Notifies the master / sub-admin WhatsApp number(s) the instant a retailer
+ * files a change request from their portal. Includes the order number, store
+ * name, the proposed changes summary, and a deep-link to /orders/<id> so the
+ * admin can act on it without hunting for the order. Always swallows errors.
+ */
+export async function notifyInternalChangeRequestCreated(opts: {
+  orderId: string
+  changeRequestId: string
+  changes: Record<string, any> | null
+  retailerNote?: string | null
+}): Promise<void> {
+  try {
+    const { orderId, changeRequestId, changes, retailerNote } = opts
+
+    const settings = await loadSettings()
+    if (!settings.enabled) {
+      console.log('[whatsappNotify:internal:cr] skipped: globally disabled', { orderId, changeRequestId })
+      return
+    }
+
+    type SettingRow = { key: string; value: string | null }
+    const { data: settingRows } = await supabaseAdmin
+      .from('settings')
+      .select('key, value')
+      .in('key', ['whatsapp_number', 'owner_name'])
+      .returns<SettingRow[]>()
+    const cfg: Record<string, string> = {}
+    for (const row of settingRows || []) cfg[row.key] = row.value || ''
+
+    // The shop may have multiple admin recipients — split on comma / semicolon
+    // / whitespace, normalise digits-only, dedupe.
+    const phones = Array.from(new Set(
+      (cfg.whatsapp_number || '')
+        .split(/[,;\s]+/)
+        .map(p => p.replace(/\D/g, ''))
+        .filter(p => p.length > 0)
+    ))
+    if (phones.length === 0) {
+      console.log('[whatsappNotify:internal:cr] skipped: no shop whatsapp_number set', { orderId })
+      return
+    }
+
+    type OrderLite = { id: string; order_number: string | null; partner_id: string | null }
+    const { data: order } = await supabaseAdmin
+      .from('orders')
+      .select('id, order_number, partner_id')
+      .eq('id', orderId)
+      .maybeSingle<OrderLite>()
+    if (!order) {
+      console.log('[whatsappNotify:internal:cr] skipped: order missing', { orderId })
+      return
+    }
+
+    let storeName = ''
+    if (order.partner_id) {
+      const { data: partner } = await supabaseAdmin
+        .from('partners')
+        .select('store_name')
+        .eq('id', order.partner_id)
+        .maybeSingle<{ store_name: string | null }>()
+      storeName = partner?.store_name || ''
+    }
+
+    const orderNum = order.order_number || order.id.slice(0, 8)
+    const baseUrl = (settings.publicBaseUrl || '').replace(/\/$/, '')
+    const adminUrl = baseUrl ? `${baseUrl}/orders/${order.id}` : `/orders/${order.id}`
+    const greet = cfg.owner_name ? `Hi ${cfg.owner_name.split(' ')[0]}` : 'Heads up'
+    const who = storeName ? ` from ${storeName}` : ''
+
+    const changeLines: string[] = []
+    if (changes && typeof changes === 'object') {
+      for (const [k, v] of Object.entries(changes)) {
+        const label = k.replace(/_/g, ' ')
+        const val = v === null || v === undefined || v === '' ? '(cleared)' : String(v)
+        changeLines.push(`• ${label}: ${val}`)
+      }
+    }
+
+    const lines: string[] = []
+    lines.push(`${greet}, the retailer${who} just filed a CHANGE REQUEST on order ${orderNum}.`)
+    if (changeLines.length > 0) {
+      lines.push('Requested changes:')
+      lines.push(...changeLines)
+    }
+    if (retailerNote) lines.push(`Their note: ${retailerNote}`)
+    lines.push(`Open: ${adminUrl}`)
+
+    const message = lines.join('\n')
+    for (const phone of phones) {
+      const result = await postToWebhook(settings, {
+        phone,
+        message,
+        orderId: order.id,
+        trigger: 'change_request_created_internal',
+      })
+      if (!result.ok) {
+        console.error('[whatsappNotify:internal:cr] send failed', {
+          orderId,
+          changeRequestId,
+          phone: phone.slice(-4),
+          status: result.status,
+          body: result.body,
+        })
+      } else {
+        console.log('[whatsappNotify:internal:cr] sent', { orderId, changeRequestId, phone: phone.slice(-4) })
+      }
+    }
+  } catch (err: any) {
+    console.error('[whatsappNotify:internal:cr] unexpected error', err?.message || err)
+  }
+}
+
+/**
+ * Notifies the retailer on WhatsApp once their change request has been
+ * approved or rejected by the master, including the master's review note.
+ * Always swallows errors — never throws.
+ */
+export async function notifyRetailerChangeRequestReviewed(opts: {
+  orderId: string
+  changeRequestId: string
+  decision: 'approved' | 'rejected'
+  reviewNote?: string | null
+}): Promise<void> {
+  try {
+    const { orderId, changeRequestId, decision, reviewNote } = opts
+
+    const settings = await loadSettings()
+    if (!settings.enabled) {
+      console.log('[whatsappNotify:cr] skipped: globally disabled', { orderId, changeRequestId })
+      return
+    }
+
+    type OrderLite = { id: string; order_number: string | null; partner_id: string | null }
+    const { data: order } = await supabaseAdmin
+      .from('orders')
+      .select('id, order_number, partner_id')
+      .eq('id', orderId)
+      .maybeSingle<OrderLite>()
+    if (!order || !order.partner_id) {
+      console.log('[whatsappNotify:cr] skipped: order or partner missing', { orderId })
+      return
+    }
+
+    type PartnerLite = {
+      id: string
+      store_name: string | null
+      owner_name: string | null
+      phone: string | null
+      notify_whatsapp: boolean | null
+    }
+    const { data: partner } = await supabaseAdmin
+      .from('partners')
+      .select('id, store_name, owner_name, phone, notify_whatsapp')
+      .eq('id', order.partner_id)
+      .maybeSingle<PartnerLite>()
+    if (!partner) {
+      console.log('[whatsappNotify:cr] skipped: partner not found', { orderId })
+      return
+    }
+    if (partner.notify_whatsapp === false) {
+      console.log('[whatsappNotify:cr] skipped: partner opted out', { orderId })
+      return
+    }
+    const phone = (partner.phone || '').replace(/\D/g, '')
+    if (!phone) {
+      console.log('[whatsappNotify:cr] skipped: no phone on partner', { orderId })
+      return
+    }
+
+    const orderNum = order.order_number || order.id.slice(0, 8)
+    const baseUrl = (settings.publicBaseUrl || '').replace(/\/$/, '')
+    const orderUrl = baseUrl
+      ? `${baseUrl}/portal/retailer/orders/${order.id}`
+      : `/portal/retailer/orders/${order.id}`
+    const ownerName = partner.owner_name
+    const greet = ownerName ? `Hi ${ownerName.split(' ')[0]}` : 'Hello'
+
+    const lines: string[] = []
+    if (decision === 'approved') {
+      lines.push(`${greet}, your change request on Shewah order ${orderNum} has been APPROVED.`)
+    } else {
+      lines.push(`${greet}, your change request on Shewah order ${orderNum} has been declined.`)
+    }
+    if (reviewNote) lines.push(`Note from Shewah: ${reviewNote}`)
+    lines.push(`Details: ${orderUrl}`)
+
+    const result = await postToWebhook(settings, {
+      phone,
+      message: lines.join('\n'),
+      orderId: order.id,
+      trigger: decision === 'approved' ? 'change_request_approved' : 'change_request_rejected',
+    })
+    if (!result.ok) {
+      console.error('[whatsappNotify:cr] send failed', {
+        orderId,
+        changeRequestId,
+        decision,
+        status: result.status,
+        body: result.body,
+      })
+    } else {
+      console.log('[whatsappNotify:cr] sent', { orderId, changeRequestId, decision, phone: phone.slice(-4) })
+    }
+  } catch (err: any) {
+    console.error('[whatsappNotify:cr] unexpected error', err?.message || err)
+  }
+}
+
+/**
  * Detects retailer-facing milestone changes between a previous order row and
  * the new values that were just written, then fires a WhatsApp notification
  * per change. Always swallows errors — never throws.

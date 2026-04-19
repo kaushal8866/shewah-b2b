@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { safeDbError } from '@/lib/sanitizeDbError'
+import { notifyRetailerChangeRequestReviewed } from '@/lib/whatsappNotify'
 
 const ALLOWED_FIELDS = new Set(['quantity', 'ring_size', 'special_notes', 'brief_text'])
 
@@ -81,5 +82,18 @@ export async function PATCH(req: Request, ctx: { params: { id: string } }) {
       { status: 500 },
     )
   }
+
+  // Fire-and-forget WhatsApp confirmation back to the retailer so they know
+  // the moment their request was approved or rejected, including the master's
+  // review note. Errors are swallowed inside the helper.
+  notifyRetailerChangeRequestReviewed({
+    orderId: cr.order_id,
+    changeRequestId: cr.id,
+    decision: action === 'approve' ? 'approved' : 'rejected',
+    reviewNote,
+  }).catch(err => {
+    console.error('[whatsappNotify:cr] dispatch error', err?.message || err)
+  })
+
   return NextResponse.json({ request: data })
 }
