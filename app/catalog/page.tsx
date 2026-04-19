@@ -94,6 +94,7 @@ function ProductsTab() {
   const [goldRate, setGoldRate] = useState<number | null>(null)
   const [marginFilter, setMarginFilter] = useState('all')
   const [sortBy, setSortBy] = useState<'code' | 'margin_desc' | 'margin_asc'>('code')
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   useEffect(() => { load() }, [])
 
@@ -124,6 +125,23 @@ function ProductsTab() {
 
   async function toggleActive(id: string, current: boolean) {
     await supabase.from('products').update({ is_active: !current }).eq('id', id)
+    load()
+  }
+
+  async function handleDeleteProduct(id: string, code: string) {
+    if (!confirm(`Permanently delete product ${code}?\n\nThis cannot be undone. Collection links will be removed and partner-interest history will be unlinked. Past CAD requests pointing to this product will block deletion — use Deactivate instead in that case.`)) return
+    setDeleting(id)
+    const { error } = await supabase.from('products').delete().eq('id', id)
+    setDeleting(null)
+    if (error) {
+      const msg = (error as any)?.message || ''
+      if (msg.includes('foreign key') || (error as any)?.code === '23503') {
+        alert(`Can't delete ${code}: it's referenced by existing CAD requests or orders. Use the eye icon to deactivate it instead — it will disappear from the active catalog but historical records stay intact.`)
+      } else {
+        alert('Error: ' + msg)
+      }
+      return
+    }
     load()
   }
 
@@ -290,9 +308,14 @@ function ProductsTab() {
                       title={p.is_active ? 'Deactivate' : 'Activate'}>
                       {p.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     </button>
-                    <Link href={`/catalog/${p.id}`} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors">
+                    <Link href={`/catalog/${p.id}`} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors" title="Edit">
                       <Edit2 className="w-3.5 h-3.5" />
                     </Link>
+                    <button onClick={() => handleDeleteProduct(p.id, p.code)} disabled={deleting === p.id}
+                      className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                      title="Delete permanently">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               </div>
