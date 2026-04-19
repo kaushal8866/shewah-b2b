@@ -98,15 +98,19 @@ function MaterialFloatInner() {
   const qty = parseFloat(form.quantity) || 0
   const currentFloat = floats.find(f => f.material_type === form.material_type)
   const currentBal = currentFloat?.balance ?? 0
-  const delta = activeTab === 'deposit' ? qty
-              : activeTab === 'return' ? -qty
-              : activeTab === 'consumption' ? -qty
-              : qty   // adjustment: signed by user (positive only here; warn anyway if neg)
+  const delta = activeTab === 'deposit' ? Math.abs(qty)
+              : activeTab === 'return' ? -Math.abs(qty)
+              : activeTab === 'consumption' ? -Math.abs(qty)
+              : qty   // adjustment: signed by user (negative allowed to decrease)
   const projectedBal = currentBal + delta
-  const willGoNegative = qty > 0 && projectedBal < 0
+  const willGoNegative = qty !== 0 && projectedBal < 0
 
   async function handleTransaction() {
-    if (!qty || qty <= 0) { alert('Enter a valid quantity'); return }
+    if (activeTab === 'adjust') {
+      if (!qty || qty === 0) { alert('Enter a non-zero adjustment (use a minus sign to decrease)'); return }
+    } else {
+      if (!qty || qty <= 0) { alert('Enter a valid quantity'); return }
+    }
 
     if (willGoNegative && !pendingNegative) {
       setPendingNegative(true)
@@ -259,7 +263,7 @@ function MaterialFloatInner() {
             </label>
             <input type="number" step="0.001" className={inp}
               value={form.quantity} onChange={e => { set('quantity', e.target.value); setPendingNegative(false) }}
-              placeholder={activeTab === 'deposit' ? 'e.g. 10' : 'Quantity'} />
+              placeholder={activeTab === 'deposit' ? 'e.g. 10' : activeTab === 'adjust' ? 'e.g. -0.2 to reduce, 0.5 to add' : 'Quantity'} />
           </div>
           {activeTab === 'deposit' && (
             <div>
