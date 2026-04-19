@@ -47,3 +47,7 @@ NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET = "shewah-b2b"
 deploymentTarget = "autoscale"
 run = ["npm", "start"]
 build = ["npm", "run", "build"]
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000
