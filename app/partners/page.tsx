@@ -139,9 +139,15 @@ export default function PartnersPage() {
               <tr><td colSpan={7} className="text-center py-8 text-stone-400 text-sm">Loading...</td></tr>
             ) : filtered.length === 0 ? (
               <tr><td colSpan={7} className="text-center py-8 text-stone-400 text-sm">
-                {partners.length === 0
-                  ? 'No partners yet — add your first one'
-                  : 'No partners match your filters'}
+                {partners.length === 0 ? 'No partners yet — add your first one' : (
+                  <span>
+                    No partners match your filters.{' '}
+                    <button
+                      onClick={() => { setSearch(''); setStatusFilter('all'); setStageFilter('all'); setCircuitFilter('all') }}
+                      className="text-[#1E3A5F] hover:underline"
+                    >Clear filters</button>
+                  </span>
+                )}
               </td></tr>
             ) : (
               filtered.map(p => (
@@ -194,9 +200,15 @@ export default function PartnersPage() {
             <div className="text-center py-8 text-stone-400 text-sm">Loading...</div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-8 text-stone-400 text-sm">
-              {partners.length === 0
-                ? 'No partners yet — add your first one'
-                : 'No partners match your filters'}
+              {partners.length === 0 ? 'No partners yet — add your first one' : (
+                <span>
+                  No partners match your filters.{' '}
+                  <button
+                    onClick={() => { setSearch(''); setStatusFilter('all'); setStageFilter('all'); setCircuitFilter('all') }}
+                    className="text-[#1E3A5F] hover:underline"
+                  >Clear filters</button>
+                </span>
+              )}
             </div>
           ) : (
             filtered.map(p => (

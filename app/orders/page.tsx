@@ -156,7 +156,15 @@ export default function OrdersPage() {
               <tr><td colSpan={7} className="text-center py-8 text-stone-400 text-sm">Loading...</td></tr>
             ) : filtered.length === 0 ? (
               <tr><td colSpan={7} className="text-center py-8 text-stone-400 text-sm">
-                {orders.length === 0 ? 'No orders yet — create your first order' : 'No orders match filters'}
+                {orders.length === 0 ? 'No orders yet — create your first order' : (
+                  <span>
+                    No orders match filters.{' '}
+                    <button
+                      onClick={() => { setSearch(''); setStatusFilter('all') }}
+                      className="text-[#1E3A5F] hover:underline"
+                    >Clear filters</button>
+                  </span>
+                )}
               </td></tr>
             ) : (
               filtered.map(o => {
@@ -215,7 +223,15 @@ export default function OrdersPage() {
           <div className="text-center py-8 text-stone-400 text-sm">Loading...</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-8 text-stone-400 text-sm">
-            {orders.length === 0 ? 'No orders yet — create your first order' : 'No orders match filters'}
+            {orders.length === 0 ? 'No orders yet — create your first order' : (
+              <span>
+                No orders match filters.{' '}
+                <button
+                  onClick={() => { setSearch(''); setStatusFilter('all') }}
+                  className="text-[#1E3A5F] hover:underline"
+                >Clear filters</button>
+              </span>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-stone-50">

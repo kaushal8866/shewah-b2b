@@ -271,7 +271,14 @@ function ProductsTab() {
         <div className="text-center py-16">
           <Package className="w-10 h-10 text-stone-200 mx-auto mb-3" />
           <p className="text-stone-400 text-sm">{products.length === 0 ? 'No products yet — add your first ring design' : 'No products match your filters'}</p>
-          {products.length === 0 && <Link href="/catalog/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">Add first product →</Link>}
+          {products.length === 0 ? (
+            <Link href="/catalog/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">Add first product →</Link>
+          ) : (
+            <button
+              onClick={() => { setSearch(''); setKaratFilter('all'); setShapeFilter('all'); setMarginFilter('all'); setShowInactive(false) }}
+              className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline"
+            >Clear all filters</button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -285,7 +292,7 @@ function ProductsTab() {
               : 'bg-red-100 text-red-700'
             return (
             <div key={p.id} className={`bg-white rounded-xl border overflow-hidden transition-all ${p.is_active ? 'border-stone-200' : 'border-stone-100 opacity-60'}`}>
-              <div className="aspect-square bg-gradient-to-br from-stone-50 to-yellow-50 flex items-center justify-center relative">
+              <Link href={`/catalog/${p.id}`} className="block aspect-square bg-gradient-to-br from-stone-50 to-yellow-50 flex items-center justify-center relative cursor-pointer hover:opacity-95 transition-opacity" title="Open product">
                 {p.photo_urls && p.photo_urls.length > 0 ? (
                   <img src={p.photo_urls[0]} alt={p.name} className="w-full h-full object-cover" />
                 ) : (
@@ -299,7 +306,7 @@ function ProductsTab() {
                 <div className="absolute top-2 left-2">
                   <span className="bg-white text-stone-600 text-xs px-2 py-0.5 rounded-full border border-stone-200 font-medium">{p.code}</span>
                 </div>
-              </div>
+              </Link>
               <div className="p-4">
                 <div className="flex items-start justify-between mb-1">
                   <p className="font-medium text-stone-900 text-sm">{p.name}</p>
