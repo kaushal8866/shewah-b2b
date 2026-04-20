@@ -90,11 +90,12 @@ export default function GoldRatesPage() {
     alert(formatRecalcResult('Recalculated.', result))
   }
 
-  function formatRecalcResult(prefix: string, r: { updated: number; skipped: number; failed: number; error?: string }) {
+  function formatRecalcResult(prefix: string, r: { updated: number; skipped: number; failed: number; pricedAt?: string; error?: string }) {
     if (r.error) return `${prefix} Could not refresh catalog prices: ${r.error}`
     const parts = [`${r.updated} repriced`, `${r.skipped} unchanged`]
     if (r.failed > 0) parts.push(`${r.failed} failed (check console)`)
-    return `${prefix} Catalog prices: ${parts.join(' · ')}.`
+    const stamp = r.pricedAt ? ` (priced at ${new Date(r.pricedAt).toLocaleString('en-IN')})` : ''
+    return `${prefix} Catalog prices: ${parts.join(' · ')}${stamp}.`
   }
 
   const computed = newRate24k ? calculateGoldRates(parseFloat(newRate24k) || 0) : null

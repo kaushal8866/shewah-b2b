@@ -210,6 +210,11 @@ export type Product = {
   igi_cert_cost?: number
   trade_price?: number
   mrp_suggested?: number
+  // When the cached karat_pricing/trade_price/mrp_suggested were last
+  // recomputed, and at what 24K rate. Refreshed automatically on every
+  // new gold_rates row (Task #72).
+  priced_at_rate?: number
+  priced_at?: string
   photo_urls?: string[]
   is_active: boolean
   delivery_days?: number
@@ -437,7 +442,7 @@ export function computeOrderCogs(opts: {
 // failures instead of silently reporting success. Designed to be safe to
 // re-run; only writes when the new price differs.
 export async function recomputeCatalogPrices(rate24k: number): Promise<{
-  updated: number; skipped: number; failed: number; error?: string
+  updated: number; skipped: number; failed: number; pricedAt?: string; error?: string
 }> {
   if (!rate24k || rate24k <= 0) return { updated: 0, skipped: 0, failed: 0, error: 'Invalid gold rate' }
 
@@ -447,6 +452,7 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
     .select('retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
     .order('recorded_at', { ascending: false })
     .limit(1)
+  const pricedAt = new Date().toISOString()
   const labour: Record<number, number> = {
     22: Number(rateRow?.[0]?.retail_labour_22k) || 0,
     18: Number(rateRow?.[0]?.retail_labour_18k) || 0,
@@ -516,15 +522,51 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
     const same = newTrade === Number(p.trade_price)
       && newMrp === Number(p.mrp_suggested)
       && JSON.stringify(prevPricing) === JSON.stringify(karat_pricing)
-    if (same) { skipped++; continue }
+
+    // Even when the resulting prices are unchanged we still refresh the
+    // priced_at_rate / priced_at stamp so the "Last priced at …" indicator
+    // reflects the most recent recompute event, not a stale older one.
+    if (same) {
+      const { error: stampErr } = await supabase
+        .from('products')
+        .update({ priced_at_rate: rate24k, priced_at: pricedAt })
+        .eq('id', p.id)
+      // If the migration hasn't been applied yet, silently treat as skipped.
+      if (stampErr && !/priced_at|column .* does not exist/i.test(stampErr.message || '')) {
+        failed++
+      } else {
+        skipped++
+      }
+      continue
+    }
 
     const { error: upErr } = await supabase
       .from('products')
-      .update({ trade_price: newTrade, mrp_suggested: newMrp, karat_pricing })
+      .update({
+        trade_price: newTrade,
+        mrp_suggested: newMrp,
+        karat_pricing,
+        priced_at_rate: rate24k,
+        priced_at: pricedAt,
+      })
       .eq('id', p.id)
-    if (upErr) { failed++ } else { updated++ }
+    if (upErr) {
+      // Tolerate missing priced_at_* columns when the migration hasn't been
+      // applied yet — fall back to the legacy 3-column update so existing
+      // installs keep working until task-72 SQL is run.
+      const msg = (upErr as any)?.message || ''
+      if (/priced_at|column .* does not exist/i.test(msg)) {
+        const { error: legacyErr } = await supabase
+          .from('products')
+          .update({ trade_price: newTrade, mrp_suggested: newMrp, karat_pricing })
+          .eq('id', p.id)
+        if (legacyErr) { failed++ } else { updated++ }
+      } else {
+        failed++
+      }
+    } else { updated++ }
   }
-  return { updated, skipped, failed }
+  return { updated, skipped, failed, pricedAt }
 }
 
 /**

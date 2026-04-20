@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { supabase, Product, computeOrderCogs } from '@/lib/supabase'
+import { supabase, Product, computeOrderCogs, recomputeCatalogPrices } from '@/lib/supabase'
 import { Plus, Search, Package, Edit2, Eye, EyeOff, Library, Heart, Trash2, Copy, Check, Globe, Lock, ChevronRight, Terminal, RefreshCw } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -95,6 +95,7 @@ function ProductsTab() {
   const [marginFilter, setMarginFilter] = useState('all')
   const [sortBy, setSortBy] = useState<'code' | 'margin_desc' | 'margin_asc'>('code')
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -125,6 +126,20 @@ function ProductsTab() {
 
   async function toggleActive(id: string, current: boolean) {
     await supabase.from('products').update({ is_active: !current }).eq('id', id)
+    load()
+  }
+
+  async function handleRefreshPrices() {
+    if (!goldRate) { alert('Add today\'s gold rate first on the Gold Rates page.'); return }
+    if (!confirm(`Recalculate trade price for every active catalog product using the current 24K rate of ₹${goldRate.toLocaleString('en-IN')}/g?`)) return
+    setRefreshing(true)
+    const r = await recomputeCatalogPrices(goldRate)
+    setRefreshing(false)
+    if (r.error) { alert('Could not refresh catalog prices: ' + r.error); return }
+    const parts = [`${r.updated} repriced`, `${r.skipped} unchanged`]
+    if (r.failed > 0) parts.push(`${r.failed} failed`)
+    const stamp = r.pricedAt ? ` (priced at ${new Date(r.pricedAt).toLocaleString('en-IN')})` : ''
+    alert('Catalog prices: ' + parts.join(' · ') + stamp + '.')
     load()
   }
 
@@ -185,12 +200,20 @@ function ProductsTab() {
 
   return (
     <>
-      <div className="mb-1">
-        <h1 className="text-xl font-semibold text-stone-900">Catalog</h1>
-        <p className="text-stone-500 text-sm">
-          {stats.active} active designs
-          {goldRate ? <span className="ml-2 text-stone-400">· Margins estimated at today&apos;s 24K rate ₹{goldRate.toLocaleString('en-IN')}/g</span> : <span className="ml-2 text-amber-600">· Add today&apos;s gold rate to see margin estimates</span>}
-        </p>
+      <div className="mb-1 flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl font-semibold text-stone-900">Catalog</h1>
+          <p className="text-stone-500 text-sm">
+            {stats.active} active designs
+            {goldRate ? <span className="ml-2 text-stone-400">· Margins estimated at today&apos;s 24K rate ₹{goldRate.toLocaleString('en-IN')}/g</span> : <span className="ml-2 text-amber-600">· Add today&apos;s gold rate to see margin estimates</span>}
+          </p>
+        </div>
+        <button onClick={handleRefreshPrices} disabled={refreshing || !goldRate}
+          title={goldRate ? 'Recompute trade price + MRP for every active product using the current 24K rate' : 'Add today\'s gold rate first'}
+          className="flex items-center gap-1.5 bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40">
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing prices…' : 'Refresh catalog prices'}
+        </button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 my-5">
         {[
@@ -298,7 +321,12 @@ function ProductsTab() {
                   </div>
                 </div>
                 {est && (
-                  <p className="text-[10px] text-stone-400 mb-2">≈ ₹{(est.margin/1000).toFixed(1)}K margin · MRP {p.mrp_suggested ? `₹${(p.mrp_suggested/1000).toFixed(0)}K` : '—'}</p>
+                  <p className="text-[10px] text-stone-400 mb-1">≈ ₹{(est.margin/1000).toFixed(1)}K margin · MRP {p.mrp_suggested ? `₹${(p.mrp_suggested/1000).toFixed(0)}K` : '—'}</p>
+                )}
+                {p.priced_at_rate && p.priced_at && (
+                  <p className="text-[10px] text-stone-400 mb-2" title={new Date(p.priced_at).toLocaleString('en-IN')}>
+                    Last priced at ₹{Number(p.priced_at_rate).toLocaleString('en-IN')}/g · {new Date(p.priced_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                  </p>
                 )}
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-stone-400">{p.delivery_days} days delivery</p>

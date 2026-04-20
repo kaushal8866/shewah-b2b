@@ -57,6 +57,7 @@ export default function CatalogProductEditPage() {
   const [diamonds, setDiamonds] = useState<DiamondRow[]>([newDiamondRow()])
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [pricedAt, setPricedAt] = useState<{ rate: number | null; at: string | null }>({ rate: null, at: null })
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'ring',
     gold_weight_22k: '',
@@ -84,6 +85,10 @@ export default function CatalogProductEditPage() {
         })
       }
       if (data) {
+        setPricedAt({
+          rate: data.priced_at_rate != null ? Number(data.priced_at_rate) : null,
+          at: data.priced_at || null,
+        })
         // Prefer the new 22kt column. For pre-#71 products, treat the legacy
         // gold_weight_g directly as the 22kt input — matches the migration
         // backfill so what the form shows equals what is stored.
@@ -174,7 +179,7 @@ export default function CatalogProductEditPage() {
     const primary = diamonds[0]
     const karat_pricing: Record<string, any> = {}
     for (const row of pricing) karat_pricing[String(row.karat)] = row
-    const { error } = await supabase.from('products').update({
+    const updatePayload: Record<string, any> = {
       code: form.code, name: form.name, description: form.description, category: form.category,
       gold_karat: 22,
       gold_weight_g: weights[22] || null,
@@ -186,6 +191,10 @@ export default function CatalogProductEditPage() {
       karat_pricing,
       making_charges: makingCharges, igi_cert_cost: igiCost,
       trade_price: tradePrice, mrp_suggested: mrp,
+      // Stamp the gold rate the prices were computed at so the catalog can
+      // show "Last priced at ₹X on <date>" (Task #72).
+      priced_at_rate: goldRate || null,
+      priced_at: new Date().toISOString(),
       delivery_days: parseInt(form.delivery_days) || 14,
       models_available: form.models_available, photo_urls: photoUrls,
       diamond_weight: parseFloat(primary.weight) || null, diamond_shape: primary.shape,
@@ -200,7 +209,15 @@ export default function CatalogProductEditPage() {
         size_label: d.size_label || null,
       })),
       detailed_pricing: { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
-    }).eq('id', id)
+    }
+    let { error } = await supabase.from('products').update(updatePayload).eq('id', id)
+    if (error && /priced_at|column .* does not exist/i.test(error.message || '')) {
+      // Migration not yet applied — drop the new columns and retry so
+      // editing keeps working until the operator runs task-72 SQL.
+      delete updatePayload.priced_at_rate
+      delete updatePayload.priced_at
+      ;({ error } = await supabase.from('products').update(updatePayload).eq('id', id))
+    }
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }
     router.push('/catalog')
@@ -217,7 +234,14 @@ export default function CatalogProductEditPage() {
         <Link href="/catalog" className="text-stone-400 hover:text-stone-600"><ArrowLeft className="w-5 h-5" /></Link>
         <div>
           <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Edit product</h1>
-          <p className="text-stone-500 text-sm">Update catalog entry</p>
+          <p className="text-stone-500 text-sm">
+            Update catalog entry
+            {pricedAt.rate && pricedAt.at && (
+              <span className="ml-2 text-stone-400">
+                · Last priced at ₹{pricedAt.rate.toLocaleString('en-IN')}/g on {new Date(pricedAt.at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </span>
+            )}
+          </p>
         </div>
       </div>
 

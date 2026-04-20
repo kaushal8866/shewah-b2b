@@ -148,7 +148,7 @@ export default function NewProductPage() {
     const primary = diamonds[0]
     const karat_pricing: Record<string, any> = {}
     for (const row of pricing) karat_pricing[String(row.karat)] = row
-    const { error } = await supabase.from('products').insert([{
+    const insertPayload: Record<string, any> = {
       code: form.code, name: form.name, description: form.description, category: form.category,
       // Legacy single-karat fields kept in sync so older queries keep working.
       gold_karat: 22,
@@ -161,6 +161,9 @@ export default function NewProductPage() {
       karat_pricing,
       making_charges: makingCharges, igi_cert_cost: igiCost,
       trade_price: tradePrice, mrp_suggested: mrp,
+      // Stamp the gold rate the prices were computed at (Task #72).
+      priced_at_rate: goldRate || null,
+      priced_at: new Date().toISOString(),
       delivery_days: parseInt(form.delivery_days) || 14,
       models_available: form.models_available, photo_urls: photoUrls,
       diamond_weight: parseFloat(primary.weight) || null, diamond_shape: primary.shape,
@@ -176,7 +179,14 @@ export default function NewProductPage() {
       })),
       detailed_pricing: { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
       is_active: true,
-    }])
+    }
+    let { error } = await supabase.from('products').insert([insertPayload])
+    if (error && /priced_at|column .* does not exist/i.test(error.message || '')) {
+      // Migration not yet applied — drop the new columns and retry.
+      delete insertPayload.priced_at_rate
+      delete insertPayload.priced_at
+      ;({ error } = await supabase.from('products').insert([insertPayload]))
+    }
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }
     router.push('/catalog')
