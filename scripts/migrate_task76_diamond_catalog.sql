@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS diamond_sizes (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS diamond_sizes_shape_label_idx
-  ON diamond_sizes (shape_id, lower(label) text_pattern_ops);
+  ON diamond_sizes (shape_id, label);
 
 -- ─────────────────────────────────────────────────────────────────────
 -- 3. Extend stock_movements with optional shape/size and a pieces count.
