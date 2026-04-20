@@ -752,22 +752,16 @@ export default function OrderDetailPage() {
   const isDelivered = order.status === 'delivered'
   const isCancelled = order.status === 'cancelled'
 
-  // Live computed COGS (from saved actuals). For display we drive labour
-  // from the persisted partner rate when present so the breakdown matches
-  // what was last saved.
-  const savedPartner = mfgPartners.find(p => p.id === order.assigned_manufacturer_id)
-  const savedLabourPerG = partnerLabourRate(savedPartner, order.gold_karat)
-  const savedGrossW = Math.max(
-    Number(order.gold_weight_actual) || Number(order.gold_weight_estimated) || 0,
-    Number(savedPartner?.min_labour_grams) || 1,
-  )
+  // Live computed COGS for the read-only display uses the SNAPSHOT labour
+  // value persisted on the order (`making_charges`) — never the partner's
+  // current rate. This keeps in-flight / historical orders from being
+  // retroactively repriced if a karigar's labour rate changes after the
+  // order was saved. Labour is only re-derived from the partner rate
+  // during an explicit edit + save (handleSave above).
   const savedCogs = computeOrderCogs({
     gold_weight_actual: order.gold_weight_actual,
     gold_rate_at_order: order.gold_rate_at_order,
     gold_karat: order.gold_karat,
-    labour_per_gram: savedLabourPerG,
-    gross_weight: savedGrossW,
-    min_labour_grams: Number(savedPartner?.min_labour_grams) || 1,
     making_charges: order.making_charges,
     cad_cost: order.cad_cost,
     stone_cost: order.stone_cost,
