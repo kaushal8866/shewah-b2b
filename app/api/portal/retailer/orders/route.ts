@@ -226,7 +226,9 @@ export async function POST(req: Request) {
         expected_delivery: insert.expected_delivery,
         status: insert.status,
         internal_notes: insert.internal_notes,
-        ...(insert.selected_karat ? { selected_karat: insert.selected_karat } : {}),
+        // Karat snapshot fields are intentionally excluded here — this retry
+        // path runs only when the DB rejected one of the optional columns,
+        // which on a partial deployment may include selected_karat itself.
       }
       const retry = await supabaseAdmin
         .from('orders')

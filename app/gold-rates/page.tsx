@@ -149,12 +149,14 @@ export default function GoldRatesPage() {
           <p className="text-xs text-yellow-700 mb-2">
             Note: only catalog products are repriced. Orders already placed keep the gold rate that was locked when the order was created.
           </p>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             {[
-              { karat: '24K', rate: latest.rate_24k, purity: '99.9%' },
-              { karat: '22K', rate: latest.rate_22k, purity: '91.6%' },
-              { karat: '18K', rate: latest.rate_18k, purity: '75.0%' },
-              { karat: '14K', rate: latest.rate_14k, purity: '58.5%' },
+              { karat: '24K', rate: latest.rate_24k, purity: `${(KARAT_FACTORS[24] * 100).toFixed(1)}%` },
+              { karat: '22K', rate: latest.rate_22k, purity: `${(KARAT_FACTORS[22] * 100).toFixed(1)}%` },
+              { karat: '18K', rate: latest.rate_18k, purity: `${(KARAT_FACTORS[18] * 100).toFixed(0)}%` },
+              { karat: '14K', rate: latest.rate_14k, purity: `${(KARAT_FACTORS[14] * 100).toFixed(0)}%` },
+              { karat: '10K', rate: latest.rate_10k, purity: `${(KARAT_FACTORS[10] * 100).toFixed(0)}%` },
+              { karat: '9K',  rate: latest.rate_9k,  purity: `${(KARAT_FACTORS[9]  * 100).toFixed(0)}%` },
             ].map(r => (
               <div key={r.karat} className="text-center bg-white rounded-lg p-3 border border-yellow-200">
                 <p className="text-xs text-stone-400">{r.karat} ({r.purity})</p>
@@ -186,14 +188,12 @@ export default function GoldRatesPage() {
               {/* Live preview */}
               {computed && computed.rate_24k > 0 && (
                 <div className="bg-stone-50 rounded-lg p-3 space-y-1">
-                  {[
-                    { k: '22K', r: computed.rate_22k },
-                    { k: '18K', r: computed.rate_18k },
-                    { k: '14K', r: computed.rate_14k },
-                  ].map(({ k, r }) => (
+                  {SELLABLE_KARATS.map(k => (
                     <div key={k} className="flex justify-between text-xs">
-                      <span className="text-stone-500">{k} auto-calculated</span>
-                      <span className="font-medium text-stone-700">₹{r?.toLocaleString('en-IN')}/g</span>
+                      <span className="text-stone-500">{k}K auto-calculated</span>
+                      <span className="font-medium text-stone-700">
+                        ₹{Math.round(computed.rate_24k * KARAT_FACTORS[k]).toLocaleString('en-IN')}/g
+                      </span>
                     </div>
                   ))}
                 </div>
