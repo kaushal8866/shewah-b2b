@@ -1103,8 +1103,11 @@ export default function OrderDetailPage() {
                           {enough ? 'In stock' : `Short ${need - have}`}
                         </span>
                         {!enough && (
-                          <Link href={requestHref} className="text-xs px-2 py-1 rounded-lg border border-[#1E3A5F] text-[#1E3A5F] hover:bg-yellow-50">
-                            Request stock
+                          <Link
+                            href={requestHref}
+                            title="Opens the receive form pre-filled — log a vendor purchase or adjustment to clear this shortage."
+                            className="text-xs px-2 py-1 rounded-lg border border-[#1E3A5F] text-[#1E3A5F] hover:bg-yellow-50">
+                            Log new stock
                           </Link>
                         )}
                       </div>
