@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
-import { ArrowLeft, Save, Trash2, Edit2, X, Printer, Send, Copy, RefreshCw, FileDown, Check, Clock, Link2, FileUp } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Edit2, X, Printer, Send, Copy, RefreshCw, FileDown, Check, Clock, Link2, FileUp, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { uploadFileToCloudinary } from '@/lib/cloudinaryUpload'
 import { applyMfgStatusChange } from '@/lib/mfgOrderLifecycle'
@@ -18,6 +18,9 @@ export default function ManufacturingOrderDetailPage() {
   const id = params.id as string
 
   const [order, setOrder] = useState<any>(null)
+  // Task #82: live diamond inventory keyed by `${material_type}|${shape_id}|${size_id}`
+  // — mirrors /orders/[id] so karigars/production see the same shortage badges.
+  const [diamondStock, setDiamondStock] = useState<Record<string, { pieces: number; carats: number; min_pieces: number }>>({})
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -99,12 +102,35 @@ export default function ManufacturingOrderDetailPage() {
     setLoading(true)
     const { data } = await supabase
       .from('manufacturing_orders')
-      .select('*, manufacturing_partners(name, city, phone), orders(order_number, partners(store_name))')
+      .select('*, manufacturing_partners(name, city, phone), orders(order_number, partners(store_name), products(diamond_specs))')
       .eq('id', id)
       .single()
     if (!data) { router.push('/manufacturing'); return }
     setOrder(data)
     setForm(data)
+
+    // Task #82: pull live diamond stock so we can render shortage badges
+    // beside each diamond requirement (mirrors /orders/[id]). Endpoint is
+    // tolerant when the catalog migration hasn't run — degrades silently.
+    try {
+      const r = await fetch('/api/diamonds/stock')
+      if (r.ok) {
+        const j = await r.json()
+        const map: Record<string, { pieces: number; carats: number; min_pieces: number }> = {}
+        for (const row of (j?.groups || [])) {
+          if (!row?.material_type || !row?.diamond_shape_id || !row?.diamond_size_id) continue
+          map[`${row.material_type}|${row.diamond_shape_id}|${row.diamond_size_id}`] = {
+            pieces: Number(row.pieces) || 0,
+            carats: Number(row.carats) || 0,
+            min_pieces: Number(row.reorder_threshold_pieces) || 0,
+          }
+        }
+        setDiamondStock(map)
+      }
+    } catch (e) {
+      console.warn('[diamond stock] fetch failed', e)
+    }
+
     setLoading(false)
   }
 
@@ -361,6 +387,58 @@ export default function ManufacturingOrderDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Diamond requirements & central-stock availability (Task #82).
+              Mirrors the panel on /orders/[id] so karigars / production
+              see shortages at planning time. Renders only when the linked
+              customer order has a product with diamond_specs picked from
+              the shared catalog (shape_id + size_id present). */}
+          {Array.isArray(order.orders?.products?.diamond_specs) && order.orders.products.diamond_specs.some((d: any) => d?.shape_id && d?.size_id) && (
+            <div className="bg-white rounded-xl border border-stone-200 p-5">
+              <h2 className="font-medium text-stone-900 mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-stone-500" />
+                Diamond requirements
+              </h2>
+              <div className="space-y-2">
+                {order.orders.products.diamond_specs.filter((d: any) => d?.shape_id && d?.size_id).map((d: any, i: number) => {
+                  const qty = parseInt(order.quantity) || 1
+                  const piecesPerUnit = parseInt(d.pieces) || 1
+                  const need = piecesPerUnit * qty
+                  const matType = d.type === 'natural' ? 'diamond_natural' : 'diamond_lgd'
+                  const stock = diamondStock[`${matType}|${d.shape_id}|${d.size_id}`]
+                  const have = stock?.pieces || 0
+                  const enough = have >= need
+                  const requestHref = `/stock/receive?material_type=${matType}&diamond_shape_id=${d.shape_id}&diamond_size_id=${d.size_id}&pieces=${Math.max(0, need - have)}`
+                  return (
+                    <div key={i} className="flex items-center justify-between border border-stone-100 rounded-lg p-3">
+                      <div className="text-sm">
+                        <p className="text-stone-800 capitalize">
+                          {d.shape || '—'} · {d.size_label || '—'}
+                          <span className="text-stone-400"> · {d.type === 'natural' ? 'Natural' : 'LGD'}</span>
+                        </p>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          Need {need} pc{need === 1 ? '' : 's'} ({piecesPerUnit}/unit × {qty}) · In stock {have}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded-lg border ${enough ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                          {enough ? 'In stock' : `Short ${need - have}`}
+                        </span>
+                        {!enough && (
+                          <Link
+                            href={requestHref}
+                            title="Opens the receive form pre-filled — log a vendor purchase or adjustment to clear this shortage."
+                            className="text-xs px-2 py-1 rounded-lg border border-[#1E3A5F] text-[#1E3A5F] hover:bg-yellow-50">
+                            Request stock
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-3">Labour charges</h2>
