@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, AlertTriangle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -24,6 +24,9 @@ const SOURCES = [
 
 export default function StockReceivePage() {
   const router = useRouter()
+  // Order detail "Request stock" CTAs deep-link in here with a
+  // material/shape/size/pieces prefill so the operator can save in one click.
+  const searchParams = useSearchParams()
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
   const [partners, setPartners] = useState<{ id: string; name: string }[]>([])
   const [shapes, setShapes] = useState<{ id: string; name: string; active: boolean }[]>([])
@@ -45,6 +48,27 @@ export default function StockReceivePage() {
     diamond_size_id: '',
     pieces: '',
   })
+
+  // One-shot prefill from query string (e.g. ?material_type=diamond_lgd&diamond_shape_id=…&diamond_size_id=…&pieces=3).
+  // Carats are intentionally left blank so the operator can weigh + enter the
+  // actual figure (carats are the source of truth — pieces is a count hint).
+  useEffect(() => {
+    if (!searchParams) return
+    const mt = searchParams.get('material_type') || ''
+    const sh = searchParams.get('diamond_shape_id') || ''
+    const sz = searchParams.get('diamond_size_id') || ''
+    const pcs = searchParams.get('pieces') || ''
+    const item = searchParams.get('item_label') || ''
+    if (!mt && !sh && !sz && !pcs && !item) return
+    setForm(prev => ({
+      ...prev,
+      ...(mt ? { material_type: mt } : {}),
+      ...(sh ? { diamond_shape_id: sh } : {}),
+      ...(sz ? { diamond_size_id: sz } : {}),
+      ...(pcs ? { pieces: pcs } : {}),
+      ...(item ? { item_label: item } : {}),
+    }))
+  }, [searchParams])
 
   useEffect(() => {
     Promise.all([
@@ -196,7 +220,7 @@ export default function StockReceivePage() {
                   value={form.pieces} onChange={e => set('pieces', e.target.value)} />
               </div>
               <p className="col-span-3 text-[11px] text-stone-400">
-                Manage shapes & sizes in <Link href="/diamonds" className="underline">Diamond catalog</Link>.
+                Manage shapes & sizes in <Link href="/diamonds/catalog" className="underline">Diamond catalog</Link>.
               </p>
             </div>
           )}

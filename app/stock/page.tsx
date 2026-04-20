@@ -138,7 +138,7 @@ export default function StockPage() {
           <p className="text-xs text-stone-400">Gold on hand</p>
           <p className="text-xl font-semibold text-stone-900 mt-1">{totals.goldG.toFixed(3)} g</p>
         </div>
-        <Link href="/diamonds" className="bg-white rounded-xl border border-stone-200 p-4 hover:border-[#1E3A5F] transition-colors">
+        <Link href="/diamonds/catalog" className="bg-white rounded-xl border border-stone-200 p-4 hover:border-[#1E3A5F] transition-colors">
           <p className="text-xs text-stone-400 flex items-center gap-1"><Diamond className="w-3 h-3" /> Diamonds on hand</p>
           <p className="text-xl font-semibold text-stone-900 mt-1">{totals.diaC.toFixed(3)} ct</p>
           <p className="text-[11px] text-stone-400 mt-0.5">{totals.diaPcs} pcs · {diaGroups.length} groups{diaLowCount > 0 && <> · <span className="text-amber-600 font-medium">{diaLowCount} low</span></>}</p>
@@ -170,7 +170,7 @@ export default function StockPage() {
               <h2 className="text-sm font-medium text-stone-700 flex items-center gap-2">
                 <Diamond className="w-4 h-4 text-[#1E3A5F]" /> Diamonds by shape × size
               </h2>
-              <Link href="/diamonds" className="text-xs text-[#1E3A5F] hover:underline">Manage catalog →</Link>
+              <Link href="/diamonds/catalog" className="text-xs text-[#1E3A5F] hover:underline">Manage catalog →</Link>
             </div>
             <div className="divide-y divide-stone-50">
               {diaGroups.map((g, i) => {

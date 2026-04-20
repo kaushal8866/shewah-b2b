@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
 import { KARAT_FACTORS, SELLABLE_KARATS, deriveAllKaratWeights, computeKaratPricing } from '@/lib/karat'
 import { ArrowLeft, Save, Calculator, Plus, X, Upload, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import Link from 'next/link'
 
 type DiamondRow = {
@@ -18,6 +19,10 @@ type DiamondRow = {
   type: string
   pieces: string
   cost: string
+  // Task #76: link to the shared diamond catalog so stock matching works.
+  shape_id: string
+  size_id: string
+  size_label: string
 }
 
 const SHAPES = ['round','oval','pear','cushion','princess','marquise','emerald','radiant','heart','asscher']
@@ -29,7 +34,8 @@ function newDiamondRow(): DiamondRow {
   return {
     id: Math.random().toString(36).slice(2),
     role: 'center', shape: 'round', weight: '', quality: 'VS2',
-    color: 'F', type: 'lgd', pieces: '1', cost: ''
+    color: 'F', type: 'lgd', pieces: '1', cost: '',
+    shape_id: '', size_id: '', size_label: '',
   }
 }
 
@@ -102,6 +108,9 @@ export default function CatalogProductEditPage() {
             type: d.type || 'lgd',
             pieces: String(d.pieces ?? '1'),
             cost: String(d.cost ?? ''),
+            shape_id: d.shape_id || '',
+            size_id: d.size_id || '',
+            size_label: d.size_label || '',
           })))
         }
       }
@@ -177,6 +186,9 @@ export default function CatalogProductEditPage() {
         role: d.role, shape: d.shape, weight: parseFloat(d.weight) || 0,
         quality: d.quality, color: d.color, type: d.type,
         pieces: parseInt(d.pieces) || 1, cost: parseFloat(d.cost) || 0,
+        shape_id: d.shape_id || null,
+        size_id: d.size_id || null,
+        size_label: d.size_label || null,
       })),
       detailed_pricing: { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
     }).eq('id', id)
@@ -244,6 +256,22 @@ export default function CatalogProductEditPage() {
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-medium text-stone-500">{idx === 0 ? 'Primary diamond' : `Diamond ${idx + 1}`}</span>
                   {diamonds.length > 1 && <button onClick={() => removeDiamondRow(d.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 className="w-3.5 h-3.5" /></button>}
+                </div>
+                <div className="mb-3">
+                  <DiamondCatalogPicker
+                    shapeId={d.shape_id || null}
+                    sizeId={d.size_id || null}
+                    onChange={picked => setDiamonds(prev => prev.map(row => row.id !== d.id ? row : ({
+                      ...row,
+                      shape_id: picked.shape_id,
+                      size_id: picked.size_id,
+                      size_label: picked.size_label,
+                      shape: picked.shape_name ? picked.shape_name.toLowerCase() : row.shape,
+                      weight: row.weight === '' && picked.approx_carats != null
+                        ? String(picked.approx_carats)
+                        : row.weight,
+                    }))) }
+                  />
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
                   <div><label className={lbl}>Role</label><select className={inp} value={d.role} onChange={e => updateDiamond(d.id, 'role', e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}</select></div>

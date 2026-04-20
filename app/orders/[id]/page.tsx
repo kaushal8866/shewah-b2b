@@ -371,6 +371,10 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<any>(null)
   const [mfgPartners, setMfgPartners] = useState<ManufacturingPartnerLite[]>([])
   const [consumptionTxn, setConsumptionTxn] = useState<any | null>(null)
+  // Task #76: live diamond inventory keyed by `${material_type}|${shape_id}|${size_id}`
+  // (e.g. `diamond_lgd|<uuid>|<uuid>`). Keying by material type prevents a
+  // natural requirement from looking satisfied by LGD stock or vice versa.
+  const [diamondStock, setDiamondStock] = useState<Record<string, { pieces: number; carats: number; min_pieces: number }>>({})
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -451,7 +455,7 @@ export default function OrderDetailPage() {
     const [{ data }, { data: mp }] = await Promise.all([
       supabase
         .from('orders')
-        .select('*, partners(store_name, owner_name, phone, city), products(code, name, gold_weight_g, gold_karat, diamond_weight, diamond_type)')
+        .select('*, partners(store_name, owner_name, phone, city), products(code, name, gold_weight_g, gold_karat, diamond_weight, diamond_type, diamond_specs)')
         .eq('id', id)
         .single(),
       supabase.from('manufacturing_partners').select('id, name, city, min_labour_grams, labour_rate_9k, labour_rate_10k, labour_rate_14k, labour_rate_18k, labour_rate_22k').order('name'),
@@ -485,6 +489,29 @@ export default function OrderDetailPage() {
       .limit(1)
       .maybeSingle()
     setConsumptionTxn(tx || null)
+
+    // Task #76: pull live diamond stock so we can show shortage badges
+    // beside each diamond on the product. The endpoint is tolerant when
+    // the catalog migration hasn't been applied yet (returns []), so we
+    // simply degrade silently in that case.
+    try {
+      const r = await fetch('/api/diamonds/stock')
+      if (r.ok) {
+        const j = await r.json()
+        const map: Record<string, { pieces: number; carats: number; min_pieces: number }> = {}
+        for (const row of (j?.groups || [])) {
+          if (!row?.material_type || !row?.diamond_shape_id || !row?.diamond_size_id) continue
+          map[`${row.material_type}|${row.diamond_shape_id}|${row.diamond_size_id}`] = {
+            pieces: Number(row.pieces) || 0,
+            carats: Number(row.carats) || 0,
+            min_pieces: Number(row.reorder_threshold_pieces) || 0,
+          }
+        }
+        setDiamondStock(map)
+      }
+    } catch (e) {
+      console.warn('[diamond stock] fetch failed', e)
+    }
 
     setLoading(false)
   }
@@ -1041,6 +1068,52 @@ export default function OrderDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Diamond requirements & central-stock availability (Task #76).
+              Only renders when the product has linked diamond_specs rows
+              with shape_id+size_id (i.e. the operator picked from the
+              shared diamond catalog). Legacy free-form rows are skipped
+              because we can't match them to inventory groups. */}
+          {Array.isArray(order.products?.diamond_specs) && order.products.diamond_specs.some((d: any) => d?.shape_id && d?.size_id) && (
+            <div className="bg-white rounded-xl border border-stone-200 p-5">
+              <h2 className="font-medium text-stone-900 mb-4">Diamond requirements</h2>
+              <div className="space-y-2">
+                {order.products.diamond_specs.filter((d: any) => d?.shape_id && d?.size_id).map((d: any, i: number) => {
+                  const qty = parseInt(order.quantity) || 1
+                  const piecesPerUnit = parseInt(d.pieces) || 1
+                  const need = piecesPerUnit * qty
+                  const matType = d.type === 'natural' ? 'diamond_natural' : 'diamond_lgd'
+                  const stock = diamondStock[`${matType}|${d.shape_id}|${d.size_id}`]
+                  const have = stock?.pieces || 0
+                  const enough = have >= need
+                  const requestHref = `/stock/receive?material_type=${matType}&diamond_shape_id=${d.shape_id}&diamond_size_id=${d.size_id}&pieces=${Math.max(0, need - have)}`
+                  return (
+                    <div key={i} className="flex items-center justify-between border border-stone-100 rounded-lg p-3">
+                      <div className="text-sm">
+                        <p className="text-stone-800 capitalize">
+                          {d.shape || '—'} · {d.size_label || '—'}
+                          <span className="text-stone-400"> · {d.type === 'natural' ? 'Natural' : 'LGD'}</span>
+                        </p>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          Need {need} pc{need === 1 ? '' : 's'} ({piecesPerUnit}/unit × {qty}) · In stock {have}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded-lg border ${enough ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                          {enough ? 'In stock' : `Short ${need - have}`}
+                        </span>
+                        {!enough && (
+                          <Link href={requestHref} className="text-xs px-2 py-1 rounded-lg border border-[#1E3A5F] text-[#1E3A5F] hover:bg-yellow-50">
+                            Request stock
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Costing & gold ledger */}
           <div className="bg-white rounded-xl border border-stone-200 p-5">

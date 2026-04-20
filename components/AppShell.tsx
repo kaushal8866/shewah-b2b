@@ -24,7 +24,7 @@ const nav = [
   { href: '/catalog',         icon: Package,         label: 'Catalog',       module: 'catalog'       },
   { href: '/gold-rates',      icon: TrendingUp,      label: 'Gold Rates',    module: 'gold_rates'    },
   { href: '/stock',           icon: Boxes,           label: 'Stock',         module: 'vendors'       },
-  { href: '/diamonds',        icon: Diamond,         label: 'Diamonds',      module: 'vendors'       },
+  { href: '/diamonds/catalog', icon: Diamond,        label: 'Diamonds',      module: 'vendors'       },
   { href: '/vendors',         icon: Store,           label: 'Vendors',       module: 'vendors'       },
   { href: '/circuits',        icon: Map,             label: 'Circuits',      module: 'circuits'      },
   { href: '/analytics',       icon: BarChart2,       label: 'Analytics',     module: 'analytics'     },
