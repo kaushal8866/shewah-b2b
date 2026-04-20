@@ -421,11 +421,21 @@ export default function OrderDetailPage() {
     Number(editPartner?.min_labour_grams) || 1,
   )
 
+  // Only fire when the admin has actually CHANGED an assignment-driving
+  // field (partner / karat / weight) from the saved snapshot. Merely
+  // entering edit mode on a historical order — or editing unrelated
+  // fields — must NOT touch the persisted labour value.
+  const assignmentChanged = !!order && (
+    String(form.assigned_manufacturer_id || '') !== String(order.assigned_manufacturer_id || '')
+    || String(form.gold_karat || '') !== String(order.gold_karat || '')
+    || String(form.gold_weight_actual || '') !== String(order.gold_weight_actual || '')
+    || String(form.gold_weight_estimated || '') !== String(order.gold_weight_estimated || '')
+  )
   useEffect(() => {
-    if (!editing || overrideLabour) return
+    if (!editing || overrideLabour || !assignmentChanged) return
     if (!editPartner || editPartnerRate <= 0 || editGrossWeight <= 0) {
-      // No partner rate available — clear any stale auto value so it doesn't
-      // silently persist into COGS.
+      // Partner / karat changed but the new partner has no rate — clear
+      // any stale auto value so we don't quietly carry the previous rate.
       if (form.making_charges) setForm((prev: any) => ({ ...prev, making_charges: '' }))
       return
     }
@@ -434,7 +444,7 @@ export default function OrderDetailPage() {
       setForm((prev: any) => ({ ...prev, making_charges: auto }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, overrideLabour, editPartnerRate, editGrossWeight, form.assigned_manufacturer_id, form.gold_karat])
+  }, [editing, overrideLabour, assignmentChanged, editPartnerRate, editGrossWeight])
 
   async function load() {
     setLoading(true)
