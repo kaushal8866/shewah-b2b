@@ -2,15 +2,15 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import { applyMfgStatusChange } from '@/lib/mfgOrderLifecycle'
 import { KARAT_FACTORS } from '@/lib/karat'
 
 /**
  * Guided cancellation for a manufacturing order. Three branches, posted with
  * different `action` values for an unambiguous audit trail.
  *
- *  • action=not_started — original behaviour: flip the mfg order to
- *    'cancelled' and let `applyMfgStatusChange` release the float.
+ *  • action=not_started — atomic RPC `cancel_mfg_order_not_started` flips
+ *    the order to 'cancelled' AND deletes the pending consumption rows
+ *    (releasing the float reservation) in one transaction.
  *
  *  • action=reassign    — karigar refused to take on the work. Atomic RPC
  *    `reassign_mfg_order_for_cancel` moves every pending consumption row to
@@ -46,9 +46,6 @@ type MfgOrderRow = {
   manufacturing_partner_id: string | null
   customer_order_id: string | null
   gold_karat: number | null
-  gold_weight_required: number | null
-  gold_weight_actual: number | null
-  material_from_float: boolean
 }
 
 export async function POST(req: Request, ctx: { params: { id: string } }) {
@@ -63,29 +60,16 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
 
   const { data: order, error: oerr } = await supabaseAdmin
     .from('manufacturing_orders')
-    .select('id, status, manufacturing_partner_id, customer_order_id, gold_karat, gold_weight_required, gold_weight_actual, material_from_float')
+    .select('id, status, manufacturing_partner_id, customer_order_id, gold_karat')
     .eq('id', ctx.params.id)
     .maybeSingle<MfgOrderRow>()
   if (oerr || !order) return NextResponse.json({ error: oerr?.message || 'Order not found' }, { status: 404 })
 
-  const prevStatus = order.status
-
   if (body.action === 'not_started') {
-    const { error: uerr } = await supabaseAdmin
-      .from('manufacturing_orders')
-      .update({ status: 'cancelled' })
-      .eq('id', order.id)
-    if (uerr) return NextResponse.json({ error: uerr.message }, { status: 500 })
-
-    await applyMfgStatusChange({
-      mfgOrderId: order.id,
-      prevStatus,
-      newStatus: 'cancelled',
-      goldWeightRequired: order.gold_weight_required,
-      goldWeightActual: order.gold_weight_actual,
-      materialFromFloat: !!order.material_from_float,
-      partnerId: order.manufacturing_partner_id,
+    const { error: rpcErr } = await supabaseAdmin.rpc('cancel_mfg_order_not_started', {
+      p_order_id: order.id,
     })
+    if (rpcErr) return NextResponse.json({ error: rpcErr.message }, { status: 500 })
     return NextResponse.json({ ok: true, action: 'not_started' })
   }
 
