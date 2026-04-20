@@ -28,6 +28,7 @@ export default function NewInventoryItemPage() {
     pieces: '',
     diamond_quality: '',
     diamond_color: '',
+    gold_karat: 'gold_22k',
     sku: '',
     notes: '',
   })
@@ -42,6 +43,7 @@ export default function NewInventoryItemPage() {
     if (!form.name) { alert('Item name is required'); return }
     const qty = parseFloat(form.quantity_in_stock) || 0
     const isDiamonds = form.category === 'diamonds'
+    const isGold = form.category === 'gold'
 
     if (isDiamonds && qty > 0) {
       if (!form.diamond_shape_id || !form.diamond_size_id) {
@@ -62,7 +64,7 @@ export default function NewInventoryItemPage() {
       category: form.category,
       vendor_id: form.vendor_id || null,
       quantity_in_stock: qty,
-      unit: form.unit,
+      unit: isGold ? 'grams' : form.unit,
       avg_purchase_price: parseFloat(form.avg_purchase_price) || null,
       low_stock_alert: parseFloat(form.low_stock_alert) || null,
       diamond_shape: form.diamond_shape_name || null,
@@ -74,11 +76,21 @@ export default function NewInventoryItemPage() {
     const { error: invErr } = await supabase.from('inventory').insert([inventoryPayload])
     if (invErr) { setSaving(false); alert('Error: ' + invErr.message); return }
 
-    if (isDiamonds && qty > 0 && form.vendor_id) {
+    async function pushToStock(body: object) {
       const res = await fetch('/api/stock/receive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || res.statusText)
+      }
+    }
+
+    try {
+      if (isDiamonds && qty > 0 && form.vendor_id) {
+        await pushToStock({
           from: 'vendor',
           material_type: form.diamond_material_type,
           quantity: qty,
@@ -88,15 +100,22 @@ export default function NewInventoryItemPage() {
           diamond_size_id: form.diamond_size_id,
           reference: form.sku || null,
           notes: form.notes || `Vendor purchase: ${form.name}`,
-        }),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        setSaving(false)
-        alert('Item saved but stock update failed: ' + (err.error || res.statusText))
-        router.push('/vendors')
-        return
+        })
+      } else if (isGold && qty > 0 && form.vendor_id) {
+        await pushToStock({
+          from: 'vendor',
+          material_type: form.gold_karat,
+          quantity: qty,
+          vendor_id: form.vendor_id,
+          reference: form.sku || null,
+          notes: form.notes || `Vendor purchase: ${form.name}`,
+        })
       }
+    } catch (e: any) {
+      setSaving(false)
+      alert('Item saved but stock update failed: ' + e.message)
+      router.push('/vendors')
+      return
     }
 
     setSaving(false)
@@ -106,6 +125,7 @@ export default function NewInventoryItemPage() {
   const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
   const isDiamonds = form.category === 'diamonds'
+  const isGold = form.category === 'gold'
 
   return (
     <div className="p-4 lg:p-7 max-w-2xl">
@@ -152,6 +172,21 @@ export default function NewInventoryItemPage() {
             </div>
           </div>
         </div>
+
+        {isGold && (
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <h2 className="font-medium text-stone-900 mb-1">Gold specifications</h2>
+            <p className="text-xs text-stone-400 mb-4">Karat is required to update the central gold stock.</p>
+            <div>
+              <label className={lbl}>Karat</label>
+              <select className={inp} value={form.gold_karat} onChange={e => set('gold_karat', e.target.value)}>
+                <option value="gold_22k">22 Karat</option>
+                <option value="gold_18k">18 Karat</option>
+                <option value="gold_14k">14 Karat</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         {isDiamonds && (
           <div className="bg-white rounded-xl border border-stone-200 p-5">
@@ -253,6 +288,12 @@ export default function NewInventoryItemPage() {
         {isDiamonds && form.vendor_id && parseFloat(form.quantity_in_stock) > 0 && form.diamond_shape_id && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
             This purchase will also be recorded in central diamond stock so shortage alerts stay accurate.
+          </div>
+        )}
+
+        {isGold && form.vendor_id && parseFloat(form.quantity_in_stock) > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+            This purchase will also be recorded in the central gold stock ledger ({form.gold_karat.replace('gold_', '')}).
           </div>
         )}
 
