@@ -25,6 +25,12 @@ type DiamondRow = {
   shape_id: string
   size_id: string
   size_label: string
+  // True when the row came from an older product save that predates the
+  // shared diamond catalog. Such rows render read-only with a "Legacy"
+  // badge and an explicit "Upgrade" affordance, so a master can safely
+  // re-pick from the catalog without accidentally losing the original
+  // values mid-edit. New rows added in this editor are never legacy.
+  legacy_locked: boolean
 }
 
 const SHAPES = ['round','oval','pear','cushion','princess','marquise','emerald','radiant','heart','asscher']
@@ -45,6 +51,7 @@ function newDiamondRow(): DiamondRow {
     role: 'center', shape: 'round', weight: '', quality: 'VS2',
     color: 'F', type: 'lgd', pieces: '1', cost: '',
     shape_id: '', size_id: '', size_label: '',
+    legacy_locked: false,
   }
 }
 

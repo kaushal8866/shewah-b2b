@@ -23,6 +23,11 @@ type DiamondRow = {
   shape_id: string
   size_id: string
   size_label: string
+  // True when this row was loaded from a product saved before the shared
+  // catalog existed. Such rows render read-only with a "Legacy" badge
+  // + "Upgrade" affordance — clicking Upgrade unlocks editing and
+  // surfaces the picker so the master can re-pick deliberately.
+  legacy_locked: boolean
 }
 
 const SHAPES = ['round','oval','pear','cushion','princess','marquise','emerald','radiant','heart','asscher']
@@ -36,6 +41,7 @@ function newDiamondRow(): DiamondRow {
     role: 'center', shape: 'round', weight: '', quality: 'VS2',
     color: 'F', type: 'lgd', pieces: '1', cost: '',
     shape_id: '', size_id: '', size_label: '',
+    legacy_locked: false,
   }
 }
 
@@ -111,6 +117,9 @@ export default function CatalogProductEditPage() {
             shape_id: d.shape_id || '',
             size_id: d.size_id || '',
             size_label: d.size_label || '',
+            // Lock pre-catalog rows so a master can't unintentionally
+            // mutate an old free-text spec — they have to "Upgrade" first.
+            legacy_locked: !(d.shape_id && d.size_id),
           })))
         }
       }
@@ -251,40 +260,67 @@ export default function CatalogProductEditPage() {
             </button>
           </div>
           <div className="space-y-3">
-            {diamonds.map((d, idx) => (
-              <div key={d.id} className="border border-stone-100 rounded-xl p-3 bg-stone-50">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-medium text-stone-500">{idx === 0 ? 'Primary diamond' : `Diamond ${idx + 1}`}</span>
-                  {diamonds.length > 1 && <button onClick={() => removeDiamondRow(d.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 className="w-3.5 h-3.5" /></button>}
+            {diamonds.map((d, idx) => {
+              // Legacy rows (saved before Task #76) are read-only with a
+              // "Legacy" badge. The "Upgrade" button just clears the lock
+              // — the master then explicitly re-picks from the catalog.
+              const locked = d.legacy_locked
+              const roInp = locked ? `${inp} bg-stone-100 text-stone-500 cursor-not-allowed` : inp
+              return (
+              <div key={d.id} className={`border rounded-xl p-3 ${locked ? 'border-amber-200 bg-amber-50/50' : 'border-stone-100 bg-stone-50'}`}>
+                <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-stone-500">{idx === 0 ? 'Primary diamond' : `Diamond ${idx + 1}`}</span>
+                    {locked && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">Legacy</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {locked && (
+                      <button
+                        type="button"
+                        onClick={() => setDiamonds(prev => prev.map(row => row.id === d.id ? { ...row, legacy_locked: false } : row))}
+                        className="text-xs px-2 py-1 rounded-lg border border-amber-400 text-amber-800 hover:bg-amber-100">
+                        Upgrade to catalog
+                      </button>
+                    )}
+                    {diamonds.length > 1 && <button onClick={() => removeDiamondRow(d.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 className="w-3.5 h-3.5" /></button>}
+                  </div>
                 </div>
-                <div className="mb-3">
-                  <DiamondCatalogPicker
-                    shapeId={d.shape_id || null}
-                    sizeId={d.size_id || null}
-                    onChange={picked => setDiamonds(prev => prev.map(row => row.id !== d.id ? row : ({
-                      ...row,
-                      shape_id: picked.shape_id,
-                      size_id: picked.size_id,
-                      size_label: picked.size_label,
-                      shape: picked.shape_name ? picked.shape_name.toLowerCase() : row.shape,
-                      weight: row.weight === '' && picked.approx_carats != null
-                        ? String(picked.approx_carats)
-                        : row.weight,
-                    }))) }
-                  />
-                </div>
+                {locked ? (
+                  <p className="text-xs text-amber-800 mb-3">
+                    This row pre-dates the shared diamond catalog. Click <strong>Upgrade to catalog</strong> to re-pick its shape and size — only then will it appear in availability badges and stock matching.
+                  </p>
+                ) : (
+                  <div className="mb-3">
+                    <DiamondCatalogPicker
+                      shapeId={d.shape_id || null}
+                      sizeId={d.size_id || null}
+                      onChange={picked => setDiamonds(prev => prev.map(row => row.id !== d.id ? row : ({
+                        ...row,
+                        shape_id: picked.shape_id,
+                        size_id: picked.size_id,
+                        size_label: picked.size_label,
+                        shape: picked.shape_name ? picked.shape_name.toLowerCase() : row.shape,
+                        weight: row.weight === '' && picked.approx_carats != null
+                          ? String(picked.approx_carats)
+                          : row.weight,
+                      }))) }
+                    />
+                  </div>
+                )}
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-                  <div><label className={lbl}>Role</label><select className={inp} value={d.role} onChange={e => updateDiamond(d.id, 'role', e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}</select></div>
-                  <div><label className={lbl}>Shape</label><select className={inp} value={d.shape} onChange={e => updateDiamond(d.id, 'shape', e.target.value)}>{SHAPES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}</select></div>
-                  <div><label className={lbl}>Weight (ct)</label><input type="number" inputMode="decimal" step="0.01" className={inp} value={d.weight} onChange={e => updateDiamond(d.id, 'weight', e.target.value)} /></div>
-                  <div><label className={lbl}>Pieces</label><input type="number" inputMode="decimal" min="1" className={inp} value={d.pieces} onChange={e => updateDiamond(d.id, 'pieces', e.target.value)} /></div>
-                  <div><label className={lbl}>Quality</label><select className={inp} value={d.quality} onChange={e => updateDiamond(d.id, 'quality', e.target.value)}>{QUALITIES.map(q => <option key={q} value={q}>{q}</option>)}</select></div>
-                  <div><label className={lbl}>Color</label><select className={inp} value={d.color} onChange={e => updateDiamond(d.id, 'color', e.target.value)}>{COLORS.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                  <div><label className={lbl}>Type</label><select className={inp} value={d.type} onChange={e => updateDiamond(d.id, 'type', e.target.value)}><option value="lgd">LGD</option><option value="natural">Natural</option></select></div>
-                  <div><label className={lbl}>Cost/pc (₹)</label><input type="number" inputMode="decimal" className={inp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} /></div>
+                  <div><label className={lbl}>Role</label><select disabled={locked} className={roInp} value={d.role} onChange={e => updateDiamond(d.id, 'role', e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}</select></div>
+                  <div><label className={lbl}>Shape</label><select disabled={locked} className={roInp} value={d.shape} onChange={e => updateDiamond(d.id, 'shape', e.target.value)}>{SHAPES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}</select></div>
+                  <div><label className={lbl}>Weight (ct)</label><input readOnly={locked} type="number" inputMode="decimal" step="0.01" className={roInp} value={d.weight} onChange={e => updateDiamond(d.id, 'weight', e.target.value)} /></div>
+                  <div><label className={lbl}>Pieces</label><input readOnly={locked} type="number" inputMode="decimal" min="1" className={roInp} value={d.pieces} onChange={e => updateDiamond(d.id, 'pieces', e.target.value)} /></div>
+                  <div><label className={lbl}>Quality</label><select disabled={locked} className={roInp} value={d.quality} onChange={e => updateDiamond(d.id, 'quality', e.target.value)}>{QUALITIES.map(q => <option key={q} value={q}>{q}</option>)}</select></div>
+                  <div><label className={lbl}>Color</label><select disabled={locked} className={roInp} value={d.color} onChange={e => updateDiamond(d.id, 'color', e.target.value)}>{COLORS.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                  <div><label className={lbl}>Type</label><select disabled={locked} className={roInp} value={d.type} onChange={e => updateDiamond(d.id, 'type', e.target.value)}><option value="lgd">LGD</option><option value="natural">Natural</option></select></div>
+                  <div><label className={lbl}>Cost/pc (₹)</label><input readOnly={locked} type="number" inputMode="decimal" className={roInp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} /></div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
 

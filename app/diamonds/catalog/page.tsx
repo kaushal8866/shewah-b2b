@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Diamond, Plus, Trash2, ArrowLeft, AlertTriangle, Save, X, ChevronRight,
@@ -26,8 +27,18 @@ type Group = {
 }
 
 export default function DiamondsCatalogPage() {
-  const { data: session } = useSession()
+  const router = useRouter()
+  const { data: session, status } = useSession()
   const isMaster = session?.user?.role === 'master'
+  // Master-only admin page. Non-masters get bounced back to the dashboard
+  // (mirrors how the rest of the master surfaces protect themselves).
+  // Note that all mutating APIs already enforce master-only on the server,
+  // so this is the route-level UX gate — not the security boundary.
+  useEffect(() => {
+    if (status === 'loading') return
+    if (!session) { router.replace('/login'); return }
+    if (!isMaster) { router.replace('/') }
+  }, [status, session, isMaster, router])
   const [shapes, setShapes] = useState<Shape[]>([])
   const [sizes, setSizes] = useState<Size[]>([])
   const [groups, setGroups] = useState<Group[]>([])
@@ -70,6 +81,12 @@ export default function DiamondsCatalogPage() {
 
   const activeShape = shapes.find(s => s.id === activeShapeId) || null
   const sizesForActive = sizes.filter(s => s.shape_id === activeShapeId)
+
+  // Suppress the page entirely while the role gate decides — keeps the
+  // master-only catalog hidden from a non-master who briefly lands here.
+  if (status === 'loading' || !session || !isMaster) {
+    return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading…</div>
+  }
 
   return (
     <div className="p-4 lg:p-7">
