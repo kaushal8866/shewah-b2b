@@ -135,23 +135,23 @@ export default function NewManufacturingPartnerPage() {
               <p className={lbl}>Labour rates (₹/gram) — used to auto-cost orders for this karigar</p>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 <div>
-                  <label className="block text-[10px] text-stone-400 mb-1">9K</label>
+                  <label className="block text-[10px] text-stone-400 mb-1">9K <span className="text-stone-300">· 9/24</span></label>
                   <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_9k} onChange={e => set('labour_rate_9k', e.target.value)} placeholder="700" />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-stone-400 mb-1">10K</label>
+                  <label className="block text-[10px] text-stone-400 mb-1">10K <span className="text-stone-300">· 10/24</span></label>
                   <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_10k} onChange={e => set('labour_rate_10k', e.target.value)} placeholder="800" />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-stone-400 mb-1">14K</label>
+                  <label className="block text-[10px] text-stone-400 mb-1">14K <span className="text-stone-300">· 14/24</span></label>
                   <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_14k} onChange={e => set('labour_rate_14k', e.target.value)} placeholder="900" />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-stone-400 mb-1">18K</label>
+                  <label className="block text-[10px] text-stone-400 mb-1">18K <span className="text-stone-300">· 18/24</span></label>
                   <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_18k} onChange={e => set('labour_rate_18k', e.target.value)} placeholder="1200" />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-stone-400 mb-1">22K</label>
+                  <label className="block text-[10px] text-stone-400 mb-1">22K <span className="text-stone-300">· 22/24</span></label>
                   <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_22k} onChange={e => set('labour_rate_22k', e.target.value)} placeholder="1500" />
                 </div>
               </div>
