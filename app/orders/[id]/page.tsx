@@ -680,13 +680,16 @@ export default function OrderDetailPage() {
     setSaving(true)
     const balanceDue = (parseFloat(form.total_amount) || 0) - (parseFloat(form.advance_paid) || 0)
 
-    // Recompute COGS + margin. When the assigned partner has a per-karat
-    // labour rate (and no manual override is in effect), drive labour from
-    // partner_rate × max(weight, min_labour_grams). Otherwise fall back to
-    // whatever the admin typed into making_charges.
+    // Recompute COGS + margin. To preserve historical pricing, we ONLY
+    // re-derive labour from the partner's current per-karat rate when the
+    // admin actually changed an assignment-driving field (partner / karat
+    // / weight) during this edit session. Otherwise we use the persisted
+    // snapshot (`making_charges`) so unrelated edits on old in-flight
+    // orders don't silently reprice them with today's rate.
     const savePartner = mfgPartners.find(p => p.id === form.assigned_manufacturer_id)
     const saveKarat = parseInt(form.gold_karat) || 18
-    const saveLabourPerG = !overrideLabour ? partnerLabourRate(savePartner, saveKarat) : 0
+    const useLivePartnerRate = assignmentChanged && !overrideLabour
+    const saveLabourPerG = useLivePartnerRate ? partnerLabourRate(savePartner, saveKarat) : 0
     const saveGrossW = Math.max(
       parseFloat(form.gold_weight_actual) || parseFloat(form.gold_weight_estimated) || 0,
       Number(savePartner?.min_labour_grams) || 1,
