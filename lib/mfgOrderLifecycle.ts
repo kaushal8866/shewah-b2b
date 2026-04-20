@@ -1,4 +1,14 @@
 import { supabase } from './supabase'
+import { KARAT_FACTORS } from './karat'
+
+// Task 78: float quantities are denominated in 24kt-net. Order/mfg-order rows
+// keep gross-at-karat for gold_weight_*; we convert here at the boundary.
+function grossToPure24k(gross: number | null | undefined, karat: number | null | undefined): number | null {
+  if (gross == null || gross <= 0) return null
+  const k = Number(karat) || 24
+  const f = KARAT_FACTORS[k] ?? 1
+  return Math.round(gross * f * 10000) / 10000
+}
 
 /**
  * Apply the float-side effects of a manufacturing-order status change.
@@ -25,18 +35,24 @@ export async function applyMfgStatusChange(opts: {
   goldWeightActual: number | null
   materialFromFloat: boolean
   partnerId?: string | null
+  goldKarat?: number | null
 }): Promise<void> {
   const {
     mfgOrderId, prevStatus, newStatus,
-    goldWeightRequired, goldWeightActual, materialFromFloat, partnerId,
+    goldWeightRequired, goldWeightActual, materialFromFloat, partnerId, goldKarat,
   } = opts
 
   if (!materialFromFloat || prevStatus === newStatus) return
 
+  // Task 78: convert gross-at-karat → 24kt-pure before writing any gold
+  // quantity to material_transactions. Diamond floats (handled separately)
+  // are unit-of-account already.
+  const actualPure   = grossToPure24k(goldWeightActual,   goldKarat)
+  const requiredPure = grossToPure24k(goldWeightRequired, goldKarat)
+
   if (newStatus === 'completed') {
-    const finalQty = goldWeightActual || null
     const upd: any = { lifecycle: 'final' }
-    if (finalQty && finalQty > 0) upd.quantity = finalQty
+    if (actualPure != null && actualPure > 0) upd.quantity = actualPure
     await supabase.from('material_transactions')
       .update(upd)
       .eq('manufacturing_order_id', mfgOrderId)
@@ -54,8 +70,6 @@ export async function applyMfgStatusChange(opts: {
   }
 
   if (newStatus === 'returned') {
-    // Look up an existing consumption row first so we can copy float_id + unit
-    // for the matching return entry (preserves which float bucket gets credited).
     const { data: existing } = await supabase
       .from('material_transactions')
       .select('float_id, unit')
@@ -69,7 +83,7 @@ export async function applyMfgStatusChange(opts: {
       .eq('manufacturing_order_id', mfgOrderId)
       .eq('transaction_type', 'consumption')
 
-    const returnQty = goldWeightActual || goldWeightRequired || 0
+    const returnQty = actualPure || requiredPure || 0
     if (existing && returnQty > 0 && partnerId) {
       await supabase.from('material_transactions').insert([{
         float_id: (existing as any).float_id,
@@ -79,16 +93,15 @@ export async function applyMfgStatusChange(opts: {
         lifecycle: 'final',
         quantity: returnQty,
         unit: (existing as any).unit || 'grams',
-        notes: 'Auto-return: order cancelled / returned post-handoff',
+        notes: 'Auto-return: order cancelled / returned post-handoff (24kt-net)',
       }])
     }
     return
   }
 
   if (prevStatus === 'completed') {
-    const restoreQty = goldWeightRequired || null
     const upd: any = { lifecycle: 'pending' }
-    if (restoreQty && restoreQty > 0) upd.quantity = restoreQty
+    if (requiredPure != null && requiredPure > 0) upd.quantity = requiredPure
     await supabase.from('material_transactions')
       .update(upd)
       .eq('manufacturing_order_id', mfgOrderId)
@@ -112,7 +125,7 @@ export async function cascadeOrderStatusToMfg(opts: {
   const { orderId, newStatus } = opts
   const { data: mfgs } = await supabase
     .from('manufacturing_orders')
-    .select('id, status, gold_weight_required, gold_weight_actual, material_from_float, manufacturing_partner_id')
+    .select('id, status, gold_weight_required, gold_weight_actual, gold_karat, material_from_float, manufacturing_partner_id')
     .eq('order_id', orderId)
 
   let affected = 0
@@ -132,6 +145,7 @@ export async function cascadeOrderStatusToMfg(opts: {
       newStatus,
       goldWeightRequired: (m as any).gold_weight_required,
       goldWeightActual: (m as any).gold_weight_actual,
+      goldKarat: (m as any).gold_karat,
       materialFromFloat: (m as any).material_from_float,
       partnerId: (m as any).manufacturing_partner_id,
     })

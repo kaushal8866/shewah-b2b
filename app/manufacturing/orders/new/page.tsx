@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase, partnerLabourRate, type ManufacturingPartnerLite } from '@/lib/supabase'
+import { KARAT_FACTORS } from '@/lib/karat'
 import { uploadToCloudinary, uploadFileToCloudinary } from '@/lib/cloudinaryUpload'
 import { formatCurrency } from '@/lib/utils'
 import { ArrowLeft, Save, Upload, X, Printer, Package, FileUp, FileDown, AlertTriangle } from 'lucide-react'
@@ -65,17 +66,15 @@ function NewMfgOrderForm() {
     }
   }, [form.manufacturing_partner_id])
 
-  function materialTypeForKarat(k: string): string {
-    const n = parseInt(k, 10)
-    if (n === 9)  return 'gold_9k'
-    if (n === 10) return 'gold_10k'
-    if (n === 14) return 'gold_14k'
-    if (n === 22) return 'gold_22k'
-    return 'gold_18k'
-  }
-  const requiredMaterialType = materialTypeForKarat(form.gold_karat)
+  // Task 78: gold floats are denominated in 24kt-net only. The karat picker on
+  // the form is purely a labour-rate input; we convert the required gross
+  // weight into its 24kt-pure equivalent before checking/reserving from float.
+  const requiredMaterialType = 'gold_24k'
   const activeBucket = buckets.find(b => b.material_type === requiredMaterialType)
-  const required = parseFloat(form.gold_weight_required || '0') || 0
+  const requiredGross = parseFloat(form.gold_weight_required || '0') || 0
+  const karatNum = parseInt(form.gold_karat, 10) || 24
+  const karatFactor = KARAT_FACTORS[karatNum] ?? 1
+  const required = Math.round(requiredGross * karatFactor * 10000) / 10000
   const shortfall =
     form.material_from_float && required > 0 && activeBucket
       ? Math.max(0, required - activeBucket.available)
@@ -434,14 +433,14 @@ function NewMfgOrderForm() {
                 )}
                 {buckets.map(b => {
                   const isActive = b.material_type === requiredMaterialType
+                  const label = b.material_type === 'gold_24k'
+                    ? 'Gold (24kt net)'
+                    : b.material_type.replace(/_/g, ' ')
                   return (
                     <div key={b.material_type}
                       className={`rounded-lg p-3 border ${isActive ? 'bg-[#F5F6F8] border-[#1E3A5F]' : 'bg-stone-50 border-stone-200'}`}>
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-stone-700">
-                          {b.material_type.replace(/_/g, ' ')}
-                        </p>
-                        {isActive && <span className="text-[10px] bg-[#1E3A5F] text-white px-2 py-0.5 rounded-full">selected karat</span>}
+                        <p className="text-xs font-semibold uppercase tracking-wider text-stone-700">{label}</p>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-center">
                         <div className="bg-white rounded-md py-2 border border-stone-200">
@@ -460,11 +459,16 @@ function NewMfgOrderForm() {
                     </div>
                   )
                 })}
+                {requiredGross > 0 && (
+                  <div className="bg-stone-50 border border-stone-200 rounded-lg p-3 text-xs text-stone-600">
+                    This order needs <strong>{requiredGross.toFixed(3)}g of {karatNum}K gold</strong>, equivalent to <strong>{required.toFixed(3)}g of 24kt-net</strong> (× {karatFactor.toFixed(3)}). Float is held only as 24kt-net.
+                  </div>
+                )}
                 {overIssue && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-start gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <span>
-                      Short by <strong>{shortfall.toFixed(3)}g</strong>. You'll be asked to record a deposit when you try to issue.
+                      Short by <strong>{shortfall.toFixed(3)}g of 24kt-net</strong>. You'll be asked to record a deposit when you try to issue.
                     </span>
                   </div>
                 )}
@@ -578,7 +582,7 @@ function NewMfgOrderForm() {
               <div className="flex-1">
                 <h3 className="font-semibold text-stone-900">Not enough float available</h3>
                 <p className="text-xs text-stone-500 mt-1">
-                  This karigar's available {requiredMaterialType.replace(/_/g, ' ')} float is short.
+                  This karigar's available 24kt-net gold float is short.
                 </p>
               </div>
             </div>

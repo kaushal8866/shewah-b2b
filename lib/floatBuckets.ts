@@ -92,12 +92,11 @@ export async function getAvailableForMaterial(
 }
 
 /**
- * Map a karat number to the canonical material_float material_type.
+ * Task 78: gold lives only as 24kt-net inside floats and central stock. The
+ * karat carried on an order/manufacturing row is a labour-rate input only —
+ * the float reservation is always against the gold_24k bucket, with the
+ * quantity converted via KARAT_FACTORS at the call site.
  */
-export function materialTypeForKarat(karat: number | string | null | undefined): string {
-  const k = typeof karat === 'string' ? parseInt(karat, 10) : karat
-  if (k === 14) return 'gold_14k'
-  if (k === 18) return 'gold_18k'
-  if (k === 22) return 'gold_22k'
-  return 'gold_18k'
+export function materialTypeForKarat(_karat: number | string | null | undefined): string {
+  return 'gold_24k'
 }

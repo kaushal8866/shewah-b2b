@@ -5,11 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, AlertTriangle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { KARAT_FACTORS } from '@/lib/karat'
 
 const MATERIALS = [
-  { value: 'gold_18k', label: 'Gold 18K', unit: 'g' },
-  { value: 'gold_22k', label: 'Gold 22K', unit: 'g' },
-  { value: 'gold_14k', label: 'Gold 14K', unit: 'g' },
+  { value: 'gold_24k', label: 'Gold (24kt net)', unit: 'g' },
   { value: 'diamond_lgd', label: 'Lab Diamond', unit: 'ct' },
   { value: 'diamond_natural', label: 'Natural Diamond', unit: 'ct' },
   { value: 'finding', label: 'Finding (specify name)', unit: 'pcs' },
@@ -36,7 +35,7 @@ export default function StockReceivePage() {
 
   const [form, setForm] = useState({
     from: 'vendor',
-    material_type: 'gold_18k',
+    material_type: 'gold_24k',
     item_label: '',
     quantity: '',
     vendor_id: '',
@@ -47,6 +46,11 @@ export default function StockReceivePage() {
     diamond_shape_id: '',
     diamond_size_id: '',
     pieces: '',
+    // Task 78: gold is stored only as 24kt-net. The karat picker below acts as
+    // a calculator — operators may enter the gross weight at the karat they
+    // bought it as, and we convert to 24kt-net before saving.
+    gold_input_karat: '24',
+    gold_gross_qty: '',
   })
 
   // One-shot prefill from query string (e.g. ?material_type=diamond_lgd&diamond_shape_id=…&diamond_size_id=…&pieces=3).
@@ -87,13 +91,33 @@ export default function StockReceivePage() {
   function set<K extends keyof typeof form>(k: K, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
   const mat = MATERIALS.find(m => m.value === form.material_type)
   const isDiamond = form.material_type.startsWith('diamond')
+  const isGold = form.material_type === 'gold_24k'
+
+  // Live conversion of gross-at-karat → 24kt-net. When operator types into the
+  // calculator we keep `quantity` in sync so the existing save path is unchanged.
+  const goldKaratNum = parseInt(form.gold_input_karat, 10) || 24
+  const goldFactor = KARAT_FACTORS[goldKaratNum] ?? 1
+  const goldGrossNum = parseFloat(form.gold_gross_qty) || 0
+  const goldNet24k = isGold && goldGrossNum > 0
+    ? Math.round(goldGrossNum * goldFactor * 10000) / 10000
+    : 0
+  useEffect(() => {
+    if (!isGold) return
+    if (goldGrossNum > 0) {
+      const next = String(goldNet24k)
+      setForm(prev => prev.quantity === next ? prev : { ...prev, quantity: next })
+    }
+  }, [isGold, goldGrossNum, goldFactor, goldNet24k])
   const activeShapes = shapes.filter(s => s.active || s.id === form.diamond_shape_id)
   const activeSizes = sizes.filter(z => z.shape_id === form.diamond_shape_id && (z.active || z.id === form.diamond_size_id))
 
   async function handleSave() {
     setError('')
     const qty = parseFloat(form.quantity)
-    if (!qty || qty <= 0) { setError('Enter a positive quantity.'); return }
+    if (isGold) {
+      if (!goldGrossNum || goldGrossNum <= 0) { setError('Enter a positive gross weight.'); return }
+      if (!goldNet24k || goldNet24k <= 0) { setError('Computed 24kt-net is zero — check the karat.'); return }
+    } else if (!qty || qty <= 0) { setError('Enter a positive quantity.'); return }
     if (form.from === 'vendor' && !form.vendor_id) { setError('Pick a vendor.'); return }
     if (form.from === 'partner' && !form.manufacturing_partner_id) { setError('Pick a karigar.'); return }
     if (form.material_type === 'finding' && !form.item_label.trim()) { setError('Findings need a name.'); return }
@@ -106,12 +130,19 @@ export default function StockReceivePage() {
 
     setSaving(true)
     try {
+      const finalQty = isGold ? goldNet24k : qty
+      const goldNote = isGold && goldKaratNum !== 24
+        ? `Vendor gross: ${goldGrossNum}g @ ${goldKaratNum}K → ${goldNet24k}g 24kt-net`
+        : null
       const r = await fetch('/api/stock/receive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          quantity: qty,
+          quantity: finalQty,
+          notes: goldNote
+            ? (form.notes ? `${form.notes} | ${goldNote}` : goldNote)
+            : form.notes,
           item_label: form.material_type === 'finding' ? form.item_label.trim() : null,
           diamond_shape_id: isDiamond ? form.diamond_shape_id : null,
           diamond_size_id: isDiamond ? form.diamond_size_id : null,
@@ -180,12 +211,42 @@ export default function StockReceivePage() {
                 {MATERIALS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </div>
-            <div>
-              <label className={lbl}>Quantity ({mat?.unit}) *</label>
-              <input type="number" inputMode="decimal" step="0.0001" className={inp}
-                value={form.quantity} onChange={e => set('quantity', e.target.value)} />
-            </div>
+            {!isGold && (
+              <div>
+                <label className={lbl}>Quantity ({mat?.unit}) *</label>
+                <input type="number" inputMode="decimal" step="0.0001" className={inp}
+                  value={form.quantity} onChange={e => set('quantity', e.target.value)} />
+              </div>
+            )}
           </div>
+
+          {isGold && (
+            <div className="bg-[#F5F6F8] border border-stone-200 rounded-lg p-3 space-y-3">
+              <p className="text-xs font-medium text-stone-700">
+                Gold inventory is held only as 24kt-net. Enter the gross weight + the karat you bought it at; we convert below.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={lbl}>Gross weight (g) *</label>
+                  <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
+                    value={form.gold_gross_qty} onChange={e => set('gold_gross_qty', e.target.value)} />
+                </div>
+                <div>
+                  <label className={lbl}>Karat *</label>
+                  <select className={inp} value={form.gold_input_karat}
+                    onChange={e => set('gold_input_karat', e.target.value)}>
+                    {[9,10,14,18,22,24].map(k => <option key={k} value={k}>{k}K</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="text-xs text-stone-600 bg-white border border-stone-200 rounded-md px-3 py-2">
+                Will credit central stock as <strong>{goldNet24k.toFixed(4)}g of 24kt-net</strong>
+                {goldGrossNum > 0 && goldKaratNum !== 24 && (
+                  <span className="text-stone-400"> ({goldGrossNum}g × {goldFactor.toFixed(3)})</span>
+                )}
+              </div>
+            </div>
+          )}
           {form.material_type === 'finding' && (
             <div>
               <label className={lbl}>Finding name *</label>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase, ORDER_STATUSES, computeOrderCogs, partnerLabourRate, type ManufacturingPartnerLite } from '@/lib/supabase'
+import { KARAT_FACTORS } from '@/lib/karat'
 import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare, CreditCard, Bell, Plus } from 'lucide-react'
@@ -558,9 +559,13 @@ export default function OrderDetailPage() {
 
     const qty = parseInt(order.quantity) || 1
     const goldKarat = order.gold_karat || order.products?.gold_karat || 18
-    const goldType = `gold_${goldKarat}k`
-    const goldPerPiece = parseFloat(order.gold_weight_estimated) || parseFloat(order.products?.gold_weight_g) || 0
-    const goldNeeded = goldPerPiece * qty
+    // Task 78: floats are denominated in 24kt-net only. The order's gold_weight
+    // is gross-at-karat — convert to its 24kt-pure equivalent for the readiness
+    // check and the deposit shortcut amount.
+    const goldType = 'gold_24k'
+    const karatFactor = KARAT_FACTORS[Number(goldKarat)] ?? 1
+    const goldPerPieceGross = parseFloat(order.gold_weight_estimated) || parseFloat(order.products?.gold_weight_g) || 0
+    const goldNeeded = Math.round(goldPerPieceGross * qty * karatFactor * 10000) / 10000
 
     const dType = order.products?.diamond_type === 'natural' ? 'diamond_natural' : 'diamond_lgd'
     const diamondPerPiece = parseFloat(order.products?.diamond_weight) || 0
@@ -809,8 +814,9 @@ export default function OrderDetailPage() {
   })
 
   // Build link for "Record gold consumption for this order"
+  // Task 78: float consumption is always logged against the 24kt-net bucket.
   const consumptionHref = order.assigned_manufacturer_id
-    ? `/manufacturing/partners/${order.assigned_manufacturer_id}/float?order_id=${id}&type=consumption&material_type=gold_${order.gold_karat || 18}k`
+    ? `/manufacturing/partners/${order.assigned_manufacturer_id}/float?order_id=${id}&type=consumption&material_type=gold_24k`
     : null
 
   return (
@@ -854,7 +860,10 @@ export default function OrderDetailPage() {
       <OrderChangeRequestsPanel orderId={id} onApplied={load} />
 
       {materialPrompt && (() => {
-        const fmtMat = (m: string) => m.replace(/_/g, ' ').replace(/^gold/, 'Gold').replace(/^diamond/, 'Diamond')
+        const fmtMat = (m: string) =>
+          m === 'gold_24k'
+            ? 'Gold (24kt net)'
+            : m.replace(/_/g, ' ').replace(/^gold/, 'Gold').replace(/^diamond/, 'Diamond')
         const goldUnit = 'g'
         const diaUnit = 'ct'
         const partner = mfgPartners.find(p => p.id === materialPrompt.partnerId)

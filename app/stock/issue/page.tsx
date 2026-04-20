@@ -7,9 +7,7 @@ import { ArrowLeft, Save, AlertTriangle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 const MATERIALS = [
-  { value: 'gold_18k', label: 'Gold 18K', unit: 'g' },
-  { value: 'gold_22k', label: 'Gold 22K', unit: 'g' },
-  { value: 'gold_14k', label: 'Gold 14K', unit: 'g' },
+  { value: 'gold_24k', label: 'Gold (24kt net)', unit: 'g' },
   { value: 'diamond_lgd', label: 'Lab Diamond', unit: 'ct' },
   { value: 'diamond_natural', label: 'Natural Diamond', unit: 'ct' },
   { value: 'finding', label: 'Finding (specify name)', unit: 'pcs' },
@@ -28,7 +26,7 @@ function StockIssueInner() {
   const [allowNegative, setAllowNegative] = useState(false)
 
   const [form, setForm] = useState({
-    material_type: sp.get('material_type') || 'gold_18k',
+    material_type: sp.get('material_type') || 'gold_24k',
     item_label: '',
     quantity: sp.get('amount') || '',
     manufacturing_partner_id: sp.get('partner_id') || '',

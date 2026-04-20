@@ -27,7 +27,7 @@ const TYPE_LABEL: Record<string, { label: string; tone: string; sign: '+' | '-' 
 }
 
 const MATERIAL_LABEL: Record<string, string> = {
-  gold_14k: 'Gold 14K', gold_18k: 'Gold 18K', gold_22k: 'Gold 22K',
+  gold_24k: 'Gold (24kt net)',
   diamond_lgd: 'Lab Diamond', diamond_natural: 'Natural Diamond', finding: 'Finding',
 }
 

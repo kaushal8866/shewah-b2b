@@ -128,9 +128,16 @@ export async function PATCH(req: Request, ctx: { params: { id: string } }) {
   // When the karigar marks this order completed, finalise any pending
   // float reservation we created on issue. The reservation is matched by
   // (manufacturing_order_id, lifecycle='pending', transaction_type='consumption').
+  // Task 78: floats now hold 24kt-net only — convert the order's gross-at-karat
+  // gold_weight_actual via KARAT_FACTORS before writing.
   if (willFinalizeReservation) {
-    const actual = (data as any).gold_weight_actual
-    const finalQty = actual != null ? Number(actual) : null
+    const { KARAT_FACTORS } = await import('@/lib/karat')
+    const actualGross = (data as any).gold_weight_actual
+    const karat = Number((data as any).gold_karat) || 24
+    const factor = KARAT_FACTORS[karat] ?? 1
+    const finalQty = actualGross != null && Number(actualGross) > 0
+      ? Math.round(Number(actualGross) * factor * 10000) / 10000
+      : null
     const updatePayload: any = { lifecycle: 'final' }
     if (finalQty != null && finalQty > 0) updatePayload.quantity = finalQty
     await supabaseAdmin

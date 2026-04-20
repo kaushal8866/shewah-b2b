@@ -24,18 +24,16 @@ type DiamondGroup = {
 }
 
 const MATERIAL_LABELS: Record<string, string> = {
-  gold_14k: 'Gold 14K',
-  gold_18k: 'Gold 18K',
-  gold_22k: 'Gold 22K',
+  gold_24k: 'Gold (24kt net)',
   diamond_lgd: 'Lab Diamond',
   diamond_natural: 'Natural Diamond',
   finding: 'Finding',
 }
 
 const GROUPS: { key: string; label: string; types: string[] }[] = [
-  { key: 'gold',    label: 'Gold',     types: ['gold_14k', 'gold_18k', 'gold_22k'] },
-  { key: 'diamond', label: 'Diamonds', types: ['diamond_lgd', 'diamond_natural'] },
-  { key: 'finding', label: 'Findings', types: ['finding'] },
+  { key: 'gold',    label: 'Gold (24kt net)', types: ['gold_24k'] },
+  { key: 'diamond', label: 'Diamonds',        types: ['diamond_lgd', 'diamond_natural'] },
+  { key: 'finding', label: 'Findings',        types: ['finding'] },
 ]
 
 function fmtUnit(u: string) {

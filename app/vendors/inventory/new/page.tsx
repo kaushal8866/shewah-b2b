@@ -103,13 +103,21 @@ export default function NewInventoryItemPage() {
           notes: form.notes || `Vendor purchase: ${form.name}`,
         })
       } else if (isGold && qty > 0 && form.vendor_id) {
+        // Task 78: gold is stored only as 24kt-net. The karat picker on this
+        // form is a calculator — we convert the gross weight to its 24kt-pure
+        // equivalent before pushing to the central stock ledger.
+        const karatNum = parseInt(form.gold_karat.replace('gold_', '').replace('k', ''))
+        const factor = KARAT_FACTORS[karatNum] || 1
+        const net24k = Math.round(qty * factor * 10000) / 10000
         await pushToStock({
           from: 'vendor',
-          material_type: form.gold_karat,
-          quantity: qty,
+          material_type: 'gold_24k',
+          quantity: net24k,
           vendor_id: form.vendor_id,
           reference: form.sku || null,
-          notes: form.notes || `Vendor purchase: ${form.name}`,
+          notes: form.notes
+            ? `${form.notes} | Vendor gross: ${qty}g @ ${karatNum}K → ${net24k}g 24kt-net`
+            : `Vendor purchase: ${form.name} — gross ${qty}g @ ${karatNum}K → ${net24k}g 24kt-net`,
         })
       }
     } catch (e: any) {
@@ -308,11 +316,16 @@ export default function NewInventoryItemPage() {
           </div>
         )}
 
-        {isGold && form.vendor_id && parseFloat(form.quantity_in_stock) > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
-            This purchase will also be recorded in the central gold stock ledger ({form.gold_karat.replace('gold_', '')}).
-          </div>
-        )}
+        {isGold && form.vendor_id && parseFloat(form.quantity_in_stock) > 0 && (() => {
+          const k = parseInt(form.gold_karat.replace('gold_', '').replace('k', ''))
+          const f = KARAT_FACTORS[k] || 1
+          const net = (parseFloat(form.quantity_in_stock) || 0) * f
+          return (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+              Central stock will be credited as <strong>{net.toFixed(4)}g of 24kt-net gold</strong> ({form.quantity_in_stock}g gross @ {k}K × {f.toFixed(3)}). Inventory only stores 24kt-pure; karat is for reference.
+            </div>
+          )
+        })()}
 
         <div className="flex justify-end gap-3">
           <Link href="/vendors" className="px-5 py-2.5 text-sm text-stone-600 border border-stone-200 rounded-lg hover:text-stone-900">

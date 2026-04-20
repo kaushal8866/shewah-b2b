@@ -16,8 +16,11 @@ import { supabaseAdmin } from './supabaseAdmin'
  * Findings stay central-only — karigars don't hold them on a tally.
  */
 
+// Task 78: gold is held only as 24kt-net across central stock + karigar floats.
+// Karat-specific values exist solely as labour-rate inputs at the catalog/order
+// edges; they never touch inventory.
 export type MaterialType =
-  | 'gold_14k' | 'gold_18k' | 'gold_22k'
+  | 'gold_24k'
   | 'diamond_lgd' | 'diamond_natural'
   | 'finding'
 
@@ -33,7 +36,7 @@ export type StockBalance = {
 }
 
 const KARIGAR_FLOAT_MATERIALS = new Set<MaterialType>([
-  'gold_14k', 'gold_18k', 'gold_22k', 'diamond_lgd', 'diamond_natural',
+  'gold_24k', 'diamond_lgd', 'diamond_natural',
 ])
 
 /** Live balance for every (material, item_label, unit) tuple. */

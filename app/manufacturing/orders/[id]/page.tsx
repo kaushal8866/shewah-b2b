@@ -208,6 +208,7 @@ export default function ManufacturingOrderDetailPage() {
           newStatus,
           goldWeightRequired: parseFloat(order.gold_weight_required) || null,
           goldWeightActual: parseFloat(form.gold_weight_actual) || null,
+          goldKarat: parseInt(form.gold_karat) || order?.gold_karat || null,
           materialFromFloat: !!order?.material_from_float,
           partnerId: order?.manufacturing_partner_id,
         })

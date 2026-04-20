@@ -3,14 +3,13 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { KARAT_FACTORS } from '@/lib/karat'
 import { formatDate } from '@/lib/utils'
 import { ArrowLeft, Plus, ArrowDown, ArrowUp, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 const MATERIAL_TYPES = [
-  { value: 'gold_14k', label: 'Gold 14K', unit: 'grams' },
-  { value: 'gold_18k', label: 'Gold 18K', unit: 'grams' },
-  { value: 'gold_22k', label: 'Gold 22K', unit: 'grams' },
+  { value: 'gold_24k', label: 'Gold (24kt net)', unit: 'grams' },
   { value: 'diamond_lgd', label: 'Lab Diamond', unit: 'carats' },
   { value: 'diamond_natural', label: 'Natural Diamond', unit: 'carats' },
 ]
@@ -30,7 +29,7 @@ function MaterialFloatInner() {
   const typeParam = depositShortcut
     ? ('deposit' as Tab)
     : ((searchParams.get('type') as Tab) || 'deposit')
-  const materialParam = depositShortcut || searchParams.get('material_type') || 'gold_18k'
+  const materialParam = depositShortcut || searchParams.get('material_type') || 'gold_24k'
   const amountParam = searchParams.get('amount') || ''
 
   const [partner, setPartner] = useState<any>(null)
@@ -44,7 +43,7 @@ function MaterialFloatInner() {
   const [pendingNegative, setPendingNegative] = useState(false)
 
   const [form, setForm] = useState({
-    material_type: MATERIAL_TYPES.find(m => m.value === materialParam) ? materialParam : 'gold_18k',
+    material_type: MATERIAL_TYPES.find(m => m.value === materialParam) ? materialParam : 'gold_24k',
     quantity: amountParam || '',
     rate_per_unit: '',
     reference: '',
@@ -62,9 +61,16 @@ function MaterialFloatInner() {
         .then(({ data }) => {
           if (data) {
             setOrderInfo(data)
-            // Pre-fill quantity from order's actual or estimated weight
-            const w = data.gold_weight_actual || data.gold_weight_estimated
-            if (w) setForm(prev => ({ ...prev, quantity: String(w) }))
+            // Task 78: order weights are gross-at-karat but the gold float is
+            // 24kt-net. Pre-fill the converted 24kt-pure value so the karigar's
+            // ledger reflects the right currency.
+            const wGross = Number(data.gold_weight_actual) || Number(data.gold_weight_estimated) || 0
+            if (wGross > 0) {
+              const k = Number(data.gold_karat) || 24
+              const f = KARAT_FACTORS[k] ?? 1
+              const wNet = Math.round(wGross * f * 10000) / 10000
+              setForm(prev => ({ ...prev, quantity: String(wNet) }))
+            }
           }
         })
     }
