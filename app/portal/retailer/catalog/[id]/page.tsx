@@ -1,9 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ShoppingBag } from 'lucide-react'
+import { SELLABLE_KARATS } from '@/lib/karat'
+
+type KaratPriceRow = {
+  karat: number
+  weight: number
+  goldCost: number
+  labourCost: number
+  cogs: number
+  trade: number
+  mrp: number
+}
 
 type Product = {
   id: string
@@ -17,6 +28,12 @@ type Product = {
   diamond_type?: string
   gold_karat?: number
   gold_weight_g?: number
+  gold_weight_22k?: number
+  gold_weight_18k?: number
+  gold_weight_14k?: number
+  gold_weight_10k?: number
+  gold_weight_9k?: number
+  karat_pricing?: Record<string, KaratPriceRow>
   trade_price?: number
   photo_urls?: string[]
   delivery_days?: number
@@ -35,6 +52,7 @@ export default function RetailerProductDetail() {
   const [qty, setQty] = useState('1')
   const [size, setSize] = useState('')
   const [notes, setNotes] = useState('')
+  const [selectedKarat, setSelectedKarat] = useState<number>(22)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -46,6 +64,43 @@ export default function RetailerProductDetail() {
       })
       .catch(e => setError(e.message))
   }, [id])
+
+  // Per-karat options that actually have a priced row in the cache.
+  // Legacy fallback: pre-migration products that haven't been re-priced yet
+  // still need to be orderable, so synthesize a single row from the canonical
+  // gold_karat + gold_weight_g + trade_price.
+  const karatRows = useMemo<KaratPriceRow[]>(() => {
+    if (!product) return []
+    const fromCache = product.karat_pricing
+      ? SELLABLE_KARATS
+          .map(k => product.karat_pricing?.[String(k)])
+          .filter((r): r is KaratPriceRow => !!r && r.trade > 0)
+      : []
+    if (fromCache.length > 0) return fromCache
+    if (product.trade_price) {
+      return [{
+        karat: product.gold_karat || 22,
+        weight: Number(product.gold_weight_g) || 0,
+        goldCost: 0, labourCost: 0, cogs: 0,
+        trade: Number(product.trade_price) || 0,
+        mrp: 0,
+      }]
+    }
+    return []
+  }, [product])
+
+  const selectedRow = useMemo(
+    () => karatRows.find(r => r.karat === selectedKarat) || karatRows[0] || null,
+    [karatRows, selectedKarat]
+  )
+
+  // Default to 22kt the first time pricing data lands.
+  useEffect(() => {
+    if (karatRows.length === 0) return
+    if (karatRows.find(r => r.karat === 22)) setSelectedKarat(22)
+    else setSelectedKarat(karatRows[0].karat)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id, karatRows.length])
 
   async function placeOrder() {
     setSubmitting(true)
@@ -59,6 +114,7 @@ export default function RetailerProductDetail() {
         quantity: parseInt(qty) || 1,
         ring_size: size || null,
         special_notes: notes || null,
+        selected_karat: selectedRow?.karat || null,
       }),
     })
     const data = await res.json()
@@ -81,7 +137,8 @@ export default function RetailerProductDetail() {
   if (!product) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
 
   const photos = product.photo_urls && product.photo_urls.length > 0 ? product.photo_urls : []
-  const total = (Number(product.trade_price) || 0) * (parseInt(qty) || 1)
+  const unitPrice = selectedRow?.trade ?? Number(product.trade_price) ?? 0
+  const total = unitPrice * (parseInt(qty) || 1)
   const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
@@ -123,8 +180,6 @@ export default function RetailerProductDetail() {
 
           <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-5 text-sm">
             {[
-              ['Gold karat', product.gold_karat ? `${product.gold_karat}K` : '—'],
-              ['Gold weight', product.gold_weight_g ? `${product.gold_weight_g}g` : '—'],
               ['Diamond', product.diamond_weight ? `${product.diamond_weight}ct ${product.diamond_shape || ''}` : '—'],
               ['Quality', product.diamond_quality ? `${product.diamond_quality}/${product.diamond_color || ''}` : '—'],
               ['Type', product.diamond_type === 'natural' ? 'Natural diamond' : 'Lab-grown (LGD)'],
@@ -138,12 +193,48 @@ export default function RetailerProductDetail() {
           </div>
 
           <div className="bg-white rounded-xl border border-stone-200 p-5 mb-4">
+            {/* Karat selector */}
+            {karatRows.length > 0 && (
+              <div className="mb-4">
+                <label className={lbl}>Choose karat</label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {karatRows.map(r => {
+                    const active = selectedKarat === r.karat
+                    return (
+                      <button key={r.karat}
+                        onClick={() => setSelectedKarat(r.karat)}
+                        className={`rounded-lg border px-1 py-2 text-center transition-colors ${
+                          active
+                            ? 'border-[#1E3A5F] bg-[#1E3A5F] text-white'
+                            : 'border-stone-200 bg-white text-stone-700 hover:border-[#1E3A5F]'
+                        }`}>
+                        <p className="text-xs font-semibold">{r.karat}kt</p>
+                        <p className={`text-[10px] mt-0.5 ${active ? 'text-white/80' : 'text-stone-400'}`}>
+                          {r.weight.toFixed(2)}g
+                        </p>
+                        <p className={`text-[11px] font-medium mt-0.5 ${active ? 'text-white' : 'text-[#1E3A5F]'}`}>
+                          ₹{(r.trade / 1000).toFixed(0)}K
+                        </p>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-end justify-between mb-4">
               <div>
-                <p className="text-xs text-stone-400">Trade price (per piece)</p>
-                <p className="text-2xl font-semibold text-stone-900">
-                  {product.trade_price ? `₹${Number(product.trade_price).toLocaleString('en-IN')}` : '—'}
+                <p className="text-xs text-stone-400">
+                  Trade price (per piece{selectedRow ? `, ${selectedRow.karat}kt` : ''})
                 </p>
+                <p className="text-2xl font-semibold text-stone-900">
+                  {unitPrice ? `₹${unitPrice.toLocaleString('en-IN')}` : '—'}
+                </p>
+                {selectedRow && (
+                  <p className="text-[11px] text-stone-400 mt-0.5">
+                    Gross weight {selectedRow.weight.toFixed(3)}g · MRP ₹{selectedRow.mrp.toLocaleString('en-IN')}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -174,7 +265,7 @@ export default function RetailerProductDetail() {
 
             {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
-            <button onClick={placeOrder} disabled={submitting}
+            <button onClick={placeOrder} disabled={submitting || !selectedRow}
               className="w-full flex items-center justify-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white px-5 py-3 rounded-lg text-sm font-medium disabled:opacity-50">
               <ShoppingBag className="w-4 h-4" />
               {submitting ? 'Placing order...' : 'Place order'}

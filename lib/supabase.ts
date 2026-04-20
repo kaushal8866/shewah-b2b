@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { KARAT_FACTORS, SELLABLE_KARATS, computeKaratPricing, deriveAllKaratWeights, startsFrom } from './karat'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
@@ -194,6 +195,16 @@ export type Product = {
   diamond_type: string
   gold_karat?: number
   gold_weight_g?: number
+  // Per-karat gross weights for the same physical piece (Task #71). The
+  // 22kt slot is the canonical input; the others derive from it.
+  gold_weight_22k?: number
+  gold_weight_18k?: number
+  gold_weight_14k?: number
+  gold_weight_10k?: number
+  gold_weight_9k?: number
+  // Cached price breakdown per karat — refreshed on every gold-rate save.
+  // Shape: { "22": { weight, goldCost, labourCost, cogs, trade, mrp }, ... }
+  karat_pricing?: Record<string, { weight: number; goldCost: number; labourCost: number; cogs: number; trade: number; mrp: number }>
   diamond_cost?: number
   making_charges?: number
   igi_cert_cost?: number
@@ -276,6 +287,15 @@ export type GoldRate = {
   rate_22k?: number
   rate_18k?: number
   rate_14k?: number
+  rate_10k?: number
+  rate_9k?: number
+  // Per-karat retail labour ₹/g — used to price catalog SKUs in each karat
+  // (Task #71). Distinct from per-partner labour rates introduced in #68.
+  retail_labour_22k?: number
+  retail_labour_18k?: number
+  retail_labour_14k?: number
+  retail_labour_10k?: number
+  retail_labour_9k?: number
   notes?: string
 }
 
@@ -369,49 +389,103 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
   updated: number; skipped: number; failed: number; error?: string
 }> {
   if (!rate24k || rate24k <= 0) return { updated: 0, skipped: 0, failed: 0, error: 'Invalid gold rate' }
-  const karatMult: Record<number, number> = { 24: 1, 22: 0.916, 18: 0.75, 14: 0.585, 10: 0.417, 9: 0.375 }
+
+  // Pull the current per-karat retail labour from the latest gold_rates row.
+  const { data: rateRow } = await supabase
+    .from('gold_rates')
+    .select('retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
+    .order('recorded_at', { ascending: false })
+    .limit(1)
+  const labour: Record<number, number> = {
+    22: Number(rateRow?.[0]?.retail_labour_22k) || 0,
+    18: Number(rateRow?.[0]?.retail_labour_18k) || 0,
+    14: Number(rateRow?.[0]?.retail_labour_14k) || 0,
+    10: Number(rateRow?.[0]?.retail_labour_10k) || 0,
+    9:  Number(rateRow?.[0]?.retail_labour_9k)  || 0,
+  }
 
   const { data: products, error } = await supabase
     .from('products')
-    .select('id, gold_karat, gold_weight_g, diamond_cost, diamond_specs, making_charges, igi_cert_cost, labour_per_gram, trade_price, mrp_suggested')
+    .select('id, gold_karat, gold_weight_g, gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k, diamond_cost, diamond_specs, making_charges, igi_cert_cost, trade_price, mrp_suggested, karat_pricing')
     .eq('is_active', true)
   if (error) return { updated: 0, skipped: 0, failed: 0, error: error.message }
   if (!products) return { updated: 0, skipped: 0, failed: 0 }
 
   let updated = 0, skipped = 0, failed = 0
   for (const p of products) {
-    const w = Number(p.gold_weight_g) || 0
-    if (w <= 0) { skipped++; continue }   // can't price without a weight
-    const k = Number(p.gold_karat) || 18
-    const mult = karatMult[k] ?? 0.75
-    // Match catalog/[id] page rounding behaviour exactly: gold and labour
-    // costs are rounded individually before being summed into COGS, so a
-    // product re-saved from the catalog page yields the same trade price
-    // here.
-    const goldCost = Math.round(w * rate24k * mult)
-    const labourCost = Math.round((Number(p.labour_per_gram) || 0) * Math.max(w, 1))
+    // Build the per-karat weights map. Prefer the explicit columns; if a
+    // legacy product has none of them, derive from (gold_karat, gold_weight_g).
+    let weights: Record<number, number> = {
+      22: Number(p.gold_weight_22k) || 0,
+      18: Number(p.gold_weight_18k) || 0,
+      14: Number(p.gold_weight_14k) || 0,
+      10: Number(p.gold_weight_10k) || 0,
+      9:  Number(p.gold_weight_9k)  || 0,
+    }
+    if (SELLABLE_KARATS.every(k => !weights[k])) {
+      const legacyW = Number(p.gold_weight_g) || 0
+      const legacyK = Number(p.gold_karat) || 18
+      if (legacyW > 0 && KARAT_FACTORS[legacyK]) {
+        weights = deriveAllKaratWeights(legacyW, legacyK)
+      } else {
+        skipped++
+        continue
+      }
+    }
+
     let diamondCost = 0
-    if (Array.isArray(p.diamond_specs) && p.diamond_specs.length > 0) {
-      diamondCost = (p.diamond_specs as any[]).reduce(
+    if (Array.isArray((p as any).diamond_specs) && (p as any).diamond_specs.length > 0) {
+      diamondCost = ((p as any).diamond_specs as any[]).reduce(
         (s, d) => s + (Number(d?.cost) || 0) * (Number(d?.pieces) || 1), 0
       )
     } else {
       diamondCost = Number(p.diamond_cost) || 0
     }
-    const cogs = goldCost + labourCost + diamondCost
-      + (Number(p.making_charges) || 0) + (Number(p.igi_cert_cost) || 0)
-    const newTrade = Math.round(cogs * 1.28)
-    const newMrp = Math.round(newTrade * 1.40)
-    if (newTrade === Number(p.trade_price) && newMrp === Number(p.mrp_suggested)) {
-      skipped++; continue
-    }
+
+    const pricing = computeKaratPricing({
+      weights,
+      rate24k,
+      retailLabour: labour,
+      diamondCost,
+      makingCharges: Number(p.making_charges) || 0,
+      igiCost: Number(p.igi_cert_cost) || 0,
+    })
+
+    // Stash full breakdown as jsonb for the retailer portal to read directly.
+    const karat_pricing: Record<string, any> = {}
+    for (const row of pricing) karat_pricing[String(row.karat)] = row
+
+    // Canonical scalar prices represent the 22kt default selection so any
+    // legacy code path that reads `trade_price` keeps working.
+    const default22 = pricing.find(p => p.karat === 22)
+    const newTrade = default22?.trade ?? Math.min(...pricing.map(p => p.trade).filter(t => t > 0)) ?? 0
+    const newMrp = default22?.mrp ?? Math.round(newTrade * 1.40)
+
+    const prevPricing = (p as any).karat_pricing || null
+    const same = newTrade === Number(p.trade_price)
+      && newMrp === Number(p.mrp_suggested)
+      && JSON.stringify(prevPricing) === JSON.stringify(karat_pricing)
+    if (same) { skipped++; continue }
+
     const { error: upErr } = await supabase
       .from('products')
-      .update({ trade_price: newTrade, mrp_suggested: newMrp })
+      .update({ trade_price: newTrade, mrp_suggested: newMrp, karat_pricing })
       .eq('id', p.id)
     if (upErr) { failed++ } else { updated++ }
   }
   return { updated, skipped, failed }
+}
+
+/**
+ * Convenience: pick the cheapest karat row from a product's `karat_pricing`
+ * cache. Used by the retailer catalog list to show "Starts from ₹X (9kt)".
+ */
+export function startsFromKarat(p: Pick<Product, 'karat_pricing' | 'trade_price'>) {
+  const kp = p.karat_pricing
+  if (!kp) return p.trade_price ? { karat: 22, trade: p.trade_price } : null
+  const rows = Object.values(kp).filter(r => r && r.trade > 0)
+  if (rows.length === 0) return null
+  return rows.reduce((min, r) => (r.trade < min.trade ? r : min))
 }
 
 export const ORDER_STATUSES = [

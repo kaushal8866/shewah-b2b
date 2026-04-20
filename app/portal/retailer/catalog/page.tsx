@@ -91,9 +91,19 @@ export default function RetailerCatalog() {
               <div className="p-3">
                 <p className="text-xs text-stone-400">{p.code}</p>
                 <p className="text-sm font-medium text-stone-800 truncate">{p.name}</p>
-                <p className="text-sm font-semibold text-[#1E3A5F] mt-1">
-                  ₹{(p.trade_price || 0).toLocaleString('en-IN')}
-                </p>
+                {p.starts_from ? (
+                  <>
+                    <p className="text-[10px] text-stone-400 mt-1">Starts from</p>
+                    <p className="text-sm font-semibold text-[#1E3A5F]">
+                      ₹{Number(p.starts_from.trade).toLocaleString('en-IN')}
+                      <span className="text-[10px] text-stone-400 ml-1">({p.starts_from.karat}kt)</span>
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm font-semibold text-[#1E3A5F] mt-1">
+                    ₹{(p.trade_price || 0).toLocaleString('en-IN')}
+                  </p>
+                )}
                 {p.category && (
                   <p className="text-[10px] text-stone-400 mt-0.5 capitalize">{p.category}</p>
                 )}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase, GoldRate, calculateGoldRates, calculateTradePrice, recomputeCatalogPrices } from '@/lib/supabase'
+import { SELLABLE_KARATS, KARAT_FACTORS } from '@/lib/karat'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { TrendingUp, Plus, Calculator, Save, RefreshCw } from 'lucide-react'
 
@@ -15,6 +16,7 @@ export default function GoldRatesPage() {
 
   const [newRate24k, setNewRate24k] = useState('')
   const [rateNotes, setRateNotes] = useState('')
+  const [retailLabour, setRetailLabour] = useState<Record<number, string>>({ 22: '', 18: '', 14: '', 10: '', 9: '' })
 
   // Calculator state
   const [calcDiamond, setCalcDiamond] = useState('8000')
@@ -36,8 +38,16 @@ export default function GoldRatesPage() {
     const all = data || []
     setRates(all)
     if (all.length > 0) {
-      setLatest(all[0])
-      setNewRate24k(String(all[0].rate_24k))
+      const top = all[0]
+      setLatest(top)
+      setNewRate24k(String(top.rate_24k))
+      setRetailLabour({
+        22: top.retail_labour_22k != null ? String(top.retail_labour_22k) : '',
+        18: top.retail_labour_18k != null ? String(top.retail_labour_18k) : '',
+        14: top.retail_labour_14k != null ? String(top.retail_labour_14k) : '',
+        10: top.retail_labour_10k != null ? String(top.retail_labour_10k) : '',
+        9:  top.retail_labour_9k  != null ? String(top.retail_labour_9k)  : '',
+      })
     }
     setLoading(false)
   }
@@ -47,12 +57,22 @@ export default function GoldRatesPage() {
     if (!rate || rate < 1000) { alert('Enter a valid gold rate (₹/gram)'); return }
     setSaving(true)
     const computed = calculateGoldRates(rate)
+    const labourPayload: Record<string, number | null> = {}
+    for (const k of SELLABLE_KARATS) {
+      const v = parseFloat(retailLabour[k])
+      labourPayload[`retail_labour_${k}k`] = isFinite(v) && v >= 0 ? v : null
+    }
     const { error } = await supabase.from('gold_rates').insert([{
-      ...computed, source: 'manual', notes: rateNotes
+      ...computed,
+      // Backfill 10kt and 9kt rates from the 24kt rate so derived numbers stay consistent.
+      rate_10k: Math.round(rate * KARAT_FACTORS[10]),
+      rate_9k:  Math.round(rate * KARAT_FACTORS[9]),
+      ...labourPayload,
+      source: 'manual', notes: rateNotes,
     }])
     if (error) { setSaving(false); alert('Error: ' + error.message); return }
     setRateNotes('')
-    // Auto-refresh every active product's trade_price/mrp using the new rate.
+    // Auto-refresh every active product's per-karat pricing using the new rate + labour.
     const result = await recomputeCatalogPrices(rate)
     setLastRecalc(result)
     setSaving(false)
@@ -178,6 +198,26 @@ export default function GoldRatesPage() {
                   ))}
                 </div>
               )}
+
+              <div className="border border-stone-200 rounded-lg p-3 bg-white">
+                <p className="text-xs font-medium text-stone-700 mb-1">Retail labour (₹/g) per karat</p>
+                <p className="text-[11px] text-stone-400 mb-2">
+                  Used to price every catalog SKU in each karat. Leave blank to skip a karat.
+                </p>
+                <div className="grid grid-cols-5 gap-2">
+                  {SELLABLE_KARATS.map(k => (
+                    <div key={k}>
+                      <label className="block text-[10px] font-medium text-stone-400 mb-0.5 text-center">{k}kt</label>
+                      <input
+                        type="number" inputMode="decimal" step="1" min="0"
+                        className="w-full border border-stone-200 rounded-md px-1.5 py-1 text-xs text-center focus:border-[#1E3A5F] outline-none"
+                        value={retailLabour[k]}
+                        onChange={e => setRetailLabour(prev => ({ ...prev, [k]: e.target.value }))}
+                        placeholder="—" />
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div>
                 <label className="block text-xs font-medium text-stone-500 mb-1">Notes (optional)</label>

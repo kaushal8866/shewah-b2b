@@ -1,0 +1,94 @@
+// Single source of truth for karat purity factors and per-karat conversions.
+// All gold movements in the float ledger settle in 24kt-pure grams; karat is
+// only the lens used at the catalog and order edges. See Task #71.
+
+export const KARAT_FACTORS: Record<number, number> = {
+  24: 1,
+  22: 0.916,
+  18: 0.75,
+  14: 0.60,
+  10: 0.42,
+  9: 0.38,
+}
+
+export const SELLABLE_KARATS = [22, 18, 14, 10, 9] as const
+export type SellableKarat = typeof SELLABLE_KARATS[number]
+
+// Round to 4 decimals — gold weights in this app are stored at 4dp throughout.
+function r4(n: number) {
+  return Math.round(n * 10000) / 10000
+}
+
+/**
+ * Given the gross weight of a piece at one karat, return the gross weight at
+ * every other karat for the same physical piece (i.e. holding 24kt-pure mass
+ * constant).
+ */
+export function deriveAllKaratWeights(grossWeight: number, fromKarat: number): Record<number, number> {
+  const fromF = KARAT_FACTORS[fromKarat]
+  if (!fromF || !grossWeight || grossWeight <= 0) {
+    return Object.fromEntries(SELLABLE_KARATS.map(k => [k, 0])) as Record<number, number>
+  }
+  const pureMass = grossWeight * fromF
+  const out: Record<number, number> = {}
+  for (const k of SELLABLE_KARATS) out[k] = r4(pureMass / KARAT_FACTORS[k])
+  return out
+}
+
+/** Convert a gross weight at any karat to the equivalent 24kt-pure mass. */
+export function pure24kt(grossWeight: number, karat: number): number {
+  const f = KARAT_FACTORS[karat] ?? 0
+  return r4((grossWeight || 0) * f)
+}
+
+/**
+ * Compute trade price + MRP for every sellable karat using the current 24kt
+ * rate, the per-karat retail labour, and the product's diamond/making/IGI
+ * costs. Same shape across the catalog admin, gold-rate page, and retailer
+ * portal so prices match everywhere.
+ *
+ * Insight: gold cost is invariant across karats for a single piece because
+ * all karats carry the same 24kt-pure mass. Only labour varies (per-karat
+ * rate × per-karat gross weight).
+ */
+export type KaratPriceInputs = {
+  weights: Record<number, number>          // gross weight per karat (g)
+  rate24k: number                          // ₹/g of 24kt
+  retailLabour: Record<number, number>     // ₹/g per karat
+  diamondCost: number                      // ₹
+  makingCharges: number                    // ₹
+  igiCost: number                          // ₹
+  marginMult?: number                      // default 1.28
+  mrpMult?: number                         // default 1.40
+}
+
+export type KaratPrice = {
+  karat: number
+  weight: number
+  goldCost: number
+  labourCost: number
+  cogs: number
+  trade: number
+  mrp: number
+}
+
+export function computeKaratPricing(inp: KaratPriceInputs): KaratPrice[] {
+  const margin = inp.marginMult ?? 1.28
+  const mrpM = inp.mrpMult ?? 1.40
+  return SELLABLE_KARATS.map(k => {
+    const w = inp.weights[k] || 0
+    const f = KARAT_FACTORS[k]
+    const goldCost = Math.round(w * f * (inp.rate24k || 0))
+    const labourPerG = inp.retailLabour[k] || 0
+    const labourCost = Math.round(labourPerG * Math.max(w, 1))
+    const cogs = goldCost + labourCost + (inp.diamondCost || 0) + (inp.makingCharges || 0) + (inp.igiCost || 0)
+    const trade = Math.round(cogs * margin)
+    const mrp = Math.round(trade * mrpM)
+    return { karat: k, weight: w, goldCost, labourCost, cogs, trade, mrp }
+  })
+}
+
+export function startsFrom(pricing: KaratPrice[]): KaratPrice | null {
+  if (!pricing.length) return null
+  return pricing.reduce((min, p) => (p.trade > 0 && (min === null || p.trade < min.trade) ? p : min), null as KaratPrice | null)
+}

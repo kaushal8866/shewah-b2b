@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 const LIST_COLS = `
   id, code, name, category, trade_price, gold_karat,
-  diamond_weight, delivery_days, photo_urls
+  diamond_weight, delivery_days, photo_urls, karat_pricing
 `
 
 export async function GET() {
@@ -22,5 +22,22 @@ export async function GET() {
     .order('code')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ products: data || [] })
+
+  // Surface the cheapest karat row so the catalog list can show
+  // "Starts from ₹X (9kt)" without re-deriving on the client.
+  const products = (data || []).map((p: any) => {
+    const kp = p.karat_pricing || {}
+    const rows = Object.values(kp).filter((r: any) => r && r.trade > 0) as any[]
+    let cheapest: any = rows.length
+      ? rows.reduce((m, r) => (r.trade < m.trade ? r : m))
+      : null
+    // Legacy fallback: pre-migration products that have not been re-priced yet
+    // still need a price to show on the catalog list. Synthesize the row from
+    // the canonical trade_price + the product's saved karat.
+    if (!cheapest && p.trade_price) {
+      cheapest = { karat: p.gold_karat || 22, trade: Number(p.trade_price) }
+    }
+    return { ...p, starts_from: cheapest }
+  })
+  return NextResponse.json({ products })
 }

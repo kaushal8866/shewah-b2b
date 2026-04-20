@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
+import { KARAT_FACTORS, SELLABLE_KARATS, deriveAllKaratWeights, computeKaratPricing } from '@/lib/karat'
 import { ArrowLeft, Save, Calculator, Plus, X, Upload, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 
@@ -44,48 +45,59 @@ export default function NewProductPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [goldRate, setGoldRate] = useState(0)
-  const [labourRates, setLabourRates] = useState<Record<number, number>>({})
+  const [retailLabour, setRetailLabour] = useState<Record<number, number>>({ 22: 0, 18: 0, 14: 0, 10: 0, 9: 0 })
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
   const [diamonds, setDiamonds] = useState<DiamondRow[]>([newDiamondRow()])
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'ring',
-    gold_karat: '18', gold_weight_g: '',
+    // 22kt is the canonical input; the four other karats derive from it.
+    gold_weight_22k: '',
     making_charges: '2500', igi_cert_cost: '1500',
-    trade_price: '', mrp_suggested: '',
     delivery_days: '14',
     models_available: ['wholesale', 'design_make'],
   })
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
-      supabase.from('labour_rates').select('karat, rate_per_gram'),
-    ]).then(([{ data: gr }, { data: lr }]) => {
-      if (gr?.[0]) setGoldRate(gr[0].rate_24k)
-      const map: Record<number, number> = {}
-      lr?.forEach((r: any) => { map[r.karat] = r.rate_per_gram })
-      setLabourRates(map)
-    })
+    supabase
+      .from('gold_rates')
+      .select('rate_24k, retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
+      .order('recorded_at', { ascending: false })
+      .limit(1)
+      .then(({ data }: any) => {
+        const r = data?.[0]
+        if (!r) return
+        setGoldRate(Number(r.rate_24k) || 0)
+        setRetailLabour({
+          22: Number(r.retail_labour_22k) || 0,
+          18: Number(r.retail_labour_18k) || 0,
+          14: Number(r.retail_labour_14k) || 0,
+          10: Number(r.retail_labour_10k) || 0,
+          9:  Number(r.retail_labour_9k)  || 0,
+        })
+      })
   }, [])
 
-  const selectedKarat = KARATS.find(k => k.value === form.gold_karat)
-  const goldCostPerGram = goldRate * (selectedKarat?.purity || 0.75)
-  const goldWeightG = parseFloat(form.gold_weight_g) || 0
-  const goldCost = Math.round(goldCostPerGram * goldWeightG)
-  const labourRate = labourRates[parseInt(form.gold_karat)] || 0
-  const effectiveWeight = Math.max(goldWeightG, 1)
-  const labourCost = Math.round(labourRate * effectiveWeight)
+  const weight22 = parseFloat(form.gold_weight_22k) || 0
+  const weights = deriveAllKaratWeights(weight22, 22)
   const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1), 0)
   const makingCharges = parseFloat(form.making_charges) || 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
-  const cogs = goldCost + totalDiamondCost + makingCharges + igiCost + labourCost
-  const autoTradePrice = Math.round(cogs * 1.28)
-  const autoMRP = Math.round(autoTradePrice * 1.40)
-  const tradePrice = parseFloat(form.trade_price) || autoTradePrice
-  const mrp = parseFloat(form.mrp_suggested) || autoMRP
+
+  const pricing = computeKaratPricing({
+    weights,
+    rate24k: goldRate,
+    retailLabour,
+    diamondCost: totalDiamondCost,
+    makingCharges,
+    igiCost,
+  })
+  const default22 = pricing.find(p => p.karat === 22)
+  const tradePrice = default22?.trade || 0
+  const mrp = default22?.mrp || 0
+  const cogs22 = default22?.cogs || 0
+  const yourMargin = tradePrice - cogs22
   const jewelerMargin = mrp - tradePrice
-  const yourMargin = tradePrice - cogs
 
   async function handleImageUpload(files: FileList | null) {
     if (!files) return
@@ -107,11 +119,6 @@ export default function NewProductPage() {
     setDiamonds(prev => prev.map(d => d.id === id ? { ...d, [key]: val } : d))
   }
 
-  function autoCalculate() {
-    setForm(prev => ({ ...prev, trade_price: String(autoTradePrice), mrp_suggested: String(autoMRP) }))
-    setShowBreakdown(true)
-  }
-
   function set(k: string, v: string | string[]) { setForm(prev => ({ ...prev, [k]: v })) }
 
   function toggleModel(model: string) {
@@ -121,12 +128,22 @@ export default function NewProductPage() {
 
   async function handleSave() {
     if (!form.code || !form.name) { alert('Product code and name are required'); return }
-    if (!form.trade_price) { alert('Trade price is required. Use Auto-calculate or enter manually.'); return }
+    if (!weight22) { alert('Gold weight @ 22kt is required'); return }
     setSaving(true)
     const primary = diamonds[0]
+    const karat_pricing: Record<string, any> = {}
+    for (const row of pricing) karat_pricing[String(row.karat)] = row
     const { error } = await supabase.from('products').insert([{
       code: form.code, name: form.name, description: form.description, category: form.category,
-      gold_karat: parseInt(form.gold_karat), gold_weight_g: parseFloat(form.gold_weight_g) || null,
+      // Legacy single-karat fields kept in sync so older queries keep working.
+      gold_karat: 22,
+      gold_weight_g: weights[22] || null,
+      gold_weight_22k: weights[22] || null,
+      gold_weight_18k: weights[18] || null,
+      gold_weight_14k: weights[14] || null,
+      gold_weight_10k: weights[10] || null,
+      gold_weight_9k:  weights[9]  || null,
+      karat_pricing,
       making_charges: makingCharges, igi_cert_cost: igiCost,
       trade_price: tradePrice, mrp_suggested: mrp,
       delivery_days: parseInt(form.delivery_days) || 14,
@@ -139,8 +156,7 @@ export default function NewProductPage() {
         quality: d.quality, color: d.color, type: d.type,
         pieces: parseInt(d.pieces) || 1, cost: parseFloat(d.cost) || 0,
       })),
-      labour_per_gram: labourRate || null,
-      detailed_pricing: { gold_cost: goldCost, labour_cost: labourCost, diamond_cost: totalDiamondCost, making_charges: makingCharges, igi_cost: igiCost, cogs, trade_price: tradePrice, mrp, your_margin: yourMargin, jeweler_margin: jewelerMargin, gold_rate_used: goldRate },
+      detailed_pricing: { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
       is_active: true,
     }])
     setSaving(false)
@@ -295,17 +311,15 @@ export default function NewProductPage() {
 
         {/* GOLD */}
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
-          <h2 className="font-medium text-stone-900 mb-4">Gold specifications</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <h2 className="font-medium text-stone-900 mb-1">Gold specifications</h2>
+          <p className="text-xs text-stone-400 mb-4">
+            Enter the gross weight at <strong>22kt</strong>. Weights for 18 / 14 / 10 / 9kt are derived automatically (same physical piece, same 24kt-pure mass).
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div>
-              <label className={lbl}>Gold karat</label>
-              <select className={inp} value={form.gold_karat} onChange={e => set('gold_karat', e.target.value)}>
-                {KARATS.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={lbl}>Gold weight (g)</label>
-              <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp} value={form.gold_weight_g} onChange={e => set('gold_weight_g', e.target.value)} placeholder="e.g. 2.8100" />
+              <label className={lbl}>Gold weight @ 22kt (g) *</label>
+              <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
+                value={form.gold_weight_22k} onChange={e => set('gold_weight_22k', e.target.value)} placeholder="e.g. 2.8100" />
             </div>
             <div>
               <label className={lbl}>Making charges (₹)</label>
@@ -316,66 +330,91 @@ export default function NewProductPage() {
               <input type="number" inputMode="decimal" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} />
             </div>
           </div>
-          {goldRate > 0 && goldWeightG > 0 && (
-            <div className="mt-3 space-y-1">
-              <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 text-xs text-amber-700 flex justify-between">
-                <span>Gold ({form.gold_karat}K, {goldWeightG}g @ ₹{Math.round(goldCostPerGram)}/g)</span>
-                <span className="font-medium">₹{goldCost.toLocaleString('en-IN')}</span>
+
+          {weight22 > 0 && (
+            <div className="mt-4 rounded-xl border border-stone-100 overflow-hidden">
+              <div className="bg-stone-50 px-3 py-2 text-xs font-medium text-stone-500 uppercase tracking-wide">
+                Derived gross weights
               </div>
-              {labourRate > 0 && (
-                <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 text-xs text-amber-700 flex justify-between">
-                  <span>Labour ({form.gold_karat}K, {effectiveWeight}g min @ ₹{labourRate}/g)</span>
-                  <span className="font-medium">₹{labourCost.toLocaleString('en-IN')}</span>
-                </div>
-              )}
+              <div className="grid grid-cols-5 divide-x divide-stone-100 text-center">
+                {SELLABLE_KARATS.map(k => (
+                  <div key={k} className="px-2 py-3">
+                    <p className="text-xs text-stone-400">{k}kt</p>
+                    <p className="text-sm font-semibold text-stone-800">{weights[k]?.toFixed(3)} g</p>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-amber-50 border-t border-amber-100 px-3 py-2 text-xs text-amber-700 text-center">
+                24kt-pure mass: <strong>{(weight22 * 0.916).toFixed(4)} g</strong> — constant across every karat.
+              </div>
             </div>
           )}
         </div>
 
-        {/* PRICING + BREAKDOWN */}
+        {/* PRICING — per karat */}
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-medium text-stone-900">Pricing</h2>
-            <button onClick={autoCalculate}
-              className="flex items-center gap-1.5 text-xs text-[#1E3A5F] border border-[#1E3A5F] px-3 py-1.5 rounded-lg hover:bg-yellow-50">
-              <Calculator className="w-3.5 h-3.5" /> Auto-calculate
-            </button>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-medium text-stone-900 flex items-center gap-2">
+              <Calculator className="w-4 h-4 text-[#1E3A5F]" />
+              Per-karat pricing
+            </h2>
+            <div>
+              <label className={lbl + ' inline-block mr-2'}>Delivery (days)</label>
+              <input type="number" inputMode="decimal" className={`${inp} inline-block w-20`} value={form.delivery_days} onChange={e => set('delivery_days', e.target.value)} />
+            </div>
           </div>
           {goldRate === 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 mb-4">
-              No gold rate. <Link href="/gold-rates" className="underline">Add today's rate</Link> for accurate calculation.
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 mb-3">
+              No gold rate. <Link href="/gold-rates" className="underline">Set today's rate &amp; retail labour</Link> to see prices.
             </div>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className={lbl}>Trade price (₹) *</label>
-              <input type="number" inputMode="decimal" className={inp} value={form.trade_price} onChange={e => set('trade_price', e.target.value)}
-                placeholder={autoTradePrice > 0 ? `Auto: ₹${autoTradePrice.toLocaleString('en-IN')}` : 'Your price to jeweler'} />
-            </div>
-            <div>
-              <label className={lbl}>Suggested MRP (₹)</label>
-              <input type="number" inputMode="decimal" className={inp} value={form.mrp_suggested} onChange={e => set('mrp_suggested', e.target.value)}
-                placeholder={autoMRP > 0 ? `Auto: ₹${autoMRP.toLocaleString('en-IN')}` : "Jeweler's price to customer"} />
-            </div>
-            <div>
-              <label className={lbl}>Delivery (days)</label>
-              <input type="number" inputMode="decimal" className={inp} value={form.delivery_days} onChange={e => set('delivery_days', e.target.value)} />
-            </div>
+
+          <div className="overflow-x-auto rounded-xl border border-stone-100">
+            <table className="w-full text-sm">
+              <thead className="bg-stone-50 text-xs text-stone-500 uppercase tracking-wide">
+                <tr>
+                  <th className="px-3 py-2 text-left">Karat</th>
+                  <th className="px-3 py-2 text-right">Gross (g)</th>
+                  <th className="px-3 py-2 text-right">Gold ₹</th>
+                  <th className="px-3 py-2 text-right">Labour ₹</th>
+                  <th className="px-3 py-2 text-right">COGS ₹</th>
+                  <th className="px-3 py-2 text-right">Trade ₹</th>
+                  <th className="px-3 py-2 text-right">MRP ₹</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pricing.map(row => (
+                  <tr key={row.karat} className={`border-t border-stone-100 ${row.karat === 22 ? 'bg-yellow-50' : ''}`}>
+                    <td className="px-3 py-2 font-medium text-stone-700">
+                      {row.karat}kt {row.karat === 22 && <span className="text-[10px] text-yellow-700 ml-1">default</span>}
+                    </td>
+                    <td className="px-3 py-2 text-right text-stone-600">{row.weight.toFixed(3)}</td>
+                    <td className="px-3 py-2 text-right text-stone-600">{row.goldCost.toLocaleString('en-IN')}</td>
+                    <td className="px-3 py-2 text-right text-stone-600">
+                      {row.labourCost.toLocaleString('en-IN')}
+                      {(retailLabour[row.karat] || 0) === 0 && <span className="text-[10px] text-amber-600 ml-1">(no rate)</span>}
+                    </td>
+                    <td className="px-3 py-2 text-right text-stone-700">{row.cogs.toLocaleString('en-IN')}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-[#1E3A5F]">{row.trade.toLocaleString('en-IN')}</td>
+                    <td className="px-3 py-2 text-right font-medium text-stone-800">{row.mrp.toLocaleString('en-IN')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           <button onClick={() => setShowBreakdown(!showBreakdown)}
-            className="w-full flex items-center justify-between text-sm text-stone-500 hover:text-stone-700 py-2 border-t border-stone-100">
-            <span className="font-medium">Detailed price breakdown</span>
+            className="w-full flex items-center justify-between text-sm text-stone-500 hover:text-stone-700 py-2 mt-3 border-t border-stone-100">
+            <span className="font-medium">22kt breakdown &amp; margin analysis</span>
             {showBreakdown ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
 
-          {showBreakdown && (
+          {showBreakdown && default22 && (
             <div className="mt-3 rounded-xl overflow-hidden border border-stone-100">
               <div className="bg-stone-50 px-4 py-3 space-y-2">
-                <p className="text-xs font-medium text-stone-400 uppercase tracking-wide mb-2">Cost of goods</p>
                 {[
-                  { label: `Gold (${form.gold_karat}K, ${goldWeightG}g)`, value: goldCost },
-                  { label: `Labour (${form.gold_karat}K, min 1g rule)`, value: labourCost },
+                  { label: `Gold (22K, ${default22.weight.toFixed(3)}g)`, value: default22.goldCost },
+                  { label: `Labour (22K @ ₹${retailLabour[22] || 0}/g)`, value: default22.labourCost },
                   { label: 'Diamonds (all rows)', value: totalDiamondCost },
                   { label: 'Making charges', value: makingCharges },
                   { label: 'IGI certification', value: igiCost },
@@ -386,50 +425,20 @@ export default function NewProductPage() {
                   </div>
                 ))}
                 <div className="flex justify-between text-sm font-semibold text-stone-800 pt-2 border-t border-stone-200">
-                  <span>Total COGS</span>
-                  <span>₹{cogs.toLocaleString('en-IN')}</span>
-                </div>
-              </div>
-              <div className="px-4 py-3 space-y-2">
-                <p className="text-xs font-medium text-stone-400 uppercase tracking-wide mb-2">Margin analysis</p>
-                <div className="flex justify-between text-sm">
-                  <span className="text-stone-500">Trade price</span>
-                  <span className="font-medium text-stone-800">₹{tradePrice.toLocaleString('en-IN')}</span>
+                  <span>Total COGS (22K)</span>
+                  <span>₹{cogs22.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-stone-500">Your margin (trade − COGS)</span>
                   <span className={`font-medium ${yourMargin >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    ₹{yourMargin.toLocaleString('en-IN')} ({cogs > 0 ? Math.round((yourMargin / tradePrice) * 100) : 0}%)
+                    ₹{yourMargin.toLocaleString('en-IN')} ({tradePrice > 0 ? Math.round((yourMargin / tradePrice) * 100) : 0}%)
                   </span>
-                </div>
-                <div className="h-px bg-stone-100 my-1" />
-                <div className="flex justify-between text-sm">
-                  <span className="text-stone-500">Suggested MRP</span>
-                  <span className="font-medium text-stone-800">₹{mrp.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-stone-500">Jeweler margin (MRP − trade)</span>
                   <span className="font-medium text-blue-600">
                     ₹{jewelerMargin.toLocaleString('en-IN')} ({mrp > 0 ? Math.round((jewelerMargin / mrp) * 100) : 0}%)
                   </span>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 border-t border-stone-100">
-                <div className="px-4 py-3 text-center border-r border-stone-100">
-                  <p className="text-xs text-stone-400">COGS</p>
-                  <p className="text-sm font-semibold text-stone-800">₹{cogs.toLocaleString('en-IN')}</p>
-                </div>
-                <div className="px-4 py-3 text-center border-r border-stone-100">
-                  <p className="text-xs text-stone-400">Your margin</p>
-                  <p className={`text-sm font-semibold ${yourMargin >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {cogs > 0 ? Math.round((yourMargin / tradePrice) * 100) : 0}%
-                  </p>
-                </div>
-                <div className="px-4 py-3 text-center">
-                  <p className="text-xs text-stone-400">Jeweler gets</p>
-                  <p className="text-sm font-semibold text-blue-600">
-                    {mrp > 0 ? Math.round((jewelerMargin / mrp) * 100) : 0}%
-                  </p>
                 </div>
               </div>
             </div>

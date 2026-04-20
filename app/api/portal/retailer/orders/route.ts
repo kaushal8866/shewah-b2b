@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { safeDbError } from '@/lib/sanitizeDbError'
+import { KARAT_FACTORS, SELLABLE_KARATS } from '@/lib/karat'
 
 // Fields the retailer is allowed to see. Internal financials (gold weights, COGS,
 // margin, manufacturer assignment, internal notes, locked gold rate) are excluded.
@@ -69,12 +70,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Please describe what you need' }, { status: 400 })
   }
 
-  // Pull product info for catalog orders to derive trade_price + delivery date.
+  // Pick the karat the retailer chose, falling back to 22kt — the catalog default.
+  const requestedKarat = parseInt(body.selected_karat) || 22
+  const selectedKarat: number = SELLABLE_KARATS.includes(requestedKarat as any) ? requestedKarat : 22
+
+  // Pull product info for catalog orders to derive per-karat trade_price + weight + delivery.
   let productRow: any = null
   if (type === 'catalog') {
     const { data: p, error: pe } = await supabaseAdmin
       .from('products')
-      .select('id, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges, diamond_cost, is_active')
+      .select('id, trade_price, delivery_days, gold_karat, gold_weight_g, gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k, karat_pricing, making_charges, diamond_cost, is_active')
       .eq('id', body.product_id)
       .maybeSingle()
     if (pe) return NextResponse.json({ error: pe.message }, { status: 500 })
@@ -82,16 +87,30 @@ export async function POST(req: Request) {
     productRow = p
   }
 
-  // Latest gold rate (locks the rate at order time, same as admin order form).
+  // Latest gold rate + per-karat retail labour (locked at order time).
   let goldRate: number | null = null
+  let retailLabourAtOrder: number | null = null
   const { data: g } = await supabaseAdmin
     .from('gold_rates')
-    .select('rate_24k')
+    .select('rate_24k, retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
     .order('recorded_at', { ascending: false })
     .limit(1)
-  if (g?.[0]) goldRate = g[0].rate_24k
+  if (g?.[0]) {
+    goldRate = g[0].rate_24k
+    const labourCol = `retail_labour_${selectedKarat}k`
+    const v = (g[0] as any)[labourCol]
+    if (v != null) retailLabourAtOrder = Number(v)
+  }
 
-  const tradePrice = productRow?.trade_price || 0
+  // Resolve the per-karat trade price + gross weight from the cached pricing.
+  const karatPricing: any = productRow?.karat_pricing || null
+  const karatRow = karatPricing ? karatPricing[String(selectedKarat)] : null
+  const grossWeight: number = karatRow?.weight
+    || Number(productRow?.[`gold_weight_${selectedKarat}k`])
+    || Number(productRow?.gold_weight_g)
+    || 0
+  const pure24kt = grossWeight * (KARAT_FACTORS[selectedKarat] || 0)
+  const tradePrice = Number(karatRow?.trade) || Number(productRow?.trade_price) || 0
   const totalAmount = tradePrice * quantity
   const deliveryDays = productRow?.delivery_days || 21
   const expectedDelivery = new Date(Date.now() + deliveryDays * 86400000).toISOString().slice(0, 10)
@@ -133,8 +152,14 @@ export async function POST(req: Request) {
     expected_delivery: expectedDelivery,
     status: 'brief_received',
     gold_source: 'self',
-    gold_karat: productRow?.gold_karat || null,
-    gold_weight_estimated: productRow?.gold_weight_g || null,
+    // Snapshot the karat the retailer actually picked, plus its physical weight
+    // and the 24kt-pure equivalent that the float ledger settles on.
+    gold_karat: selectedKarat,
+    selected_karat: selectedKarat,
+    gross_weight_at_karat: grossWeight || null,
+    gold_pure_24kt_g: pure24kt || null,
+    retail_labour_at_order: retailLabourAtOrder,
+    gold_weight_estimated: grossWeight || productRow?.gold_weight_g || null,
     // Pull labour (making_charges) and diamond cost straight from the catalog
     // so the admin's COGS view is populated the moment the portal order lands.
     // Admin can still edit these before/at QC stage if the actual differs.
@@ -166,7 +191,7 @@ export async function POST(req: Request) {
   if (error) {
     // The COGS columns from Task #5 may not be present in every environment.
     // Retry without those optional columns so the portal still works.
-    if (error.message?.match(/gold_source|gold_weight_estimated|making_charges|cad_cost|stone_cost|gold_karat|brief_images/)) {
+    if (error.message?.match(/gold_source|gold_weight_estimated|making_charges|cad_cost|stone_cost|gold_karat|brief_images|selected_karat|gross_weight_at_karat|gold_pure_24kt_g|retail_labour_at_order/)) {
       const minimal = {
         order_number: insert.order_number,
         partner_id: insert.partner_id,
@@ -186,6 +211,7 @@ export async function POST(req: Request) {
         expected_delivery: insert.expected_delivery,
         status: insert.status,
         internal_notes: insert.internal_notes,
+        ...(insert.selected_karat ? { selected_karat: insert.selected_karat } : {}),
       }
       const retry = await supabaseAdmin
         .from('orders')
