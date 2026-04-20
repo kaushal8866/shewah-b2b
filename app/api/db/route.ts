@@ -26,6 +26,7 @@ const ALLOWED_TABLES = new Set([
   'material_float',
   'material_transactions',
   'reconciliation_alerts',
+  'order_payments',
 ])
 
 const MASTER_ONLY_TABLES = new Set(['app_users', 'material_float', 'material_transactions', 'reconciliation_alerts'])

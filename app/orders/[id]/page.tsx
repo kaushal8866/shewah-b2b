@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase, ORDER_STATUSES, computeOrderCogs } from '@/lib/supabase'
 import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
 import { formatDate, getStatusColor } from '@/lib/utils'
-import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare, CreditCard, Bell, Plus } from 'lucide-react'
 import Link from 'next/link'
 
 function OrderChangeRequestsPanel({ orderId, onApplied }: { orderId: string, onApplied: () => void }) {
@@ -134,6 +134,233 @@ function OrderChangeRequestsPanel({ orderId, onApplied }: { orderId: string, onA
   )
 }
 
+// Modal that opens when the admin tries to dispatch with an outstanding
+// balance, or via the "+ Log payment" button on the pricing card.
+// Two paths:
+//   1. Log a payment now (amount + date + reference + method)
+//   2. Schedule a reminder (collect in N days) — only available in dispatch
+//      mode so dispatched orders can ship on time
+function PaymentModal({
+  mode, balanceDue, orderNumber,
+  onClose, onLogPayment, onScheduleReminder, onContinueDispatch,
+}: {
+  mode: 'dispatch' | 'standalone'
+  balanceDue: number
+  orderNumber?: string
+  onClose: () => void
+  onLogPayment: (input: { amount: number; payment_date: string; reference?: string | null; method?: string | null; notes?: string | null }) => Promise<{ ok: boolean; error?: string }>
+  onScheduleReminder: (days: number) => Promise<{ ok: boolean; error?: string }>
+  onContinueDispatch: () => void
+}) {
+  const [tab, setTab] = useState<'log' | 'remind'>('log')
+  const [amount, setAmount] = useState(String(balanceDue))
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [reference, setReference] = useState('')
+  const [method, setMethod] = useState('upi')
+  const [notes, setNotes] = useState('')
+  const [days, setDays] = useState('7')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const lbl = "block text-xs font-medium text-stone-500 mb-1"
+
+  async function handleLog() {
+    setBusy(true); setError('')
+    const r = await onLogPayment({
+      amount: parseFloat(amount),
+      payment_date: date,
+      reference: reference.trim() || null,
+      method,
+      notes: notes.trim() || null,
+    })
+    setBusy(false)
+    if (!r.ok) { setError(r.error || 'Could not save'); return }
+    if (mode === 'dispatch') {
+      // If the logged amount fully clears the balance, dispatch immediately.
+      // Otherwise the admin can still ship by switching to Schedule reminder.
+      if (parseFloat(amount) >= balanceDue) onContinueDispatch()
+      else onClose()
+    } else {
+      onClose()
+    }
+  }
+  async function handleSchedule() {
+    setBusy(true); setError('')
+    const r = await onScheduleReminder(parseInt(days) || 7)
+    setBusy(false)
+    if (!r.ok) { setError(r.error || 'Could not save reminder'); return }
+    onContinueDispatch()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+        <div className="flex items-start gap-3 mb-3">
+          <CreditCard className="w-5 h-5 text-[#1E3A5F] mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <h3 className="font-semibold text-stone-900">
+              {mode === 'dispatch' ? 'Confirm payment before dispatch' : 'Log payment'}
+            </h3>
+            <p className="text-sm text-stone-500 mt-1">
+              {mode === 'dispatch'
+                ? `Order ${orderNumber || ''} has ₹${balanceDue.toLocaleString('en-IN')} pending. Record what you've collected, or schedule a reminder.`
+                : `Outstanding balance: ₹${balanceDue.toLocaleString('en-IN')}.`}
+            </p>
+          </div>
+        </div>
+
+        {mode === 'dispatch' && (
+          <div className="flex gap-1 bg-stone-100 rounded-lg p-1 mb-4">
+            <button onClick={() => setTab('log')}
+              className={`flex-1 text-xs font-medium py-1.5 rounded-md ${tab === 'log' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'}`}>
+              Payment received
+            </button>
+            <button onClick={() => setTab('remind')}
+              className={`flex-1 text-xs font-medium py-1.5 rounded-md ${tab === 'remind' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'}`}>
+              Collect later
+            </button>
+          </div>
+        )}
+
+        {(mode === 'standalone' || tab === 'log') && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={lbl}>Amount (₹)</label>
+                <input type="number" inputMode="decimal" className={inp} value={amount} onChange={e => setAmount(e.target.value)} />
+              </div>
+              <div>
+                <label className={lbl}>Date</label>
+                <input type="date" className={inp} value={date} onChange={e => setDate(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={lbl}>Method</label>
+                <select className={inp} value={method} onChange={e => setMethod(e.target.value)}>
+                  <option value="upi">UPI</option>
+                  <option value="bank">Bank transfer</option>
+                  <option value="cheque">Cheque</option>
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>Reference / UTR</label>
+                <input className={inp} value={reference} onChange={e => setReference(e.target.value)} placeholder="UTR / cheque no" />
+              </div>
+            </div>
+            <div>
+              <label className={lbl}>Notes (optional)</label>
+              <input className={inp} value={notes} onChange={e => setNotes(e.target.value)} />
+            </div>
+          </div>
+        )}
+
+        {mode === 'dispatch' && tab === 'remind' && (
+          <div className="space-y-3">
+            <div>
+              <label className={lbl}>Collect in (days)</label>
+              <input type="number" inputMode="numeric" min="1" className={inp} value={days} onChange={e => setDays(e.target.value)} />
+              <p className="text-[11px] text-stone-400 mt-1">
+                We'll flag the order on {(() => { const d = new Date(); d.setDate(d.getDate() + (parseInt(days) || 7)); return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) })()} and re-prompt you to confirm a new date with the retailer if it's still unpaid.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
+
+        <div className="flex gap-2 mt-5">
+          <button onClick={onClose} disabled={busy}
+            className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50 disabled:opacity-50">
+            Cancel
+          </button>
+          {(mode === 'standalone' || tab === 'log') ? (
+            <button onClick={handleLog} disabled={busy}
+              className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+              {busy ? 'Saving...' : (mode === 'dispatch' && parseFloat(amount) >= balanceDue ? 'Log & dispatch' : 'Log payment')}
+            </button>
+          ) : (
+            <button onClick={handleSchedule} disabled={busy}
+              className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+              {busy ? 'Saving...' : 'Schedule & dispatch'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Re-prompt the admin to set a fresh due date once a payment reminder has
+// passed (or whenever they want to bump it). Forces them to enter a new
+// date — which they confirm with the retailer first.
+function PaymentRescheduleModal({
+  currentDate, onClose, onSave,
+}: {
+  currentDate?: string | null
+  onClose: () => void
+  onSave: (days: number) => Promise<void>
+}) {
+  // Intentionally start blank — operator must enter a *fresh* number after
+  // confirming with the retailer; defaulting to '7' would let them save
+  // without thinking.
+  const [days, setDays] = useState('')
+  const [confirmed, setConfirmed] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const parsed = parseInt(days)
+  const valid = !!days && Number.isFinite(parsed) && parsed >= 1
+  const canSave = valid && confirmed && !busy
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const lbl = "block text-xs font-medium text-stone-500 mb-1"
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+        <div className="flex items-start gap-3 mb-3">
+          <Bell className="w-5 h-5 text-[#1E3A5F] mt-0.5 shrink-0" />
+          <div>
+            <h3 className="font-semibold text-stone-900">Reschedule payment reminder</h3>
+            <p className="text-sm text-stone-500 mt-1">
+              {currentDate
+                ? `Currently set for ${new Date(currentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}. Confirm a new collection date with the retailer first.`
+                : 'Set a new collection target after confirming with the retailer.'}
+            </p>
+          </div>
+        </div>
+        <div>
+          <label className={lbl}>Collect in (days from today)</label>
+          <input type="number" inputMode="numeric" min="1" className={inp}
+            value={days} onChange={e => setDays(e.target.value)}
+            placeholder="e.g. 7" autoFocus />
+          {valid && (
+            <p className="text-[11px] text-stone-400 mt-1">
+              New due date: {(() => { const d = new Date(); d.setDate(d.getDate() + parsed); return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) })()}
+            </p>
+          )}
+          <label className="flex items-start gap-2 mt-3 text-xs text-stone-600">
+            <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)}
+              className="mt-0.5" />
+            <span>I've confirmed this new date with the retailer.</span>
+          </label>
+        </div>
+        <div className="flex gap-2 mt-5">
+          <button onClick={onClose} disabled={busy}
+            className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50 disabled:opacity-50">
+            Cancel
+          </button>
+          <button onClick={async () => { setBusy(true); await onSave(parsed); setBusy(false) }} disabled={!canSave}
+            className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 disabled:cursor-not-allowed">
+            {busy ? 'Saving...' : 'Save reminder'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const STAGES_REQUIRING_ACTUALS = new Set(['qc', 'dispatched', 'delivered'])
 
 export default function OrderDetailPage() {
@@ -165,6 +392,11 @@ export default function OrderDetailPage() {
     diamondHave: number
     diamondShort: number
   }>(null)
+  // Payment ledger for this order + UI state for the dispatch / "+ Log
+  // payment" modal and the overdue-reminder reschedule modal.
+  const [payments, setPayments] = useState<any[]>([])
+  const [paymentModal, setPaymentModal] = useState<null | { mode: 'dispatch' | 'standalone' }>(null)
+  const [rescheduleOpen, setRescheduleOpen] = useState(false)
 
   useEffect(() => { load() }, [id])
 
@@ -182,6 +414,20 @@ export default function OrderDetailPage() {
     setOrder(data)
     setForm(data)
     setMfgPartners(mp || [])
+
+    // Payments ledger for this order (Task #69). The migration table may not
+    // be present in older environments — fall through silently if so.
+    try {
+      const { data: pays } = await supabase
+        .from('order_payments')
+        .select('*')
+        .eq('order_id', id)
+        .order('payment_date', { ascending: false })
+      setPayments(pays || [])
+    } catch (e) {
+      console.warn('[order_payments] table missing or query failed', e)
+      setPayments([])
+    }
 
     // Look for a consumption transaction for this order (used by the
     // completion guard when gold_source = self).
@@ -272,10 +518,68 @@ export default function OrderDetailPage() {
     }
   }
 
-  async function advanceStage(opts?: { skipMaterialCheck?: boolean }) {
+  async function logPayment(input: {
+    amount: number
+    payment_date: string
+    reference?: string | null
+    method?: string | null
+    notes?: string | null
+  }): Promise<{ ok: boolean; error?: string }> {
+    if (!input.amount || input.amount <= 0) return { ok: false, error: 'Enter a positive amount.' }
+    const ins = await supabase.from('order_payments').insert([{
+      order_id: id,
+      amount: input.amount,
+      payment_date: input.payment_date,
+      reference: input.reference || null,
+      method: input.method || null,
+      notes: input.notes || null,
+    }]).select('*').single()
+    if ((ins as any).error) return { ok: false, error: (ins as any).error.message }
+
+    // Recompute advance_paid by SUMming the ledger instead of trusting the
+    // in-memory snapshot — protects against lost updates if two payments are
+    // logged concurrently. The latest writer always sees every prior insert.
+    const sumQ = await supabase.from('order_payments').select('amount').eq('order_id', id)
+    if ((sumQ as any).error) {
+      return { ok: false, error: 'Payment saved but totals could not be refreshed: ' + (sumQ as any).error.message }
+    }
+    const newAdvance = ((sumQ.data as any[]) || []).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0)
+    const newBalance = Math.max(0, (parseFloat(order.total_amount) || 0) - newAdvance)
+    const update: any = { advance_paid: newAdvance, balance_due: newBalance }
+    // Once fully paid, drop the reminder.
+    if (newBalance === 0) update.payment_reminder_date = null
+    const upd = await supabase.from('orders').update(update).eq('id', id)
+    if ((upd as any).error) {
+      return { ok: false, error: 'Payment saved but order totals failed to update: ' + (upd as any).error.message }
+    }
+    return { ok: true }
+  }
+
+  async function schedulePaymentReminder(days: number): Promise<{ ok: boolean; error?: string }> {
+    const d = new Date()
+    d.setDate(d.getDate() + Math.max(1, Math.round(days)))
+    const iso = d.toISOString().split('T')[0]
+    const r = await supabase.from('orders').update({ payment_reminder_date: iso }).eq('id', id)
+    if ((r as any).error) return { ok: false, error: (r as any).error.message }
+    return { ok: true }
+  }
+
+  async function advanceStage(opts?: { skipMaterialCheck?: boolean; skipPaymentPrompt?: boolean }) {
     if (!nextStage) return
     const err = checkCompletionGuard(nextStage.value)
     if (err) { setGuardError(err); return }
+
+    // Pre-dispatch gate: if there's still a balance owed, force the admin to
+    // either log a payment (date + reference number) or schedule a reminder
+    // before letting the order ship. Skipped on "confirm" from the modal.
+    if (nextStage.value === 'dispatched' && !opts?.skipPaymentPrompt) {
+      const balance = (parseFloat(order.balance_due) || (parseFloat(order.total_amount) || 0) - (parseFloat(order.advance_paid) || 0))
+      if (balance > 0) {
+        setGuardError(null)
+        setPaymentModal({ mode: 'dispatch' })
+        return
+      }
+    }
 
     // Pre-production gate: if a manufacturer is assigned and they're short on
     // the gold/diamonds this order needs, prompt the admin to issue material
@@ -316,6 +620,15 @@ export default function OrderDetailPage() {
     if (form.status !== order.status) {
       const err = checkCompletionGuard(form.status)
       if (err) { setGuardError(err); return }
+      // Same payment gate that advanceStage() enforces — the edit form must
+      // not become a back-door for shipping unpaid orders.
+      if (form.status === 'dispatched') {
+        const balance = (parseFloat(form.total_amount) || 0) - (parseFloat(form.advance_paid) || 0)
+        if (balance > 0) {
+          setGuardError('This order still has a balance due. Use the "Dispatch" button on the pipeline — it lets you log the payment or schedule a reminder before shipping.')
+          return
+        }
+      }
     }
     setGuardError(null)
     setSaving(true)
@@ -512,6 +825,47 @@ export default function OrderDetailPage() {
         )
       })()}
 
+      {paymentModal && (
+        <PaymentModal
+          mode={paymentModal.mode}
+          balanceDue={Math.max(0, (parseFloat(order.total_amount) || 0) - (parseFloat(order.advance_paid) || 0))}
+          orderNumber={order.order_number}
+          onClose={() => setPaymentModal(null)}
+          onLogPayment={async (input) => {
+            const r = await logPayment(input)
+            if (!r.ok) return r
+            await load()
+            return { ok: true }
+          }}
+          onScheduleReminder={async (days) => {
+            const r = await schedulePaymentReminder(days)
+            if (!r.ok) return r
+            await load()
+            return { ok: true }
+          }}
+          onContinueDispatch={async () => {
+            setPaymentModal(null)
+            // Re-fetch latest order then re-trigger advance with payment
+            // prompt skipped — guards (tracking, COGS) still run.
+            await load()
+            advanceStage({ skipPaymentPrompt: true })
+          }}
+        />
+      )}
+
+      {rescheduleOpen && (
+        <PaymentRescheduleModal
+          currentDate={order.payment_reminder_date}
+          onClose={() => setRescheduleOpen(false)}
+          onSave={async (days) => {
+            const r = await schedulePaymentReminder(days)
+            if (!r.ok) { alert('Could not save reminder: ' + (r.error || 'unknown error')); return }
+            setRescheduleOpen(false)
+            await load()
+          }}
+        />
+      )}
+
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
@@ -677,12 +1031,18 @@ export default function OrderDetailPage() {
 
           {/* Pricing */}
           <div className="bg-white rounded-xl border border-stone-200 p-5">
-            <h2 className="font-medium text-stone-900 mb-4">Pricing &amp; payment</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-medium text-stone-900">Pricing &amp; payment</h2>
+              <button onClick={() => setPaymentModal({ mode: 'standalone' })}
+                className="flex items-center gap-1.5 text-xs font-medium text-[#1E3A5F] bg-[#1E3A5F]/5 hover:bg-[#1E3A5F]/10 px-3 py-1.5 rounded-lg">
+                <Plus className="w-3.5 h-3.5" /> Log payment
+              </button>
+            </div>
             <div className="grid grid-cols-3 gap-4 text-sm mb-3">
               {[
                 ['Trade price', `₹${order.trade_price?.toLocaleString('en-IN') || '—'}`],
                 ['Total amount', `₹${order.total_amount?.toLocaleString('en-IN') || '—'}`],
-                ['Advance paid', `₹${(order.advance_paid || 0).toLocaleString('en-IN')}`],
+                ['Received', `₹${(order.advance_paid || 0).toLocaleString('en-IN')}`],
               ].map(([k, v]) => (
                 <div key={String(k)}>
                   <p className="text-xs text-stone-400">{k}</p>
@@ -692,7 +1052,7 @@ export default function OrderDetailPage() {
             </div>
             {(order.balance_due || 0) > 0 ? (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex justify-between items-center">
-                <span className="text-amber-700 text-sm">Balance due at delivery</span>
+                <span className="text-amber-700 text-sm">Balance due</span>
                 <span className="font-semibold text-amber-800">₹{order.balance_due?.toLocaleString('en-IN')}</span>
               </div>
             ) : (
@@ -701,8 +1061,67 @@ export default function OrderDetailPage() {
                 <Check className="w-4 h-4 text-green-600" />
               </div>
             )}
+
+            {/* Payment-collection reminder (set when an order ships with an
+                outstanding balance — Task #69). Once overdue, force the admin
+                to confirm a new collection date with the retailer. */}
+            {order.payment_reminder_date && (order.balance_due || 0) > 0 && (() => {
+              const today = new Date().toISOString().split('T')[0]
+              const overdue = order.payment_reminder_date < today
+              return (
+                <div className={`mt-3 p-3 rounded-lg border flex items-center justify-between gap-3 ${overdue ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Bell className={`w-4 h-4 shrink-0 ${overdue ? 'text-red-600' : 'text-blue-600'}`} />
+                    <div className="text-xs">
+                      <p className={`font-medium ${overdue ? 'text-red-700' : 'text-blue-700'}`}>
+                        {overdue ? 'Payment overdue' : 'Payment reminder'}
+                      </p>
+                      <p className={overdue ? 'text-red-600' : 'text-blue-600'}>
+                        {overdue
+                          ? `Was due ${formatDate(order.payment_reminder_date)} — confirm a new date with the retailer.`
+                          : `Collect by ${formatDate(order.payment_reminder_date)}`}
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={() => setRescheduleOpen(true)}
+                    className={`text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap ${overdue ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-white border border-blue-200 text-blue-700 hover:bg-blue-100'}`}>
+                    Reschedule
+                  </button>
+                </div>
+              )
+            })()}
+
+            {/* Payment ledger (Task #69) */}
+            {payments.length > 0 && (
+              <div className="mt-4 border-t border-stone-100 pt-3">
+                <p className="text-xs font-medium text-stone-500 mb-2 flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5" /> Payment log
+                </p>
+                <div className="space-y-1.5">
+                  {payments.map((p: any) => (
+                    <div key={p.id} className="flex items-center justify-between text-xs py-1.5 border-b border-stone-50 last:border-0">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-stone-700">
+                          {formatDate(p.payment_date)}
+                          {p.method ? ` · ${p.method}` : ''}
+                        </p>
+                        {(p.reference || p.notes) && (
+                          <p className="text-stone-400 truncate">
+                            {p.reference || ''}{p.reference && p.notes ? ' · ' : ''}{p.notes || ''}
+                          </p>
+                        )}
+                      </div>
+                      <span className="font-medium text-stone-800 shrink-0 ml-2">
+                        ₹{Number(p.amount || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {order.gold_rate_at_order > 0 && (
-              <p className="text-xs text-stone-400 mt-2">Gold rate locked: ₹{order.gold_rate_at_order?.toLocaleString('en-IN')}/g (24K)</p>
+              <p className="text-xs text-stone-400 mt-3">Gold rate locked: ₹{order.gold_rate_at_order?.toLocaleString('en-IN')}/g (24K)</p>
             )}
           </div>
 
