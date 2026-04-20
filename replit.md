@@ -26,6 +26,10 @@ Key architectural features include:
 - **Cron Jobs**: Supports scheduled tasks like daily reconciliation digests for manufacturing partners, with email notification capabilities via Resend.
 - **File Uploads**: Utilizes Cloudinary for storing various file types, including CAD files and reference images.
 
+## Operations
+
+- **Upload error retention**: The `upload_errors` table is trimmed by the `app/api/cron/cleanup-upload-errors` route, which deletes rows older than 90 days. Trigger it on a schedule (e.g. daily) with a `Bearer ${CRON_SECRET}` `Authorization` header, or manually as a master user. The Settings page only surfaces the most recent 100 rows, so older entries are not needed for live diagnosis.
+
 ## External Dependencies
 
 - **Supabase**: PostgreSQL database, authentication, and real-time features.
