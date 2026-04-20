@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, partnerLabourRate, type ManufacturingPartnerLite } from '@/lib/supabase'
 import { uploadToCloudinary, uploadFileToCloudinary } from '@/lib/cloudinaryUpload'
 import { formatCurrency } from '@/lib/utils'
 import { ArrowLeft, Save, Upload, X, Printer, Package, FileUp, FileDown, AlertTriangle } from 'lucide-react'
@@ -14,13 +14,12 @@ function NewMfgOrderForm() {
   const printRef = useRef<HTMLDivElement>(null)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [partners, setPartners] = useState<any[]>([])
+  const [partners, setPartners] = useState<ManufacturingPartnerLite[]>([])
   const [customerOrders, setCustomerOrders] = useState<any[]>([])
   const [buckets, setBuckets] = useState<any[]>([])
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [cadFiles, setCadFiles] = useState<{ url: string; filename: string }[]>([])
   const [uploadingCad, setUploadingCad] = useState(false)
-  const [labourRates, setLabourRates] = useState<Record<number, number>>({})
   const [floatError, setFloatError] = useState<string | null>(null)
   const [overIssueModal, setOverIssueModal] = useState<{ available: number; required: number; shortfall: number } | null>(null)
 
@@ -49,13 +48,9 @@ function NewMfgOrderForm() {
     Promise.all([
       supabase.from('manufacturing_partners').select('*').eq('status', 'active').order('name'),
       supabase.from('orders').select('id, order_number, partners(store_name)').order('order_date', { ascending: false }).limit(20),
-      supabase.from('labour_rates').select('*'),
-    ]).then(([{ data: p }, { data: co }, { data: lr }]) => {
-      setPartners(p || [])
+    ]).then(([{ data: p }, { data: co }]) => {
+      setPartners((p || []) as ManufacturingPartnerLite[])
       setCustomerOrders(co || [])
-      const rateMap: Record<number, number> = {}
-      lr?.forEach(r => { rateMap[r.karat] = r.rate_per_gram })
-      setLabourRates(rateMap)
     })
   }, [])
 
@@ -87,21 +82,17 @@ function NewMfgOrderForm() {
       : 0
   const overIssue = form.material_from_float && required > 0 && (!activeBucket || activeBucket.available < required)
 
-  // Auto-fill labour rate when karat OR partner changes. Prefer the
-  // partner-specific per-karat rate (Task #68); fall back to the global
-  // labour_rates table for partners that don't have a rate set yet. Track
-  // the last auto value in a ref so that any user-typed override is left
-  // alone — and so we explicitly clear the field when no rate is available.
+  // Auto-fill labour rate from the SELECTED partner's per-karat rate only
+  // (Task #68 — no implicit global default). When the partner has no rate
+  // for the chosen karat, the field is cleared and a hint surfaces beside
+  // the input. A useRef tracks the last value WE wrote, so any value the
+  // admin types (different from our last auto) is preserved as a manual
+  // override.
   const selectedPartnerForLabour = partners.find(p => p.id === form.manufacturing_partner_id)
+  const partnerKaratRate = partnerLabourRate(selectedPartnerForLabour, parseInt(form.gold_karat))
   const autoLabourRef = useRef<string>('')
   useEffect(() => {
-    const k = parseInt(form.gold_karat)
-    const partnerRate = selectedPartnerForLabour
-      ? Number((selectedPartnerForLabour as any)[`labour_rate_${k}k`]) || 0
-      : 0
-    const fallback = Number(labourRates[k]) || 0
-    const next = partnerRate || fallback
-    const nextStr = next > 0 ? String(next) : ''
+    const nextStr = partnerKaratRate > 0 ? String(partnerKaratRate) : ''
     const isDirty = form.labour_per_gram !== '' && form.labour_per_gram !== autoLabourRef.current
     if (isDirty) return
     if (form.labour_per_gram !== nextStr) {
@@ -111,7 +102,7 @@ function NewMfgOrderForm() {
       autoLabourRef.current = nextStr
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.gold_karat, labourRates, form.manufacturing_partner_id, partners])
+  }, [form.gold_karat, form.manufacturing_partner_id, partnerKaratRate])
 
   function set(k: string, v: string | boolean) {
     setForm(prev => ({ ...prev, [k]: v }))
@@ -507,9 +498,21 @@ function NewMfgOrderForm() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
               <div>
                 <label className={lbl}>Labour rate (₹/gram)</label>
-                <input type="number" inputMode="decimal" className={inp} value={form.labour_per_gram} onChange={e => set('labour_per_gram', e.target.value)}
-                  placeholder={`Default: ₹${labourRates[parseInt(form.gold_karat)] || '—'}`} />
-                <p className="text-xs text-stone-400 mt-1">Auto-filled from karat settings</p>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  className={inp}
+                  value={form.labour_per_gram}
+                  onChange={e => set('labour_per_gram', e.target.value)}
+                  placeholder={partnerKaratRate > 0 ? `Auto: ₹${partnerKaratRate}` : 'No partner rate set'}
+                />
+                {selectedPartnerForLabour && partnerKaratRate <= 0 ? (
+                  <p className="text-[11px] text-amber-600 mt-1">{selectedPartnerForLabour.name} has no labour rate set for {form.gold_karat}K. Add one on the partner page or enter the rate manually.</p>
+                ) : selectedPartnerForLabour && partnerKaratRate > 0 ? (
+                  <p className="text-[11px] text-stone-400 mt-1">Auto-filled from {selectedPartnerForLabour.name}&apos;s {form.gold_karat}K rate. Type to override.</p>
+                ) : (
+                  <p className="text-[11px] text-stone-400 mt-1">Pick a karigar to auto-fill from their per-karat rate.</p>
+                )}
               </div>
               <div>
                 <label className={lbl}>Actual gold weight (g)</label>

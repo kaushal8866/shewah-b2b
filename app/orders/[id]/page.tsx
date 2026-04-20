@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase, ORDER_STATUSES, computeOrderCogs } from '@/lib/supabase'
+import { supabase, ORDER_STATUSES, computeOrderCogs, partnerLabourRate, type ManufacturingPartnerLite } from '@/lib/supabase'
 import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare, CreditCard, Bell, Plus } from 'lucide-react'
@@ -369,7 +369,7 @@ export default function OrderDetailPage() {
   const id = params.id as string
 
   const [order, setOrder] = useState<any>(null)
-  const [mfgPartners, setMfgPartners] = useState<any[]>([])
+  const [mfgPartners, setMfgPartners] = useState<ManufacturingPartnerLite[]>([])
   const [consumptionTxn, setConsumptionTxn] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -400,49 +400,41 @@ export default function OrderDetailPage() {
 
   useEffect(() => { load() }, [id])
 
-  // Task #68: auto-fill `making_charges` from the assigned karigar's per-karat
-  // labour rate × max(weight, min_labour_grams). To preserve admin overrides
-  // we track the last value we auto-wrote in a ref — if the field still equals
-  // that value (or is empty), it's safe to overwrite. The moment the admin
-  // types something different, the field is "dirty" and we leave it alone.
-  const autoMakingChargesRef = useRef<number | null>(null)
+  // Task #68: when the karigar / karat / weight changes during edit, the
+  // labour cost (`making_charges`) is auto-filled from
+  //     partner.labour_rate_{karat}k × max(weight, min_labour_grams)
+  // The admin can opt out by enabling the explicit "override" toggle below;
+  // while the toggle is OFF the field is read-only and tracks the partner
+  // rate. When the toggle is ON the field becomes editable and we never
+  // touch it. If the partner has no rate for the karat, the field is
+  // cleared (no global default falls through).
+  const [overrideLabour, setOverrideLabour] = useState(false)
   useEffect(() => {
-    if (!editing) { autoMakingChargesRef.current = null; return }
+    if (!editing) setOverrideLabour(false)
   }, [editing])
-  useEffect(() => {
-    if (!editing) return
-    const partner = mfgPartners.find(p => p.id === form.assigned_manufacturer_id)
-    const k = parseInt(form.gold_karat) || 0
-    const rate = partner ? Number((partner as any)[`labour_rate_${k}k`]) || 0 : 0
-    const wActual = parseFloat(form.gold_weight_actual) || 0
-    const wEst = parseFloat(form.gold_weight_estimated) || 0
-    const minG = partner ? Number((partner as any).min_labour_grams) || 1 : 1
-    const w = Math.max(wActual || wEst, minG)
-    const currentMC = Number(form.making_charges) || 0
-    const lastAuto = autoMakingChargesRef.current
-    const isDirty = currentMC !== 0 && currentMC !== lastAuto
-    if (isDirty) return // admin has entered a manual override
 
-    if (!partner || !rate || w <= 0) {
-      // No data to auto-cost from. If the current value was something WE
-      // last auto-filled, clear it so a stale rate from a previous partner /
-      // karat doesn't quietly persist into COGS. Manual entries are left
-      // alone (caught by the `isDirty` check above).
-      if (lastAuto !== null && currentMC === lastAuto) {
-        autoMakingChargesRef.current = null
-        setForm((prev: any) => ({ ...prev, making_charges: '' }))
-      }
+  const editPartner = mfgPartners.find(p => p.id === form.assigned_manufacturer_id)
+  const editKarat = parseInt(form.gold_karat) || 0
+  const editPartnerRate = partnerLabourRate(editPartner, editKarat)
+  const editGrossWeight = Math.max(
+    parseFloat(form.gold_weight_actual) || parseFloat(form.gold_weight_estimated) || 0,
+    Number(editPartner?.min_labour_grams) || 1,
+  )
+
+  useEffect(() => {
+    if (!editing || overrideLabour) return
+    if (!editPartner || editPartnerRate <= 0 || editGrossWeight <= 0) {
+      // No partner rate available — clear any stale auto value so it doesn't
+      // silently persist into COGS.
+      if (form.making_charges) setForm((prev: any) => ({ ...prev, making_charges: '' }))
       return
     }
-    const auto = Math.round(rate * w)
-    if (currentMC !== auto) {
-      autoMakingChargesRef.current = auto
-      setForm((prev: any) => ({ ...prev, making_charges: String(auto) }))
-    } else {
-      autoMakingChargesRef.current = auto
+    const auto = String(Math.round(editPartnerRate * editGrossWeight))
+    if (form.making_charges !== auto) {
+      setForm((prev: any) => ({ ...prev, making_charges: auto }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, form.assigned_manufacturer_id, form.gold_karat, form.gold_weight_actual, form.gold_weight_estimated, mfgPartners])
+  }, [editing, overrideLabour, editPartnerRate, editGrossWeight, form.assigned_manufacturer_id, form.gold_karat])
 
   async function load() {
     setLoading(true)
@@ -457,7 +449,7 @@ export default function OrderDetailPage() {
     if (!data) { router.push('/orders'); return }
     setOrder(data)
     setForm(data)
-    setMfgPartners(mp || [])
+    setMfgPartners((mp || []) as ManufacturingPartnerLite[])
 
     // Payments ledger for this order (Task #69). The migration table may not
     // be present in older environments — fall through silently if so.
@@ -678,11 +670,24 @@ export default function OrderDetailPage() {
     setSaving(true)
     const balanceDue = (parseFloat(form.total_amount) || 0) - (parseFloat(form.advance_paid) || 0)
 
-    // Recompute COGS + margin
+    // Recompute COGS + margin. When the assigned partner has a per-karat
+    // labour rate (and no manual override is in effect), drive labour from
+    // partner_rate × max(weight, min_labour_grams). Otherwise fall back to
+    // whatever the admin typed into making_charges.
+    const savePartner = mfgPartners.find(p => p.id === form.assigned_manufacturer_id)
+    const saveKarat = parseInt(form.gold_karat) || 18
+    const saveLabourPerG = !overrideLabour ? partnerLabourRate(savePartner, saveKarat) : 0
+    const saveGrossW = Math.max(
+      parseFloat(form.gold_weight_actual) || parseFloat(form.gold_weight_estimated) || 0,
+      Number(savePartner?.min_labour_grams) || 1,
+    )
     const cogs = computeOrderCogs({
       gold_weight_actual: parseFloat(form.gold_weight_actual) || 0,
       gold_rate_at_order: order.gold_rate_at_order,
-      gold_karat: parseInt(form.gold_karat) || 18,
+      gold_karat: saveKarat,
+      labour_per_gram: saveLabourPerG,
+      gross_weight: saveGrossW,
+      min_labour_grams: Number(savePartner?.min_labour_grams) || 1,
       making_charges: parseFloat(form.making_charges) || 0,
       cad_cost: parseFloat(form.cad_cost) || 0,
       stone_cost: parseFloat(form.stone_cost) || 0,
@@ -747,11 +752,22 @@ export default function OrderDetailPage() {
   const isDelivered = order.status === 'delivered'
   const isCancelled = order.status === 'cancelled'
 
-  // Live computed COGS (from saved actuals)
+  // Live computed COGS (from saved actuals). For display we drive labour
+  // from the persisted partner rate when present so the breakdown matches
+  // what was last saved.
+  const savedPartner = mfgPartners.find(p => p.id === order.assigned_manufacturer_id)
+  const savedLabourPerG = partnerLabourRate(savedPartner, order.gold_karat)
+  const savedGrossW = Math.max(
+    Number(order.gold_weight_actual) || Number(order.gold_weight_estimated) || 0,
+    Number(savedPartner?.min_labour_grams) || 1,
+  )
   const savedCogs = computeOrderCogs({
     gold_weight_actual: order.gold_weight_actual,
     gold_rate_at_order: order.gold_rate_at_order,
     gold_karat: order.gold_karat,
+    labour_per_gram: savedLabourPerG,
+    gross_weight: savedGrossW,
+    min_labour_grams: Number(savedPartner?.min_labour_grams) || 1,
     making_charges: order.making_charges,
     cad_cost: order.cad_cost,
     stone_cost: order.stone_cost,
@@ -1291,17 +1307,31 @@ export default function OrderDetailPage() {
                   value={form.gold_weight_actual || ''} onChange={e => set('gold_weight_actual', e.target.value)} />
               </div>
               <div>
-                <label className={lbl}>Making charges (₹)</label>
-                <input type="number" inputMode="decimal" className={inp}
-                  value={form.making_charges || ''} onChange={e => set('making_charges', e.target.value)} />
+                <div className="flex items-center justify-between">
+                  <label className={lbl}>Making charges (₹)</label>
+                  <label className="text-[11px] text-stone-600 flex items-center gap-1 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={overrideLabour}
+                      onChange={e => setOverrideLabour(e.target.checked)}
+                      className="h-3 w-3"
+                    />
+                    Override partner rate
+                  </label>
+                </div>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  className={inp + (!overrideLabour ? ' bg-stone-50 cursor-not-allowed' : '')}
+                  readOnly={!overrideLabour}
+                  value={form.making_charges || ''}
+                  onChange={e => set('making_charges', e.target.value)}
+                />
                 {(() => {
-                  const partner = mfgPartners.find(p => p.id === form.assigned_manufacturer_id)
-                  const k = parseInt(form.gold_karat) || 0
-                  const rate = partner ? Number((partner as any)[`labour_rate_${k}k`]) || 0 : 0
-                  const w = Math.max(parseFloat(form.gold_weight_actual) || parseFloat(form.gold_weight_estimated) || 0, Number((partner as any)?.min_labour_grams) || 1)
-                  if (!partner) return <p className="text-[11px] text-stone-400 mt-1">Assign a manufacturer to auto-fill from their per-karat labour rate.</p>
-                  if (!rate) return <p className="text-[11px] text-amber-600 mt-1">{partner.name} has no labour rate set for {k}K. Add one on the partner page or enter making charges manually.</p>
-                  return <p className="text-[11px] text-stone-500 mt-1">Auto from {partner.name}: ₹{rate}/g × {w}g = ₹{Math.round(rate * w).toLocaleString('en-IN')}. Override above if needed.</p>
+                  if (!editPartner) return <p className="text-[11px] text-stone-400 mt-1">Assign a manufacturer to auto-fill from their per-karat labour rate.</p>
+                  if (overrideLabour) return <p className="text-[11px] text-stone-500 mt-1">Manual override on — ignoring {editPartner.name}&apos;s {editKarat}K rate.</p>
+                  if (editPartnerRate <= 0) return <p className="text-[11px] text-amber-600 mt-1">{editPartner.name} has no labour rate set for {editKarat}K. Set one on the partner page or tick &quot;Override partner rate&quot; to enter manually.</p>
+                  return <p className="text-[11px] text-stone-500 mt-1">Auto from {editPartner.name}: ₹{editPartnerRate}/g × {editGrossWeight}g = ₹{Math.round(editPartnerRate * editGrossWeight).toLocaleString('en-IN')}.</p>
                 })()}
               </div>
               <div>

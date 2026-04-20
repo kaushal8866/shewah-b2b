@@ -299,6 +299,41 @@ export type GoldRate = {
   notes?: string
 }
 
+// ── Manufacturing partner type + per-karat labour helper ──────────────────
+// Used by both the issue-mfg-order screen and the customer-order COGS path
+// (Task #68). Centralised so both sites avoid `any` casts on dynamic
+// `labour_rate_{karat}k` field lookups.
+
+export type ManufacturingPartnerLite = {
+  id: string
+  name: string
+  city?: string | null
+  phone?: string | null
+  email?: string | null
+  status?: string | null
+  material_policy?: string | null
+  min_labour_grams?: number | null
+  labour_rate_9k?: number | null
+  labour_rate_10k?: number | null
+  labour_rate_14k?: number | null
+  labour_rate_18k?: number | null
+  labour_rate_22k?: number | null
+}
+
+export function partnerLabourRate(
+  partner: ManufacturingPartnerLite | undefined | null,
+  karat: number,
+): number {
+  if (!partner) return 0
+  const k = Number(karat)
+  if (k === 9) return Number(partner.labour_rate_9k) || 0
+  if (k === 10) return Number(partner.labour_rate_10k) || 0
+  if (k === 14) return Number(partner.labour_rate_14k) || 0
+  if (k === 18) return Number(partner.labour_rate_18k) || 0
+  if (k === 22) return Number(partner.labour_rate_22k) || 0
+  return 0
+}
+
 export type Circuit = {
   id: string
   created_at: string
@@ -346,13 +381,21 @@ export function calculateTradePrice(
   return Math.round(cogs * marginMultiplier)
 }
 
-// Compute COGS + margin for an order using actual gold weight, gold-rate at order,
-// karat purity, making charges, CAD cost and stone cost. Returns 0 when actuals
-// are missing.
+// Compute COGS + margin for an order. Material cost stays invariant in
+// 24kt-pure terms (gold_weight × rate × karat purity = pure-24kt mass × rate).
+// Labour cost is computed separately — Task #68 wires it from the assigned
+// karigar's per-karat rate × gross weight (with a min-charge floor). When the
+// partner rate isn't available, the callers can pass a flat `making_charges`
+// fallback. Returns the explicit labour breakdown so the UI can render it.
 export function computeOrderCogs(opts: {
   gold_weight_actual?: number | null
   gold_rate_at_order?: number | null
   gold_karat?: number | null
+  // Task #68 inputs — preferred path when an assigned partner exists:
+  labour_per_gram?: number | null
+  gross_weight?: number | null
+  min_labour_grams?: number | null
+  // Legacy / manual-override fallback when no partner rate is available:
   making_charges?: number | null
   cad_cost?: number | null
   stone_cost?: number | null
@@ -364,13 +407,21 @@ export function computeOrderCogs(opts: {
   const karat = Number(opts.gold_karat) || 18
   const mult = (KARAT_FACTORS as Record<number, number>)[karat] ?? KARAT_FACTORS[18]
   const goldCost = w * rate * mult
+
+  const labourPerG = Number(opts.labour_per_gram) || 0
+  const grossW = Number(opts.gross_weight ?? opts.gold_weight_actual) || 0
+  const minG = Number(opts.min_labour_grams) || 1
+  const labourCost = labourPerG > 0
+    ? labourPerG * Math.max(grossW, minG)
+    : (Number(opts.making_charges) || 0)
+
   const total_cogs = goldCost
-    + (Number(opts.making_charges) || 0)
+    + labourCost
     + (Number(opts.cad_cost) || 0)
     + (Number(opts.stone_cost) || 0)
   const sellingPrice = Number(opts.total_amount ?? opts.trade_price) || 0
   const margin = sellingPrice - total_cogs
-  return { gold_cost: goldCost, total_cogs, margin }
+  return { gold_cost: goldCost, labour_cost: labourCost, total_cogs, margin }
 }
 
 // Recompute every active product's trade_price (and mrp_suggested) using the
