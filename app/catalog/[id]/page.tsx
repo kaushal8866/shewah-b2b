@@ -61,6 +61,7 @@ export default function CatalogProductEditPage() {
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'ring',
     gold_weight_22k: '',
+    gross_weight: '',
     making_charges: '2500', igi_cert_cost: '1500',
     delivery_days: '14',
     models_available: ['wholesale', 'design_make'],
@@ -102,6 +103,7 @@ export default function CatalogProductEditPage() {
           description: data.description || '',
           category: data.category || 'ring',
           gold_weight_22k: w22 ? String(w22) : '',
+          gross_weight: data.gross_weight ? String(data.gross_weight) : '',
           making_charges: String(data.making_charges ?? '2500'),
           igi_cert_cost: String(data.igi_cert_cost ?? '1500'),
           delivery_days: String(data.delivery_days || '14'),
@@ -188,6 +190,7 @@ export default function CatalogProductEditPage() {
       gold_weight_14k: weights[14] || null,
       gold_weight_10k: weights[10] || null,
       gold_weight_9k:  weights[9]  || null,
+      gross_weight: parseFloat(form.gross_weight) || null,
       karat_pricing,
       making_charges: makingCharges, igi_cert_cost: igiCost,
       trade_price: tradePrice, mrp_suggested: mrp,
@@ -352,20 +355,26 @@ export default function CatalogProductEditPage() {
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
           <h2 className="font-medium text-stone-900 mb-1">Gold specifications</h2>
           <p className="text-xs text-stone-400 mb-4">
-            Enter the gross weight at <strong>22kt</strong>. Other karats derive automatically.
+            Net gold weight is the gold content only. Gross weight is the total finished piece (gold + diamonds + alloys). Other karats derive automatically.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div>
-              <label className={lbl}>Gold weight @ 22kt (g) *</label>
+              <label className={lbl}>Net gold weight @ 22kt (g) *</label>
               <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
                 value={form.gold_weight_22k} onChange={e => set('gold_weight_22k', e.target.value)} />
+            </div>
+            <div>
+              <label className={lbl}>Gross weight — finished piece (g)</label>
+              <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
+                value={form.gross_weight} onChange={e => set('gross_weight', e.target.value)}
+                placeholder="gold + diamonds + alloys" />
             </div>
             <div><label className={lbl}>Making charges (₹)</label><input type="number" inputMode="decimal" className={inp} value={form.making_charges} onChange={e => set('making_charges', e.target.value)} /></div>
             <div><label className={lbl}>IGI cert cost (₹)</label><input type="number" inputMode="decimal" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} /></div>
           </div>
           {weight22 > 0 && (
             <div className="mt-4 rounded-xl border border-stone-100 overflow-hidden">
-              <div className="bg-stone-50 px-3 py-2 text-xs font-medium text-stone-500 uppercase tracking-wide">Derived gross weights</div>
+              <div className="bg-stone-50 px-3 py-2 text-xs font-medium text-stone-500 uppercase tracking-wide">Derived net gold weights — same 24kt-pure mass</div>
               <div className="grid grid-cols-5 divide-x divide-stone-100 text-center">
                 {SELLABLE_KARATS.map(k => (
                   <div key={k} className="px-2 py-3">

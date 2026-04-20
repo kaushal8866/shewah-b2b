@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { KARAT_FACTORS } from '@/lib/karat'
 import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
@@ -173,20 +174,36 @@ export default function NewInventoryItemPage() {
           </div>
         </div>
 
-        {isGold && (
-          <div className="bg-white rounded-xl border border-stone-200 p-5">
-            <h2 className="font-medium text-stone-900 mb-1">Gold specifications</h2>
-            <p className="text-xs text-stone-400 mb-4">Karat is required to update the central gold stock.</p>
-            <div>
-              <label className={lbl}>Karat</label>
-              <select className={inp} value={form.gold_karat} onChange={e => set('gold_karat', e.target.value)}>
-                <option value="gold_22k">22 Karat</option>
-                <option value="gold_18k">18 Karat</option>
-                <option value="gold_14k">14 Karat</option>
-              </select>
+        {isGold && (() => {
+          const karatNum = parseInt(form.gold_karat.replace('gold_', '').replace('k', ''))
+          const factor = KARAT_FACTORS[karatNum] || 1
+          const grossGrams = parseFloat(form.quantity_in_stock) || 0
+          const net24k = grossGrams * factor
+          return (
+            <div className="bg-white rounded-xl border border-stone-200 p-5">
+              <h2 className="font-medium text-stone-900 mb-1">Gold specifications</h2>
+              <p className="text-xs text-stone-400 mb-4">Enter the gross weight (actual grams of gold bar/chain purchased). The 24kt net weight is the pure gold content.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={lbl}>Karat</label>
+                  <select className={inp} value={form.gold_karat} onChange={e => set('gold_karat', e.target.value)}>
+                    <option value="gold_22k">22 Karat</option>
+                    <option value="gold_18k">18 Karat</option>
+                    <option value="gold_14k">14 Karat</option>
+                  </select>
+                </div>
+                {grossGrams > 0 && (
+                  <div className="flex items-end">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 w-full">
+                      <p className="text-xs text-amber-600 mb-0.5">24kt net weight</p>
+                      <p className="text-sm font-semibold text-amber-800">{net24k.toFixed(4)} g</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {isDiamonds && (
           <div className="bg-white rounded-xl border border-stone-200 p-5">
@@ -254,7 +271,7 @@ export default function NewInventoryItemPage() {
               </div>
             )}
             <div>
-              <label className={lbl}>{isDiamonds ? 'Total carats' : 'Quantity in stock'}</label>
+              <label className={lbl}>{isDiamonds ? 'Total carats' : isGold ? 'Gross weight (g)' : 'Quantity in stock'}</label>
               <input type="number" inputMode="decimal" step="0.001" className={inp}
                 value={form.quantity_in_stock} onChange={e => set('quantity_in_stock', e.target.value)} />
             </div>
