@@ -151,6 +151,20 @@ export default function OrderDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [form, setForm] = useState<any>({})
   const [guardError, setGuardError] = useState<string | null>(null)
+  // Surfaced when the admin tries to move an order into `production` and the
+  // assigned manufacturer is short on the gold/diamond float needed for it.
+  // Drives the "issue material to manufacturer" prompt modal.
+  const [materialPrompt, setMaterialPrompt] = useState<null | {
+    partnerId: string
+    goldType: string
+    goldNeeded: number
+    goldHave: number
+    goldShort: number
+    diamondType: string
+    diamondNeeded: number
+    diamondHave: number
+    diamondShort: number
+  }>(null)
 
   useEffect(() => { load() }, [id])
 
@@ -159,7 +173,7 @@ export default function OrderDetailPage() {
     const [{ data }, { data: mp }] = await Promise.all([
       supabase
         .from('orders')
-        .select('*, partners(store_name, owner_name, phone, city), products(code, name)')
+        .select('*, partners(store_name, owner_name, phone, city), products(code, name, gold_weight_g, gold_karat, diamond_weight, diamond_type)')
         .eq('id', id)
         .single(),
       supabase.from('manufacturing_partners').select('id, name, city').order('name'),
@@ -214,10 +228,73 @@ export default function OrderDetailPage() {
     return null
   }
 
-  async function advanceStage() {
+  // Reads the assigned manufacturer's live float and compares against what this
+  // order needs. Returns null when no manufacturer is assigned, or when nothing
+  // is short. Used as a soft gate before moving to `production` so the admin
+  // is reminded to issue gold/diamonds if the karigar doesn't already have
+  // enough on hand.
+  async function checkMaterialReadiness() {
+    const partnerId = order?.assigned_manufacturer_id
+    if (!partnerId) return null
+
+    const qty = parseInt(order.quantity) || 1
+    const goldKarat = order.gold_karat || order.products?.gold_karat || 18
+    const goldType = `gold_${goldKarat}k`
+    const goldPerPiece = parseFloat(order.gold_weight_estimated) || parseFloat(order.products?.gold_weight_g) || 0
+    const goldNeeded = goldPerPiece * qty
+
+    const dType = order.products?.diamond_type === 'natural' ? 'diamond_natural' : 'diamond_lgd'
+    const diamondPerPiece = parseFloat(order.products?.diamond_weight) || 0
+    const diamondNeeded = diamondPerPiece * qty
+
+    let goldHave = 0
+    let diamondHave = 0
+    try {
+      const r = await fetch(`/api/manufacturing/partners/${partnerId}/buckets`)
+      const d = await r.json()
+      const buckets = Array.isArray(d?.buckets) ? d.buckets : []
+      goldHave = Number(buckets.find((b: any) => b.material_type === goldType)?.available) || 0
+      diamondHave = Number(buckets.find((b: any) => b.material_type === dType)?.available) || 0
+    } catch (e) {
+      console.error('[checkMaterialReadiness] buckets fetch failed', e)
+    }
+
+    return {
+      partnerId,
+      goldType,
+      goldNeeded,
+      goldHave,
+      goldShort: Math.max(0, goldNeeded - goldHave),
+      diamondType: dType,
+      diamondNeeded,
+      diamondHave,
+      diamondShort: Math.max(0, diamondNeeded - diamondHave),
+    }
+  }
+
+  async function advanceStage(opts?: { skipMaterialCheck?: boolean }) {
     if (!nextStage) return
     const err = checkCompletionGuard(nextStage.value)
     if (err) { setGuardError(err); return }
+
+    // Pre-production gate: if a manufacturer is assigned and they're short on
+    // the gold/diamonds this order needs, prompt the admin to issue material
+    // (or top up the float) before flipping the order into production.
+    if (nextStage.value === 'production' && !opts?.skipMaterialCheck) {
+      if (!order.assigned_manufacturer_id) {
+        setGuardError('Assign a manufacturer first — material has to be issued to someone before production starts.')
+        return
+      }
+      setAdvancing(true)
+      const check = await checkMaterialReadiness()
+      setAdvancing(false)
+      if (check && (check.goldShort > 0 || check.diamondShort > 0)) {
+        setGuardError(null)
+        setMaterialPrompt(check)
+        return
+      }
+    }
+
     setGuardError(null)
     setAdvancing(true)
     const update: any = { status: nextStage.value }
@@ -230,6 +307,7 @@ export default function OrderDetailPage() {
     const { error } = await supabase.from('orders').update(update).eq('id', id)
     setAdvancing(false)
     if (error) { alert('Error: ' + error.message); return }
+    setMaterialPrompt(null)
     load()
   }
 
@@ -367,6 +445,72 @@ export default function OrderDetailPage() {
       </div>
 
       <OrderChangeRequestsPanel orderId={id} onApplied={load} />
+
+      {materialPrompt && (() => {
+        const fmtMat = (m: string) => m.replace(/_/g, ' ').replace(/^gold/, 'Gold').replace(/^diamond/, 'Diamond')
+        const goldUnit = 'g'
+        const diaUnit = 'ct'
+        const partner = mfgPartners.find(p => p.id === materialPrompt.partnerId)
+        const goldDeposit = `/manufacturing/partners/${materialPrompt.partnerId}/float?deposit=${materialPrompt.goldType}&amount=${materialPrompt.goldShort.toFixed(3)}`
+        const diaDeposit = `/manufacturing/partners/${materialPrompt.partnerId}/float?deposit=${materialPrompt.diamondType}&amount=${materialPrompt.diamondShort.toFixed(3)}`
+        return (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+              <div className="flex items-start gap-3 mb-3">
+                <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-stone-900">Issue material before production?</h3>
+                  <p className="text-sm text-stone-500 mt-1">
+                    {partner?.name || 'The assigned manufacturer'} doesn't have enough on hand for this order. Top up their float, then move the order to production.
+                  </p>
+                </div>
+              </div>
+              <div className="border border-stone-200 rounded-xl divide-y divide-stone-100 mb-5 text-sm">
+                {materialPrompt.goldShort > 0 && (
+                  <div className="px-4 py-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-stone-800">{fmtMat(materialPrompt.goldType)}</p>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        Need {materialPrompt.goldNeeded.toFixed(3)}{goldUnit} · have {materialPrompt.goldHave.toFixed(3)}{goldUnit}
+                      </p>
+                    </div>
+                    <Link href={goldDeposit} className="text-xs font-medium text-[#1E3A5F] bg-[#1E3A5F]/5 hover:bg-[#1E3A5F]/10 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                      Issue {materialPrompt.goldShort.toFixed(3)}{goldUnit}
+                    </Link>
+                  </div>
+                )}
+                {materialPrompt.diamondShort > 0 && (
+                  <div className="px-4 py-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-stone-800">{fmtMat(materialPrompt.diamondType)}</p>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        Need {materialPrompt.diamondNeeded.toFixed(3)}{diaUnit} · have {materialPrompt.diamondHave.toFixed(3)}{diaUnit}
+                      </p>
+                    </div>
+                    <Link href={diaDeposit} className="text-xs font-medium text-[#1E3A5F] bg-[#1E3A5F]/5 hover:bg-[#1E3A5F]/10 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                      Issue {materialPrompt.diamondShort.toFixed(3)}{diaUnit}
+                    </Link>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setMaterialPrompt(null)}
+                  className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50">
+                  Cancel
+                </button>
+                <button onClick={() => { setMaterialPrompt(null); advanceStage({ skipMaterialCheck: true }) }}
+                  disabled={advancing}
+                  className="flex-1 bg-stone-100 text-stone-700 py-2.5 rounded-xl text-sm font-medium hover:bg-stone-200 disabled:opacity-50">
+                  {advancing ? 'Moving...' : 'Move anyway'}
+                </button>
+              </div>
+              <p className="text-[11px] text-stone-400 text-center mt-3">
+                "Move anyway" assumes you'll issue material outside the system (e.g. courier with separate proof).
+              </p>
+            </div>
+          </div>
+        )
+      })()}
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

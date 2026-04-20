@@ -74,7 +74,7 @@ export async function POST(req: Request) {
   if (type === 'catalog') {
     const { data: p, error: pe } = await supabaseAdmin
       .from('products')
-      .select('id, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges, is_active')
+      .select('id, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges, diamond_cost, is_active')
       .eq('id', body.product_id)
       .maybeSingle()
     if (pe) return NextResponse.json({ error: pe.message }, { status: 500 })
@@ -133,10 +133,14 @@ export async function POST(req: Request) {
     expected_delivery: expectedDelivery,
     status: 'brief_received',
     gold_source: 'self',
+    gold_karat: productRow?.gold_karat || null,
     gold_weight_estimated: productRow?.gold_weight_g || null,
+    // Pull labour (making_charges) and diamond cost straight from the catalog
+    // so the admin's COGS view is populated the moment the portal order lands.
+    // Admin can still edit these before/at QC stage if the actual differs.
     making_charges: productRow?.making_charges || null,
     cad_cost: 0,
-    stone_cost: 0,
+    stone_cost: productRow?.diamond_cost || 0,
     internal_notes: `Placed via retailer portal by ${user.username}`,
   }
 
