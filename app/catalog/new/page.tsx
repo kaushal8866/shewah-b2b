@@ -305,7 +305,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className={lbl}>Gold weight (g)</label>
-              <input type="number" inputMode="decimal" step="0.01" className={inp} value={form.gold_weight_g} onChange={e => set('gold_weight_g', e.target.value)} placeholder="3.0" />
+              <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp} value={form.gold_weight_g} onChange={e => set('gold_weight_g', e.target.value)} placeholder="e.g. 2.8100" />
             </div>
             <div>
               <label className={lbl}>Making charges (₹)</label>

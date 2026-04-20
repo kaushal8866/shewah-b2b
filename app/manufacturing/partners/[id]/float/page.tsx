@@ -261,7 +261,7 @@ function MaterialFloatInner() {
             <label className={lbl}>
               Quantity ({MATERIAL_TYPES.find(m => m.value === form.material_type)?.unit})
             </label>
-            <input type="number" step="0.001" className={inp}
+            <input type="number" inputMode="decimal" step="0.0001" className={inp}
               value={form.quantity} onChange={e => { set('quantity', e.target.value); setPendingNegative(false) }}
               placeholder={activeTab === 'deposit' ? 'e.g. 10' : activeTab === 'adjust' ? 'e.g. -0.2 to reduce, 0.5 to add' : 'Quantity'} />
           </div>

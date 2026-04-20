@@ -466,7 +466,7 @@ function NewMfgOrderForm() {
               </div>
               <div>
                 <label className={lbl}>Gold weight needed (g)</label>
-                <input type="number" inputMode="decimal" step="0.01" className={inp} value={form.gold_weight_required} onChange={e => set('gold_weight_required', e.target.value)} placeholder="e.g. 3.5" />
+                <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp} value={form.gold_weight_required} onChange={e => set('gold_weight_required', e.target.value)} placeholder="e.g. 3.5000" />
               </div>
               <div>
                 <label className={lbl}>Diamond weight (ct)</label>
@@ -491,7 +491,7 @@ function NewMfgOrderForm() {
               </div>
               <div>
                 <label className={lbl}>Actual gold weight (g)</label>
-                <input type="number" inputMode="decimal" step="0.01" className={inp} value={form.gold_weight_actual} onChange={e => set('gold_weight_actual', e.target.value)} placeholder="Fill after making" />
+                <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp} value={form.gold_weight_actual} onChange={e => set('gold_weight_actual', e.target.value)} placeholder="Fill after making" />
                 <p className="text-xs text-stone-400 mt-1">Min 1g rule applies</p>
               </div>
               <div>

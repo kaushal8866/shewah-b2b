@@ -660,12 +660,12 @@ export default function OrderDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Gold weight estimated (g)</label>
-                <input type="number" inputMode="decimal" step="0.01" className={inp}
+                <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
                   value={form.gold_weight_estimated || ''} onChange={e => set('gold_weight_estimated', e.target.value)} />
               </div>
               <div>
                 <label className={lbl}>Gold weight actual (g)</label>
-                <input type="number" inputMode="decimal" step="0.01" className={inp}
+                <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
                   value={form.gold_weight_actual || ''} onChange={e => set('gold_weight_actual', e.target.value)} />
               </div>
               <div>

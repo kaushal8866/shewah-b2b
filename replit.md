@@ -29,6 +29,7 @@ Key architectural features include:
 ## Operations
 
 - **Upload error retention**: The `upload_errors` table is trimmed by the `app/api/cron/cleanup-upload-errors` route, which deletes rows older than 90 days. Trigger it on a schedule (e.g. daily) with a `Bearer ${CRON_SECRET}` `Authorization` header, or manually as a master user. The Settings page only surfaces the most recent 100 rows, so older entries are not needed for live diagnosis.
+- **Decimal precision for gold/diamond weights**: All weight columns (`products.gold_weight_g`, `orders.gold_weight_estimated/actual`, `manufacturing_orders.gold_weight_required/actual`, `material_transactions.quantity`, `material_float.current_quantity/reserved_quantity`, and matching `diamond_weight` columns) must be `numeric` so jewellers can record up to 4+ decimal places at every stage. If the live DB drifted and any of these are `integer`, run `scripts/migrate_task67_decimal_gold_weights.sql` in the Supabase SQL Editor — it inspects each column and only ALTERs the ones that aren't already `numeric`, so it is idempotent and safe to re-run. All gold-weight inputs in the admin UI use `step="0.0001"`.
 
 ## External Dependencies
 

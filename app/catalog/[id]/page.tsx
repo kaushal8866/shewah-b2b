@@ -263,7 +263,7 @@ export default function CatalogProductEditPage() {
           <h2 className="font-medium text-stone-900 mb-4">Gold specifications</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div><label className={lbl}>Gold karat</label><select className={inp} value={form.gold_karat} onChange={e => set('gold_karat', e.target.value)}>{KARATS.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}</select></div>
-            <div><label className={lbl}>Gold weight (g)</label><input type="number" inputMode="decimal" step="0.01" className={inp} value={form.gold_weight_g} onChange={e => set('gold_weight_g', e.target.value)} /></div>
+            <div><label className={lbl}>Gold weight (g)</label><input type="number" inputMode="decimal" step="0.0001" min="0" className={inp} value={form.gold_weight_g} onChange={e => set('gold_weight_g', e.target.value)} /></div>
             <div><label className={lbl}>Making charges (₹)</label><input type="number" inputMode="decimal" className={inp} value={form.making_charges} onChange={e => set('making_charges', e.target.value)} /></div>
             <div><label className={lbl}>IGI cert cost (₹)</label><input type="number" inputMode="decimal" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} /></div>
           </div>

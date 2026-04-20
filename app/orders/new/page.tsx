@@ -253,7 +253,7 @@ function NewOrderForm() {
             </div>
             <div>
               <label className={label}>Estimated gold weight (g)</label>
-              <input type="number" inputMode="decimal" step="0.01" className={input}
+              <input type="number" inputMode="decimal" step="0.0001" min="0" className={input}
                 value={form.gold_weight_estimated} onChange={e => set('gold_weight_estimated', e.target.value)} />
             </div>
             <div>
