@@ -189,7 +189,22 @@ export default function OrderDetailPage() {
   const nextStage = currentStageIdx < ORDER_STATUSES.length - 1 ? ORDER_STATUSES[currentStageIdx + 1] : null
 
   // Integrity rule check — returns null when OK, otherwise an error message.
+  // For "dispatched" we also enforce a tracking number + courier so the
+  // automatic WhatsApp dispatch ping to the retailer (fired in
+  // lib/whatsappNotify.ts) always carries the shipment reference.
   function checkCompletionGuard(targetStatus: string): string | null {
+    if (targetStatus === 'dispatched' || targetStatus === 'delivered') {
+      // Prefer the in-flight form values when the editor is open so the
+      // admin can fill tracking + advance in one save.
+      const tracking = (editing ? form.tracking_number : order?.tracking_number) || ''
+      const courier = (editing ? form.courier : order?.courier) || ''
+      if (!tracking.toString().trim()) {
+        return 'Add a tracking number before dispatching — the retailer is auto-notified on WhatsApp with this reference.'
+      }
+      if (!courier.toString().trim()) {
+        return 'Add the courier name before dispatching — it appears in the retailer WhatsApp message.'
+      }
+    }
     if (!STAGES_REQUIRING_ACTUALS.has(targetStatus)) return null
     if (!order?.gold_weight_actual) return 'Gold weight (actual) must be filled before this stage.'
     if (!order?.making_charges) return 'Making charges must be filled before this stage.'
