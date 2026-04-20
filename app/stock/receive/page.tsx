@@ -26,6 +26,8 @@ export default function StockReceivePage() {
   const router = useRouter()
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
   const [partners, setPartners] = useState<{ id: string; name: string }[]>([])
+  const [shapes, setShapes] = useState<{ id: string; name: string; active: boolean }[]>([])
+  const [sizes, setSizes] = useState<{ id: string; shape_id: string; label: string; active: boolean }[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -39,20 +41,30 @@ export default function StockReceivePage() {
     reference: '',
     notes: '',
     movement_date: new Date().toISOString().split('T')[0],
+    diamond_shape_id: '',
+    diamond_size_id: '',
+    pieces: '',
   })
 
   useEffect(() => {
     Promise.all([
       supabase.from('vendors').select('id, name').order('name'),
       supabase.from('manufacturing_partners').select('id, name').eq('active', true).order('name'),
-    ]).then(([v, p]) => {
+      fetch('/api/diamonds/shapes').then(r => r.json()),
+      fetch('/api/diamonds/sizes').then(r => r.json()),
+    ]).then(([v, p, sh, sz]: any[]) => {
       setVendors(v.data || [])
       setPartners(p.data || [])
+      setShapes(sh.shapes || [])
+      setSizes(sz.sizes || [])
     })
   }, [])
 
   function set<K extends keyof typeof form>(k: K, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
   const mat = MATERIALS.find(m => m.value === form.material_type)
+  const isDiamond = form.material_type.startsWith('diamond')
+  const activeShapes = shapes.filter(s => s.active || s.id === form.diamond_shape_id)
+  const activeSizes = sizes.filter(z => z.shape_id === form.diamond_shape_id && (z.active || z.id === form.diamond_size_id))
 
   async function handleSave() {
     setError('')
@@ -61,6 +73,12 @@ export default function StockReceivePage() {
     if (form.from === 'vendor' && !form.vendor_id) { setError('Pick a vendor.'); return }
     if (form.from === 'partner' && !form.manufacturing_partner_id) { setError('Pick a karigar.'); return }
     if (form.material_type === 'finding' && !form.item_label.trim()) { setError('Findings need a name.'); return }
+    if (isDiamond) {
+      if (!form.diamond_shape_id) { setError('Pick a diamond shape from the catalog.'); return }
+      if (!form.diamond_size_id)  { setError('Pick a diamond size from the catalog.'); return }
+      const pcs = parseInt(form.pieces)
+      if (!pcs || pcs <= 0) { setError('Enter the number of pieces.'); return }
+    }
 
     setSaving(true)
     try {
@@ -71,6 +89,9 @@ export default function StockReceivePage() {
           ...form,
           quantity: qty,
           item_label: form.material_type === 'finding' ? form.item_label.trim() : null,
+          diamond_shape_id: isDiamond ? form.diamond_shape_id : null,
+          diamond_size_id: isDiamond ? form.diamond_size_id : null,
+          pieces: isDiamond ? parseInt(form.pieces) : null,
         }),
       })
       const d = await r.json()
@@ -147,6 +168,36 @@ export default function StockReceivePage() {
               <input className={inp} value={form.item_label}
                 onChange={e => set('item_label', e.target.value)}
                 placeholder="e.g. Screw back 18K Y" />
+            </div>
+          )}
+
+          {isDiamond && (
+            <div className="grid grid-cols-3 gap-3 bg-stone-50 border border-stone-100 rounded-lg p-3">
+              <div>
+                <label className={lbl}>Shape *</label>
+                <select className={inp} value={form.diamond_shape_id}
+                  onChange={e => { set('diamond_shape_id', e.target.value); set('diamond_size_id', '') }}>
+                  <option value="">Select...</option>
+                  {activeShapes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>Size *</label>
+                <select className={inp} value={form.diamond_size_id}
+                  disabled={!form.diamond_shape_id}
+                  onChange={e => set('diamond_size_id', e.target.value)}>
+                  <option value="">{form.diamond_shape_id ? 'Select...' : 'Pick shape first'}</option>
+                  {activeSizes.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>Pieces *</label>
+                <input type="number" inputMode="numeric" min="1" className={inp}
+                  value={form.pieces} onChange={e => set('pieces', e.target.value)} />
+              </div>
+              <p className="col-span-3 text-[11px] text-stone-400">
+                Manage shapes & sizes in <Link href="/diamonds" className="underline">Diamond catalog</Link>.
+              </p>
             </div>
           )}
 

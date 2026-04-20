@@ -20,6 +20,9 @@ function StockIssueInner() {
   const sp = useSearchParams()
   const [partners, setPartners] = useState<{ id: string; name: string }[]>([])
   const [balances, setBalances] = useState<{ material_type: string; item_label: string; balance: number; unit: string }[]>([])
+  const [shapes, setShapes] = useState<{ id: string; name: string; active: boolean }[]>([])
+  const [sizes, setSizes] = useState<{ id: string; shape_id: string; label: string; active: boolean }[]>([])
+  const [groups, setGroups] = useState<{ diamond_shape_id: string | null; diamond_size_id: string | null; material_type: string; carats: number; pieces: number }[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [allowNegative, setAllowNegative] = useState(false)
@@ -32,6 +35,9 @@ function StockIssueInner() {
     reference: '',
     notes: '',
     movement_date: new Date().toISOString().split('T')[0],
+    diamond_shape_id: '',
+    diamond_size_id: '',
+    pieces: '',
   })
 
   useEffect(() => {
@@ -39,17 +45,36 @@ function StockIssueInner() {
       .select('id, name').eq('active', true).order('name')
       .then(({ data }) => setPartners(data || []))
     fetch('/api/stock/balances').then(r => r.json()).then(d => setBalances(d.balances || []))
+    fetch('/api/diamonds/shapes').then(r => r.json()).then(d => setShapes(d.shapes || []))
+    fetch('/api/diamonds/sizes').then(r => r.json()).then(d => setSizes(d.sizes || []))
+    fetch('/api/diamonds/stock').then(r => r.json()).then(d => setGroups(d.groups || []))
   }, [])
 
   function set<K extends keyof typeof form>(k: K, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
 
   const mat = MATERIALS.find(m => m.value === form.material_type)
-  const onHand = balances.find(b =>
-    b.material_type === form.material_type &&
-    (b.item_label || '') === (form.item_label || ''),
-  )?.balance || 0
+  const isDiamond = form.material_type.startsWith('diamond')
+  const activeShapes = shapes.filter(s => s.active || s.id === form.diamond_shape_id)
+  const activeSizes = sizes.filter(z => z.shape_id === form.diamond_shape_id && (z.active || z.id === form.diamond_size_id))
+  // For diamonds the on-hand is read from the shape×size group view so the
+  // shortage warning matches what the dashboard shows. For gold/findings
+  // it stays on the flat balances feed.
   const wantQty = parseFloat(form.quantity) || 0
+  const wantPieces = parseInt(form.pieces) || 0
+  const diamondGroup = isDiamond
+    ? groups.find(g => g.material_type === form.material_type
+        && g.diamond_shape_id === form.diamond_shape_id
+        && g.diamond_size_id === form.diamond_size_id)
+    : null
+  const onHand = isDiamond
+    ? (diamondGroup?.carats || 0)
+    : (balances.find(b =>
+        b.material_type === form.material_type &&
+        (b.item_label || '') === (form.item_label || ''),
+      )?.balance || 0)
+  const onHandPieces = diamondGroup?.pieces || 0
   const shortfall = wantQty > onHand ? wantQty - onHand : 0
+  const piecesShort = isDiamond && wantPieces > onHandPieces
 
   async function handleSave() {
     setError('')
@@ -58,8 +83,16 @@ function StockIssueInner() {
     if (form.material_type === 'finding' && !form.item_label.trim()) {
       setError('Findings need a name (e.g. "Screw back 18K Y").'); return
     }
-    if (shortfall > 0 && !allowNegative) {
-      setError(`Only ${onHand} ${mat?.unit || ''} on hand. Tick "Override" to issue anyway, or record a purchase first.`)
+    if (isDiamond) {
+      if (!form.diamond_shape_id) { setError('Pick a diamond shape from the catalog.'); return }
+      if (!form.diamond_size_id)  { setError('Pick a diamond size from the catalog.'); return }
+      if (!wantPieces) { setError('Enter the number of pieces being issued.'); return }
+    }
+    if ((shortfall > 0 || piecesShort) && !allowNegative) {
+      const carPart = shortfall > 0 ? `Only ${onHand} ${mat?.unit || ''} on hand` : ''
+      const piecePart = piecesShort ? `only ${onHandPieces} pcs available` : ''
+      const both = [carPart, piecePart].filter(Boolean).join(', ')
+      setError(`${both}. Tick "Override" to issue anyway, or record a purchase first.`)
       return
     }
     setSaving(true)
@@ -72,6 +105,9 @@ function StockIssueInner() {
           quantity: wantQty,
           item_label: form.material_type === 'finding' ? form.item_label.trim() : null,
           allow_negative_central: allowNegative,
+          diamond_shape_id: isDiamond ? form.diamond_shape_id : null,
+          diamond_size_id: isDiamond ? form.diamond_size_id : null,
+          pieces: isDiamond ? wantPieces : null,
         }),
       })
       const d = await r.json()
@@ -132,12 +168,41 @@ function StockIssueInner() {
             </div>
           )}
 
-          <div className={`rounded-lg p-3 text-sm ${shortfall > 0 ? 'bg-amber-50 border border-amber-200' : 'bg-stone-50'}`}>
+          {isDiamond && (
+            <div className="grid grid-cols-3 gap-3 bg-stone-50 border border-stone-100 rounded-lg p-3">
+              <div>
+                <label className={lbl}>Shape *</label>
+                <select className={inp} value={form.diamond_shape_id}
+                  onChange={e => { set('diamond_shape_id', e.target.value); set('diamond_size_id', '') }}>
+                  <option value="">Select...</option>
+                  {activeShapes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>Size *</label>
+                <select className={inp} value={form.diamond_size_id}
+                  disabled={!form.diamond_shape_id}
+                  onChange={e => set('diamond_size_id', e.target.value)}>
+                  <option value="">{form.diamond_shape_id ? 'Select...' : 'Pick shape first'}</option>
+                  {activeSizes.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>Pieces *</label>
+                <input type="number" inputMode="numeric" min="1" className={inp}
+                  value={form.pieces} onChange={e => set('pieces', e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          <div className={`rounded-lg p-3 text-sm ${(shortfall > 0 || piecesShort) ? 'bg-amber-50 border border-amber-200' : 'bg-stone-50'}`}>
             <p className="text-stone-700">
               On hand: <span className="font-semibold">{onHand} {mat?.unit}</span>
+              {isDiamond && <> · <span className="font-semibold">{onHandPieces} pcs</span></>}
               {wantQty > 0 && <> · After issue: <span className={`font-semibold ${shortfall > 0 ? 'text-red-600' : 'text-emerald-700'}`}>{(onHand - wantQty).toFixed(4)} {mat?.unit}</span></>}
+              {isDiamond && wantPieces > 0 && <> · <span className={`font-semibold ${piecesShort ? 'text-red-600' : 'text-emerald-700'}`}>{onHandPieces - wantPieces} pcs left</span></>}
             </p>
-            {shortfall > 0 && (
+            {(shortfall > 0 || piecesShort) && (
               <label className="flex items-start gap-2 mt-2 text-xs text-amber-800">
                 <input type="checkbox" checked={allowNegative} onChange={e => setAllowNegative(e.target.checked)} className="mt-0.5" />
                 <span>Override — issue anyway and let the central balance go negative (record a purchase to clear it).</span>

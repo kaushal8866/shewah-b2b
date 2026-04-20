@@ -16,6 +16,7 @@ export async function POST(req: Request) {
   const {
     material_type, item_label, quantity, manufacturing_partner_id,
     rate_per_unit, reference, notes, movement_date, allow_negative_central,
+    diamond_shape_id, diamond_size_id, pieces,
   } = body || {}
 
   if (!material_type || !manufacturing_partner_id || !quantity) {
@@ -27,6 +28,18 @@ export async function POST(req: Request) {
   const qty = Number(quantity)
   if (!Number.isFinite(qty) || qty <= 0) {
     return NextResponse.json({ error: 'quantity must be a positive number' }, { status: 400 })
+  }
+
+  const isDiamond = String(material_type).startsWith('diamond')
+  let normalizedPieces: number | null = null
+  if (isDiamond) {
+    if (!diamond_shape_id) return NextResponse.json({ error: 'diamond_shape_id is required for diamond issues' }, { status: 400 })
+    if (!diamond_size_id)  return NextResponse.json({ error: 'diamond_size_id is required for diamond issues' }, { status: 400 })
+    const p = Number(pieces)
+    if (!Number.isInteger(p) || p <= 0) {
+      return NextResponse.json({ error: 'pieces must be a positive whole number for diamond issues' }, { status: 400 })
+    }
+    normalizedPieces = p
   }
 
   try {
@@ -41,6 +54,9 @@ export async function POST(req: Request) {
       movement_date: movement_date || null,
       allow_negative_central: !!allow_negative_central,
       created_by: (session.user as any)?.id || null,
+      diamond_shape_id: isDiamond ? diamond_shape_id : null,
+      diamond_size_id: isDiamond ? diamond_size_id : null,
+      pieces: normalizedPieces,
     })
     return NextResponse.json({ movement: row })
   } catch (e: any) {

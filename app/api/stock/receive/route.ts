@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     from, material_type, item_label, quantity,
     vendor_id, manufacturing_partner_id,
     reference, notes, movement_date,
+    diamond_shape_id, diamond_size_id, pieces,
   } = body || {}
 
   if (!from || !material_type || !quantity) {
@@ -35,6 +36,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'quantity must be a positive number' }, { status: 400 })
   }
 
+  // Diamond rows must always carry shape, size, and pieces — the catalog &
+  // shortage alerts depend on it. Reject anything else server-side.
+  const isDiamond = String(material_type).startsWith('diamond')
+  let normalizedPieces: number | null = null
+  if (isDiamond) {
+    if (!diamond_shape_id) return NextResponse.json({ error: 'diamond_shape_id is required for diamond receipts' }, { status: 400 })
+    if (!diamond_size_id)  return NextResponse.json({ error: 'diamond_size_id is required for diamond receipts' }, { status: 400 })
+    const p = Number(pieces)
+    if (!Number.isInteger(p) || p <= 0) {
+      return NextResponse.json({ error: 'pieces must be a positive whole number for diamond receipts' }, { status: 400 })
+    }
+    normalizedPieces = p
+  } else if (pieces != null && pieces !== '') {
+    // Non-diamond rows shouldn't carry pieces — drop silently rather than
+    // letting a stray UI value land in the ledger.
+    normalizedPieces = null
+  }
+
   const created_by = (session.user as any)?.id || null
   const common = {
     material_type: material_type as MaterialType,
@@ -44,6 +63,9 @@ export async function POST(req: Request) {
     notes: notes || null,
     movement_date: movement_date || null,
     created_by,
+    diamond_shape_id: isDiamond ? diamond_shape_id : null,
+    diamond_size_id: isDiamond ? diamond_size_id : null,
+    pieces: normalizedPieces,
   }
 
   try {
