@@ -143,6 +143,15 @@ export default function ManufacturingOrderDetailPage() {
     const prevStatus: string | undefined = order?.status
     const newStatus: string = form.status
 
+    // Guided cancellation only — these statuses must come from the cancel
+    // modal so float settlement, reassignment, or Ready-to-Ship intake can
+    // happen atomically.
+    if ((newStatus === 'cancelled' || newStatus === 'received_after_cancel') && newStatus !== prevStatus) {
+      alert('Use the Cancel button at the top to cancel or receive this order — direct status edit is not allowed for these states.')
+      setSaving(false)
+      return
+    }
+
     const { error } = await supabase.from('manufacturing_orders').update({
       status: form.status,
       description: form.description,
@@ -541,7 +550,7 @@ export default function ManufacturingOrderDetailPage() {
               <div className="sm:col-span-2">
                 <label className={lbl}>Status</label>
                 <select className={inp} value={form.status || ''} onChange={e => set('status', e.target.value)}>
-                  {MFG_STATUSES.map(s => (
+                  {MFG_STATUSES.filter(s => s === form.status || (s !== 'cancelled' && s !== 'received_after_cancel')).map(s => (
                     <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
                   ))}
                 </select>

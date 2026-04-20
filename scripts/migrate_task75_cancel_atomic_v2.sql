@@ -237,6 +237,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS rts_one_per_mfg_order
   ON ready_to_ship_items(source_mfg_order_id)
   WHERE source_mfg_order_id IS NOT NULL;
 
+-- At most one open (pending or countered) offer per (item, retailer). The
+-- application path withdraws prior open offers before inserting a new one;
+-- this index hardens the invariant against concurrent submissions.
+CREATE UNIQUE INDEX IF NOT EXISTS rts_offers_one_open_per_partner
+  ON ready_to_ship_offers(item_id, partner_id)
+  WHERE status IN ('pending', 'countered');
+
 -- ---------------------------- accept offer with full sibling closure (v2)
 DROP FUNCTION IF EXISTS accept_ready_to_ship_offer(uuid, uuid, uuid);
 CREATE FUNCTION accept_ready_to_ship_offer(
