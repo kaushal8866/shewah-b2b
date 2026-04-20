@@ -28,5 +28,19 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  return NextResponse.json({ product: data })
+
+  // Strip internal cost components from karat_pricing before sending to the
+  // retailer. Only karat / weight / trade / mrp are part of the public contract.
+  type FullPricingRow = { karat: number; weight: number; trade: number; mrp: number; goldCost?: number; labourCost?: number; cogs?: number }
+  type PublicPricingRow = { karat: number; weight: number; trade: number; mrp: number }
+  const raw = (data as { karat_pricing?: Record<string, FullPricingRow> | null }).karat_pricing
+  let publicPricing: Record<string, PublicPricingRow> | null = null
+  if (raw && typeof raw === 'object') {
+    publicPricing = {}
+    for (const [k, row] of Object.entries(raw)) {
+      if (!row) continue
+      publicPricing[k] = { karat: row.karat, weight: row.weight, trade: row.trade, mrp: row.mrp }
+    }
+  }
+  return NextResponse.json({ product: { ...data, karat_pricing: publicPricing } })
 }

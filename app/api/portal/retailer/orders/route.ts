@@ -116,10 +116,12 @@ export async function POST(req: Request) {
   }
 
   // Resolve the per-karat trade price + gross weight from the cached pricing.
-  const karatPricing: any = productRow?.karat_pricing || null
+  type KaratPricingRow = { karat: number; weight: number; trade: number; mrp: number }
+  const karatPricing: Record<string, KaratPricingRow> | null = productRow?.karat_pricing || null
   const karatRow = karatPricing ? karatPricing[String(selectedKarat)] : null
+  const weightCol = `gold_weight_${selectedKarat}k` as const
   const grossWeight: number = karatRow?.weight
-    || Number(productRow?.[`gold_weight_${selectedKarat}k`])
+    || Number(productRow?.[weightCol])
     || Number(productRow?.gold_weight_g)
     || 0
   const pure24kt = grossWeight * (KARAT_FACTORS[selectedKarat] || 0)

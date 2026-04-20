@@ -41,18 +41,16 @@ export async function GET() {
   // "Starts from ₹X (9kt)" without re-deriving on the client.
   type StartsFrom = { karat: number; trade: number }
   const rows: ProductListRow[] = (data || []) as ProductListRow[]
-  // The "Starts from ₹X (Ykt)" UX is meant to lead with the lowest karat the
-  // SKU is sold in (9kt for most pieces). Walk SELLABLE_KARATS bottom-up so
-  // the label is deterministic — falling through to higher karats only when a
-  // labour rate is missing and that karat has no priced row.
+  // Find the truly cheapest karat row (lowest trade price). For typical labour
+  // configurations this is 9kt, but we never assume — labour rates can invert
+  // the ordering and the UX promises "starts from the cheapest option."
   const products = rows.map((p) => {
     const kp = p.karat_pricing || {}
     let pick: StartsFrom | null = null
-    for (const k of [...SELLABLE_KARATS].sort((a, b) => a - b)) {
+    for (const k of SELLABLE_KARATS) {
       const row = kp[String(k)]
-      if (row && row.trade > 0) {
+      if (row && row.trade > 0 && (pick === null || row.trade < pick.trade)) {
         pick = { karat: row.karat, trade: row.trade }
-        break
       }
     }
     // Legacy fallback: pre-migration products that have not been re-priced yet
@@ -60,7 +58,11 @@ export async function GET() {
     if (!pick && p.trade_price) {
       pick = { karat: p.gold_karat || 22, trade: Number(p.trade_price) }
     }
-    return { ...p, starts_from: pick }
+    // Strip the cached karat_pricing entirely from the public payload — it
+    // includes internal cost components (cogs/goldCost/labourCost) that
+    // retailers must never see.
+    const { karat_pricing: _hidden, ...safe } = p
+    return { ...safe, starts_from: pick }
   })
   return NextResponse.json({ products })
 }
