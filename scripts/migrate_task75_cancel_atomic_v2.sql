@@ -167,7 +167,9 @@ BEGIN
   IF v_status IS NULL THEN
     RAISE EXCEPTION 'Manufacturing order not found';
   END IF;
-  IF v_status IN ('cancelled', 'returned', 'received_after_cancel', 'completed') THEN
+  -- Allow any non-terminal status PLUS 'completed' (the Karigar finished it
+  -- but the customer never received it). Reject only truly terminal states.
+  IF v_status IN ('cancelled', 'returned', 'received_after_cancel') THEN
     RAISE EXCEPTION 'Cannot receive an order in status %', v_status;
   END IF;
 
@@ -184,6 +186,9 @@ BEGIN
   IF v_karat IS NULL THEN v_karat := 22; END IF;
   v_actual_gross := p_actual_pure / p_karat_factor;
 
+  -- Settle the consumption row whether it's still pending (issued/in-making)
+  -- or already final (order had been marked completed). Either way the row
+  -- now reflects the real gross used.
   UPDATE material_transactions
      SET quantity  = v_actual_gross,
          lifecycle = 'final',
@@ -192,7 +197,7 @@ BEGIN
                  to_char(p_actual_pure,  'FM999990.0000') || 'g 24kt-pure)'
    WHERE manufacturing_order_id = p_order_id
      AND transaction_type       = 'consumption'
-     AND lifecycle              = 'pending';
+     AND lifecycle IN ('pending', 'final');
 
   UPDATE manufacturing_orders
      SET status              = 'received_after_cancel',

@@ -33,13 +33,17 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
   const itemId = ctx.params.id
 
   if (body.decision === 'reject') {
-    const { error } = await supabaseAdmin
+    const { data: updated, error } = await supabaseAdmin
       .from('ready_to_ship_offers')
       .update({ status: 'rejected', decided_at: new Date().toISOString(), decided_by: user.id || null })
       .eq('id', body.offer_id)
       .eq('item_id', itemId)
       .in('status', ['pending', 'countered'])
+      .select('id')
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!updated || updated.length === 0) {
+      return NextResponse.json({ error: 'Offer is no longer open or does not match this item' }, { status: 409 })
+    }
     await notifyRetailerOfferDecision({ offerId: body.offer_id, decision: 'rejected' })
     return NextResponse.json({ ok: true })
   }
@@ -47,7 +51,7 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
   if (body.decision === 'counter') {
     const counter = Number(body.counter_price)
     if (!counter || counter <= 0) return NextResponse.json({ error: 'counter_price required' }, { status: 400 })
-    const { error } = await supabaseAdmin
+    const { data: updated, error } = await supabaseAdmin
       .from('ready_to_ship_offers')
       .update({
         status: 'countered',
@@ -59,7 +63,11 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
       .eq('id', body.offer_id)
       .eq('item_id', itemId)
       .in('status', ['pending', 'countered'])
+      .select('id')
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!updated || updated.length === 0) {
+      return NextResponse.json({ error: 'Offer is no longer open or does not match this item' }, { status: 409 })
+    }
     await notifyRetailerOfferDecision({ offerId: body.offer_id, decision: 'countered' })
     return NextResponse.json({ ok: true })
   }
