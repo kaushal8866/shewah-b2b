@@ -5,12 +5,15 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Package, Truck, Clock, FileText, Calendar, CheckCircle2, Circle, Sparkles, X, Edit3, AlertCircle } from 'lucide-react'
 
+// Stage values must match the admin pipeline in `lib/supabase.ts:ORDER_STATUSES`
+// — the DB stores e.g. `production` (not `in_production`). If these drift the
+// progress list silently breaks (findIndex returns -1 → nothing lights up).
 const PIPELINE = [
   { value: 'brief_received', label: 'Brief received' },
   { value: 'cad_in_progress', label: 'CAD in progress' },
   { value: 'cad_sent', label: 'CAD shared with you' },
   { value: 'design_approved', label: 'Design approved' },
-  { value: 'in_production', label: 'In production' },
+  { value: 'production', label: 'In production' },
   { value: 'qc', label: 'Quality check' },
   { value: 'dispatched', label: 'Dispatched' },
   { value: 'delivered', label: 'Delivered' },
@@ -22,7 +25,7 @@ const STATUS_STYLES: Record<string, string> = {
   cad_sent: 'bg-purple-100 text-purple-700',
   cad_approved: 'bg-purple-100 text-purple-700',
   design_approved: 'bg-purple-100 text-purple-700',
-  in_production: 'bg-amber-100 text-amber-700',
+  production: 'bg-amber-100 text-amber-700',
   qc: 'bg-amber-100 text-amber-700',
   dispatched: 'bg-indigo-100 text-indigo-700',
   delivered: 'bg-green-100 text-green-700',
