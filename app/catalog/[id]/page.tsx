@@ -287,7 +287,7 @@ export default function CatalogProductEditPage() {
                 ))}
               </div>
               <div className="bg-amber-50 border-t border-amber-100 px-3 py-2 text-xs text-amber-700 text-center">
-                24kt-pure mass: <strong>{(weight22 * 0.916).toFixed(4)} g</strong>
+                24kt-pure mass: <strong>{(weight22 * KARAT_FACTORS[22]).toFixed(4)} g</strong>
               </div>
             </div>
           )}

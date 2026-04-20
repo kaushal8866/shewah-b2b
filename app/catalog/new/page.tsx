@@ -25,11 +25,11 @@ const QUALITIES = ['IF','VVS1','VVS2','VS1','VS2','SI1','SI2']
 const COLORS = ['D','E','F','G','H','I','J']
 const ROLES = ['center','side','accent','other']
 const KARATS = [
-  { value: '9',  label: '9K  (37.5%)', purity: 0.375 },
-  { value: '10', label: '10K (41.7%)', purity: 0.417 },
-  { value: '14', label: '14K (58.5%)', purity: 0.585 },
-  { value: '18', label: '18K (75.0%)', purity: 0.750 },
-  { value: '22', label: '22K (91.6%)', purity: 0.916 },
+  { value: '9',  label: '9K  (38%)',   purity: KARAT_FACTORS[9]  },
+  { value: '10', label: '10K (42%)',   purity: KARAT_FACTORS[10] },
+  { value: '14', label: '14K (60%)',   purity: KARAT_FACTORS[14] },
+  { value: '18', label: '18K (75%)',   purity: KARAT_FACTORS[18] },
+  { value: '22', label: '22K (91.6%)', purity: KARAT_FACTORS[22] },
 ]
 
 function newDiamondRow(): DiamondRow {
@@ -345,7 +345,7 @@ export default function NewProductPage() {
                 ))}
               </div>
               <div className="bg-amber-50 border-t border-amber-100 px-3 py-2 text-xs text-amber-700 text-center">
-                24kt-pure mass: <strong>{(weight22 * 0.916).toFixed(4)} g</strong> — constant across every karat.
+                24kt-pure mass: <strong>{(weight22 * KARAT_FACTORS[22]).toFixed(4)} g</strong> — constant across every karat.
               </div>
             </div>
           )}

@@ -110,7 +110,7 @@ export default function GoldRatesPage() {
   )
 
   const goldCost = latest
-    ? parseFloat(calcGoldWeight) * latest.rate_24k * ({ 14: 0.585, 18: 0.750, 22: 0.916, 24: 1 }[parseInt(calcGoldKarat)] || 0.75)
+    ? parseFloat(calcGoldWeight) * latest.rate_24k * ((KARAT_FACTORS as Record<number, number>)[parseInt(calcGoldKarat)] || KARAT_FACTORS[18])
     : 0
 
   const cogs = (parseFloat(calcDiamond) || 0) + goldCost + (parseFloat(calcMaking) || 0) + (parseFloat(calcIGI) || 0)

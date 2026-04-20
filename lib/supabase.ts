@@ -322,11 +322,12 @@ export type Circuit = {
 // ── Helper functions ──────────────────────────────────────
 
 export function calculateGoldRates(rate24k: number) {
+  // Single source of truth — KARAT_FACTORS from lib/karat.ts.
   return {
     rate_24k: rate24k,
-    rate_22k: Math.round(rate24k * 0.916),
-    rate_18k: Math.round(rate24k * 0.750),
-    rate_14k: Math.round(rate24k * 0.585),
+    rate_22k: Math.round(rate24k * KARAT_FACTORS[22]),
+    rate_18k: Math.round(rate24k * KARAT_FACTORS[18]),
+    rate_14k: Math.round(rate24k * KARAT_FACTORS[14]),
   }
 }
 
@@ -339,8 +340,8 @@ export function calculateTradePrice(
   igiCost: number,
   marginMultiplier = 1.28
 ) {
-  const karatMultipliers: Record<number, number> = { 24: 1, 22: 0.916, 18: 0.750, 14: 0.585 }
-  const goldCost = goldWeightG * goldRatePerGram * (karatMultipliers[goldKarat] || 0.75)
+  const mult = (KARAT_FACTORS as Record<number, number>)[goldKarat] || KARAT_FACTORS[18]
+  const goldCost = goldWeightG * goldRatePerGram * mult
   const cogs = diamondCost + goldCost + makingCharges + igiCost
   return Math.round(cogs * marginMultiplier)
 }
@@ -358,11 +359,10 @@ export function computeOrderCogs(opts: {
   total_amount?: number | null
   trade_price?: number | null
 }) {
-  const karatMultipliers: Record<number, number> = { 24: 1, 22: 0.916, 18: 0.750, 14: 0.585, 10: 0.417, 9: 0.375 }
   const w = Number(opts.gold_weight_actual) || 0
   const rate = Number(opts.gold_rate_at_order) || 0
   const karat = Number(opts.gold_karat) || 18
-  const mult = karatMultipliers[karat] ?? 0.75
+  const mult = (KARAT_FACTORS as Record<number, number>)[karat] ?? KARAT_FACTORS[18]
   const goldCost = w * rate * mult
   const total_cogs = goldCost
     + (Number(opts.making_charges) || 0)

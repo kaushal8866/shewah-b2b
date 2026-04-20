@@ -301,8 +301,8 @@ export default function SettingsPage() {
             <p className="text-xs text-stone-400 mb-4">Used to calculate gold cost per gram for each karat from the 24K base rate.</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { key: 'gold_markup_14k', label: '14K multiplier', default: '0.585' },
-                { key: 'gold_markup_18k', label: '18K multiplier', default: '0.750' },
+                { key: 'gold_markup_14k', label: '14K multiplier', default: '0.60' },
+                { key: 'gold_markup_18k', label: '18K multiplier', default: '0.75' },
                 { key: 'gold_markup_22k', label: '22K multiplier', default: '0.916' },
               ].map(f => (
                 <div key={f.key}>
