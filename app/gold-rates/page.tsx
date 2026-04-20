@@ -1,15 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase, GoldRate, calculateGoldRates, calculateTradePrice } from '@/lib/supabase'
+import { supabase, GoldRate, calculateGoldRates, calculateTradePrice, recomputeCatalogPrices } from '@/lib/supabase'
 import { formatDate, formatCurrency } from '@/lib/utils'
-import { TrendingUp, Plus, Calculator, Save } from 'lucide-react'
+import { TrendingUp, Plus, Calculator, Save, RefreshCw } from 'lucide-react'
 
 export default function GoldRatesPage() {
   const [rates, setRates] = useState<GoldRate[]>([])
   const [latest, setLatest] = useState<GoldRate | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [recalcing, setRecalcing] = useState(false)
+  const [lastRecalc, setLastRecalc] = useState<{ updated: number; skipped: number; failed: number; error?: string } | null>(null)
 
   const [newRate24k, setNewRate24k] = useState('')
   const [rateNotes, setRateNotes] = useState('')
@@ -48,10 +50,31 @@ export default function GoldRatesPage() {
     const { error } = await supabase.from('gold_rates').insert([{
       ...computed, source: 'manual', notes: rateNotes
     }])
-    setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
+    if (error) { setSaving(false); alert('Error: ' + error.message); return }
     setRateNotes('')
+    // Auto-refresh every active product's trade_price/mrp using the new rate.
+    const result = await recomputeCatalogPrices(rate)
+    setLastRecalc(result)
+    setSaving(false)
     loadRates()
+    alert(formatRecalcResult('Rate saved.', result))
+  }
+
+  async function recalcNow() {
+    if (!latest) { alert('No gold rate recorded yet.'); return }
+    if (!confirm(`Recalculate trade price for every active catalog product using the current rate of ₹${latest.rate_24k}/g (24K)?`)) return
+    setRecalcing(true)
+    const result = await recomputeCatalogPrices(latest.rate_24k)
+    setLastRecalc(result)
+    setRecalcing(false)
+    alert(formatRecalcResult('Recalculated.', result))
+  }
+
+  function formatRecalcResult(prefix: string, r: { updated: number; skipped: number; failed: number; error?: string }) {
+    if (r.error) return `${prefix} Could not refresh catalog prices: ${r.error}`
+    const parts = [`${r.updated} repriced`, `${r.skipped} unchanged`]
+    if (r.failed > 0) parts.push(`${r.failed} failed (check console)`)
+    return `${prefix} Catalog prices: ${parts.join(' · ')}.`
   }
 
   const computed = newRate24k ? calculateGoldRates(parseFloat(newRate24k) || 0) : null
@@ -84,13 +107,25 @@ export default function GoldRatesPage() {
       {/* Current rates banner */}
       {latest && (
         <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-5 mb-6">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-yellow-600" />
               <span className="text-sm font-medium text-yellow-800">Current gold rates</span>
             </div>
-            <span className="text-xs text-yellow-600">{formatDate(latest.recorded_at)} · {latest.source}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-yellow-700">{formatDate(latest.recorded_at)} · {latest.source}</span>
+              <button onClick={recalcNow} disabled={recalcing}
+                className="flex items-center gap-1.5 bg-white border border-yellow-300 text-yellow-800 hover:bg-yellow-100 px-2.5 py-1 rounded-md text-xs font-medium disabled:opacity-40">
+                <RefreshCw className={`w-3.5 h-3.5 ${recalcing ? 'animate-spin' : ''}`} />
+                {recalcing ? 'Recalculating…' : 'Recalculate catalog prices'}
+              </button>
+            </div>
           </div>
+          {lastRecalc && (
+            <p className="text-xs text-yellow-700 mb-2">
+              Last refresh: {lastRecalc.updated} product(s) repriced · {lastRecalc.skipped} unchanged.
+            </p>
+          )}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { karat: '24K', rate: latest.rate_24k, purity: '99.9%' },

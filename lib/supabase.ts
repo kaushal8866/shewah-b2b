@@ -353,6 +353,67 @@ export function computeOrderCogs(opts: {
   return { gold_cost: goldCost, total_cogs, margin }
 }
 
+// Recompute every active product's trade_price (and mrp_suggested) using the
+// supplied 24K rate. Same formula as `app/catalog/[id]/page.tsx`:
+//   goldCost     = gold_weight × rate24k × karatPurity
+//   labourCost   = labour_per_gram × max(gold_weight, 1g)
+//   diamondCost  = sum(diamond_specs[].cost × pieces)  — fallback to diamond_cost
+//   cogs         = goldCost + labourCost + diamondCost + making_charges + igi_cert_cost
+//   trade_price  = round(cogs × 1.28)
+//   mrp_suggested= round(trade_price × 1.40)
+//
+// Returns { updated, skipped, failed, error } so callers can surface partial
+// failures instead of silently reporting success. Designed to be safe to
+// re-run; only writes when the new price differs.
+export async function recomputeCatalogPrices(rate24k: number): Promise<{
+  updated: number; skipped: number; failed: number; error?: string
+}> {
+  if (!rate24k || rate24k <= 0) return { updated: 0, skipped: 0, failed: 0, error: 'Invalid gold rate' }
+  const karatMult: Record<number, number> = { 24: 1, 22: 0.916, 18: 0.75, 14: 0.585, 10: 0.417, 9: 0.375 }
+
+  const { data: products, error } = await supabase
+    .from('products')
+    .select('id, gold_karat, gold_weight_g, diamond_cost, diamond_specs, making_charges, igi_cert_cost, labour_per_gram, trade_price, mrp_suggested')
+    .eq('is_active', true)
+  if (error) return { updated: 0, skipped: 0, failed: 0, error: error.message }
+  if (!products) return { updated: 0, skipped: 0, failed: 0 }
+
+  let updated = 0, skipped = 0, failed = 0
+  for (const p of products) {
+    const w = Number(p.gold_weight_g) || 0
+    if (w <= 0) { skipped++; continue }   // can't price without a weight
+    const k = Number(p.gold_karat) || 18
+    const mult = karatMult[k] ?? 0.75
+    // Match catalog/[id] page rounding behaviour exactly: gold and labour
+    // costs are rounded individually before being summed into COGS, so a
+    // product re-saved from the catalog page yields the same trade price
+    // here.
+    const goldCost = Math.round(w * rate24k * mult)
+    const labourCost = Math.round((Number(p.labour_per_gram) || 0) * Math.max(w, 1))
+    let diamondCost = 0
+    if (Array.isArray(p.diamond_specs) && p.diamond_specs.length > 0) {
+      diamondCost = (p.diamond_specs as any[]).reduce(
+        (s, d) => s + (Number(d?.cost) || 0) * (Number(d?.pieces) || 1), 0
+      )
+    } else {
+      diamondCost = Number(p.diamond_cost) || 0
+    }
+    const cogs = goldCost + labourCost + diamondCost
+      + (Number(p.making_charges) || 0) + (Number(p.igi_cert_cost) || 0)
+    const newTrade = Math.round(cogs * 1.28)
+    const newMrp = Math.round(newTrade * 1.40)
+    if (newTrade === Number(p.trade_price) && newMrp === Number(p.mrp_suggested)) {
+      skipped++; continue
+    }
+    const { error: upErr } = await supabase
+      .from('products')
+      .update({ trade_price: newTrade, mrp_suggested: newMrp })
+      .eq('id', p.id)
+    if (upErr) { failed++ } else { updated++ }
+  }
+  return { updated, skipped, failed }
+}
+
 export const ORDER_STATUSES = [
   { value: 'brief_received',   label: 'Brief Received',   color: 'bg-blue-100 text-blue-800' },
   { value: 'cad_in_progress',  label: 'CAD In Progress',  color: 'bg-yellow-100 text-yellow-800' },
