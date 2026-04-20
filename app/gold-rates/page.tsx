@@ -126,6 +126,9 @@ export default function GoldRatesPage() {
               Last refresh: {lastRecalc.updated} product(s) repriced · {lastRecalc.skipped} unchanged.
             </p>
           )}
+          <p className="text-xs text-yellow-700 mb-2">
+            Note: only catalog products are repriced. Orders already placed keep the gold rate that was locked when the order was created.
+          </p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { karat: '24K', rate: latest.rate_24k, purity: '99.9%' },
