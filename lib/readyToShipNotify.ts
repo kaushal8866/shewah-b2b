@@ -103,7 +103,9 @@ export async function notifyRetailerOfferDecision(opts: {
     const lines: string[] = []
     if (opts.decision === 'accepted') {
       lines.push(`${greet}, your offer of ₹${offer.offer_price.toLocaleString('en-IN')} on the Shewah ${desc} has been ACCEPTED.`)
-      lines.push(`We've created order ${opts.orderId ? '' : ''}for you — it will dispatch shortly.`)
+      lines.push(opts.orderId
+        ? `We've raised order ${opts.orderId} for you — it will dispatch shortly.`
+        : `We've raised an order for you — it will dispatch shortly.`)
     } else if (opts.decision === 'countered') {
       lines.push(`${greet}, Shewah has COUNTERED your offer on the ${desc}.`)
       if (offer.counter_price) lines.push(`New price: ₹${Number(offer.counter_price).toLocaleString('en-IN')}.`)

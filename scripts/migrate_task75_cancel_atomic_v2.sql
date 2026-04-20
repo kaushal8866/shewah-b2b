@@ -32,18 +32,26 @@ BEGIN
   IF v_status IS NULL THEN
     RAISE EXCEPTION 'Manufacturing order not found';
   END IF;
-  IF v_status IN ('cancelled', 'returned', 'received_after_cancel') THEN
-    RAISE EXCEPTION 'Order is already in terminal state %', v_status;
+  -- Only orders that haven't entered making qualify for the "not started"
+  -- branch. Anything beyond `issued` either has work in progress (use the
+  -- reassign branch), is already finished (use the receive branch), or is
+  -- terminal.
+  IF v_status <> 'issued' THEN
+    RAISE EXCEPTION 'Cancel-not-started is only allowed for orders in status ''issued'' (current: %)', v_status;
   END IF;
 
   UPDATE manufacturing_orders
      SET status = 'cancelled'
    WHERE id = p_order_id;
 
+  -- Release the float reservation: delete only the pending consumption
+  -- rows. Final/settled rows (none expected for an `issued` order, but
+  -- guarded anyway) are preserved so the audit trail stays intact.
   IF v_from_float THEN
     DELETE FROM material_transactions
      WHERE manufacturing_order_id = p_order_id
-       AND transaction_type       = 'consumption';
+       AND transaction_type       = 'consumption'
+       AND lifecycle              = 'pending';
   END IF;
 END;
 $$;
