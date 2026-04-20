@@ -250,7 +250,24 @@ function MaterialFloatInner() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {activeTab === 'deposit' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3 text-sm">
+            <p className="text-blue-900 font-medium">Deposits now go through Central Stock</p>
+            <p className="text-blue-700 text-xs mt-1">
+              To keep one source of truth for inventory, all material handed to a karigar
+              must be issued from the Central Stock ledger. The karigar's float will update
+              automatically the moment you issue.
+            </p>
+            <Link
+              href={`/stock/issue?partner_id=${partnerId}&material_type=${encodeURIComponent(form.material_type)}${form.quantity ? `&amount=${encodeURIComponent(form.quantity)}` : ''}`}
+              className="inline-flex items-center gap-1.5 mt-3 bg-[#1E3A5F] text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-[#162B47]"
+            >
+              Issue from Central Stock →
+            </Link>
+          </div>
+        )}
+
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${activeTab === 'deposit' ? 'opacity-50 pointer-events-none' : ''}`}>
           <div>
             <label className={lbl}>Material type</label>
             <select className={inp} value={form.material_type} onChange={e => { set('material_type', e.target.value); setPendingNegative(false) }}>
@@ -317,7 +334,7 @@ function MaterialFloatInner() {
           </div>
         )}
 
-        <button onClick={handleTransaction} disabled={saving}
+        <button onClick={handleTransaction} disabled={saving || activeTab === 'deposit'}
           className={`w-full mt-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
             willGoNegative && pendingNegative ? 'bg-red-600 text-white hover:bg-red-700'
             : activeTab === 'deposit' ? 'bg-green-600 text-white hover:bg-green-700'
