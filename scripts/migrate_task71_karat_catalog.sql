@@ -19,37 +19,18 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS gold_weight_10k numeric;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS gold_weight_9k  numeric;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS karat_pricing   jsonb;
 
--- Backfill: for any product missing the 22kt weight, derive all five from
--- the legacy single (gold_karat, gold_weight_g) pair so existing catalog
--- entries keep working untouched.
-WITH purity AS (
-  SELECT 22 AS k, 0.916::numeric AS f UNION ALL
-  SELECT 18, 0.75   UNION ALL
-  SELECT 14, 0.60   UNION ALL
-  SELECT 10, 0.42   UNION ALL
-  SELECT  9, 0.38
-),
-src AS (
-  SELECT p.id,
-         CASE
-           WHEN p.gold_karat IN (9,10,14,18,22) THEN p.gold_karat
-           WHEN p.gold_karat = 24 THEN 22
-           ELSE 18
-         END AS k,
-         COALESCE(p.gold_weight_g, 0)::numeric AS w
-  FROM products p
-  WHERE p.gold_weight_22k IS NULL
-)
-UPDATE products p
+-- Backfill: per the task spec, treat any existing `gold_weight_g` as the
+-- 22kt input weight (the canonical karat in the new system). Derive the
+-- other four karats by holding 24kt-pure mass constant:
+--   weight_in_Kx = (weight_22k × 0.916) ÷ factor_for_Kx
+UPDATE products
 SET
-  gold_weight_22k = ROUND( (s.w * pf.f) / 0.916, 4 ),
-  gold_weight_18k = ROUND( (s.w * pf.f) / 0.75 , 4 ),
-  gold_weight_14k = ROUND( (s.w * pf.f) / 0.60 , 4 ),
-  gold_weight_10k = ROUND( (s.w * pf.f) / 0.42 , 4 ),
-  gold_weight_9k  = ROUND( (s.w * pf.f) / 0.38 , 4 )
-FROM src s
-JOIN purity pf ON pf.k = s.k
-WHERE p.id = s.id;
+  gold_weight_22k = ROUND(COALESCE(gold_weight_g, 0)::numeric, 4),
+  gold_weight_18k = ROUND( (COALESCE(gold_weight_g, 0)::numeric * 0.916) / 0.75 , 4),
+  gold_weight_14k = ROUND( (COALESCE(gold_weight_g, 0)::numeric * 0.916) / 0.60 , 4),
+  gold_weight_10k = ROUND( (COALESCE(gold_weight_g, 0)::numeric * 0.916) / 0.42 , 4),
+  gold_weight_9k  = ROUND( (COALESCE(gold_weight_g, 0)::numeric * 0.916) / 0.38 , 4)
+WHERE gold_weight_22k IS NULL;
 
 ---------------------------------------------------------------- gold_rates
 ALTER TABLE gold_rates ADD COLUMN IF NOT EXISTS rate_10k          numeric;

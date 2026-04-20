@@ -72,12 +72,12 @@ export default function CatalogProductEditPage() {
         })
       }
       if (data) {
-        // Prefer the new 22kt column. Fall back to deriving from legacy
-        // (gold_karat, gold_weight_g) so pre-#71 products edit cleanly.
+        // Prefer the new 22kt column. For pre-#71 products, treat the legacy
+        // gold_weight_g directly as the 22kt input — matches the migration
+        // backfill so what the form shows equals what is stored.
         let w22 = Number(data.gold_weight_22k) || 0
-        if (!w22 && data.gold_weight_g && data.gold_karat && KARAT_FACTORS[Number(data.gold_karat)]) {
-          const derived = deriveAllKaratWeights(Number(data.gold_weight_g), Number(data.gold_karat))
-          w22 = derived[22] || 0
+        if (!w22 && data.gold_weight_g) {
+          w22 = Number(data.gold_weight_g) || 0
         }
         setForm({
           code: data.code || '',

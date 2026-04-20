@@ -3,7 +3,16 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { safeDbError } from '@/lib/sanitizeDbError'
-import { KARAT_FACTORS, SELLABLE_KARATS } from '@/lib/karat'
+import { KARAT_FACTORS, SELLABLE_KARATS, type SellableKarat } from '@/lib/karat'
+
+type LatestGoldRateRow = {
+  rate_24k: number
+  retail_labour_22k: number | null
+  retail_labour_18k: number | null
+  retail_labour_14k: number | null
+  retail_labour_10k: number | null
+  retail_labour_9k:  number | null
+}
 
 // Fields the retailer is allowed to see. Internal financials (gold weights, COGS,
 // margin, manufacturer assignment, internal notes, locked gold rate) are excluded.
@@ -72,7 +81,9 @@ export async function POST(req: Request) {
 
   // Pick the karat the retailer chose, falling back to 22kt — the catalog default.
   const requestedKarat = parseInt(body.selected_karat) || 22
-  const selectedKarat: number = SELLABLE_KARATS.includes(requestedKarat as any) ? requestedKarat : 22
+  const isSellable = (n: number): n is SellableKarat =>
+    (SELLABLE_KARATS as readonly number[]).includes(n)
+  const selectedKarat: SellableKarat = isSellable(requestedKarat) ? requestedKarat : 22
 
   // Pull product info for catalog orders to derive per-karat trade_price + weight + delivery.
   let productRow: any = null
@@ -95,10 +106,12 @@ export async function POST(req: Request) {
     .select('rate_24k, retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
     .order('recorded_at', { ascending: false })
     .limit(1)
-  if (g?.[0]) {
-    goldRate = g[0].rate_24k
-    const labourCol = `retail_labour_${selectedKarat}k`
-    const v = (g[0] as any)[labourCol]
+    .returns<LatestGoldRateRow[]>()
+  const latestRate = g?.[0]
+  if (latestRate) {
+    goldRate = latestRate.rate_24k
+    const labourCol = `retail_labour_${selectedKarat}k` as keyof LatestGoldRateRow
+    const v = latestRate[labourCol]
     if (v != null) retailLabourAtOrder = Number(v)
   }
 
