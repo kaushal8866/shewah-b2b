@@ -46,7 +46,11 @@ export default function VendorDetailPage() {
       city: form.city || null,
       address: form.address || null,
       gstin: form.gstin || null,
-      category: form.category || null,
+      category: Array.isArray(form.category)
+        ? form.category
+        : (form.category
+            ? String(form.category).split(',').map((s: string) => s.trim()).filter(Boolean)
+            : null),
       payment_terms: form.payment_terms,
       credit_limit: parseFloat(form.credit_limit) || 0,
       outstanding: parseFloat(form.outstanding) || 0,
@@ -167,7 +171,7 @@ export default function VendorDetailPage() {
                 ['City', vendor.city || '—'],
                 ['Address', vendor.address || '—'],
                 ['GSTIN', vendor.gstin || '—'],
-                ['Category', vendor.category || '—'],
+                ['Category', Array.isArray(vendor.category) && vendor.category.length > 0 ? vendor.category.join(', ') : (vendor.category || '—')],
                 ['Status', vendor.status || 'active'],
                 ['Payment terms', vendor.payment_terms?.replace(/_/g, ' ') || '—'],
                 ['Credit limit', vendor.credit_limit ? `₹${vendor.credit_limit?.toLocaleString('en-IN')}` : '₹0'],
@@ -249,7 +253,10 @@ export default function VendorDetailPage() {
               </div>
               <div>
                 <label className={lbl}>Category</label>
-                <input className={inp} value={form.category || ''} onChange={e => set('category', e.target.value)} />
+                <input className={inp}
+                  value={Array.isArray(form.category) ? form.category.join(', ') : (form.category || '')}
+                  onChange={e => set('category', e.target.value)}
+                  placeholder="e.g. diamonds, gemstones, findings" />
               </div>
               <div>
                 <label className={lbl}>Status</label>

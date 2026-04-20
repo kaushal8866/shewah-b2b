@@ -42,7 +42,9 @@ export default function NewVendorPage() {
       city: form.city || null,
       address: form.address || null,
       gstin: form.gstin || null,
-      category: form.category || null,
+      category: form.category
+        ? form.category.split(',').map(s => s.trim()).filter(Boolean)
+        : null,
       payment_terms: form.payment_terms,
       credit_limit: parseFloat(form.credit_limit) || 0,
       outstanding: parseFloat(form.outstanding) || 0,
