@@ -20,6 +20,7 @@ const nav = [
   { href: '/cad-requests',    icon: Pen,             label: 'CAD Requests',  module: 'cad_requests'  },
   { href: '/cad-partners',    icon: BookUser,        label: 'CAD Partners',  module: 'cad_partners'  },
   { href: '/manufacturing',   icon: Factory,         label: 'Manufacturing', module: 'manufacturing' },
+  { href: '/ready-to-ship',   icon: Package,         label: 'Ready to Ship', module: 'manufacturing' },
   { href: '/catalog',         icon: Package,         label: 'Catalog',       module: 'catalog'       },
   { href: '/gold-rates',      icon: TrendingUp,      label: 'Gold Rates',    module: 'gold_rates'    },
   { href: '/stock',           icon: Boxes,           label: 'Stock',         module: 'vendors'       },

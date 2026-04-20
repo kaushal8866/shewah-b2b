@@ -702,3 +702,49 @@ $func$ language sql;
 create or replace function mfg_share_link_record_visit(p_token uuid) returns void as $func$
   update mfg_share_links set last_accessed_at = now() where token = p_token;
 $func$ language sql;
+
+-- ── READY-TO-SHIP ────────────────────────────────────────
+-- See scripts/migrate_task73_ready_to_ship.sql for the canonical, idempotent
+-- migration. Mirrored here so fresh installs match the production schema.
+create table if not exists ready_to_ship_items (
+  id                    uuid        primary key default gen_random_uuid(),
+  created_at            timestamptz not null default now(),
+  product_id            uuid        references products(id)             on delete set null,
+  source_mfg_order_id   uuid        references manufacturing_orders(id) on delete set null,
+  source_order_id       uuid        references orders(id)               on delete set null,
+  karat                 integer     not null,
+  gross_weight          numeric     not null,
+  pure_24kt_weight      numeric,
+  diamond_specs         jsonb       not null default '{}'::jsonb,
+  photos                text[]      not null default '{}',
+  list_price            numeric     not null,
+  original_cogs         numeric,
+  status                text        not null default 'available'
+                                    check (status in ('available','reserved','sold','withdrawn')),
+  sold_to_partner_id    uuid        references partners(id) on delete set null,
+  sold_order_id         uuid        references orders(id)   on delete set null,
+  sold_at               timestamptz,
+  internal_notes        text
+);
+alter table ready_to_ship_items enable row level security;
+create policy "service_role_all" on ready_to_ship_items
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create table if not exists ready_to_ship_offers (
+  id              uuid        primary key default gen_random_uuid(),
+  created_at      timestamptz not null default now(),
+  item_id         uuid        not null references ready_to_ship_items(id) on delete cascade,
+  partner_id      uuid        not null references partners(id)            on delete cascade,
+  offer_price     numeric     not null,
+  note            text,
+  status          text        not null default 'pending'
+                              check (status in ('pending','countered','accepted','rejected','withdrawn')),
+  counter_price   numeric,
+  counter_note    text,
+  decided_at      timestamptz,
+  decided_by      uuid        references app_users(id) on delete set null,
+  resulting_order_id uuid     references orders(id) on delete set null
+);
+alter table ready_to_ship_offers enable row level security;
+create policy "service_role_all" on ready_to_ship_offers
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');

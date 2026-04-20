@@ -8,8 +8,9 @@ import { ArrowLeft, Save, Trash2, Edit2, X, Printer, Send, Copy, RefreshCw, File
 import Link from 'next/link'
 import { uploadFileToCloudinary } from '@/lib/cloudinaryUpload'
 import { applyMfgStatusChange } from '@/lib/mfgOrderLifecycle'
+import CancelMfgOrderModal from '@/components/CancelMfgOrderModal'
 
-const MFG_STATUSES = ['issued', 'in_progress', 'quality_check', 'completed', 'returned', 'cancelled']
+const MFG_STATUSES = ['issued', 'in_progress', 'quality_check', 'completed', 'returned', 'cancelled', 'received_after_cancel']
 
 export default function ManufacturingOrderDetailPage() {
   const params = useParams()
@@ -21,6 +22,7 @@ export default function ManufacturingOrderDetailPage() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
   const [form, setForm] = useState<any>({})
   const [shareLink, setShareLink] = useState<any>(null)
   const [shareBusy, setShareBusy] = useState(false)
@@ -224,6 +226,12 @@ export default function ManufacturingOrderDetailPage() {
                 className="flex items-center gap-1.5 border border-stone-200 text-stone-600 px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
                 <Edit2 className="w-4 h-4" /> Edit
               </button>
+              {!['cancelled', 'received_after_cancel', 'returned'].includes(order.status) && (
+                <button onClick={() => setShowCancelModal(true)}
+                  className="flex items-center gap-1.5 border border-amber-200 text-amber-700 px-3 py-2 rounded-lg text-sm hover:bg-amber-50">
+                  <X className="w-4 h-4" /> Cancel
+                </button>
+              )}
               <button onClick={() => setShowDeleteConfirm(true)}
                 className="flex items-center gap-1.5 border border-red-200 text-red-500 px-3 py-2 rounded-lg text-sm hover:bg-red-50">
                 <Trash2 className="w-4 h-4" />
@@ -243,6 +251,28 @@ export default function ManufacturingOrderDetailPage() {
           )}
         </div>
       </div>
+
+      {showCancelModal && (
+        <CancelMfgOrderModal
+          mfgOrderId={id}
+          currentPartnerId={order.manufacturing_partner_id}
+          currentPartnerName={order.manufacturing_partners?.name || null}
+          goldKarat={order.gold_karat}
+          goldWeightRequired={order.gold_weight_required}
+          productCode={null}
+          productName={order.description}
+          defaultListPrice={null}
+          onClose={() => setShowCancelModal(false)}
+          onDone={(action, payload) => {
+            setShowCancelModal(false)
+            if (action === 'receive' && payload?.ready_to_ship_id) {
+              router.push(`/ready-to-ship/${payload.ready_to_ship_id}`)
+            } else {
+              load()
+            }
+          }}
+        />
+      )}
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
