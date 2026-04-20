@@ -19,6 +19,8 @@ export default function NewManufacturingPartnerPage() {
     address: '',
     speciality: '',
     material_policy: 'client_material',
+    labour_rate_9k: '',
+    labour_rate_10k: '',
     labour_rate_14k: '',
     labour_rate_18k: '',
     labour_rate_22k: '',
@@ -44,6 +46,8 @@ export default function NewManufacturingPartnerPage() {
       address: form.address || null,
       speciality: form.speciality ? form.speciality.split(',').map(s => s.trim()).filter(Boolean) : null,
       material_policy: form.material_policy,
+      labour_rate_9k: parseFloat(form.labour_rate_9k) || null,
+      labour_rate_10k: parseFloat(form.labour_rate_10k) || null,
       labour_rate_14k: parseFloat(form.labour_rate_14k) || null,
       labour_rate_18k: parseFloat(form.labour_rate_18k) || null,
       labour_rate_22k: parseFloat(form.labour_rate_22k) || null,
@@ -127,17 +131,30 @@ export default function NewManufacturingPartnerPage() {
                 <option value="both">Both options available</option>
               </select>
             </div>
-            <div>
-              <label className={lbl}>Labour rate 14K (₹/gram)</label>
-              <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_14k} onChange={e => set('labour_rate_14k', e.target.value)} placeholder="e.g. 900" />
-            </div>
-            <div>
-              <label className={lbl}>Labour rate 18K (₹/gram)</label>
-              <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_18k} onChange={e => set('labour_rate_18k', e.target.value)} placeholder="e.g. 1200" />
-            </div>
-            <div>
-              <label className={lbl}>Labour rate 22K (₹/gram)</label>
-              <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_22k} onChange={e => set('labour_rate_22k', e.target.value)} placeholder="e.g. 1500" />
+            <div className="sm:col-span-2">
+              <p className={lbl}>Labour rates (₹/gram) — used to auto-cost orders for this karigar</p>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <div>
+                  <label className="block text-[10px] text-stone-400 mb-1">9K</label>
+                  <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_9k} onChange={e => set('labour_rate_9k', e.target.value)} placeholder="700" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-stone-400 mb-1">10K</label>
+                  <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_10k} onChange={e => set('labour_rate_10k', e.target.value)} placeholder="800" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-stone-400 mb-1">14K</label>
+                  <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_14k} onChange={e => set('labour_rate_14k', e.target.value)} placeholder="900" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-stone-400 mb-1">18K</label>
+                  <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_18k} onChange={e => set('labour_rate_18k', e.target.value)} placeholder="1200" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-stone-400 mb-1">22K</label>
+                  <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_22k} onChange={e => set('labour_rate_22k', e.target.value)} placeholder="1500" />
+                </div>
+              </div>
             </div>
             <div>
               <label className={lbl}>Minimum chargeable weight (grams)</label>

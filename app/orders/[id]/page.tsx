@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase, ORDER_STATUSES, computeOrderCogs } from '@/lib/supabase'
 import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
@@ -400,6 +400,50 @@ export default function OrderDetailPage() {
 
   useEffect(() => { load() }, [id])
 
+  // Task #68: auto-fill `making_charges` from the assigned karigar's per-karat
+  // labour rate × max(weight, min_labour_grams). To preserve admin overrides
+  // we track the last value we auto-wrote in a ref — if the field still equals
+  // that value (or is empty), it's safe to overwrite. The moment the admin
+  // types something different, the field is "dirty" and we leave it alone.
+  const autoMakingChargesRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!editing) { autoMakingChargesRef.current = null; return }
+  }, [editing])
+  useEffect(() => {
+    if (!editing) return
+    const partner = mfgPartners.find(p => p.id === form.assigned_manufacturer_id)
+    const k = parseInt(form.gold_karat) || 0
+    const rate = partner ? Number((partner as any)[`labour_rate_${k}k`]) || 0 : 0
+    const wActual = parseFloat(form.gold_weight_actual) || 0
+    const wEst = parseFloat(form.gold_weight_estimated) || 0
+    const minG = partner ? Number((partner as any).min_labour_grams) || 1 : 1
+    const w = Math.max(wActual || wEst, minG)
+    const currentMC = Number(form.making_charges) || 0
+    const lastAuto = autoMakingChargesRef.current
+    const isDirty = currentMC !== 0 && currentMC !== lastAuto
+    if (isDirty) return // admin has entered a manual override
+
+    if (!partner || !rate || w <= 0) {
+      // No data to auto-cost from. If the current value was something WE
+      // last auto-filled, clear it so a stale rate from a previous partner /
+      // karat doesn't quietly persist into COGS. Manual entries are left
+      // alone (caught by the `isDirty` check above).
+      if (lastAuto !== null && currentMC === lastAuto) {
+        autoMakingChargesRef.current = null
+        setForm((prev: any) => ({ ...prev, making_charges: '' }))
+      }
+      return
+    }
+    const auto = Math.round(rate * w)
+    if (currentMC !== auto) {
+      autoMakingChargesRef.current = auto
+      setForm((prev: any) => ({ ...prev, making_charges: String(auto) }))
+    } else {
+      autoMakingChargesRef.current = auto
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing, form.assigned_manufacturer_id, form.gold_karat, form.gold_weight_actual, form.gold_weight_estimated, mfgPartners])
+
   async function load() {
     setLoading(true)
     const [{ data }, { data: mp }] = await Promise.all([
@@ -408,7 +452,7 @@ export default function OrderDetailPage() {
         .select('*, partners(store_name, owner_name, phone, city), products(code, name, gold_weight_g, gold_karat, diamond_weight, diamond_type)')
         .eq('id', id)
         .single(),
-      supabase.from('manufacturing_partners').select('id, name, city').order('name'),
+      supabase.from('manufacturing_partners').select('id, name, city, min_labour_grams, labour_rate_9k, labour_rate_10k, labour_rate_14k, labour_rate_18k, labour_rate_22k').order('name'),
     ])
     if (!data) { router.push('/orders'); return }
     setOrder(data)
@@ -1250,6 +1294,15 @@ export default function OrderDetailPage() {
                 <label className={lbl}>Making charges (₹)</label>
                 <input type="number" inputMode="decimal" className={inp}
                   value={form.making_charges || ''} onChange={e => set('making_charges', e.target.value)} />
+                {(() => {
+                  const partner = mfgPartners.find(p => p.id === form.assigned_manufacturer_id)
+                  const k = parseInt(form.gold_karat) || 0
+                  const rate = partner ? Number((partner as any)[`labour_rate_${k}k`]) || 0 : 0
+                  const w = Math.max(parseFloat(form.gold_weight_actual) || parseFloat(form.gold_weight_estimated) || 0, Number((partner as any)?.min_labour_grams) || 1)
+                  if (!partner) return <p className="text-[11px] text-stone-400 mt-1">Assign a manufacturer to auto-fill from their per-karat labour rate.</p>
+                  if (!rate) return <p className="text-[11px] text-amber-600 mt-1">{partner.name} has no labour rate set for {k}K. Add one on the partner page or enter making charges manually.</p>
+                  return <p className="text-[11px] text-stone-500 mt-1">Auto from {partner.name}: ₹{rate}/g × {w}g = ₹{Math.round(rate * w).toLocaleString('en-IN')}. Override above if needed.</p>
+                })()}
               </div>
               <div>
                 <label className={lbl}>CAD cost (₹)</label>
@@ -1263,7 +1316,7 @@ export default function OrderDetailPage() {
               </div>
             </div>
             <p className="text-xs text-stone-400 mt-3">
-              COGS = (gold weight × rate × karat purity) + making + CAD + stone. Margin recalculated against total amount.
+              COGS = (gold weight × rate × karat purity) + labour (auto-filled from karigar's per-karat rate) + CAD + stone. Margin recalculated against total amount.
             </p>
           </div>
         </div>

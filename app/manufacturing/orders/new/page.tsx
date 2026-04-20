@@ -72,6 +72,8 @@ function NewMfgOrderForm() {
 
   function materialTypeForKarat(k: string): string {
     const n = parseInt(k, 10)
+    if (n === 9)  return 'gold_9k'
+    if (n === 10) return 'gold_10k'
     if (n === 14) return 'gold_14k'
     if (n === 22) return 'gold_22k'
     return 'gold_18k'
@@ -85,11 +87,31 @@ function NewMfgOrderForm() {
       : 0
   const overIssue = form.material_from_float && required > 0 && (!activeBucket || activeBucket.available < required)
 
-  // Auto-fill labour rate when karat changes
+  // Auto-fill labour rate when karat OR partner changes. Prefer the
+  // partner-specific per-karat rate (Task #68); fall back to the global
+  // labour_rates table for partners that don't have a rate set yet. Track
+  // the last auto value in a ref so that any user-typed override is left
+  // alone — and so we explicitly clear the field when no rate is available.
+  const selectedPartnerForLabour = partners.find(p => p.id === form.manufacturing_partner_id)
+  const autoLabourRef = useRef<string>('')
   useEffect(() => {
-    const rate = labourRates[parseInt(form.gold_karat)]
-    if (rate) set('labour_per_gram', String(rate))
-  }, [form.gold_karat, labourRates])
+    const k = parseInt(form.gold_karat)
+    const partnerRate = selectedPartnerForLabour
+      ? Number((selectedPartnerForLabour as any)[`labour_rate_${k}k`]) || 0
+      : 0
+    const fallback = Number(labourRates[k]) || 0
+    const next = partnerRate || fallback
+    const nextStr = next > 0 ? String(next) : ''
+    const isDirty = form.labour_per_gram !== '' && form.labour_per_gram !== autoLabourRef.current
+    if (isDirty) return
+    if (form.labour_per_gram !== nextStr) {
+      autoLabourRef.current = nextStr
+      set('labour_per_gram', nextStr)
+    } else {
+      autoLabourRef.current = nextStr
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.gold_karat, labourRates, form.manufacturing_partner_id, partners])
 
   function set(k: string, v: string | boolean) {
     setForm(prev => ({ ...prev, [k]: v }))

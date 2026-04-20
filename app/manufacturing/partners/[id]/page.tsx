@@ -60,6 +60,8 @@ export default function ManufacturingPartnerDetailPage() {
             : form.speciality)
         : null,
       material_policy: form.material_policy,
+      labour_rate_9k: parseFloat(form.labour_rate_9k) || null,
+      labour_rate_10k: parseFloat(form.labour_rate_10k) || null,
       labour_rate_14k: parseFloat(form.labour_rate_14k) || null,
       labour_rate_18k: parseFloat(form.labour_rate_18k) || null,
       labour_rate_22k: parseFloat(form.labour_rate_22k) || null,
@@ -203,6 +205,8 @@ export default function ManufacturingPartnerDetailPage() {
                 ['Address', partner.address || '—'],
                 ['Material policy', partner.material_policy?.replace(/_/g, ' ') || '—'],
                 ['Min charge weight', `${partner.min_labour_grams || 1}g`],
+                ['Labour rate 9K', partner.labour_rate_9k ? `₹${partner.labour_rate_9k}/g` : '—'],
+                ['Labour rate 10K', partner.labour_rate_10k ? `₹${partner.labour_rate_10k}/g` : '—'],
                 ['Labour rate 14K', partner.labour_rate_14k ? `₹${partner.labour_rate_14k}/g` : '—'],
                 ['Labour rate 18K', partner.labour_rate_18k ? `₹${partner.labour_rate_18k}/g` : '—'],
                 ['Labour rate 22K', partner.labour_rate_22k ? `₹${partner.labour_rate_22k}/g` : '—'],
@@ -313,17 +317,30 @@ export default function ManufacturingPartnerDetailPage() {
                   <option value="both">Both options</option>
                 </select>
               </div>
-              <div>
-                <label className={lbl}>Labour rate 14K (₹/g)</label>
-                <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_14k || ''} onChange={e => set('labour_rate_14k', e.target.value)} />
-              </div>
-              <div>
-                <label className={lbl}>Labour rate 18K (₹/g)</label>
-                <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_18k || ''} onChange={e => set('labour_rate_18k', e.target.value)} />
-              </div>
-              <div>
-                <label className={lbl}>Labour rate 22K (₹/g)</label>
-                <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_22k || ''} onChange={e => set('labour_rate_22k', e.target.value)} />
+              <div className="sm:col-span-2">
+                <p className={lbl}>Labour rates (₹/gram) — applied automatically when this karigar is assigned to an order</p>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-stone-400 mb-1">9K</label>
+                    <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_9k || ''} onChange={e => set('labour_rate_9k', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-stone-400 mb-1">10K</label>
+                    <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_10k || ''} onChange={e => set('labour_rate_10k', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-stone-400 mb-1">14K</label>
+                    <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_14k || ''} onChange={e => set('labour_rate_14k', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-stone-400 mb-1">18K</label>
+                    <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_18k || ''} onChange={e => set('labour_rate_18k', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-stone-400 mb-1">22K</label>
+                    <input type="number" inputMode="decimal" className={inp} value={form.labour_rate_22k || ''} onChange={e => set('labour_rate_22k', e.target.value)} />
+                  </div>
+                </div>
               </div>
               <div>
                 <label className={lbl}>Min chargeable weight (g)</label>
