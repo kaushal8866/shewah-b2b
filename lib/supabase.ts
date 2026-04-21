@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { KARAT_FACTORS, SELLABLE_KARATS, computeKaratPricing, deriveAllKaratWeights, startsFrom } from './karat'
+import { KARAT_FACTORS, SELLABLE_KARATS, computeKaratPricing, startsFrom } from './karat'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
@@ -430,12 +430,15 @@ export function computeOrderCogs(opts: {
 }
 
 // Recompute every active product's trade_price (and mrp_suggested) using the
-// supplied 24K rate. Same formula as `app/catalog/[id]/page.tsx`:
-//   goldCost     = gold_weight × rate24k × karatPurity
-//   labourCost   = labour_per_gram × max(gold_weight, 1g)
+// supplied 24K rate. Same formula as `app/catalog/[id]/page.tsx` (post-#81):
+//   netGoldWeight = gold_weight_22k (the raw user input — not karat-purity'd)
+//   per-karat 24kt-pure mass = pureMassByKarat(netGoldWeight)[k]
+//                            = netGoldWeight × KARAT_FACTORS[k]
+//   goldCost[k]  = mass[k] × rate24k             (gold trades at 24K rate)
+//   labourCost[k]= retailLabour[k] × max(netGoldWeight, 1g)
 //   diamondCost  = sum(diamond_specs[].cost × pieces)  — fallback to diamond_cost
-//   cogs         = goldCost + labourCost + diamondCost + making_charges + igi_cert_cost
-//   trade_price  = round(cogs × 1.28)
+//   cogs[k]      = goldCost[k] + labourCost[k] + diamondCost + making_charges + igi_cert_cost
+//   trade_price  = round(cogs[22] × 1.28)        (default karat is 22)
 //   mrp_suggested= round(trade_price × 1.40)
 //
 // Returns { updated, skipped, failed, error } so callers can surface partial
