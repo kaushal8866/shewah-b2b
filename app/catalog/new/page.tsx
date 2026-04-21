@@ -132,6 +132,34 @@ export default function NewProductPage() {
   function removeDiamondRow(id: string) { if (diamonds.length > 1) setDiamonds(prev => prev.filter(d => d.id !== id)) }
   function updateDiamond(id: string, key: keyof DiamondRow, val: string) {
     setDiamonds(prev => prev.map(d => d.id === id ? { ...d, [key]: val } : d))
+    // Picking a different type for an already-picked stone should refresh
+    // the cost suggestion too.
+    if (key === 'type') {
+      const row = diamonds.find(x => x.id === id)
+      if (row?.shape_id && row?.size_id) autofillCostFor(id, row.shape_id, row.size_id, val)
+    }
+  }
+
+  // Auto-fill a row's cost from the most recent matching shape+size+type
+  // entry in the system. Only fills when the cost field is blank so the
+  // operator's manual entries are never overwritten.
+  async function autofillCostFor(rowId: string, shape_id: string, size_id: string, type: string) {
+    if (!shape_id || !size_id) return
+    try {
+      const url = new URL('/api/diamonds/latest-cost', window.location.origin)
+      url.searchParams.set('shape_id', shape_id)
+      url.searchParams.set('size_id', size_id)
+      if (type) url.searchParams.set('type', type)
+      const r = await fetch(url.toString())
+      if (!r.ok) return
+      const d = await r.json()
+      if (d.cost == null) return
+      setDiamonds(prev => prev.map(row => {
+        if (row.id !== rowId) return row
+        if (row.cost && row.cost !== '') return row // never overwrite operator input
+        return { ...row, cost: String(d.cost) }
+      }))
+    } catch { /* silent — auto-fill is best-effort */ }
   }
 
   function set(k: string, v: string | string[]) { setForm(prev => ({ ...prev, [k]: v })) }
@@ -283,34 +311,34 @@ export default function NewProductPage() {
                   <DiamondCatalogPicker
                     shapeId={d.shape_id || null}
                     sizeId={d.size_id || null}
-                    onChange={picked => setDiamonds(prev => prev.map(row => row.id !== d.id ? row : ({
-                      ...row,
-                      shape_id: picked.shape_id,
-                      size_id: picked.size_id,
-                      size_label: picked.size_label,
-                      // Keep the legacy free-text shape in sync so the
-                      // pricing fallbacks that read `diamond_shape` keep
-                      // showing something sensible.
-                      shape: picked.shape_name ? picked.shape_name.toLowerCase() : row.shape,
-                      // Auto-fill weight from the catalog the first time
-                      // (operator can still override).
-                      weight: row.weight === '' && picked.approx_carats != null
-                        ? String(picked.approx_carats)
-                        : row.weight,
-                    }))) }
+                    onChange={picked => {
+                      setDiamonds(prev => prev.map(row => row.id !== d.id ? row : ({
+                        ...row,
+                        shape_id: picked.shape_id,
+                        size_id: picked.size_id,
+                        size_label: picked.size_label,
+                        // Keep the legacy free-text shape in sync so the
+                        // pricing fallbacks that read `diamond_shape` keep
+                        // showing something sensible.
+                        shape: picked.shape_name ? picked.shape_name.toLowerCase() : row.shape,
+                        // Auto-fill weight from the catalog the first time
+                        // (operator can still override).
+                        weight: row.weight === '' && picked.approx_carats != null
+                          ? String(picked.approx_carats)
+                          : row.weight,
+                      })))
+                      // Auto-fill cost from the most recent diamond row that
+                      // matched this shape+size+type. Only fills when blank
+                      // so we never trample an operator-typed value.
+                      autofillCostFor(d.id, picked.shape_id, picked.size_id, d.type)
+                    }}
                   />
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                   <div>
                     <label className={lbl}>Role</label>
                     <select className={inp} value={d.role} onChange={e => updateDiamond(d.id, 'role', e.target.value)}>
                       {ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={lbl}>Shape</label>
-                    <select className={inp} value={d.shape} onChange={e => updateDiamond(d.id, 'shape', e.target.value)}>
-                      {SHAPES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                     </select>
                   </div>
                   <div>

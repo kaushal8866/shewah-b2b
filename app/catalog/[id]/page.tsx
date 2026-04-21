@@ -167,7 +167,34 @@ export default function CatalogProductEditPage() {
 
   function addDiamondRow() { setDiamonds(prev => [...prev, newDiamondRow()]) }
   function removeDiamondRow(id2: string) { if (diamonds.length > 1) setDiamonds(prev => prev.filter(d => d.id !== id2)) }
-  function updateDiamond(id2: string, key: keyof DiamondRow, val: string) { setDiamonds(prev => prev.map(d => d.id === id2 ? { ...d, [key]: val } : d)) }
+  function updateDiamond(id2: string, key: keyof DiamondRow, val: string) {
+    setDiamonds(prev => prev.map(d => d.id === id2 ? { ...d, [key]: val } : d))
+    if (key === 'type') {
+      const row = diamonds.find(x => x.id === id2)
+      if (row?.shape_id && row?.size_id) autofillCostFor(id2, row.shape_id, row.size_id, val)
+    }
+  }
+
+  // Mirrors the helper on the create page — auto-fills cost from the most
+  // recent matching shape+size+type entry, only when the field is blank.
+  async function autofillCostFor(rowId: string, shape_id: string, size_id: string, type: string) {
+    if (!shape_id || !size_id) return
+    try {
+      const url = new URL('/api/diamonds/latest-cost', window.location.origin)
+      url.searchParams.set('shape_id', shape_id)
+      url.searchParams.set('size_id', size_id)
+      if (type) url.searchParams.set('type', type)
+      const r = await fetch(url.toString())
+      if (!r.ok) return
+      const d = await r.json()
+      if (d.cost == null) return
+      setDiamonds(prev => prev.map(row => {
+        if (row.id !== rowId) return row
+        if (row.cost && row.cost !== '') return row
+        return { ...row, cost: String(d.cost) }
+      }))
+    } catch { /* silent */ }
+  }
   function set(k: string, v: string | string[]) { setForm(prev => ({ ...prev, [k]: v })) }
   function toggleModel(model: string) {
     const current = form.models_available
@@ -323,22 +350,24 @@ export default function CatalogProductEditPage() {
                     <DiamondCatalogPicker
                       shapeId={d.shape_id || null}
                       sizeId={d.size_id || null}
-                      onChange={picked => setDiamonds(prev => prev.map(row => row.id !== d.id ? row : ({
-                        ...row,
-                        shape_id: picked.shape_id,
-                        size_id: picked.size_id,
-                        size_label: picked.size_label,
-                        shape: picked.shape_name ? picked.shape_name.toLowerCase() : row.shape,
-                        weight: row.weight === '' && picked.approx_carats != null
-                          ? String(picked.approx_carats)
-                          : row.weight,
-                      }))) }
+                      onChange={picked => {
+                        setDiamonds(prev => prev.map(row => row.id !== d.id ? row : ({
+                          ...row,
+                          shape_id: picked.shape_id,
+                          size_id: picked.size_id,
+                          size_label: picked.size_label,
+                          shape: picked.shape_name ? picked.shape_name.toLowerCase() : row.shape,
+                          weight: row.weight === '' && picked.approx_carats != null
+                            ? String(picked.approx_carats)
+                            : row.weight,
+                        })))
+                        autofillCostFor(d.id, picked.shape_id, picked.size_id, d.type)
+                      }}
                     />
                   </div>
                 )}
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                   <div><label className={lbl}>Role</label><select disabled={locked} className={roInp} value={d.role} onChange={e => updateDiamond(d.id, 'role', e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}</select></div>
-                  <div><label className={lbl}>Shape</label><select disabled={locked} className={roInp} value={d.shape} onChange={e => updateDiamond(d.id, 'shape', e.target.value)}>{SHAPES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}</select></div>
                   <div><label className={lbl}>Weight (ct)</label><input readOnly={locked} type="number" inputMode="decimal" step="0.01" className={roInp} value={d.weight} onChange={e => updateDiamond(d.id, 'weight', e.target.value)} /></div>
                   <div><label className={lbl}>Pieces</label><input readOnly={locked} type="number" inputMode="decimal" min="1" className={roInp} value={d.pieces} onChange={e => updateDiamond(d.id, 'pieces', e.target.value)} /></div>
                   <div><label className={lbl}>Quality</label><select disabled={locked} className={roInp} value={d.quality} onChange={e => updateDiamond(d.id, 'quality', e.target.value)}>{QUALITIES.map(q => <option key={q} value={q}>{q}</option>)}</select></div>
