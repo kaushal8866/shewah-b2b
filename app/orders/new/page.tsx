@@ -14,8 +14,12 @@ function NewOrderForm() {
 
   const [saving, setSaving] = useState(false)
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
-  const [products, setProducts] = useState<{ id: string; code: string; name: string; trade_price: number; delivery_days: number; gold_karat?: number; gold_weight_g?: number; making_charges?: number }[]>([])
-  const [mfgPartners, setMfgPartners] = useState<{ id: string; name: string; city: string }[]>([])
+  const [products, setProducts] = useState<{ id: string; code: string; name: string; trade_price: number; delivery_days: number; gold_karat?: number; gold_weight_g?: number; making_charges?: number; diamond_cost?: number; diamond_weight?: number; diamond_shape?: string; diamond_quality?: string; diamond_color?: string }[]>([])
+  const [mfgPartners, setMfgPartners] = useState<{ id: string; name: string; city: string; min_labour_grams?: number; labour_rate_9k?: number; labour_rate_10k?: number; labour_rate_14k?: number; labour_rate_18k?: number; labour_rate_22k?: number }[]>([])
+  // Track whether the operator has hand-edited the labour-charges field. Once
+  // they type into it, we stop auto-recomputing so we don't clobber their value.
+  const [makingTouched, setMakingTouched] = useState(false)
+  const [stoneTouched, setStoneTouched] = useState(false)
   const [goldRate, setGoldRate] = useState(0)
   const [fromInterest, setFromInterest] = useState(false)
 
@@ -43,9 +47,9 @@ function NewOrderForm() {
     if (prePartner || preProduct) setFromInterest(true)
     Promise.all([
       supabase.from('partners').select('id, store_name, city').order('store_name'),
-      supabase.from('products').select('id, code, name, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges').eq('is_active', true).order('code'),
+      supabase.from('products').select('id, code, name, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges, diamond_cost, diamond_weight, diamond_shape, diamond_quality, diamond_color').eq('is_active', true).order('code'),
       supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
-      supabase.from('manufacturing_partners').select('id, name, city').eq('status', 'active').order('name'),
+      supabase.from('manufacturing_partners').select('id, name, city, min_labour_grams, labour_rate_9k, labour_rate_10k, labour_rate_14k, labour_rate_18k, labour_rate_22k').eq('status', 'active').order('name'),
     ]).then(([{ data: p }, { data: pr }, { data: g }, { data: mp }]) => {
       setPartners(p || [])
       const prods = pr || []
@@ -54,43 +58,76 @@ function NewOrderForm() {
       if (g?.[0]) setGoldRate(g[0].rate_24k)
       if (preProduct) {
         const product = prods.find(x => x.id === preProduct)
-        if (product) {
-          const days = product.delivery_days || 14
-          setForm(prev => ({
-            ...prev,
-            trade_price: String(product.trade_price || ''),
-            total_amount: String(product.trade_price || ''),
-            expected_delivery: new Date(Date.now() + days * 86400000).toISOString().split('T')[0],
-            gold_karat: product.gold_karat ? String(product.gold_karat) : prev.gold_karat,
-            gold_weight_estimated: product.gold_weight_g ? String(product.gold_weight_g) : prev.gold_weight_estimated,
-            making_charges: product.making_charges ? String(product.making_charges) : prev.making_charges,
-          }))
-        }
+        if (product) applyProductDefaults(product)
       }
     })
   }, [])
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
 
+  // Pull every catalog field we know about into the order form. Diamond info
+  // (carats / shape / quality) lives on the order's special_notes by default
+  // so production has it; stone_cost is autofilled from the catalog row.
+  function applyProductDefaults(product: typeof products[number]) {
+    const days = product.delivery_days || 14
+    const delivery = new Date(Date.now() + days * 86400000).toISOString().split('T')[0]
+    const qty = parseInt(form.quantity) || 1
+    const total = (product.trade_price || 0) * qty
+    const diamondLine = [
+      product.diamond_weight ? `${product.diamond_weight}ct` : '',
+      product.diamond_shape || '',
+      [product.diamond_quality, product.diamond_color].filter(Boolean).join('/'),
+    ].filter(Boolean).join(' ')
+    setForm(prev => ({
+      ...prev,
+      product_id: product.id,
+      trade_price: String(product.trade_price || ''),
+      total_amount: total ? String(total) : String(product.trade_price || ''),
+      expected_delivery: delivery,
+      gold_karat: product.gold_karat ? String(product.gold_karat) : prev.gold_karat,
+      gold_weight_estimated: product.gold_weight_g ? String(product.gold_weight_g) : prev.gold_weight_estimated,
+      making_charges: product.making_charges && !makingTouched ? String(product.making_charges) : prev.making_charges,
+      stone_cost: product.diamond_cost && !stoneTouched ? String(product.diamond_cost) : prev.stone_cost,
+      special_notes: prev.special_notes || (diamondLine ? `Diamond: ${diamondLine}` : ''),
+    }))
+  }
+
   function onProductSelect(productId: string) {
     const product = products.find(p => p.id === productId)
-    if (product) {
-      const days = product.delivery_days || 14
-      const delivery = new Date(Date.now() + days * 86400000).toISOString().split('T')[0]
-      setForm(prev => ({
-        ...prev,
-        product_id: productId,
-        trade_price: String(product.trade_price || ''),
-        total_amount: String(product.trade_price || ''),
-        expected_delivery: delivery,
-        gold_karat: product.gold_karat ? String(product.gold_karat) : prev.gold_karat,
-        gold_weight_estimated: product.gold_weight_g ? String(product.gold_weight_g) : prev.gold_weight_estimated,
-        making_charges: product.making_charges ? String(product.making_charges) : prev.making_charges,
-      }))
-    } else {
-      set('product_id', productId)
-    }
+    if (product) applyProductDefaults(product)
+    else set('product_id', productId)
   }
+
+  // Auto-compute labour charges whenever the operator picks a karigar (or
+  // changes weight/karat) — using the partner's labour_rate_{karat} × max(weight, min_labour_grams) × quantity.
+  // Stops auto-updating once the operator types in the field manually.
+  const selectedMfg = mfgPartners.find(m => m.id === form.assigned_manufacturer_id)
+  const labourRate = selectedMfg ? Number((selectedMfg as any)[`labour_rate_${form.gold_karat}k`] || 0) : 0
+  const minGrams = Number(selectedMfg?.min_labour_grams) || 0
+  const weight = parseFloat(form.gold_weight_estimated) || 0
+  const qtyForLabour = Math.max(parseInt(form.quantity) || 1, 1)
+  const billableGrams = Math.max(weight, minGrams)
+  const autoMaking = selectedMfg && labourRate > 0 && weight > 0
+    ? Math.round(billableGrams * labourRate * qtyForLabour)
+    : 0
+  useEffect(() => {
+    if (makingTouched) return
+    if (autoMaking > 0) {
+      setForm(prev => prev.making_charges === String(autoMaking) ? prev : { ...prev, making_charges: String(autoMaking) })
+    }
+  }, [autoMaking, makingTouched])
+
+  // Keep total_amount in sync with trade_price × quantity until the operator overrides it.
+  const [totalTouched, setTotalTouched] = useState(false)
+  useEffect(() => {
+    if (totalTouched) return
+    const tp = parseFloat(form.trade_price) || 0
+    const q = parseInt(form.quantity) || 1
+    const t = tp * q
+    if (t > 0) {
+      setForm(prev => prev.total_amount === String(t) ? prev : { ...prev, total_amount: String(t) })
+    }
+  }, [form.trade_price, form.quantity, totalTouched])
 
   // Estimated COGS preview
   const estCogs = computeOrderCogs({
@@ -257,9 +294,24 @@ function NewOrderForm() {
                 value={form.gold_weight_estimated} onChange={e => set('gold_weight_estimated', e.target.value)} />
             </div>
             <div>
-              <label className={label}>Making charges (₹)</label>
+              <label className={label}>
+                Making charges (₹)
+                {!makingTouched && autoMaking > 0 && (
+                  <span className="ml-2 text-[10px] text-emerald-600 font-normal">auto from karigar rate</span>
+                )}
+              </label>
               <input type="number" inputMode="decimal" className={input}
-                value={form.making_charges} onChange={e => set('making_charges', e.target.value)} />
+                value={form.making_charges}
+                onChange={e => { setMakingTouched(true); set('making_charges', e.target.value) }} />
+              {!makingTouched && selectedMfg && labourRate > 0 && weight > 0 && (
+                <p className="text-[10px] text-stone-400 mt-1">
+                  {qtyForLabour > 1 ? `${qtyForLabour} × ` : ''}{billableGrams.toFixed(3)}g × ₹{labourRate}/g
+                  {minGrams > 0 && weight < minGrams && <span className="text-amber-600"> (min {minGrams}g billed)</span>}
+                </p>
+              )}
+              {selectedMfg && form.gold_karat && labourRate === 0 && weight > 0 && (
+                <p className="text-[10px] text-amber-600 mt-1">No {form.gold_karat}K rate set for this karigar.</p>
+              )}
             </div>
             <div>
               <label className={label}>CAD cost (₹)</label>
@@ -267,9 +319,15 @@ function NewOrderForm() {
                 value={form.cad_cost} onChange={e => set('cad_cost', e.target.value)} />
             </div>
             <div>
-              <label className={label}>Stone cost (₹)</label>
+              <label className={label}>
+                Stone cost (₹)
+                {!stoneTouched && parseFloat(form.stone_cost) > 0 && form.product_id && (
+                  <span className="ml-2 text-[10px] text-emerald-600 font-normal">auto from catalog</span>
+                )}
+              </label>
               <input type="number" inputMode="decimal" className={input}
-                value={form.stone_cost} onChange={e => set('stone_cost', e.target.value)} />
+                value={form.stone_cost}
+                onChange={e => { setStoneTouched(true); set('stone_cost', e.target.value) }} />
             </div>
           </div>
           {(parseFloat(form.gold_weight_estimated) > 0 || parseFloat(form.making_charges) > 0) && (
@@ -307,8 +365,14 @@ function NewOrderForm() {
               <input type="number" inputMode="decimal" className={input} value={form.trade_price} onChange={e => set('trade_price', e.target.value)} />
             </div>
             <div>
-              <label className={label}>Total amount (₹) *</label>
-              <input type="number" inputMode="decimal" className={input} value={form.total_amount} onChange={e => set('total_amount', e.target.value)} />
+              <label className={label}>
+                Total amount (₹) *
+                {!totalTouched && parseFloat(form.total_amount) > 0 && (parseInt(form.quantity) || 1) > 1 && (
+                  <span className="ml-2 text-[10px] text-emerald-600 font-normal">trade × qty</span>
+                )}
+              </label>
+              <input type="number" inputMode="decimal" className={input} value={form.total_amount}
+                onChange={e => { setTotalTouched(true); set('total_amount', e.target.value) }} />
             </div>
             <div>
               <label className={label}>Advance paid (₹)</label>
