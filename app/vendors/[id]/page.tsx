@@ -64,7 +64,34 @@ export default function VendorDetailPage() {
   }
 
   async function handleDelete() {
-    // Unlink inventory items before deleting the vendor
+    // The central-stock ledger has a CHECK constraint that every 'purchase'
+    // row must carry a vendor_id (its FK is ON DELETE SET NULL). Deleting a
+    // vendor that has any purchase history would null out those vendor_ids
+    // and trip the constraint with a cryptic SQL error. Detect this up front
+    // and offer the operator the right next step instead of a hard failure.
+    const { count: purchaseCount } = await supabase
+      .from('stock_movements')
+      .select('id', { count: 'exact', head: true })
+      .eq('vendor_id', id)
+      .eq('movement_type', 'purchase')
+
+    if ((purchaseCount || 0) > 0) {
+      const proceed = confirm(
+        `${vendor.name} has ${purchaseCount} purchase record${purchaseCount === 1 ? '' : 's'} on the stock ledger ` +
+        `that must be kept for audit. The vendor cannot be deleted, but you can mark it Inactive ` +
+        `so it stops appearing in pickers and dashboards.\n\nMark this vendor as Inactive now?`,
+      )
+      if (!proceed) return
+      const { error: updErr } = await supabase
+        .from('vendors').update({ status: 'inactive' }).eq('id', id)
+      if (updErr) { alert('Could not mark inactive: ' + updErr.message); return }
+      load()
+      setShowDeleteConfirm(false)
+      return
+    }
+
+    // No purchase history — safe to fully delete. Unlink inventory first so
+    // its vendor_id FK doesn't block the delete (inventory rows are kept).
     await supabase.from('inventory').update({ vendor_id: null }).eq('vendor_id', id)
     const { error } = await supabase.from('vendors').delete().eq('id', id)
     if (error) { alert('Error: ' + error.message); return }
