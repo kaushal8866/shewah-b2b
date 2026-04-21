@@ -37,6 +37,15 @@ export default withAuth(
       return NextResponse.next()
     }
 
+    // Shared infrastructure endpoints any authenticated user can hit.
+    // /api/upload proxies to Cloudinary and is needed by retailers (custom
+    // order photos) and manufacturers (CAD/QC uploads) just as much as the
+    // admin team. Without this, the sandbox rules below return 403 Forbidden
+    // because /api/upload doesn't live under /api/portal/<role>/*.
+    if (pathname === '/api/upload' || pathname.startsWith('/api/upload/')) {
+      return NextResponse.next()
+    }
+
     // Manufacturers are sandboxed to their portal — block every other admin URL/API.
     if (role === 'manufacturer') {
       if (pathname.startsWith('/api/')) {

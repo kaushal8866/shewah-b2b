@@ -25,6 +25,7 @@ const nav = [
   { href: '/gold-rates',      icon: TrendingUp,      label: 'Gold Rates',    module: 'gold_rates'    },
   { href: '/stock',           icon: Boxes,           label: 'Stock',         module: 'vendors'       },
   { href: '/diamonds/catalog', icon: Diamond,        label: 'Diamonds',      module: 'vendors'       },
+  { href: '/diamonds/pricing', icon: Diamond,        label: 'Diamond Pricing', module: 'vendors', masterOnly: true },
   { href: '/vendors',         icon: Store,           label: 'Vendors',       module: 'vendors'       },
   { href: '/circuits',        icon: Map,             label: 'Circuits',      module: 'circuits'      },
   { href: '/analytics',       icon: BarChart2,       label: 'Analytics',     module: 'analytics'     },
@@ -80,7 +81,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return permissions.includes(module)
   }
 
-  const visibleNav = nav.filter(item => hasAccess(item.module))
+  const visibleNav = nav.filter(item => hasAccess(item.module) && (!('masterOnly' in item && item.masterOnly) || role === 'master'))
   const visibleBottom = bottomNav.filter(item => hasAccess(item.module))
 
   async function handleLogout() {

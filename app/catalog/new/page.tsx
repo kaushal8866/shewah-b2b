@@ -140,9 +140,20 @@ export default function NewProductPage() {
     }
   }
 
-  // Auto-fill a row's cost from the most recent matching shape+size+type
-  // entry in the system. Only fills when the cost field is blank so the
-  // operator's manual entries are never overwritten.
+  // Suggestions panel state — keyed by diamond row id. Holds both the
+  // central matrix prices (Task #82, source of truth) and the legacy
+  // product/inventory history price so the operator can compare and pick.
+  type CostSuggestion = {
+    matrix: Array<{ quality_label: string; color_label: string; price: number }>
+    history: { cost: number; source_label: string } | null
+  }
+  const [costSuggestions, setCostSuggestions] = useState<Record<string, CostSuggestion>>({})
+
+  // Fetch cost suggestions for a row from the central matrix + history. The
+  // first matrix cell auto-fills the cost field if it's blank, but the full
+  // list is rendered as clickable chips so the operator can swap to any
+  // other quality/color or to the historical product cost — required for
+  // closing verbal deals where the negotiated price differs.
   async function autofillCostFor(rowId: string, shape_id: string, size_id: string, type: string) {
     if (!shape_id || !size_id) return
     try {
@@ -153,11 +164,24 @@ export default function NewProductPage() {
       const r = await fetch(url.toString())
       if (!r.ok) return
       const d = await r.json()
-      if (d.cost == null) return
+      const matrix = Array.isArray(d.matrix_options) ? d.matrix_options.map((m: any) => ({
+        quality_label: m.quality_label, color_label: m.color_label, price: Number(m.price) || 0,
+      })) : []
+      const history = (d.cost != null && Number.isFinite(Number(d.cost)))
+        ? { cost: Number(d.cost), source_label: String(d.source_label || 'History') }
+        : null
+      setCostSuggestions(prev => ({ ...prev, [rowId]: { matrix, history } }))
+      // First-time autofill: prefer the matrix price (preferring a row that
+      // matches the diamond's quality + color when present), fall back to
+      // history. Never overwrite an operator-typed value.
       setDiamonds(prev => prev.map(row => {
         if (row.id !== rowId) return row
-        if (row.cost && row.cost !== '') return row // never overwrite operator input
-        return { ...row, cost: String(d.cost) }
+        if (row.cost && row.cost !== '') return row
+        const qMatch = matrix.find((m: any) => m.quality_label.toLowerCase().includes((row.quality || '').toLowerCase().slice(0, 2)))
+        const cMatch = qMatch && matrix.find((m: any) =>
+          m.quality_label === qMatch.quality_label && m.color_label.toLowerCase().includes((row.color || '').toLowerCase().slice(0, 1)))
+        const pick = cMatch?.price ?? qMatch?.price ?? matrix[0]?.price ?? history?.cost
+        return pick ? { ...row, cost: String(pick) } : row
       }))
     } catch { /* silent — auto-fill is best-effort */ }
   }
@@ -378,6 +402,48 @@ export default function NewProductPage() {
                     <input type="number" inputMode="decimal" className={inp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} placeholder="8000" />
                   </div>
                 </div>
+                {(() => {
+                  const sug = costSuggestions[d.id]
+                  if (!sug || (sug.matrix.length === 0 && !sug.history)) return null
+                  return (
+                    <div className="mt-3 border-t border-stone-200 pt-2.5">
+                      <p className="text-[11px] font-medium text-stone-500 mb-1.5">Cost suggestions — click to use</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {sug.matrix.map((m, i) => {
+                          const active = parseFloat(d.cost) === m.price
+                          return (
+                            <button
+                              key={`m-${i}`}
+                              type="button"
+                              onClick={() => updateDiamond(d.id, 'cost', String(m.price))}
+                              className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
+                                (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
+                                        : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}
+                              title={`Matrix · ${m.quality_label} · ${m.color_label}`}
+                            >
+                              <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
+                              ₹{m.price.toLocaleString('en-IN')}
+                            </button>
+                          )
+                        })}
+                        {sug.history && (
+                          <button
+                            type="button"
+                            onClick={() => updateDiamond(d.id, 'cost', String(sug.history!.cost))}
+                            className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
+                              (parseFloat(d.cost) === sug.history.cost
+                                ? 'border-amber-500 bg-amber-50 text-amber-800'
+                                : 'border-stone-200 bg-white text-stone-600 hover:border-amber-400')}
+                            title={sug.history.source_label}
+                          >
+                            <span className="text-stone-400 mr-1">Last</span>
+                            ₹{sug.history.cost.toLocaleString('en-IN')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
                 {d.cost && parseInt(d.pieces) > 1 && (
                   <div className="mt-2 text-right text-xs text-stone-400">
                     Row total: ₹{((parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1)).toLocaleString('en-IN')}

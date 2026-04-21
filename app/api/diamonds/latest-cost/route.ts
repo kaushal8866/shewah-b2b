@@ -4,17 +4,19 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 /**
- * Latest cost-per-piece lookup for a (shape, size, type) combo.
- * Used by product/inventory forms to auto-fill the diamond cost field.
+ * Cost-per-piece suggestions for a (shape, size, type) combo.
  *
- * Source priority:
- *   1. Most recent product whose `diamond_specs` array contains a row with
- *      this shape_id + size_id (and matching type when provided). Cost lives
- *      in the row's `cost` field.
- *   2. Most recent vendor inventory row matching shape_id + size_id + type
- *      (cost lives in `avg_purchase_price`).
+ * Returns:
+ *   - `cost`           — the single best historical guess (product > inventory),
+ *                        kept for backward compatibility with older callers.
+ *   - `matrix_options` — every quality × color cell in the central price
+ *                        matrix for this shape/size/type. The team-managed
+ *                        source of truth (Task #82). Empty when no cell has
+ *                        been priced yet, or while the migration is pending.
  *
- * Returns null if nothing found yet — the caller leaves the field blank.
+ * Catalog forms now show both side-by-side and let the user pick (or type
+ * their own price) — required so the team can close verbal deals at a
+ * negotiated rate without touching the matrix.
  */
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -26,6 +28,42 @@ export async function GET(req: Request) {
   const type     = searchParams.get('type') // 'lgd' | 'natural' | null
   if (!shape_id || !size_id) {
     return NextResponse.json({ error: 'shape_id and size_id are required' }, { status: 400 })
+  }
+
+  // Matrix lookup (Task #82). LGD-only today; future natural rows will work
+  // here too because we filter by `type` when the caller supplies one.
+  let matrix_options: Array<{
+    cell_id: string
+    quality_bucket_id: string
+    quality_label: string
+    color_bucket_id: string
+    color_label: string
+    type: string
+    price: number
+  }> = []
+  try {
+    let mq = supabaseAdmin
+      .from('diamond_price_matrix')
+      .select('id, type, price_per_piece, quality_bucket_id, color_bucket_id, quality:diamond_quality_buckets(label,sort_order), color:diamond_color_buckets(label,sort_order)')
+      .eq('shape_id', shape_id)
+      .eq('size_id', size_id)
+    if (type) mq = mq.eq('type', type)
+    const { data: cells, error: mErr } = await mq
+    // 42P01 = "relation does not exist" → migration not yet applied. Fall
+    // through silently so the legacy product/inventory lookup still works.
+    if (!mErr && cells) {
+      matrix_options = cells.map((c: any) => ({
+        cell_id: c.id,
+        quality_bucket_id: c.quality_bucket_id,
+        quality_label: c.quality?.label || '',
+        color_bucket_id: c.color_bucket_id,
+        color_label: c.color?.label || '',
+        type: c.type,
+        price: Number(c.price_per_piece) || 0,
+      })).sort((a, b) => a.quality_label.localeCompare(b.quality_label) || a.color_label.localeCompare(b.color_label))
+    }
+  } catch {
+    // Matrix tables aren't available yet — keep going with legacy lookup.
   }
 
   // 1. Recent products' diamond_specs.
@@ -51,6 +89,7 @@ export async function GET(req: Request) {
           source: 'product',
           source_label: `Product ${(p as any).sku || (p as any).id}`,
           source_date: (p as any).created_at,
+          matrix_options,
         })
       }
     }
@@ -76,8 +115,9 @@ export async function GET(req: Request) {
       source: 'inventory',
       source_label: 'Vendor inventory',
       source_date: (invHit as any).updated_at || (invHit as any).created_at,
+      matrix_options,
     })
   }
 
-  return NextResponse.json({ cost: null })
+  return NextResponse.json({ cost: null, matrix_options })
 }

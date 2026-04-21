@@ -71,6 +71,16 @@ export async function POST(req: Request) {
     ? body.reference_images
     : Array.isArray(body.brief_images) ? body.brief_images : []
   const briefImages = rawImages.filter((u: any) => typeof u === 'string').slice(0, 20)
+  // External-piece comparison snapshot (Task #82). Free-form jsonb so the
+  // retailer-side quote preview can be inspected later without a schema
+  // change. Capped at ~32k serialized chars as a defensive guard.
+  let comparisonPayload: any = null
+  if (body.comparison_payload && typeof body.comparison_payload === 'object') {
+    try {
+      const s = JSON.stringify(body.comparison_payload)
+      if (s.length <= 32000) comparisonPayload = body.comparison_payload
+    } catch { /* ignore malformed payload */ }
+  }
 
   if (type === 'catalog' && !body.product_id) {
     return NextResponse.json({ error: 'Pick a product' }, { status: 400 })
@@ -182,6 +192,7 @@ export async function POST(req: Request) {
     cad_cost: 0,
     stone_cost: productRow?.diamond_cost || 0,
     internal_notes: `Placed via retailer portal by ${user.username}`,
+    comparison_payload: comparisonPayload,
   }
 
   let created: any = null
@@ -206,7 +217,7 @@ export async function POST(req: Request) {
   if (error) {
     // The COGS columns from Task #5 may not be present in every environment.
     // Retry without those optional columns so the portal still works.
-    if (error.message?.match(/gold_source|gold_weight_estimated|making_charges|cad_cost|stone_cost|gold_karat|brief_images|selected_karat|gross_weight_at_karat|gold_pure_24kt_g|retail_labour_at_order/)) {
+    if (error.message?.match(/gold_source|gold_weight_estimated|making_charges|cad_cost|stone_cost|gold_karat|brief_images|selected_karat|gross_weight_at_karat|gold_pure_24kt_g|retail_labour_at_order|comparison_payload/)) {
       const minimal = {
         order_number: insert.order_number,
         partner_id: insert.partner_id,

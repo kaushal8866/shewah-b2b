@@ -187,8 +187,16 @@ export default function CatalogProductEditPage() {
     }
   }
 
-  // Mirrors the helper on the create page — auto-fills cost from the most
-  // recent matching shape+size+type entry, only when the field is blank.
+  // Mirrors the helper on the create page — fetches both the central
+  // diamond price matrix (Task #82, source of truth) and the legacy
+  // product/inventory history price. Renders both as clickable chips so
+  // the operator can pick or override at deal-close time.
+  type CostSuggestion = {
+    matrix: Array<{ quality_label: string; color_label: string; price: number }>
+    history: { cost: number; source_label: string } | null
+  }
+  const [costSuggestions, setCostSuggestions] = useState<Record<string, CostSuggestion>>({})
+
   async function autofillCostFor(rowId: string, shape_id: string, size_id: string, type: string) {
     if (!shape_id || !size_id) return
     try {
@@ -199,13 +207,23 @@ export default function CatalogProductEditPage() {
       const r = await fetch(url.toString())
       if (!r.ok) return
       const d = await r.json()
-      if (d.cost == null) return
+      const matrix = Array.isArray(d.matrix_options) ? d.matrix_options.map((m: any) => ({
+        quality_label: m.quality_label, color_label: m.color_label, price: Number(m.price) || 0,
+      })) : []
+      const history = (d.cost != null && Number.isFinite(Number(d.cost)))
+        ? { cost: Number(d.cost), source_label: String(d.source_label || 'History') }
+        : null
+      setCostSuggestions(prev => ({ ...prev, [rowId]: { matrix, history } }))
       setDiamonds(prev => prev.map(row => {
         if (row.id !== rowId) return row
         if (row.cost && row.cost !== '') return row
-        return { ...row, cost: String(d.cost) }
+        const qMatch = matrix.find((m: any) => m.quality_label.toLowerCase().includes((row.quality || '').toLowerCase().slice(0, 2)))
+        const cMatch = qMatch && matrix.find((m: any) =>
+          m.quality_label === qMatch.quality_label && m.color_label.toLowerCase().includes((row.color || '').toLowerCase().slice(0, 1)))
+        const pick = cMatch?.price ?? qMatch?.price ?? matrix[0]?.price ?? history?.cost
+        return pick ? { ...row, cost: String(pick) } : row
       }))
-    } catch { /* silent */ }
+    } catch { /* silent — auto-fill is best-effort */ }
   }
   function set(k: string, v: string | string[]) { setForm(prev => ({ ...prev, [k]: v })) }
   function toggleModel(model: string) {
@@ -393,6 +411,43 @@ export default function CatalogProductEditPage() {
                   <div><label className={lbl}>Type</label><select disabled={locked} className={roInp} value={d.type} onChange={e => updateDiamond(d.id, 'type', e.target.value)}><option value="lgd">LGD</option><option value="natural">Natural</option></select></div>
                   <div><label className={lbl}>Cost/pc (₹)</label><input readOnly={locked} type="number" inputMode="decimal" className={roInp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} /></div>
                 </div>
+                {!locked && (() => {
+                  const sug = costSuggestions[d.id]
+                  if (!sug || (sug.matrix.length === 0 && !sug.history)) return null
+                  return (
+                    <div className="mt-3 border-t border-stone-200 pt-2.5">
+                      <p className="text-[11px] font-medium text-stone-500 mb-1.5">Cost suggestions — click to use</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {sug.matrix.map((m, i) => {
+                          const active = parseFloat(d.cost) === m.price
+                          return (
+                            <button key={`m-${i}`} type="button"
+                              onClick={() => updateDiamond(d.id, 'cost', String(m.price))}
+                              className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
+                                (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
+                                        : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}
+                              title={`Matrix · ${m.quality_label} · ${m.color_label}`}>
+                              <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
+                              ₹{m.price.toLocaleString('en-IN')}
+                            </button>
+                          )
+                        })}
+                        {sug.history && (
+                          <button type="button"
+                            onClick={() => updateDiamond(d.id, 'cost', String(sug.history!.cost))}
+                            className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
+                              (parseFloat(d.cost) === sug.history.cost
+                                ? 'border-amber-500 bg-amber-50 text-amber-800'
+                                : 'border-stone-200 bg-white text-stone-600 hover:border-amber-400')}
+                            title={sug.history.source_label}>
+                            <span className="text-stone-400 mr-1">Last</span>
+                            ₹{sug.history.cost.toLocaleString('en-IN')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )})}
           </div>
