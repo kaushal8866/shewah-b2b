@@ -33,7 +33,7 @@ export default function LoginPage() {
     const session = await getSession()
     setLoading(false)
     const role = session?.user?.role
-    let dest = '/'
+    let dest = '/dashboard'
     if (role === 'manufacturer') dest = '/portal/manufacturer'
     else if (role === 'retailer') dest = '/portal/retailer'
     router.replace(dest)

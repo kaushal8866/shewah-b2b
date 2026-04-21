@@ -5,10 +5,20 @@ import { NextResponse } from 'next/server'
 // keeps /api/portal/* in scope while still excluding /api/auth, /api/setup,
 // /api/showcase, /api/track.
 
+// Public marketing surfaces — anyone can hit them, logged in or not.
+// `/` is the lead-capture landing page and `/partner-signup` its full form.
+function isPublicMarketing(pathname: string): boolean {
+  return pathname === '/' || pathname.startsWith('/partner-signup') || pathname === '/api/public/partner-signup'
+}
+
 export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl
     const token = req.nextauth.token
+
+    // Marketing pages render for everyone — the page itself decides whether
+    // to redirect a logged-in user to their role's home.
+    if (isPublicMarketing(pathname)) return NextResponse.next()
 
     if (!token) return NextResponse.redirect(new URL('/login', req.url))
 
@@ -95,7 +105,10 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        if (isPublicMarketing(req.nextUrl.pathname)) return true
+        return !!token
+      },
     },
   }
 )
@@ -106,6 +119,6 @@ export const config = {
     // /api/cron/* is excluded so Replit Scheduled Deployments can hit it
     // without a session — every route under /api/cron MUST implement its own
     // auth (typically a Bearer $CRON_SECRET check) inside the handler.
-    '/((?!login|setup|showcase|track|m/|cad-share/|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|api/cad-share/|_next|_vercel|favicon\\.ico|.*\\.).*)',
+    '/((?!login|partner-signup|setup|showcase|track|m/|cad-share/|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|api/cad-share/|api/public|_next|_vercel|favicon\\.ico|opengraph-image|.*\\.).*)',
   ],
 }

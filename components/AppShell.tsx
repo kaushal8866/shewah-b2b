@@ -13,7 +13,7 @@ import {
 import { useEffect, useState } from 'react'
 
 const nav = [
-  { href: '/',                icon: LayoutDashboard, label: 'Dashboard',     module: 'dashboard'     },
+  { href: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard',     module: 'dashboard'     },
   { href: '/partners',        icon: Users,           label: 'Partners',      module: 'partners'      },
   { href: '/orders',          icon: ShoppingBag,     label: 'Orders',        module: 'orders'        },
   { href: '/order-change-requests', icon: MessageSquare, label: 'Change Requests', module: 'orders'  },
@@ -34,7 +34,7 @@ const nav = [
 ]
 
 const bottomNav = [
-  { href: '/',              icon: LayoutDashboard, short: 'Home',     module: 'dashboard'     },
+  { href: '/dashboard',     icon: LayoutDashboard, short: 'Home',     module: 'dashboard'     },
   { href: '/partners',      icon: Users,           short: 'Partners', module: 'partners'      },
   { href: '/orders',        icon: ShoppingBag,     short: 'Orders',   module: 'orders'        },
   { href: '/manufacturing', icon: Factory,         short: 'Mfg',      module: 'manufacturing' },
@@ -48,6 +48,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [pendingChangeRequests, setPendingChangeRequests] = useState<number>(0)
+  const [newLeadCount, setNewLeadCount] = useState<number>(0)
 
   useEffect(() => {
     if (!session) return
@@ -61,13 +62,40 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         const d = await r.json()
         if (!cancelled) setPendingChangeRequests((d.requests || []).length)
       } catch {}
+      // New-lead count for the Partners nav badge — silently 0 if the
+      // partner_signups table isn't migrated yet.
+      try {
+        const r2 = await fetch('/api/db', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            table: 'partner_signups',
+            op: 'select',
+            select: 'id',
+            filters: [{ type: 'eq', col: 'status', val: 'new' }],
+            count: 'exact',
+            head: true,
+          }),
+        })
+        if (!r2.ok) return
+        const d = await r2.json()
+        if (!cancelled) setNewLeadCount(typeof d?.count === 'number' ? d.count : 0)
+      } catch {}
     }
     load()
     const t = setInterval(load, 60000)
     return () => { cancelled = true; clearInterval(t) }
   }, [session, pathname])
 
-  const isPublic = pathname === '/login' || pathname.startsWith('/setup') || pathname.startsWith('/showcase') || pathname.startsWith('/track') || pathname.startsWith('/portal')
+  const isPublic =
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname.startsWith('/partner-signup') ||
+    pathname.startsWith('/setup') ||
+    pathname.startsWith('/showcase') ||
+    pathname.startsWith('/track') ||
+    pathname.startsWith('/portal')
   if (isPublic) return <>{children}</>  
 
   const role = session?.user?.role || 'sub'
@@ -111,7 +139,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {visibleNav.map(({ href, icon: Icon, label }) => {
             const active = pathname === href || (href !== '/' && pathname.startsWith(href))
-            const badge = href === '/order-change-requests' && pendingChangeRequests > 0 ? pendingChangeRequests : 0
+            const badge =
+              href === '/order-change-requests' && pendingChangeRequests > 0 ? pendingChangeRequests :
+              href === '/partners'              && newLeadCount > 0          ? newLeadCount          : 0
             return (
               <Link key={href} href={href}
                 className={cn(
@@ -181,7 +211,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             {visibleNav.map(({ href, icon: Icon, label }) => {
               const active = pathname === href || (href !== '/' && pathname.startsWith(href))
-              const badge = href === '/order-change-requests' && pendingChangeRequests > 0 ? pendingChangeRequests : 0
+              const badge =
+                href === '/order-change-requests' && pendingChangeRequests > 0 ? pendingChangeRequests :
+                href === '/partners'              && newLeadCount > 0          ? newLeadCount          : 0
               return (
                 <Link key={href} href={href}
                   onClick={() => setMobileMenuOpen(false)}
