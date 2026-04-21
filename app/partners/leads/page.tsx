@@ -73,19 +73,18 @@ export default function PartnerLeadsPage() {
   const [canAssign, setCanAssign] = useState<boolean>(false)
 
   useEffect(() => {
-    // Best-effort fetch of admin staff for the assignee dropdown.
-    // /api/users requires `master` role; sub-admins will get 403 and
-    // see read-only assignee names instead of an editable dropdown.
-    fetch('/api/users')
+    // Fetch admin staff for the assignee dropdown. /api/staff is open to
+    // any authenticated admin user (master or sub) and returns only the
+    // narrow subset of fields needed for the picker.
+    fetch('/api/staff')
       .then(async r => {
         if (!r.ok) return null
         const j = await r.json().catch(() => null)
-        return j?.users as Staff[] | undefined
+        return j?.staff as Staff[] | undefined
       })
-      .then(users => {
-        if (!users) return
-        const admins = users.filter(u => u.role === 'master' || u.role === 'sub')
-        setStaff(admins)
+      .then(staffList => {
+        if (!staffList) return
+        setStaff(staffList)
         setCanAssign(true)
       })
       .catch(() => {})
