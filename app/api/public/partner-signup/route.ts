@@ -70,28 +70,45 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
-  const full_name  = clean(body?.full_name,  120)
-  const store_name = clean(body?.store_name, 200)
-  const city       = clean(body?.city,       100)
-  const phone      = clean(body?.phone,      40)
+  const full_name      = clean(body?.full_name,  120)
+  const store_name     = clean(body?.store_name, 200)
+  const city           = clean(body?.city,       100)
+  const phone          = clean(body?.phone,      40)
+  const monthly_volume = clean(body?.monthly_volume, 40)
   if (!full_name || !store_name || !city || !phone) {
     return NextResponse.json(
       { ok: false, error: 'Please fill name, store name, city and phone.' },
       { status: 400 },
     )
   }
-  const whatsapp: string = clean(body?.whatsapp, 40) || phone
-  // Cheap phone-shape sanity check (digits >= 7)
-  if ((phone.replace(/\D/g, '').length || 0) < 7) {
+  if (!monthly_volume) {
     return NextResponse.json(
-      { ok: false, error: 'That phone number doesn\'t look right. Please check.' },
+      { ok: false, error: 'Please choose your typical monthly diamond piece volume.' },
+      { status: 400 },
+    )
+  }
+  const whatsapp: string = clean(body?.whatsapp, 40) || phone
+  // Strict India 10-digit phone (allow optional +91 / 91 / 0 prefix).
+  const validIndian = (raw: string): boolean => {
+    const d10 = raw.replace(/\D/g, '').replace(/^(0|91)/, '')
+    return d10.length === 10 && /^[6-9]/.test(d10)
+  }
+  if (!validIndian(phone)) {
+    return NextResponse.json(
+      { ok: false, error: 'Please enter a valid 10-digit Indian mobile number.' },
       { status: 400 },
     )
   }
 
-  const monthly_volume = clean(body?.monthly_volume, 12) || ''
   if (!ALLOWED_VOLUMES.has(monthly_volume)) {
     return NextResponse.json({ ok: false, error: 'Invalid volume choice.' }, { status: 400 })
+  }
+  const email = clean(body?.email, 200)
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json(
+      { ok: false, error: 'That email address doesn\'t look right.' },
+      { status: 400 },
+    )
   }
 
   const row = {
@@ -100,7 +117,7 @@ export async function POST(req: NextRequest) {
     city,
     phone,
     whatsapp,
-    email:          clean(body?.email,        200),
+    email,
     gst_number:     clean(body?.gst_number,   40),
     monthly_volume: monthly_volume || null,
     note:           clean(body?.note,         2000),

@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 
 export default function NewPartnerPage() {
   const router = useRouter()
+  const search = useSearchParams()
   const [saving, setSaving] = useState(false)
+  const [leadId, setLeadId] = useState<string | null>(null)
   const [form, setForm] = useState({
     store_name: '', owner_name: '', phone: '', email: '',
     city: '', state: '', circuit: '', address: '', sarafa_bazaar: '',
@@ -16,6 +18,20 @@ export default function NewPartnerPage() {
     model_preference: '', status: 'cold', stage: 'prospect',
     source: 'cold_visit', notes: '',
   })
+
+  // Prefill from query params (used when converting a lead from /partners/leads).
+  useEffect(() => {
+    if (!search) return
+    const next: Record<string, string> = {}
+    const keys = ['store_name','owner_name','phone','email','city','state','source','notes'] as const
+    for (const k of keys) {
+      const v = search.get(k)
+      if (v) next[k] = v
+    }
+    if (Object.keys(next).length) setForm(prev => ({ ...prev, ...next }))
+    const lid = search.get('lead_id')
+    if (lid) setLeadId(lid)
+  }, [search])
 
   function set(key: string, val: string) {
     setForm(prev => ({ ...prev, [key]: val }))
@@ -28,8 +44,15 @@ export default function NewPartnerPage() {
     }
     setSaving(true)
     const { data, error } = await supabase.from('partners').insert([form]).select().single()
+    if (error) { setSaving(false); alert('Error: ' + error.message); return }
+    // If we came from a landing-page lead, mark it onboarded and link the new partner row.
+    if (leadId) {
+      await supabase
+        .from('partner_signups')
+        .update({ status: 'onboarded', converted_partner_id: data.id })
+        .eq('id', leadId)
+    }
     setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
     router.push(`/partners/${data.id}`)
   }
 

@@ -57,6 +57,28 @@ export default function LeadForm({ compact = false }: { compact?: boolean }) {
       setError('Please fill name, store, city and phone.')
       return
     }
+    if (!f.monthly_volume) {
+      setError('Please choose your typical monthly diamond piece volume.')
+      return
+    }
+    // Strict India 10-digit phone (allow optional +91 / 91 / 0 prefix).
+    const phoneDigits = f.phone.replace(/\D/g, '')
+    const phone10 = phoneDigits.replace(/^(0|91)/, '')
+    if (phone10.length !== 10 || !/^[6-9]/.test(phone10)) {
+      setError('Please enter a valid 10-digit Indian mobile number.')
+      return
+    }
+    if (!f.whatsapp_same) {
+      const waDigits = f.whatsapp.replace(/\D/g, '').replace(/^(0|91)/, '')
+      if (waDigits.length !== 10 || !/^[6-9]/.test(waDigits)) {
+        setError('Please enter a valid 10-digit WhatsApp number.')
+        return
+      }
+    }
+    if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
+      setError('That email address doesn\u2019t look right.')
+      return
+    }
     setSubmitting(true)
     try {
       const payload = {
@@ -160,8 +182,8 @@ export default function LeadForm({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
       <div>
-        <label className="block text-xs font-medium text-stone-700 mb-1">Monthly diamond piece volume</label>
-        <select className={inputCls} value={f.monthly_volume} onChange={e => set('monthly_volume', e.target.value)}>
+        <label className="block text-xs font-medium text-stone-700 mb-1">Monthly diamond piece volume *</label>
+        <select className={inputCls} value={f.monthly_volume} onChange={e => set('monthly_volume', e.target.value)} required>
           {VOLUME_OPTIONS.map(o => (<option key={o.value} value={o.value}>{o.label}</option>))}
         </select>
       </div>

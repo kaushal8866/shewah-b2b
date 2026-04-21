@@ -28,9 +28,12 @@ type Lead = {
   internal_notes: string | null
   contacted_at: string | null
   converted_partner_id: string | null
+  assigned_to: string | null
   email_dispatch: any
   whatsapp_dispatch: any
 }
+
+type Staff = { id: string; display_name: string | null; username: string; role: string }
 
 const STATUSES: Lead['status'][] = ['new', 'contacted', 'qualified', 'onboarded', 'rejected']
 
@@ -66,6 +69,33 @@ export default function PartnerLeadsPage() {
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [staff, setStaff] = useState<Staff[]>([])
+  const [canAssign, setCanAssign] = useState<boolean>(false)
+
+  useEffect(() => {
+    // Best-effort fetch of admin staff for the assignee dropdown.
+    // /api/users requires `master` role; sub-admins will get 403 and
+    // see read-only assignee names instead of an editable dropdown.
+    fetch('/api/users')
+      .then(async r => {
+        if (!r.ok) return null
+        const j = await r.json().catch(() => null)
+        return j?.users as Staff[] | undefined
+      })
+      .then(users => {
+        if (!users) return
+        const admins = users.filter(u => u.role === 'master' || u.role === 'sub')
+        setStaff(admins)
+        setCanAssign(true)
+      })
+      .catch(() => {})
+  }, [])
+
+  const staffById = useMemo(() => {
+    const m: Record<string, Staff> = {}
+    for (const s of staff) m[s.id] = s
+    return m
+  }, [staff])
 
   async function load() {
     setLoading(true)
@@ -105,6 +135,21 @@ export default function PartnerLeadsPage() {
     if (error) setError(error.message)
     else setLeads(prev => prev.map(l => l.id === id ? { ...l, internal_notes: value } : l))
     setBusyId(null)
+  }
+
+  async function setAssignee(id: string, assignee: string | null) {
+    setBusyId(id)
+    const { error } = await supabase.from('partner_signups').update({ assigned_to: assignee }).eq('id', id)
+    if (error) setError(error.message)
+    else setLeads(prev => prev.map(l => l.id === id ? { ...l, assigned_to: assignee } : l))
+    setBusyId(null)
+  }
+
+  function assigneeLabel(id: string | null): string {
+    if (!id) return 'Unassigned'
+    const s = staffById[id]
+    if (!s) return 'Assigned'
+    return s.display_name || s.username
   }
 
   function convertHref(l: Lead): string {
@@ -213,6 +258,26 @@ export default function PartnerLeadsPage() {
                       </select>
                       <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
                     </div>
+                    {canAssign ? (
+                      <div className="relative">
+                        <select
+                          disabled={busyId === l.id}
+                          value={l.assigned_to || ''}
+                          onChange={e => setAssignee(l.id, e.target.value || null)}
+                          className="text-xs border border-stone-200 rounded-lg px-2.5 py-1.5 bg-white pr-7 appearance-none max-w-[180px]"
+                          title="Assigned to">
+                          <option value="">Unassigned</option>
+                          {staff.map(s => (
+                            <option key={s.id} value={s.id}>{s.display_name || s.username}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-stone-500" title="Assigned to">
+                        {assigneeLabel(l.assigned_to)}
+                      </span>
+                    )}
                     {l.converted_partner_id ? (
                       <Link href={`/partners/${l.converted_partner_id}`}
                         className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-800">
