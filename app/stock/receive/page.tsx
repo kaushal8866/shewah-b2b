@@ -77,7 +77,7 @@ export default function StockReceivePage() {
   useEffect(() => {
     Promise.all([
       supabase.from('vendors').select('id, name').order('name'),
-      supabase.from('manufacturing_partners').select('id, name').eq('active', true).order('name'),
+      supabase.from('manufacturing_partners').select('id, name').eq('status', 'active').order('name'),
       fetch('/api/diamonds/shapes').then(r => r.json()),
       fetch('/api/diamonds/sizes').then(r => r.json()),
     ]).then(([v, p, sh, sz]: any[]) => {

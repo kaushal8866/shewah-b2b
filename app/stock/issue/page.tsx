@@ -40,7 +40,7 @@ function StockIssueInner() {
 
   useEffect(() => {
     supabase.from('manufacturing_partners')
-      .select('id, name').eq('active', true).order('name')
+      .select('id, name').eq('status', 'active').order('name')
       .then(({ data }) => setPartners(data || []))
     fetch('/api/stock/balances').then(r => r.json()).then(d => setBalances(d.balances || []))
     fetch('/api/diamonds/shapes').then(r => r.json()).then(d => setShapes(d.shapes || []))
