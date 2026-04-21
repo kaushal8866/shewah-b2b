@@ -41,16 +41,22 @@ function NewCADRequestForm() {
     if (!preProduct) return
     supabase
       .from('products')
-      .select('id, code, name, gold_karat, diamond_shape')
+      .select('id, code, name, gold_karat, diamond_shape, diamond_weight, diamond_quality, diamond_color')
       .eq('id', preProduct)
       .single()
       .then(({ data }) => {
         if (!data) return
         setProductRef(data)
+        const dq = (data as any).diamond_weight
+        const specs = [
+          (data as any).diamond_quality,
+          (data as any).diamond_color,
+        ].filter(Boolean).join(' / ')
         setForm(prev => ({
           ...prev,
-          brief_text: prev.brief_text || `Reference product: ${data.code} — ${data.name}`,
+          brief_text: prev.brief_text || `Reference product: ${data.code} — ${data.name}${specs ? ` · ${specs}` : ''}`,
           diamond_shape: data.diamond_shape || prev.diamond_shape,
+          diamond_weight: prev.diamond_weight || (dq ? `${dq}ct` : prev.diamond_weight),
           gold_karat: data.gold_karat ? String(data.gold_karat) : prev.gold_karat,
         }))
       })

@@ -1,14 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 
+const RATE_KEYS = ['labour_rate_9k','labour_rate_10k','labour_rate_14k','labour_rate_18k','labour_rate_22k'] as const
+type RateKey = typeof RATE_KEYS[number]
+
+function median(nums: number[]): number {
+  const xs = nums.filter(n => Number.isFinite(n) && n > 0).slice().sort((a, b) => a - b)
+  if (!xs.length) return 0
+  const mid = Math.floor(xs.length / 2)
+  return xs.length % 2 ? xs[mid] : Math.round((xs[mid - 1] + xs[mid]) / 2)
+}
+
 export default function NewManufacturingPartnerPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
+  // Track which rate fields the operator has typed in so the city-suggestion
+  // autofill never clobbers a manual value.
+  const touchedRef = useRef<Record<string, boolean>>({})
+  const [suggestion, setSuggestion] = useState<null | { city: string; sample: number; medians: Record<RateKey, number> }>(null)
 
   const [form, setForm] = useState({
     name: '',
@@ -29,7 +43,51 @@ export default function NewManufacturingPartnerPage() {
     notes: '',
   })
 
-  function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
+  function set(k: string, v: string) {
+    if ((RATE_KEYS as readonly string[]).includes(k)) touchedRef.current[k] = true
+    setForm(prev => ({ ...prev, [k]: v }))
+  }
+
+  // Debounced lookup of the median labour rates among other active partners
+  // in the same city. We surface them as a one-click "Use city averages" chip
+  // so a new karigar can be onboarded in seconds with sensible starting rates.
+  // A `cancelled` flag drops stale responses so the operator never sees a
+  // suggestion belonging to a previously-typed city.
+  useEffect(() => {
+    const city = form.city.trim()
+    if (city.length < 2) { setSuggestion(null); return }
+    let cancelled = false
+    const t = setTimeout(async () => {
+      const { data } = await supabase
+        .from('manufacturing_partners')
+        .select('labour_rate_9k,labour_rate_10k,labour_rate_14k,labour_rate_18k,labour_rate_22k')
+        .eq('status', 'active')
+        .ilike('city', city)
+      if (cancelled) return
+      const rows = data || []
+      if (!rows.length) { setSuggestion(null); return }
+      const medians = RATE_KEYS.reduce((acc, k) => {
+        acc[k] = median(rows.map((r: any) => Number(r[k])))
+        return acc
+      }, {} as Record<RateKey, number>)
+      const anyRate = RATE_KEYS.some(k => medians[k] > 0)
+      setSuggestion(anyRate ? { city, sample: rows.length, medians } : null)
+    }, 400)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [form.city])
+
+  function applyCityAverages() {
+    if (!suggestion) return
+    setForm(prev => {
+      const next = { ...prev }
+      for (const k of RATE_KEYS) {
+        if (!touchedRef.current[k] && suggestion.medians[k] > 0) {
+          ;(next as any)[k] = String(suggestion.medians[k])
+        }
+      }
+      return next
+    })
+  }
 
   async function handleSave() {
     if (!form.name || !form.phone || !form.city) {
@@ -133,6 +191,20 @@ export default function NewManufacturingPartnerPage() {
             </div>
             <div className="sm:col-span-2">
               <p className={lbl}>Labour rates (₹/gram) — used to auto-cost orders for this karigar</p>
+              {suggestion && (
+                <div className="mb-2 flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                  <p className="text-xs text-emerald-800">
+                    {suggestion.sample} other active karigar{suggestion.sample === 1 ? '' : 's'} in <strong>{suggestion.city}</strong>: median{' '}
+                    {RATE_KEYS.map((k, i) => suggestion.medians[k] > 0
+                      ? <span key={k}>{i > 0 ? ' · ' : ''}{k.replace('labour_rate_','').toUpperCase()} ₹{suggestion.medians[k]}</span>
+                      : null)}
+                  </p>
+                  <button type="button" onClick={applyCityAverages}
+                    className="text-xs font-medium text-emerald-700 hover:text-emerald-900 underline shrink-0">
+                    Use city average
+                  </button>
+                </div>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 <div>
                   <label className="block text-[10px] text-stone-400 mb-1">9K <span className="text-stone-300">· 9/24</span></label>

@@ -12,6 +12,11 @@ export default function NewInventoryItemPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
+  // Latest 24K rate-per-gram from `gold_rates` — used to suggest a sensible
+  // average purchase price when the operator picks the gold category. Editing
+  // the price field flips the touched flag so we never overwrite a manual value.
+  const [latestRate24k, setLatestRate24k] = useState<number | null>(null)
+  const [priceTouched, setPriceTouched] = useState(false)
 
   const [form, setForm] = useState({
     name: '',
@@ -36,9 +41,29 @@ export default function NewInventoryItemPage() {
 
   useEffect(() => {
     supabase.from('vendors').select('id, name').order('name').then(({ data }) => setVendors(data || []))
+    supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1)
+      .then(({ data }) => {
+        const r = Number(data?.[0]?.rate_24k)
+        if (Number.isFinite(r) && r > 0) setLatestRate24k(r)
+      })
   }, [])
 
-  function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
+  function set(k: string, v: string) {
+    setForm(prev => ({ ...prev, [k]: v }))
+    if (k === 'avg_purchase_price') setPriceTouched(true)
+  }
+
+  // For gold: price/g ≈ latest 24K rate × karat factor (gross-gram basis).
+  // Fires whenever karat changes or category becomes 'gold' — but never if
+  // the operator has already typed something in the price field.
+  useEffect(() => {
+    if (form.category !== 'gold' || priceTouched || !latestRate24k) return
+    const k = parseInt(form.gold_karat.replace('gold_', '').replace('k', ''))
+    const f = KARAT_FACTORS[k] || 1
+    const suggested = Math.round(latestRate24k * f)
+    setForm(prev => ({ ...prev, avg_purchase_price: String(suggested) }))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.category, form.gold_karat, latestRate24k, priceTouched])
 
   async function handleSave() {
     if (!form.name) { alert('Item name is required'); return }
@@ -295,8 +320,18 @@ export default function NewInventoryItemPage() {
               </div>
             )}
             <div>
-              <label className={lbl}>Avg purchase price (₹/{isDiamonds ? 'ct' : form.unit === 'grams' ? 'g' : 'unit'})</label>
+              <label className={lbl}>
+                Avg purchase price (₹/{isDiamonds ? 'ct' : form.unit === 'grams' ? 'g' : 'unit'})
+                {isGold && !priceTouched && form.avg_purchase_price && (
+                  <span className="ml-2 text-[10px] text-emerald-600 font-normal">auto from latest 24K rate</span>
+                )}
+              </label>
               <input type="number" inputMode="decimal" className={inp} value={form.avg_purchase_price} onChange={e => set('avg_purchase_price', e.target.value)} />
+              {isGold && latestRate24k && !priceTouched && form.avg_purchase_price && (
+                <p className="text-[10px] text-stone-400 mt-1">
+                  ₹{latestRate24k.toLocaleString('en-IN')}/g (24K) × {(KARAT_FACTORS[parseInt(form.gold_karat.replace('gold_', '').replace('k', ''))] || 1).toFixed(3)} = ₹{form.avg_purchase_price}/g gross. Edit to override.
+                </p>
+              )}
             </div>
             <div>
               <label className={lbl}>Low stock alert threshold</label>

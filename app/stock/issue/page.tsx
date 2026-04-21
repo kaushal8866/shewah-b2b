@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, AlertTriangle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { KARAT_FACTORS } from '@/lib/karat'
 
 const MATERIALS = [
   { value: 'gold_24k', label: 'Gold (24kt net)', unit: 'g' },
@@ -21,6 +22,10 @@ function StockIssueInner() {
   const [shapes, setShapes] = useState<{ id: string; name: string; active: boolean }[]>([])
   const [sizes, setSizes] = useState<{ id: string; shape_id: string; label: string; active: boolean }[]>([])
   const [groups, setGroups] = useState<{ diamond_shape_id: string | null; diamond_size_id: string | null; material_type: string; carats: number; pieces: number }[]>([])
+  // Open manufacturing orders for the selected karigar that need material from
+  // float — surfaced as one-tap prefill chips so the issuer never has to
+  // re-key the shortfall amount or remember which job it was for.
+  const [openMfgOrders, setOpenMfgOrders] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [allowNegative, setAllowNegative] = useState(false)
@@ -49,6 +54,42 @@ function StockIssueInner() {
   }, [])
 
   function set<K extends keyof typeof form>(k: K, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
+
+  // Reload the karigar's open mfg orders (status=issued, material_from_float)
+  // whenever the partner picker changes. We pull gold_weight_required + karat
+  // so we can suggest the 24kt-net amount the operator most likely needs.
+  // A request token guards against stale responses if the operator switches
+  // partners before the previous fetch resolves.
+  useEffect(() => {
+    if (!form.manufacturing_partner_id) { setOpenMfgOrders([]); return }
+    let cancelled = false
+    supabase.from('manufacturing_orders')
+      .select('id, order_number, description, gold_weight_required, gold_karat, status, material_from_float')
+      .eq('manufacturing_partner_id', form.manufacturing_partner_id)
+      .eq('material_from_float', true)
+      .in('status', ['issued', 'in_progress', 'pending'])
+      .order('created_at', { ascending: false })
+      .limit(10)
+      .then(({ data }) => { if (!cancelled) setOpenMfgOrders(data || []) })
+    return () => { cancelled = true }
+  }, [form.manufacturing_partner_id])
+
+  // Convert a mfg order's gross gold requirement to its 24kt-pure equivalent
+  // so the issue-form quantity matches what the float bucket actually holds.
+  // Use the canonical KARAT_FACTORS table (lib/karat.ts) — never re-define
+  // factors locally, so 24kt math stays consistent across the app.
+  function applyOpenOrder(o: any) {
+    const k = Number(o.gold_karat) || 24
+    const f = KARAT_FACTORS[k] ?? 1
+    const net24k = Math.round((Number(o.gold_weight_required) || 0) * f * 10000) / 10000
+    setForm(prev => ({
+      ...prev,
+      material_type: 'gold_24k',
+      quantity: net24k > 0 ? String(net24k) : prev.quantity,
+      reference: o.order_number,
+      notes: prev.notes || `For ${o.order_number}: ${o.description || ''}`.trim(),
+    }))
+  }
 
   const mat = MATERIALS.find(m => m.value === form.material_type)
   const isDiamond = form.material_type.startsWith('diamond')
@@ -142,6 +183,26 @@ function StockIssueInner() {
               <option value="">Select karigar...</option>
               {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
+            {form.manufacturing_partner_id && openMfgOrders.length > 0 && (
+              <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-lg p-2">
+                <p className="text-[11px] text-emerald-800 mb-1.5 font-medium">
+                  Open jobs for this karigar — tap to prefill
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {openMfgOrders.map(o => {
+                    const k = Number(o.gold_karat) || 24
+                    const f = KARAT_FACTORS[k] ?? 1
+                    const net = Math.round((Number(o.gold_weight_required) || 0) * f * 1000) / 1000
+                    return (
+                      <button key={o.id} type="button" onClick={() => applyOpenOrder(o)}
+                        className="text-[11px] bg-white border border-emerald-300 hover:border-emerald-500 text-emerald-800 rounded px-2 py-1">
+                        {o.order_number} · {net || '?'}g 24K
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

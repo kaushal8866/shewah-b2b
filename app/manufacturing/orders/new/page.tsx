@@ -23,6 +23,9 @@ function NewMfgOrderForm() {
   const [uploadingCad, setUploadingCad] = useState(false)
   const [floatError, setFloatError] = useState<string | null>(null)
   const [overIssueModal, setOverIssueModal] = useState<{ available: number; required: number; shortfall: number } | null>(null)
+  // Tracks fields the operator has manually edited so the customer-order autofill
+  // doesn't clobber them on a second pick.
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
 
   const defaultPartnerId = searchParams.get('partner') || ''
 
@@ -48,7 +51,7 @@ function NewMfgOrderForm() {
   useEffect(() => {
     Promise.all([
       supabase.from('manufacturing_partners').select('*').eq('status', 'active').order('name'),
-      supabase.from('orders').select('id, order_number, partners(store_name)').order('order_date', { ascending: false }).limit(20),
+      supabase.from('orders').select('id, order_number, quantity, ring_size, special_notes, gold_karat, gold_weight_estimated, gold_weight_actual, products(code, name, gold_karat, gold_weight_g, diamond_weight, diamond_shape, diamond_quality, diamond_color), partners(store_name)').order('order_date', { ascending: false }).limit(20),
     ]).then(([{ data: p }, { data: co }]) => {
       setPartners((p || []) as ManufacturingPartnerLite[])
       setCustomerOrders(co || [])
@@ -105,6 +108,46 @@ function NewMfgOrderForm() {
 
   function set(k: string, v: string | boolean) {
     setForm(prev => ({ ...prev, [k]: v }))
+    setTouched(prev => ({ ...prev, [k]: true }))
+  }
+
+  // When the operator links a customer order, copy across everything we know
+  // (description, qty, ring size, karat, gold weight, diamond carats, notes)
+  // so they don't have to retype it. Manually-edited fields are preserved.
+  function onLinkCustomerOrder(coId: string) {
+    setForm(prev => ({ ...prev, customer_order_id: coId }))
+    if (!coId) return
+    const co: any = customerOrders.find((o: any) => o.id === coId)
+    if (!co) return
+    const product = co.products
+    const goldWeight = co.gold_weight_actual || co.gold_weight_estimated || product?.gold_weight_g || ''
+    const diamondLine = product
+      ? [
+          product.diamond_weight ? `${product.diamond_weight}ct` : '',
+          product.diamond_shape || '',
+          [product.diamond_quality, product.diamond_color].filter(Boolean).join('/'),
+        ].filter(Boolean).join(' ')
+      : ''
+    const desc = product ? `${product.code} — ${product.name}` : ''
+    setForm(prev => ({
+      ...prev,
+      customer_order_id: coId,
+      description: !touched.description && desc ? desc : prev.description,
+      quantity:    !touched.quantity && co.quantity     ? String(co.quantity)        : prev.quantity,
+      ring_size:   !touched.ring_size && co.ring_size   ? String(co.ring_size)       : prev.ring_size,
+      special_notes: !touched.special_notes
+        ? [co.special_notes, diamondLine ? `Diamond: ${diamondLine}` : ''].filter(Boolean).join(' | ') || prev.special_notes
+        : prev.special_notes,
+      gold_karat:    !touched.gold_karat && (co.gold_karat || product?.gold_karat)
+        ? String(co.gold_karat || product.gold_karat)
+        : prev.gold_karat,
+      gold_weight_required: !touched.gold_weight_required && goldWeight
+        ? String(goldWeight)
+        : prev.gold_weight_required,
+      diamond_weight: !touched.diamond_weight && product?.diamond_weight
+        ? String(product.diamond_weight)
+        : prev.diamond_weight,
+    }))
   }
 
   async function uploadImage(file: File) {
@@ -328,12 +371,15 @@ function NewMfgOrderForm() {
               </div>
               <div className="sm:col-span-2">
                 <label className={lbl}>Link to customer order (optional)</label>
-                <select className={inp} value={form.customer_order_id} onChange={e => set('customer_order_id', e.target.value)}>
+                <select className={inp} value={form.customer_order_id} onChange={e => onLinkCustomerOrder(e.target.value)}>
                   <option value="">No linked order</option>
                   {customerOrders.map((o: any) => (
                     <option key={o.id} value={o.id}>{o.order_number} — {o.partners?.store_name}</option>
                   ))}
                 </select>
+                {form.customer_order_id && (
+                  <p className="text-[10px] text-emerald-600 mt-1">Description, qty, karat, weight & diamond auto-filled from the linked order. Edit any field to override.</p>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <label className={lbl}>Description / what to make *</label>
