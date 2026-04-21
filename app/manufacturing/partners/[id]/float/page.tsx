@@ -42,6 +42,8 @@ function MaterialFloatInner() {
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>(['deposit','return','consumption','adjust'].includes(typeParam) ? typeParam : 'deposit')
   const [pendingNegative, setPendingNegative] = useState(false)
+  const [txError, setTxError] = useState<string | null>(null)
+  const [txOk, setTxOk] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     material_type: MATERIAL_TYPES.find(m => m.value === materialParam) ? materialParam : 'gold_24k',
@@ -162,10 +164,12 @@ function MaterialFloatInner() {
   const willGoNegative = qty !== 0 && projectedBal < 0
 
   async function handleTransaction() {
+    setTxError(null)
+    setTxOk(null)
     if (activeTab === 'adjust') {
-      if (!qty || qty === 0) { alert('Enter a non-zero adjustment (use a minus sign to decrease)'); return }
+      if (!qty || qty === 0) { setTxError('Enter a non-zero adjustment (use a minus sign to decrease)'); return }
     } else {
-      if (!qty || qty <= 0) { alert('Enter a valid quantity'); return }
+      if (!qty || qty <= 0) { setTxError('Enter a valid quantity greater than zero.'); return }
     }
 
     if (willGoNegative && !pendingNegative) {
@@ -182,20 +186,30 @@ function MaterialFloatInner() {
     if (floatRecord?._synthetic) floatRecord = undefined
     if (!floatRecord) {
       const materialInfo = MATERIAL_TYPES.find(m => m.value === form.material_type)
-      const { data } = await supabase.from('material_float').insert([{
+      const { data: newFloat, error: floatErr } = await supabase.from('material_float').insert([{
         manufacturing_partner_id: partnerId,
         material_type: form.material_type,
         unit: materialInfo?.unit || 'grams',
         total_deposited: 0,
         total_consumed: 0,
       }]).select().single()
-      floatRecord = data
+      if (floatErr || !newFloat) {
+        setSaving(false)
+        setTxError('Could not create the karigar\'s float row: ' + (floatErr?.message || 'unknown error'))
+        return
+      }
+      floatRecord = newFloat
     }
 
-    const txType = activeTab // 'deposit' | 'return' | 'consumption' | 'adjustment'
+    if (!floatRecord?.id) {
+      setSaving(false)
+      setTxError('Internal error — float row is missing an id. Refresh and try again.')
+      return
+    }
+
     const transactionType = activeTab === 'adjust' ? 'adjustment' : activeTab
 
-    await supabase.from('material_transactions').insert([{
+    const { error: txErr } = await supabase.from('material_transactions').insert([{
       float_id: floatRecord.id,
       manufacturing_partner_id: partnerId,
       transaction_type: transactionType,
@@ -211,8 +225,21 @@ function MaterialFloatInner() {
     }])
 
     setSaving(false)
+
+    if (txErr) {
+      // Surface the actual reason instead of clearing the form silently.
+      // Common causes: RLS (must be master), the negative-balance check, or
+      // a missing column from a not-yet-applied migration.
+      setTxError('Could not record this transaction: ' + (txErr.message || 'unknown error'))
+      return
+    }
+
     setPendingNegative(false)
     setForm(prev => ({ ...prev, quantity: '', reference: '', notes: '' }))
+    setTxOk(
+      `${transactionType.charAt(0).toUpperCase() + transactionType.slice(1)} of ${qty} ` +
+      `${floatRecord.unit} recorded${form.order_id ? ' against this order' : ''}.`
+    )
     load()
   }
 
@@ -303,7 +330,7 @@ function MaterialFloatInner() {
             { key: 'adjust',      label: 'Adjust',      color: 'text-blue-700' },
           ].map(t => (
             <button key={t.key}
-              onClick={() => { setActiveTab(t.key as Tab); setPendingNegative(false) }}
+              onClick={() => { setActiveTab(t.key as Tab); setPendingNegative(false); setTxError(null); setTxOk(null) }}
               className={`flex-1 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${activeTab === t.key ? `bg-white shadow-sm ${t.color}` : 'text-stone-500 hover:text-stone-700'}`}>
               {t.label}
             </button>
@@ -391,6 +418,18 @@ function MaterialFloatInner() {
               This will push the {MATERIAL_TYPES.find(m => m.value === form.material_type)?.label} balance to{' '}
               <strong>{projectedBal.toFixed(3)}</strong>. Click the button again to confirm and save anyway.
             </p>
+          </div>
+        )}
+
+        {txError && (
+          <div className="mt-3 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <p className="break-words">{txError}</p>
+          </div>
+        )}
+        {txOk && (
+          <div className="mt-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm text-green-700">
+            {txOk}
           </div>
         )}
 
