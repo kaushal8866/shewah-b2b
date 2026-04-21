@@ -47,12 +47,12 @@ export function pure24kt(grossWeight: number, karat: number): number {
  * costs. Same shape across the catalog admin, gold-rate page, and retailer
  * portal so prices match everywhere.
  *
- * Insight: gold cost is invariant across karats for a single piece because
- * all karats carry the same 24kt-pure mass. Only labour varies (per-karat
- * rate × per-karat gross weight).
+ * Per-karat 24kt-pure billed mass = netGoldWeight × KARAT_FACTORS[k]. The
+ * gold cost differs honestly across karats because lower-purity karats bill
+ * less 24kt-equivalent gold for the same finished piece.
  */
 export type KaratPriceInputs = {
-  weights: Record<number, number>          // gross weight per karat (g)
+  netGoldWeight: number                    // single net-gold input (g)
   rate24k: number                          // ₹/g of 24kt
   retailLabour: Record<number, number>     // ₹/g per karat
   diamondCost: number                      // ₹
@@ -64,7 +64,7 @@ export type KaratPriceInputs = {
 
 export type KaratPrice = {
   karat: number
-  weight: number
+  weight: number          // 24kt-pure billed mass at this karat (g)
   goldCost: number
   labourCost: number
   cogs: number
@@ -72,13 +72,24 @@ export type KaratPrice = {
   mrp: number
 }
 
+/**
+ * Per-karat 24kt-pure content for a single net-gold-weight input.
+ * Returned as { 22, 18, 14, 10, 9 } in grams, rounded to 4dp.
+ */
+export function pureMassByKarat(netGoldWeight: number): Record<number, number> {
+  const w = netGoldWeight || 0
+  const out: Record<number, number> = {}
+  for (const k of SELLABLE_KARATS) out[k] = r4(w * KARAT_FACTORS[k])
+  return out
+}
+
 export function computeKaratPricing(inp: KaratPriceInputs): KaratPrice[] {
   const margin = inp.marginMult ?? 1.28
   const mrpM = inp.mrpMult ?? 1.40
+  const masses = pureMassByKarat(inp.netGoldWeight || 0)
   return SELLABLE_KARATS.map(k => {
-    const w = inp.weights[k] || 0
-    const f = KARAT_FACTORS[k]
-    const goldCost = Math.round(w * f * (inp.rate24k || 0))
+    const w = masses[k] || 0
+    const goldCost = Math.round(w * (inp.rate24k || 0))
     const labourPerG = inp.retailLabour[k] || 0
     const labourCost = Math.round(labourPerG * Math.max(w, 1))
     const cogs = goldCost + labourCost + (inp.diamondCost || 0) + (inp.makingCharges || 0) + (inp.igiCost || 0)

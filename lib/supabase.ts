@@ -470,20 +470,16 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
 
   let updated = 0, skipped = 0, failed = 0
   for (const p of products) {
-    // Build the per-karat weights map. Prefer the explicit columns; if a
-    // legacy product has none of them, derive from (gold_karat, gold_weight_g).
-    let weights: Record<number, number> = {
-      22: Number(p.gold_weight_22k) || 0,
-      18: Number(p.gold_weight_18k) || 0,
-      14: Number(p.gold_weight_14k) || 0,
-      10: Number(p.gold_weight_10k) || 0,
-      9:  Number(p.gold_weight_9k)  || 0,
-    }
-    if (SELLABLE_KARATS.every(k => !weights[k])) {
+    // Resolve the single net-gold-weight input for this product. Catalog form
+    // saves it into `gold_weight_22k` (numerically the user-entered value).
+    // For super-legacy rows that only have gold_weight_g + gold_karat, we
+    // approximate by reading gold_weight_g as the net input.
+    let netGoldWeight = Number(p.gold_weight_22k) || 0
+    if (!netGoldWeight) {
       const legacyW = Number(p.gold_weight_g) || 0
-      const legacyK = Number(p.gold_karat) || 18
+      const legacyK = Number(p.gold_karat) || 22
       if (legacyW > 0 && KARAT_FACTORS[legacyK]) {
-        weights = deriveAllKaratWeights(legacyW, legacyK)
+        netGoldWeight = legacyW
       } else {
         skipped++
         continue
@@ -500,7 +496,7 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
     }
 
     const pricing = computeKaratPricing({
-      weights,
+      netGoldWeight,
       rate24k,
       retailLabour: labour,
       diamondCost,

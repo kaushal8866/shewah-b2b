@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
-import { KARAT_FACTORS, SELLABLE_KARATS, deriveAllKaratWeights, computeKaratPricing } from '@/lib/karat'
+import { KARAT_FACTORS, SELLABLE_KARATS, pureMassByKarat, computeKaratPricing } from '@/lib/karat'
 import { ArrowLeft, Save, Calculator, Plus, X, Upload, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import Link from 'next/link'
@@ -135,13 +135,13 @@ export default function CatalogProductEditPage() {
   }, [id])
 
   const weight22 = parseFloat(form.gold_weight_22k) || 0
-  const weights = deriveAllKaratWeights(weight22, 22)
+  const weights = pureMassByKarat(weight22)
   const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1), 0)
   const makingCharges = parseFloat(form.making_charges) || 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
 
   const pricing = computeKaratPricing({
-    weights, rate24k: goldRate, retailLabour,
+    netGoldWeight: weight22, rate24k: goldRate, retailLabour,
     diamondCost: totalDiamondCost, makingCharges, igiCost,
   })
   const default22 = pricing.find(p => p.karat === 22)
@@ -203,7 +203,7 @@ export default function CatalogProductEditPage() {
 
   async function handleSave() {
     if (!form.code || !form.name) { alert('Product code and name are required'); return }
-    if (!weight22) { alert('Gold weight @ 22kt is required'); return }
+    if (!weight22) { alert('Net gold weight is required'); return }
     setSaving(true)
     const primary = diamonds[0]
     const karat_pricing: Record<string, any> = {}
@@ -211,8 +211,11 @@ export default function CatalogProductEditPage() {
     const updatePayload: Record<string, any> = {
       code: form.code, name: form.name, description: form.description, category: form.category,
       gold_karat: 22,
-      gold_weight_g: weights[22] || null,
-      gold_weight_22k: weights[22] || null,
+      // gold_weight_22k stores the user-entered net gold weight (24kt
+      // consumption). The other per-karat columns store the 24kt-pure
+      // billed mass at that karat = net × KARAT_FACTORS[k].
+      gold_weight_g: weight22 || null,
+      gold_weight_22k: weight22 || null,
       gold_weight_18k: weights[18] || null,
       gold_weight_14k: weights[14] || null,
       gold_weight_10k: weights[10] || null,
@@ -384,36 +387,26 @@ export default function CatalogProductEditPage() {
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
           <h2 className="font-medium text-stone-900 mb-1">Gold specifications</h2>
           <p className="text-xs text-stone-400 mb-4">
-            Net gold weight is the gold content only. Gross weight is the total finished piece (gold + diamonds + alloys). Other karats derive automatically.
+            Net gold weight is the 24kt consumption for this piece. Per-karat 24kt-pure billed mass = net × that karat's purity factor.
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={lbl}>Net gold weight @ 22kt (g) *</label>
+              <label className={lbl}>Net gold weight (24kt consumption) (g) *</label>
               <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
                 value={form.gold_weight_22k} onChange={e => set('gold_weight_22k', e.target.value)} />
             </div>
-            <div>
-              <label className={lbl}>Gross weight — finished piece (g)</label>
-              <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
-                value={form.gross_weight} onChange={e => set('gross_weight', e.target.value)}
-                placeholder="gold + diamonds + alloys" />
-            </div>
-            <div><label className={lbl}>Making charges (₹)</label><input type="number" inputMode="decimal" className={inp} value={form.making_charges} onChange={e => set('making_charges', e.target.value)} /></div>
             <div><label className={lbl}>IGI cert cost (₹)</label><input type="number" inputMode="decimal" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} /></div>
           </div>
           {weight22 > 0 && (
             <div className="mt-4 rounded-xl border border-stone-100 overflow-hidden">
-              <div className="bg-stone-50 px-3 py-2 text-xs font-medium text-stone-500 uppercase tracking-wide">Derived net gold weights — same 24kt-pure mass</div>
+              <div className="bg-stone-50 px-3 py-2 text-xs font-medium text-stone-500 uppercase tracking-wide">24kt-pure content per karat</div>
               <div className="grid grid-cols-5 divide-x divide-stone-100 text-center">
                 {SELLABLE_KARATS.map(k => (
                   <div key={k} className="px-2 py-3">
                     <p className="text-xs text-stone-400">{k}kt</p>
-                    <p className="text-sm font-semibold text-stone-800">{weights[k]?.toFixed(3)} g</p>
+                    <p className="text-sm font-semibold text-stone-800">{weights[k]?.toFixed(4)} g</p>
                   </div>
                 ))}
-              </div>
-              <div className="bg-amber-50 border-t border-amber-100 px-3 py-2 text-xs text-amber-700 text-center">
-                24kt-pure mass: <strong>{(weight22 * KARAT_FACTORS[22]).toFixed(4)} g</strong>
               </div>
             </div>
           )}
@@ -441,7 +434,7 @@ export default function CatalogProductEditPage() {
               <thead className="bg-stone-50 text-xs text-stone-500 uppercase tracking-wide">
                 <tr>
                   <th className="px-3 py-2 text-left">Karat</th>
-                  <th className="px-3 py-2 text-right">Gross (g)</th>
+                  <th className="px-3 py-2 text-right">24kt-pure (g)</th>
                   <th className="px-3 py-2 text-right">Gold ₹</th>
                   <th className="px-3 py-2 text-right">Labour ₹</th>
                   <th className="px-3 py-2 text-right">COGS ₹</th>
