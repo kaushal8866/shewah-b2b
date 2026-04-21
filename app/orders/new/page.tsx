@@ -3,8 +3,38 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase, computeOrderCogs } from '@/lib/supabase'
-import { ArrowLeft, Save, Heart } from 'lucide-react'
+import { ArrowLeft, Save, Heart, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
+
+type DiamondRow = {
+  id: string
+  role: string
+  shape: string
+  weight: string
+  quality: string
+  color: string
+  type: string
+  pieces: string
+  cost: string
+  shape_id: string
+  size_id: string
+  size_label: string
+}
+
+const DIAMOND_SHAPES = ['round','oval','pear','cushion','princess','marquise','emerald','radiant','heart','asscher']
+const DIAMOND_QUALITIES = ['IF','VVS1','VVS2','VS1','VS2','SI1','SI2']
+const DIAMOND_COLORS = ['D','E','F','G','H','I','J']
+const DIAMOND_ROLES = ['center','side','accent','other']
+
+function newDiamondRow(): DiamondRow {
+  return {
+    id: Math.random().toString(36).slice(2),
+    role: 'center', shape: 'round', weight: '', quality: 'VS2',
+    color: 'F', type: 'lgd', pieces: '1', cost: '',
+    shape_id: '', size_id: '', size_label: '',
+  }
+}
 
 function NewOrderForm() {
   const router = useRouter()
@@ -14,7 +44,7 @@ function NewOrderForm() {
 
   const [saving, setSaving] = useState(false)
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
-  const [products, setProducts] = useState<{ id: string; code: string; name: string; trade_price: number; delivery_days: number; gold_karat?: number; gold_weight_g?: number; making_charges?: number; diamond_cost?: number; diamond_weight?: number; diamond_shape?: string; diamond_quality?: string; diamond_color?: string }[]>([])
+  const [products, setProducts] = useState<{ id: string; code: string; name: string; trade_price: number; delivery_days: number; gold_karat?: number; gold_weight_g?: number; making_charges?: number; diamond_cost?: number; diamond_weight?: number; diamond_shape?: string; diamond_quality?: string; diamond_color?: string; diamond_specs?: any }[]>([])
   const [mfgPartners, setMfgPartners] = useState<{ id: string; name: string; city: string; min_labour_grams?: number; labour_rate_9k?: number; labour_rate_10k?: number; labour_rate_14k?: number; labour_rate_18k?: number; labour_rate_22k?: number }[]>([])
   // Track whether the operator has hand-edited the labour-charges field. Once
   // they type into it, we stop auto-recomputing so we don't clobber their value.
@@ -22,6 +52,16 @@ function NewOrderForm() {
   const [stoneTouched, setStoneTouched] = useState(false)
   const [goldRate, setGoldRate] = useState(0)
   const [fromInterest, setFromInterest] = useState(false)
+
+  // Structured diamond rows — same UX as the catalog form so a custom order
+  // captures the picker selection + matrix-priced cost. Sum auto-fills
+  // `stone_cost` until the operator manually overrides it.
+  const [diamonds, setDiamonds] = useState<DiamondRow[]>([newDiamondRow()])
+  type CostSuggestion = {
+    matrix: Array<{ quality_label: string; color_label: string; price: number }>
+    history: { cost: number; source_label: string } | null
+  }
+  const [costSuggestions, setCostSuggestions] = useState<Record<string, CostSuggestion>>({})
 
   const [form, setForm] = useState({
     partner_id: prePartner,
@@ -47,7 +87,7 @@ function NewOrderForm() {
     if (prePartner || preProduct) setFromInterest(true)
     Promise.all([
       supabase.from('partners').select('id, store_name, city').order('store_name'),
-      supabase.from('products').select('id, code, name, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges, diamond_cost, diamond_weight, diamond_shape, diamond_quality, diamond_color').eq('is_active', true).order('code'),
+      supabase.from('products').select('id, code, name, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges, diamond_cost, diamond_weight, diamond_shape, diamond_quality, diamond_color, diamond_specs').eq('is_active', true).order('code'),
       supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
       supabase.from('manufacturing_partners').select('id, name, city, min_labour_grams, labour_rate_9k, labour_rate_10k, labour_rate_14k, labour_rate_18k, labour_rate_22k').eq('status', 'active').order('name'),
     ]).then(([{ data: p }, { data: pr }, { data: g }, { data: mp }]) => {
@@ -57,13 +97,69 @@ function NewOrderForm() {
       setMfgPartners(mp || [])
       if (g?.[0]) setGoldRate(g[0].rate_24k)
       if (preProduct) {
-        const product = prods.find(x => x.id === preProduct)
+        const product = prods.find((x: any) => x.id === preProduct)
         if (product) applyProductDefaults(product)
       }
     })
   }, [])
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
+
+  function addDiamondRow() { setDiamonds(prev => [...prev, newDiamondRow()]) }
+  function removeDiamondRow(id: string) {
+    if (diamonds.length > 1) setDiamonds(prev => prev.filter(d => d.id !== id))
+  }
+  function updateDiamond(id: string, key: keyof DiamondRow, val: string) {
+    setDiamonds(prev => prev.map(d => d.id === id ? { ...d, [key]: val } : d))
+    if (key === 'type') {
+      const row = diamonds.find(x => x.id === id)
+      if (row?.shape_id && row?.size_id) autofillCostFor(id, row.shape_id, row.size_id, val)
+    }
+    if (key === 'cost') setStoneTouched(true)
+  }
+
+  // Pulls central matrix prices + last-history cost for a row. Mirror of the
+  // catalog form so the chips look and behave identically.
+  async function autofillCostFor(rowId: string, shape_id: string, size_id: string, type: string) {
+    if (!shape_id || !size_id) return
+    try {
+      const url = new URL('/api/diamonds/latest-cost', window.location.origin)
+      url.searchParams.set('shape_id', shape_id)
+      url.searchParams.set('size_id', size_id)
+      if (type) url.searchParams.set('type', type)
+      const r = await fetch(url.toString())
+      if (!r.ok) return
+      const d = await r.json()
+      const matrix = Array.isArray(d.matrix_options) ? d.matrix_options.map((m: any) => ({
+        quality_label: m.quality_label, color_label: m.color_label, price: Number(m.price) || 0,
+      })) : []
+      const history = (d.cost != null && Number.isFinite(Number(d.cost)))
+        ? { cost: Number(d.cost), source_label: String(d.source_label || 'History') }
+        : null
+      setCostSuggestions(prev => ({ ...prev, [rowId]: { matrix, history } }))
+      setDiamonds(prev => prev.map(row => {
+        if (row.id !== rowId) return row
+        if (row.cost && row.cost !== '') return row
+        const qMatch = matrix.find((m: any) => m.quality_label.toLowerCase().includes((row.quality || '').toLowerCase().slice(0, 2)))
+        const cMatch = qMatch && matrix.find((m: any) =>
+          m.quality_label === qMatch.quality_label && m.color_label.toLowerCase().includes((row.color || '').toLowerCase().slice(0, 1)))
+        const pick = cMatch?.price ?? qMatch?.price ?? matrix[0]?.price ?? history?.cost
+        return pick ? { ...row, cost: String(pick) } : row
+      }))
+    } catch { /* silent — auto-fill is best-effort */ }
+  }
+
+  // Sum row totals for the auto stone_cost mirror + display.
+  const totalDiamondCost = diamonds.reduce(
+    (s, d) => s + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1),
+    0
+  )
+  // Mirror to stone_cost while operator hasn't manually edited that field.
+  useEffect(() => {
+    if (stoneTouched) return
+    if (totalDiamondCost <= 0) return
+    setForm(prev => prev.stone_cost === String(totalDiamondCost) ? prev : { ...prev, stone_cost: String(totalDiamondCost) })
+  }, [totalDiamondCost, stoneTouched])
 
   // Pull every catalog field we know about into the order form. Diamond info
   // (carats / shape / quality) lives on the order's special_notes by default
@@ -90,6 +186,38 @@ function NewOrderForm() {
       stone_cost: product.diamond_cost && !stoneTouched ? String(product.diamond_cost) : prev.stone_cost,
       special_notes: prev.special_notes || (diamondLine ? `Diamond: ${diamondLine}` : ''),
     }))
+    // Hydrate the structured diamond rows from the catalog product so the
+    // operator can tweak per-row instead of re-typing. Falls back to a single
+    // primary row built from the legacy diamond_* columns when diamond_specs
+    // isn't populated.
+    const specs = Array.isArray(product.diamond_specs)
+      ? product.diamond_specs
+      : (product.diamond_specs && Array.isArray(product.diamond_specs.rows) ? product.diamond_specs.rows : null)
+    if (specs && specs.length > 0) {
+      setDiamonds(specs.map((s: any) => ({
+        id: Math.random().toString(36).slice(2),
+        role: s.role || 'center',
+        shape: s.shape || 'round',
+        weight: s.weight != null ? String(s.weight) : '',
+        quality: s.quality || 'VS2',
+        color: s.color || 'F',
+        type: s.type || 'lgd',
+        pieces: s.pieces != null ? String(s.pieces) : '1',
+        cost: s.cost != null ? String(s.cost) : '',
+        shape_id: s.shape_id || '',
+        size_id: s.size_id || '',
+        size_label: s.size_label || '',
+      })))
+    } else if (product.diamond_shape || product.diamond_weight || product.diamond_cost) {
+      setDiamonds([{
+        ...newDiamondRow(),
+        shape: product.diamond_shape || 'round',
+        weight: product.diamond_weight != null ? String(product.diamond_weight) : '',
+        quality: product.diamond_quality || 'VS2',
+        color: product.diamond_color || 'F',
+        cost: product.diamond_cost != null ? String(product.diamond_cost) : '',
+      }])
+    }
   }
 
   function onProductSelect(productId: string) {
@@ -176,7 +304,36 @@ function NewOrderForm() {
       assigned_manufacturer_id: form.assigned_manufacturer_id || null,
     }
 
-    const { error } = await supabase.from('orders').insert([payload]).select().single()
+    // Structured diamond rows. Only attach when the operator entered something
+    // meaningful so we don't bloat orders with empty placeholder rows.
+    const filledDiamonds = diamonds.filter(d =>
+      d.shape_id || d.size_id || parseFloat(d.weight) > 0 || parseFloat(d.cost) > 0
+    )
+    if (filledDiamonds.length > 0) {
+      payload.diamond_specs = filledDiamonds.map(d => ({
+        role: d.role,
+        shape: d.shape,
+        weight: parseFloat(d.weight) || 0,
+        quality: d.quality,
+        color: d.color,
+        type: d.type,
+        pieces: parseInt(d.pieces) || 1,
+        cost: parseFloat(d.cost) || 0,
+        shape_id: d.shape_id || null,
+        size_id: d.size_id || null,
+        size_label: d.size_label || null,
+      }))
+    }
+
+    let { error } = await supabase.from('orders').insert([payload]).select().single()
+    // 42703: column does not exist. The diamond_specs column is added by
+    // scripts/migrate_task83_orders_diamond_specs.sql; until the operator
+    // applies it we still want the order to save (without the structured
+    // rows). Same pattern catalog.create uses for newer columns.
+    if (error && (error as any).code === '42703' && payload.diamond_specs) {
+      delete payload.diamond_specs
+      ;({ error } = await supabase.from('orders').insert([payload]).select().single())
+    }
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }
     router.push('/orders')
@@ -262,6 +419,156 @@ function NewOrderForm() {
                 placeholder="Any specific instructions..." />
             </div>
           </div>
+        </div>
+
+        {/* DIAMONDS — same picker + matrix-chip UX as the catalog form so a
+            custom order captures structured rows instead of a free-text note. */}
+        <div className="bg-white rounded-xl border border-stone-200 p-5">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="font-medium text-stone-900">Diamond specifications</h2>
+            <button type="button" onClick={addDiamondRow}
+              className="flex items-center gap-1.5 text-xs text-[#1E3A5F] border border-[#1E3A5F] px-3 py-1.5 rounded-lg hover:bg-yellow-50">
+              <Plus className="w-3.5 h-3.5" /> Add row
+            </button>
+          </div>
+          <p className="text-xs text-stone-400 mb-4">
+            Pick a shape × size from the <Link href="/diamonds/catalog" className="text-[#1E3A5F] underline">diamond catalog</Link> so cost suggestions appear and stock matching works. Row totals auto-mirror into <em>Stone cost</em> below until you edit it manually.
+          </p>
+          <div className="space-y-3">
+            {diamonds.map((d, idx) => (
+              <div key={d.id} className="border border-stone-100 rounded-xl p-3 bg-stone-50">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-stone-500">{idx === 0 ? 'Primary diamond' : `Diamond ${idx + 1}`}</span>
+                  {diamonds.length > 1 && (
+                    <button type="button" onClick={() => removeDiamondRow(d.id)} className="text-red-400 hover:text-red-600 p-1">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+                <div className="mb-3">
+                  <DiamondCatalogPicker
+                    shapeId={d.shape_id || null}
+                    sizeId={d.size_id || null}
+                    onChange={picked => {
+                      setDiamonds(prev => prev.map(row => row.id !== d.id ? row : ({
+                        ...row,
+                        shape_id: picked.shape_id,
+                        size_id: picked.size_id,
+                        size_label: picked.size_label,
+                        shape: picked.shape_name ? picked.shape_name.toLowerCase() : row.shape,
+                        weight: row.weight === '' && picked.approx_carats != null
+                          ? String(picked.approx_carats)
+                          : row.weight,
+                      })))
+                      autofillCostFor(d.id, picked.shape_id, picked.size_id, d.type)
+                    }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Role</label>
+                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                      value={d.role} onChange={e => updateDiamond(d.id, 'role', e.target.value)}>
+                      {DIAMOND_ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Weight (ct)</label>
+                    <input type="number" inputMode="decimal" step="0.01"
+                      className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                      value={d.weight} onChange={e => updateDiamond(d.id, 'weight', e.target.value)} placeholder="0.50" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Pieces</label>
+                    <input type="number" inputMode="decimal" min="1"
+                      className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                      value={d.pieces} onChange={e => updateDiamond(d.id, 'pieces', e.target.value)} placeholder="1" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Quality</label>
+                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                      value={d.quality} onChange={e => updateDiamond(d.id, 'quality', e.target.value)}>
+                      {DIAMOND_QUALITIES.map(q => <option key={q} value={q}>{q}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Color</label>
+                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                      value={d.color} onChange={e => updateDiamond(d.id, 'color', e.target.value)}>
+                      {DIAMOND_COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Type</label>
+                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                      value={d.type} onChange={e => updateDiamond(d.id, 'type', e.target.value)}>
+                      <option value="lgd">LGD</option>
+                      <option value="natural">Natural</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Cost/pc (₹)</label>
+                    <input type="number" inputMode="decimal"
+                      className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                      value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} placeholder="8000" />
+                  </div>
+                </div>
+                {(() => {
+                  const sug = costSuggestions[d.id]
+                  if (!sug || (sug.matrix.length === 0 && !sug.history)) return null
+                  return (
+                    <div className="mt-3 border-t border-stone-200 pt-2.5">
+                      <p className="text-[11px] font-medium text-stone-500 mb-1.5">Cost suggestions — click to use</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {sug.matrix.map((m, i) => {
+                          const active = parseFloat(d.cost) === m.price
+                          return (
+                            <button
+                              key={`m-${i}`}
+                              type="button"
+                              onClick={() => updateDiamond(d.id, 'cost', String(m.price))}
+                              className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
+                                (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
+                                        : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}
+                              title={`Matrix · ${m.quality_label} · ${m.color_label}`}
+                            >
+                              <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
+                              ₹{m.price.toLocaleString('en-IN')}
+                            </button>
+                          )
+                        })}
+                        {sug.history && (
+                          <button
+                            type="button"
+                            onClick={() => updateDiamond(d.id, 'cost', String(sug.history!.cost))}
+                            className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
+                              (parseFloat(d.cost) === sug.history.cost
+                                ? 'border-amber-500 bg-amber-50 text-amber-800'
+                                : 'border-stone-200 bg-white text-stone-600 hover:border-amber-400')}
+                            title={sug.history.source_label}
+                          >
+                            <span className="text-stone-400 mr-1">Last</span>
+                            ₹{sug.history.cost.toLocaleString('en-IN')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
+                {d.cost && parseInt(d.pieces) > 1 && (
+                  <div className="mt-2 text-right text-xs text-stone-400">
+                    Row total: ₹{((parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1)).toLocaleString('en-IN')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {totalDiamondCost > 0 && (
+            <div className="mt-3 flex justify-between text-sm font-medium text-stone-700 px-1">
+              <span>Total diamond cost</span>
+              <span>₹{totalDiamondCost.toLocaleString('en-IN')}</span>
+            </div>
+          )}
         </div>
 
         {/* Costing & gold */}

@@ -27,16 +27,39 @@ export default function ManufacturingPartnerDetailPage() {
 
   useEffect(() => { load() }, [id, isMaster])
 
+  const [loadError, setLoadError] = useState<string | null>(null)
+
   async function load() {
     setLoading(true)
+    setLoadError(null)
     const calls: Promise<any>[] = [
-      supabase.from('manufacturing_partners').select('*').eq('id', id).single(),
+      supabase.from('manufacturing_partners').select('*').eq('id', id).maybeSingle(),
       supabase.from('manufacturing_orders').select('*').eq('manufacturing_partner_id', id).order('created_at', { ascending: false }).limit(10),
     ]
     if (isMaster) calls.push(supabase.from('material_float').select('*').eq('manufacturing_partner_id', id))
-    const results = await Promise.all(calls)
-    const p = results[0].data
-    if (!p) { router.push('/manufacturing'); return }
+    let results: any[]
+    try {
+      results = await Promise.all(calls)
+    } catch (err: any) {
+      setLoadError(err?.message || 'Failed to load partner')
+      setLoading(false)
+      return
+    }
+    const partnerRes = results[0]
+    if (partnerRes?.error) {
+      setLoadError(partnerRes.error.message || 'Failed to load partner')
+      setLoading(false)
+      return
+    }
+    const p = partnerRes?.data
+    if (!p) {
+      // Partner was deleted or the URL id is wrong — show a clear message
+      // instead of silently redirecting to /manufacturing (which used to make
+      // the page look "inaccessible").
+      setLoadError('Partner not found. They may have been deleted.')
+      setLoading(false)
+      return
+    }
     setPartner(p)
     setForm(p)
     setOrders(results[1].data || [])
@@ -108,6 +131,17 @@ export default function ManufacturingPartnerDetailPage() {
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
+  if (loadError) return (
+    <div className="p-4 lg:p-7 max-w-xl">
+      <Link href="/manufacturing" className="text-stone-400 hover:text-stone-600 inline-flex items-center gap-2 mb-4 text-sm">
+        <ArrowLeft className="w-4 h-4" /> Back to manufacturing
+      </Link>
+      <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+        {loadError}
+      </div>
+    </div>
+  )
+  if (!partner) return null
 
   const totalOrders = orders.length
   const activeOrders = orders.filter(o => !['completed', 'cancelled'].includes(o.status)).length
