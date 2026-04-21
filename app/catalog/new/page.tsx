@@ -68,7 +68,7 @@ export default function NewProductPage() {
     code: '', name: '', description: '', category: 'ring',
     gold_weight_22k: '',
     gross_weight: '',
-    making_charges: '2500', igi_cert_cost: '1500',
+    making_charges: '0', igi_cert_cost: '1500',
     delivery_days: '14',
     models_available: ['wholesale', 'design_make'],
   })
@@ -190,9 +190,10 @@ export default function NewProductPage() {
       gold_weight_14k: weights[14] || null,
       gold_weight_10k: weights[10] || null,
       gold_weight_9k:  weights[9]  || null,
-      gross_weight: parseFloat(form.gross_weight) || null,
+      // gross_weight + making_charges intentionally not written from this
+      // form — those values now belong to the labour-rate/partner module.
       karat_pricing,
-      making_charges: makingCharges, igi_cert_cost: igiCost,
+      igi_cert_cost: igiCost,
       trade_price: tradePrice, mrp_suggested: mrp,
       // Stamp the gold rate the prices were computed at (Task #72).
       priced_at_rate: goldRate || null,
@@ -465,7 +466,7 @@ export default function NewProductPage() {
                     <td className="px-3 py-2 font-medium text-stone-700">
                       {row.karat}kt {row.karat === 22 && <span className="text-[10px] text-yellow-700 ml-1">default</span>}
                     </td>
-                    <td className="px-3 py-2 text-right text-stone-600">{row.weight.toFixed(3)}</td>
+                    <td className="px-3 py-2 text-right text-stone-600">{row.weight.toFixed(4)}</td>
                     <td className="px-3 py-2 text-right text-stone-600">{row.goldCost.toLocaleString('en-IN')}</td>
                     <td className="px-3 py-2 text-right text-stone-600">
                       {row.labourCost.toLocaleString('en-IN')}

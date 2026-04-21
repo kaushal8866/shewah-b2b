@@ -58,6 +58,11 @@ export default function CatalogProductEditPage() {
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [loading, setLoading] = useState(true)
   const [pricedAt, setPricedAt] = useState<{ rate: number | null; at: string | null }>({ rate: null, at: null })
+  // Pre-#81 products may have non-null gross_weight / making_charges in the
+  // database. We never expose those inputs on this form anymore, but we hold
+  // the originally-loaded values here so save() can pass them through
+  // unchanged instead of clobbering them.
+  const [legacy, setLegacy] = useState<{ gross_weight: number | null; making_charges: number | null }>({ gross_weight: null, making_charges: null })
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'ring',
     gold_weight_22k: '',
@@ -104,10 +109,14 @@ export default function CatalogProductEditPage() {
           category: data.category || 'ring',
           gold_weight_22k: w22 ? String(w22) : '',
           gross_weight: data.gross_weight ? String(data.gross_weight) : '',
-          making_charges: String(data.making_charges ?? '2500'),
+          making_charges: String(data.making_charges ?? '0'),
           igi_cert_cost: String(data.igi_cert_cost ?? '1500'),
           delivery_days: String(data.delivery_days || '14'),
           models_available: data.models_available || ['wholesale', 'design_make'],
+        })
+        setLegacy({
+          gross_weight: data.gross_weight != null ? Number(data.gross_weight) : null,
+          making_charges: data.making_charges != null ? Number(data.making_charges) : null,
         })
         setPhotoUrls(data.photo_urls || [])
         if (Array.isArray(data.diamond_specs) && data.diamond_specs.length > 0) {
@@ -137,7 +146,10 @@ export default function CatalogProductEditPage() {
   const weight22 = parseFloat(form.gold_weight_22k) || 0
   const weights = pureMassByKarat(weight22)
   const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1), 0)
-  const makingCharges = parseFloat(form.making_charges) || 0
+  // Pricing uses the legacy making_charges value as-is so existing products
+  // keep their previously computed COGS/Trade/MRP. New products start at 0
+  // because making charges no longer belong on this form.
+  const makingCharges = legacy.making_charges ?? 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
 
   const pricing = computeKaratPricing({
@@ -220,9 +232,12 @@ export default function CatalogProductEditPage() {
       gold_weight_14k: weights[14] || null,
       gold_weight_10k: weights[10] || null,
       gold_weight_9k:  weights[9]  || null,
-      gross_weight: parseFloat(form.gross_weight) || null,
+      // gross_weight + making_charges are pass-through from the original
+      // load — this form no longer exposes them, but we don't want to
+      // clobber legacy values either.
+      gross_weight: legacy.gross_weight,
       karat_pricing,
-      making_charges: makingCharges, igi_cert_cost: igiCost,
+      making_charges: legacy.making_charges, igi_cert_cost: igiCost,
       trade_price: tradePrice, mrp_suggested: mrp,
       // Stamp the gold rate the prices were computed at so the catalog can
       // show "Last priced at ₹X on <date>" (Task #72).
@@ -446,7 +461,7 @@ export default function CatalogProductEditPage() {
                 {pricing.map(row => (
                   <tr key={row.karat} className={`border-t border-stone-100 ${row.karat === 22 ? 'bg-yellow-50' : ''}`}>
                     <td className="px-3 py-2 font-medium text-stone-700">{row.karat}kt {row.karat === 22 && <span className="text-[10px] text-yellow-700 ml-1">default</span>}</td>
-                    <td className="px-3 py-2 text-right text-stone-600">{row.weight.toFixed(3)}</td>
+                    <td className="px-3 py-2 text-right text-stone-600">{row.weight.toFixed(4)}</td>
                     <td className="px-3 py-2 text-right text-stone-600">{row.goldCost.toLocaleString('en-IN')}</td>
                     <td className="px-3 py-2 text-right text-stone-600">
                       {row.labourCost.toLocaleString('en-IN')}
