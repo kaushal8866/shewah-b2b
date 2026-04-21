@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { supabase } from '@/lib/supabase'
+import { normalizeGoldMaterialType } from '@/lib/floatBuckets'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, Phone, Package, Layers } from 'lucide-react'
 import Link from 'next/link'
@@ -39,7 +40,24 @@ export default function ManufacturingPartnerDetailPage() {
     setPartner(p)
     setForm(p)
     setOrders(results[1].data || [])
-    setFloats(isMaster ? (results[2]?.data || []) : [])
+    // Task 78 read-layer safety net: collapse any legacy gold_<N>k float rows
+    // into a single canonical gold_24k entry so this card never shows a stale
+    // "gold 18k" pill when the migration hasn't reached this karigar yet.
+    const rawFloats = isMaster ? (results[2]?.data || []) : []
+    const merged = new Map<string, any>()
+    for (const r of rawFloats) {
+      const norm = normalizeGoldMaterialType(r.material_type)
+      const key = norm.material_type
+      const f = norm.factor
+      const r4 = (n: number) => Math.round(n * 10000) / 10000
+      const existing = merged.get(key)
+      if (!existing) {
+        merged.set(key, { ...r, material_type: key, balance: r4((Number(r.balance) || 0) * f) })
+      } else {
+        existing.balance = r4(existing.balance + (Number(r.balance) || 0) * f)
+      }
+    }
+    setFloats(Array.from(merged.values()))
     setLoading(false)
   }
 

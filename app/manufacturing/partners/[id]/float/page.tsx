@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { KARAT_FACTORS } from '@/lib/karat'
+import { normalizeGoldMaterialType } from '@/lib/floatBuckets'
 import { formatDate } from '@/lib/utils'
 import { ArrowLeft, Plus, ArrowDown, ArrowUp, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
@@ -88,7 +89,11 @@ function MaterialFloatInner() {
         .limit(30),
     ])
     setPartner(p)
-    setFloats(f || [])
+    // Task 78 read-layer safety net: collapse any legacy gold_<N>k float rows
+    // into a single canonical gold_24k entry (qty × KARAT_FACTORS[N]) so the
+    // consumption-form "Current balance" lookup matches the bucket view above
+    // and the operator never sees the legacy/24k mismatch.
+    setFloats(normalizeFloatsForDisplay(f || []))
     setTransactions(t || [])
     try {
       const r = await fetch(`/api/manufacturing/partners/${partnerId}/buckets`)
@@ -99,6 +104,51 @@ function MaterialFloatInner() {
   }
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
+
+  // Sum any pre-Task-78 legacy gold rows (gold_18k / gold_22k / gold_14k …)
+  // into the canonical gold_24k row using the same conversion as the bucket
+  // helper. Keeps the consumption form, the bucket cards, and the available
+  // check perfectly aligned even when the migration script hasn't run yet.
+  function normalizeFloatsForDisplay(rows: any[]) {
+    // Two-pass: first pass keeps real (already-canonical) rows so we reuse
+    // their `id` for new transactions; second pass folds any legacy karat
+    // rows into them (or seeds a synthetic row whose id MUST NOT be used
+    // when writing — handleTransaction creates a fresh gold_24k float in
+    // that case so the new transaction's float_id never points back at a
+    // gold_18k row that would re-trigger the 0.75 conversion on next read).
+    const out = new Map<string, any>()
+    const acc = (key: string, r: any, f: number, synthetic: boolean) => {
+      const existing = out.get(key)
+      const b  = Math.round((Number(r.balance        ) || 0) * f * 10000) / 10000
+      const td = Math.round((Number(r.total_deposited) || 0) * f * 10000) / 10000
+      const tr = Math.round((Number(r.total_returned ) || 0) * f * 10000) / 10000
+      const tc = Math.round((Number(r.total_consumed ) || 0) * f * 10000) / 10000
+      if (!existing) {
+        out.set(key, {
+          ...r,
+          material_type: key,
+          balance: b, total_deposited: td, total_returned: tr, total_consumed: tc,
+          _synthetic: synthetic,
+        })
+      } else {
+        existing.balance += b
+        existing.total_deposited += td
+        existing.total_returned += tr
+        existing.total_consumed += tc
+        // If a real row joins later, drop the synthetic flag so we reuse its id.
+        if (!synthetic) existing._synthetic = false
+      }
+    }
+    for (const r of rows) {
+      const norm = normalizeGoldMaterialType(r.material_type)
+      if (!norm.wasLegacy) acc(norm.material_type, r, 1, false)
+    }
+    for (const r of rows) {
+      const norm = normalizeGoldMaterialType(r.material_type)
+      if (norm.wasLegacy) acc(norm.material_type, r, norm.factor, true)
+    }
+    return Array.from(out.values())
+  }
 
   // Compute the would-be new balance for the current form input
   const qty = parseFloat(form.quantity) || 0
@@ -126,6 +176,10 @@ function MaterialFloatInner() {
     setSaving(true)
 
     let floatRecord = floats.find(f => f.material_type === form.material_type)
+    // If the matching float row is purely synthetic (only legacy karat rows
+    // existed for this material), seed a real gold_24k float row before
+    // writing — never link a new 24kt-net transaction to a legacy gold_18k id.
+    if (floatRecord?._synthetic) floatRecord = undefined
     if (!floatRecord) {
       const materialInfo = MATERIAL_TYPES.find(m => m.value === form.material_type)
       const { data } = await supabase.from('material_float').insert([{
@@ -378,7 +432,7 @@ function MaterialFloatInner() {
                     )}
                   </p>
                   <p className="text-xs text-stone-400 truncate">
-                    {t.material_float?.material_type?.replace(/_/g, ' ')}
+                    {(normalizeGoldMaterialType(t.material_float?.material_type || '').material_type || '').replace(/_/g, ' ')}
                     {t.orders?.order_number && (
                       <> · <Link href={`/orders/${t.order_id}`} className="text-[#1E3A5F] hover:underline">{t.orders.order_number}</Link></>
                     )}

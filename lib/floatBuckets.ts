@@ -1,4 +1,32 @@
 import { supabaseAdmin } from './supabaseAdmin'
+import { KARAT_FACTORS } from './karat'
+
+/**
+ * Task 78 read-layer safety net: gold MUST live as `gold_24k` only across
+ * inventory. If a karigar still has a legacy `gold_18k` / `gold_22k` /
+ * `gold_14k` row from before the migration ran (or from any older data
+ * import), every read goes through this helper so the screens still show
+ * one unified `gold_24k` bucket — quantities are converted via the same
+ * KARAT_FACTORS the migration script uses. The DB row is left alone (no
+ * data loss); only the read view is normalized.
+ */
+const LEGACY_GOLD_KARATS: Record<string, number> = {
+  gold_22k: KARAT_FACTORS[22],
+  gold_18k: KARAT_FACTORS[18],
+  gold_14k: KARAT_FACTORS[14],
+  gold_10k: KARAT_FACTORS[10],
+  gold_9k:  KARAT_FACTORS[9],
+}
+
+export function normalizeGoldMaterialType(mt: string): {
+  material_type: string
+  factor: number
+  wasLegacy: boolean
+} {
+  const f = LEGACY_GOLD_KARATS[mt]
+  if (f != null) return { material_type: 'gold_24k', factor: f, wasLegacy: true }
+  return { material_type: mt, factor: 1, wasLegacy: false }
+}
 
 export type Bucket = {
   material_type: string
@@ -48,10 +76,14 @@ export async function getPartnerBuckets(partnerId: string): Promise<Bucket[]> {
   }
 
   for (const r of (data || []) as unknown as Row[]) {
-    const mt = r.material_float?.material_type
-    if (!mt) continue
-    const qty = Number(r.quantity) || 0
-    const b = get(mt, r.unit || 'grams')
+    const rawMt = r.material_float?.material_type
+    if (!rawMt) continue
+    // Task 78: collapse any legacy gold_<N>k row into the canonical gold_24k
+    // bucket using KARAT_FACTORS — same conversion as the migration script,
+    // so the operator always sees one unified gold bucket on every screen.
+    const norm = normalizeGoldMaterialType(rawMt)
+    const qty = (Number(r.quantity) || 0) * norm.factor
+    const b = get(norm.material_type, r.unit || 'grams')
     const lifecycle = r.lifecycle || 'final'
 
     if (r.transaction_type === 'consumption') {
