@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  ArrowLeft, Diamond, Plus, Trash2, AlertTriangle, Percent, Loader2, Check, X,
+  ArrowLeft, Diamond, Plus, Trash2, AlertTriangle, Percent, Loader2, Check, X, Wand2,
 } from 'lucide-react'
 
 type Bucket = { id: string; label: string; sort_order: number; active: boolean }
@@ -55,6 +55,14 @@ export default function DiamondPricingPage() {
   const [bulkPct, setBulkPct] = useState('')
   const [bulkBusy, setBulkBusy] = useState(false)
   const [bulkMsg, setBulkMsg] = useState('')
+
+  // Bulk-fill-blanks modal state
+  const [fillOpen, setFillOpen] = useState(false)
+  const [fillQuality, setFillQuality] = useState('')
+  const [fillColor, setFillColor] = useState('')
+  const [fillRate, setFillRate] = useState('')
+  const [fillBusy, setFillBusy] = useState(false)
+  const [fillMsg, setFillMsg] = useState('')
 
   async function load() {
     setLoading(true); setError('')
@@ -140,6 +148,30 @@ export default function DiamondPricingPage() {
     }), 1200)
   }
 
+  async function applyBulkFill() {
+    const rate = Number(fillRate)
+    if (!fillQuality || !fillColor) { setFillMsg('Pick a quality and color bucket.'); return }
+    if (!Number.isFinite(rate) || rate <= 0) { setFillMsg('Enter a positive ₹/ct rate.'); return }
+    setFillBusy(true); setFillMsg('')
+    const r = await fetch('/api/diamonds/pricing-matrix/bulk-fill', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        quality_bucket_id: fillQuality,
+        color_bucket_id: fillColor,
+        type: 'lgd',
+        rate_per_carat: rate,
+      }),
+    })
+    setFillBusy(false)
+    const j = await r.json().catch(() => ({}))
+    if (!r.ok) { setFillMsg(j.error || 'Bulk fill failed.'); return }
+    const parts = [`Filled ${j.inserted} blank${j.inserted === 1 ? '' : 's'}.`]
+    if (j.skipped_existing) parts.push(`${j.skipped_existing} already had prices.`)
+    if (j.skipped_no_carats) parts.push(`${j.skipped_no_carats} size${j.skipped_no_carats === 1 ? '' : 's'} had no carat weight.`)
+    setFillMsg(parts.join(' '))
+    if (j.inserted > 0) load()
+  }
+
   async function applyBulk() {
     const p = Number(bulkPct)
     if (!Number.isFinite(p) || p === 0) { setBulkMsg('Enter a non-zero percent.'); return }
@@ -183,6 +215,13 @@ export default function DiamondPricingPage() {
             One price per piece for each shape × size × quality × color. Edits save automatically. Used everywhere a diamond cost is suggested.
           </p>
         </div>
+        <button
+          onClick={() => { setFillOpen(true); setFillMsg('') }}
+          className="px-3 py-2 rounded-lg bg-white border border-stone-200 hover:border-[#1E3A5F] text-stone-700 text-sm font-medium inline-flex items-center gap-1.5 shrink-0"
+          title="Auto-fill blank cells from a single ₹/ct rate"
+        >
+          <Wand2 className="w-3.5 h-3.5 text-[#1E3A5F]" /> Bulk fill blanks
+        </button>
       </div>
 
       {error && (
@@ -333,6 +372,78 @@ export default function DiamondPricingPage() {
           </div>
         )
       })}
+
+      {fillOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => !fillBusy && setFillOpen(false)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-1">
+              <Wand2 className="w-4 h-4 text-[#1E3A5F]" />
+              <h3 className="font-semibold text-stone-900">Bulk fill blank cells</h3>
+            </div>
+            <p className="text-xs text-stone-500 mb-4">
+              Sets every empty cell for one (color, quality) combo to{' '}
+              <span className="font-medium text-stone-700">approx_carats × ₹/ct</span>.
+              Existing prices are never overwritten — tune them by hand after.
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-stone-600 mb-1">Quality bucket</label>
+                <select
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+                  value={fillQuality}
+                  onChange={e => setFillQuality(e.target.value)}
+                  disabled={fillBusy}
+                >
+                  <option value="">Select…</option>
+                  {qualities.map(q => <option key={q.id} value={q.id}>{q.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-stone-600 mb-1">Color bucket</label>
+                <select
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+                  value={fillColor}
+                  onChange={e => setFillColor(e.target.value)}
+                  disabled={fillBusy}
+                >
+                  <option value="">Select…</option>
+                  {colors.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-stone-600 mb-1">Base rate (₹ per carat)</label>
+                <input
+                  type="number" min="1" step="100"
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+                  placeholder="e.g. 25000"
+                  value={fillRate}
+                  onChange={e => setFillRate(e.target.value)}
+                  disabled={fillBusy}
+                />
+              </div>
+            </div>
+
+            {fillMsg && <p className="text-xs text-stone-700 mt-3">{fillMsg}</p>}
+
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                onClick={() => setFillOpen(false)}
+                disabled={fillBusy}
+                className="px-3 py-2 rounded-lg border border-stone-200 text-stone-700 text-sm hover:bg-stone-50 disabled:opacity-50"
+              >Close</button>
+              <button
+                onClick={applyBulkFill}
+                disabled={fillBusy || !fillQuality || !fillColor || !fillRate}
+                className="px-3 py-2 rounded-lg bg-[#1E3A5F] text-white text-sm font-medium disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {fillBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Fill blanks
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
