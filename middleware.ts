@@ -1,5 +1,9 @@
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
+import {
+  LANDING_VARIANT_COOKIE, LANDING_VARIANT_COOKIE_MAX_AGE, LANDING_VARIANT_HEADER,
+  isLandingVariant, pickRandomVariant, readKillSwitch,
+} from '@/lib/landingVariant'
 // NOTE: middleware matcher in `config` excludes most /api/* routes, but we need
 // /api/portal/* to be reachable for manufacturers and retailers. The matcher
 // keeps /api/portal/* in scope while still excluding /api/auth, /api/setup,
@@ -18,7 +22,41 @@ export default withAuth(
 
     // Marketing pages render for everyone — the page itself decides whether
     // to redirect a logged-in user to their role's home.
-    if (isPublicMarketing(pathname)) return NextResponse.next()
+    if (isPublicMarketing(pathname)) {
+      // Task 102 — landing-page A/B bucketing.
+      // On `/`, ensure every visitor has a sticky `lp_variant` cookie so the
+      // server component can render the matching layout. Server Components
+      // can read cookies but not set them, so the assignment must happen
+      // here in middleware.
+      //
+      // CRITICAL: on the very first hit there is no incoming cookie, but the
+      // user MUST see the same variant we just persisted to the response —
+      // otherwise the rendered layout and the cookie that LeadForm later
+      // forwards would disagree, corrupting the conversion data. We solve
+      // this by stamping the chosen variant onto a request header
+      // (`x-landing-variant`) that flows downstream to `app/page.tsx`. The
+      // page reads the header first and only falls back to the request
+      // cookie if the header is missing (i.e. someone hit the page outside
+      // middleware, which shouldn't happen for `/`).
+      if (pathname === '/') {
+        const override = readKillSwitch()
+        const existing = req.cookies.get(LANDING_VARIANT_COOKIE)?.value
+        const desired  = override || (isLandingVariant(existing) ? existing : pickRandomVariant())
+
+        const requestHeaders = new Headers(req.headers)
+        requestHeaders.set(LANDING_VARIANT_HEADER, desired)
+        const res = NextResponse.next({ request: { headers: requestHeaders } })
+        if (desired !== existing) {
+          res.cookies.set(LANDING_VARIANT_COOKIE, desired, {
+            path: '/',
+            maxAge: LANDING_VARIANT_COOKIE_MAX_AGE,
+            sameSite: 'lax',
+          })
+        }
+        return res
+      }
+      return NextResponse.next()
+    }
 
     if (!token) return NextResponse.redirect(new URL('/login', req.url))
 

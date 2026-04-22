@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { notifyNewPartnerLead } from '@/lib/leadNotify'
+import { LANDING_VARIANT_COOKIE, isLandingVariant } from '@/lib/landingVariant'
 
 export const runtime = 'nodejs'
 
@@ -114,6 +115,19 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // Task 102 — record the A/B variant the visitor saw. Trust the cookie set
+  // by middleware first (server-controlled), fall back to the body field
+  // sent by LeadForm if the cookie didn't survive (e.g. some embedded
+  // browsers strip cookies on the same request that sets them). A null
+  // value means we couldn't attribute — those rows are excluded from the
+  // variant counts on /partners/leads.
+  const cookieVariant = req.cookies.get(LANDING_VARIANT_COOKIE)?.value
+  const bodyVariant   = clean(body?.landing_variant, 40)
+  const landing_variant =
+    isLandingVariant(cookieVariant) ? cookieVariant
+    : isLandingVariant(bodyVariant) ? bodyVariant
+    : null
+
   const row = {
     full_name,
     store_name,
@@ -131,6 +145,7 @@ export async function POST(req: NextRequest) {
     utm_term:       clean(body?.utm_term,     200),
     referrer:       clean(body?.referrer,     500),
     landing_path:   clean(body?.landing_path, 500),
+    landing_variant,
     user_agent:     clean(req.headers.get('user-agent'), 500),
     ip_hash:        hashIp(ip),
     status:         'new',

@@ -1,9 +1,15 @@
 import { redirect } from 'next/navigation'
+import { cookies, headers } from 'next/headers'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import LandingPage from './LandingPage'
+import LandingPageOriginal from './LandingPageOriginal'
 import { BRAND, SEO } from '@/lib/landingCopy'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import {
+  LANDING_VARIANT_COOKIE, LANDING_VARIANT_HEADER,
+  isLandingVariant, readKillSwitch,
+} from '@/lib/landingVariant'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,5 +67,25 @@ export default async function HomePage() {
     redirect(dashboardForRole((session.user as any).role))
   }
   const whatsappE164 = await getLandingWhatsapp()
+
+  // Task 102 — A/B test the redesign against the previous layout.
+  // Middleware bucketed this request and stamped the chosen variant on the
+  // `x-landing-variant` request header (and on the response cookie for
+  // stickiness). We trust the header first so a brand-new visitor — who has
+  // no cookie yet on this very request — renders the same layout the cookie
+  // will tag their signup with. The cookie + env override are defensive
+  // fallbacks in case middleware was bypassed or the kill-switch was set
+  // after a stale cookie was issued.
+  const headerVariant = headers().get(LANDING_VARIANT_HEADER)
+  const cookieVariant = cookies().get(LANDING_VARIANT_COOKIE)?.value
+  const variant =
+    readKillSwitch()
+    || (isLandingVariant(headerVariant) ? headerVariant : null)
+    || (isLandingVariant(cookieVariant) ? cookieVariant : null)
+    || 'outcome_first'
+
+  if (variant === 'original') {
+    return <LandingPageOriginal whatsappE164={whatsappE164} />
+  }
   return <LandingPage whatsappE164={whatsappE164} />
 }

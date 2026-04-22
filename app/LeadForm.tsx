@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react'
 import { CheckCircle2, Loader2, ArrowRight } from 'lucide-react'
 import { VOLUME_OPTIONS, BRAND } from '@/lib/landingCopy'
+import { LANDING_VARIANT_COOKIE, isLandingVariant } from '@/lib/landingVariant'
 
 type FormState = {
   /* Step 1 — the only required fields */
@@ -41,6 +42,18 @@ function readUtm(): Record<string, string | null> {
     referrer:     document.referrer || null,
     landing_path: window.location.pathname + window.location.search,
   }
+}
+
+// Task 102 — read the A/B test cookie set by middleware and forward it
+// with the signup payload so we can attribute conversions per variant.
+function readLandingVariant(): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie
+    .split('; ')
+    .find(c => c.startsWith(`${LANDING_VARIANT_COOKIE}=`))
+  if (!match) return null
+  const v = decodeURIComponent(match.split('=')[1] || '')
+  return isLandingVariant(v) ? v : null
 }
 
 const validIndianMobile = (raw: string): boolean => {
@@ -96,6 +109,7 @@ export default function LeadForm({
         ...f,
         phone,
         ...readUtm(),
+        landing_variant: readLandingVariant(),
       }
       const res = await fetch('/api/public/partner-signup', {
         method: 'POST',

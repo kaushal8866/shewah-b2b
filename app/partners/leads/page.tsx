@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import {
   Loader2, Phone, MessageCircle, Mail, MapPin, ChevronDown,
-  CheckCircle2, XCircle, ArrowUpRight, Filter, Inbox,
+  CheckCircle2, XCircle, ArrowUpRight, Filter, Inbox, FlaskConical,
 } from 'lucide-react'
+import { LANDING_VARIANT_LABEL, LANDING_VARIANTS } from '@/lib/landingVariant'
 
 type Lead = {
   id: string
@@ -20,6 +21,7 @@ type Lead = {
   gst_number: string | null
   monthly_volume: string | null
   note: string | null
+  landing_variant: string | null
   utm_source: string | null
   utm_medium: string | null
   utm_campaign: string | null
@@ -115,6 +117,25 @@ export default function PartnerLeadsPage() {
     return c
   }, [leads])
 
+  // Task 102 — A/B test attribution. We tally signups per landing variant
+  // (and per status × variant) so the team can call a winner. Leads with a
+  // null variant predate the test and are bucketed under "Untagged".
+  const variantStats = useMemo(() => {
+    const rows = (LANDING_VARIANTS as readonly string[]).concat(['untagged']).map(v => {
+      const matches = leads.filter(l => (l.landing_variant || 'untagged') === v)
+      return {
+        key: v,
+        label: v === 'untagged' ? 'Untagged' : LANDING_VARIANT_LABEL[v as typeof LANDING_VARIANTS[number]],
+        total:     matches.length,
+        onboarded: matches.filter(l => l.status === 'onboarded').length,
+        qualified: matches.filter(l => l.status === 'qualified').length,
+      }
+    })
+    return rows
+  }, [leads])
+
+  const hasAnyVariantData = variantStats.some(r => r.key !== 'untagged' && r.total > 0)
+
   async function setStatus(id: string, status: Lead['status']) {
     setBusyId(id)
     const patch: any = { status }
@@ -182,6 +203,37 @@ export default function PartnerLeadsPage() {
       </div>
       <p className="text-sm text-stone-600 mb-6">Inbound leads from the public landing page at /. Triage them here, then convert qualified leads into partners.</p>
 
+      {/* Task 102 — A/B test scoreboard. Hidden until at least one tagged
+          lead exists so it doesn't show empty during the migration window. */}
+      {hasAnyVariantData && (
+        <div className="mb-5 rounded-xl border border-stone-200 bg-white p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <FlaskConical className="w-4 h-4 text-[#1E3A5F]" />
+            <p className="text-sm font-semibold text-stone-800">Landing-page A/B test</p>
+            <span className="text-[11px] text-stone-500">
+              counts reflect leads currently in view{filter !== 'all' ? ` (filtered: ${filter})` : ''}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {variantStats.map(r => (
+              <div key={r.key} className="rounded-lg border border-stone-100 bg-stone-50 p-3">
+                <p className="text-xs font-medium text-stone-600">{r.label}</p>
+                <p className="text-2xl font-serif text-stone-900 mt-1">{r.total}</p>
+                <p className="text-[11px] text-stone-500 mt-1">
+                  {r.qualified} qualified · {r.onboarded} onboarded
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-stone-400 mt-3">
+            Sticky 50/50 cookie bucket. Once a winner is decided, set
+            <code className="mx-1 px-1 py-0.5 bg-stone-100 rounded">LANDING_VARIANT_OVERRIDE</code>
+            in Replit Secrets to <code className="px-1 py-0.5 bg-stone-100 rounded">original</code>
+            or <code className="ml-1 px-1 py-0.5 bg-stone-100 rounded">outcome_first</code> and redeploy.
+          </p>
+        </div>
+      )}
+
       {/* Filter chips */}
       <div className="flex flex-wrap items-center gap-2 mb-5">
         <Filter className="w-4 h-4 text-stone-400" />
@@ -242,6 +294,13 @@ export default function PartnerLeadsPage() {
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {dispatchPill('Email', l.email_dispatch)}
                       {dispatchPill('WhatsApp', l.whatsapp_dispatch)}
+                      {l.landing_variant && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100"
+                          title="Landing-page variant the visitor saw">
+                          <FlaskConical className="w-3 h-3" />
+                          {LANDING_VARIANT_LABEL[l.landing_variant as typeof LANDING_VARIANTS[number]] || l.landing_variant}
+                        </span>
+                      )}
                       <span className="text-[10px] text-stone-400">{formatDate(l.created_at)}</span>
                       {(l.utm_source || l.utm_campaign) && (
                         <span className="text-[10px] text-stone-500">{[l.utm_source, l.utm_campaign].filter(Boolean).join(' / ')}</span>
