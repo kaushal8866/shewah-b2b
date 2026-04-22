@@ -3,10 +3,16 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
-// POST — fill every blank (shape, size) cell for a given (color, quality, type)
-// combo using `approx_carats × rate_per_carat`. Existing rows are left alone so
-// the master can keep any hand-tuned prices. Master only.
-//   Body: { color_bucket_id, quality_bucket_id, type?: 'lgd'|'natural', rate_per_carat }
+// POST — fill (or overwrite) every (shape, size) cell for a given
+// (color, quality, type) combo using `approx_carats × rate_per_carat`.
+// Master only.
+//   Body: {
+//     color_bucket_id, quality_bucket_id,
+//     type?: 'lgd'|'natural',
+//     rate_per_carat,
+//     shape_id?: string,     // optional — restrict to one shape; default = all
+//     overwrite?: boolean,   // optional — replace existing prices too
+//   }
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -18,6 +24,8 @@ export async function POST(req: Request) {
   const quality_bucket_id = String(body?.quality_bucket_id || '')
   const type = body?.type === 'natural' ? 'natural' : 'lgd'
   const rate = Number(body?.rate_per_carat)
+  const shape_id = body?.shape_id ? String(body.shape_id) : ''
+  const overwrite = !!body?.overwrite
   if (!color_bucket_id || !quality_bucket_id) {
     return NextResponse.json({ error: 'color_bucket_id and quality_bucket_id are required' }, { status: 400 })
   }
@@ -31,24 +39,26 @@ export async function POST(req: Request) {
 
   // 1. Load every active size with a known approx_carats — that's all we can
   //    derive a price for. Sizes without approx_carats are skipped and reported.
-  const { data: sizes, error: sizesErr } = await supabaseAdmin
+  let sizesQuery = supabaseAdmin
     .from('diamond_sizes')
     .select('id, shape_id, label, approx_carats, active')
     .eq('active', true)
+  if (shape_id) sizesQuery = sizesQuery.eq('shape_id', shape_id)
+  const { data: sizes, error: sizesErr } = await sizesQuery
   if (sizesErr) return NextResponse.json({ error: sizesErr.message }, { status: 500 })
 
   const usable = (sizes || []).filter(s => Number(s.approx_carats) > 0)
   const skipped_no_carats = (sizes || []).length - usable.length
 
   if (usable.length === 0) {
-    return NextResponse.json({ inserted: 0, skipped_existing: 0, skipped_no_carats })
+    return NextResponse.json({ inserted: 0, updated: 0, skipped_existing: 0, skipped_no_carats })
   }
 
   // 2. Find which of those (shape, size) cells already have a price for this
-  //    (quality, color, type) so we never overwrite them.
+  //    (quality, color, type) so we know whether to skip or overwrite them.
   const { data: existing, error: existErr } = await supabaseAdmin
     .from('diamond_price_matrix')
-    .select('shape_id, size_id')
+    .select('id, shape_id, size_id')
     .eq('quality_bucket_id', quality_bucket_id)
     .eq('color_bucket_id', color_bucket_id)
     .eq('type', type)
@@ -57,40 +67,64 @@ export async function POST(req: Request) {
   }
   if (existErr) return NextResponse.json({ error: existErr.message }, { status: 500 })
 
-  const taken = new Set((existing || []).map(r => `${r.shape_id}|${r.size_id}`))
+  const existingByKey = new Map<string, string>()
+  for (const r of existing || []) existingByKey.set(`${r.shape_id}|${r.size_id}`, r.id)
 
   const updated_by = session.user?.username || session.user?.id || null
   const updated_at = new Date().toISOString()
 
-  const rows = usable
-    .filter(s => !taken.has(`${s.shape_id}|${s.id}`))
-    .map(s => ({
-      shape_id: s.shape_id,
-      size_id: s.id,
-      quality_bucket_id,
-      color_bucket_id,
-      type,
-      // Round to a whole rupee so the grid stays tidy.
-      price_per_piece: Math.max(1, Math.round(Number(s.approx_carats) * rate)),
-      updated_by,
-      updated_at,
-    }))
+  const priceFor = (carats: number) => Math.max(1, Math.round(carats * rate))
 
-  const skipped_existing = usable.length - rows.length
-
-  if (rows.length === 0) {
-    return NextResponse.json({ inserted: 0, skipped_existing, skipped_no_carats })
+  // Split into rows to insert vs update (only when overwrite is on).
+  const toInsert: any[] = []
+  const toUpdate: { id: string; price: number }[] = []
+  for (const s of usable) {
+    const key = `${s.shape_id}|${s.id}`
+    const existsId = existingByKey.get(key)
+    if (existsId) {
+      if (overwrite) toUpdate.push({ id: existsId, price: priceFor(Number(s.approx_carats)) })
+      // else: skip — leave hand-tuned price alone
+    } else {
+      toInsert.push({
+        shape_id: s.shape_id,
+        size_id: s.id,
+        quality_bucket_id,
+        color_bucket_id,
+        type,
+        price_per_piece: priceFor(Number(s.approx_carats)),
+        updated_by,
+        updated_at,
+      })
+    }
   }
 
-  // Insert (not upsert) so any race with a concurrent edit fails loudly rather
-  // than silently overwriting — but the pre-check above means this is rare.
-  const { error: insErr } = await supabaseAdmin
-    .from('diamond_price_matrix')
-    .insert(rows)
-  if (insErr) return NextResponse.json({ error: insErr.message }, { status: 400 })
+  const skipped_existing = overwrite ? 0 : (usable.length - toInsert.length)
+
+  if (toInsert.length === 0 && toUpdate.length === 0) {
+    return NextResponse.json({ inserted: 0, updated: 0, skipped_existing, skipped_no_carats })
+  }
+
+  if (toInsert.length > 0) {
+    const { error: insErr } = await supabaseAdmin
+      .from('diamond_price_matrix')
+      .insert(toInsert)
+    if (insErr) return NextResponse.json({ error: insErr.message }, { status: 400 })
+  }
+
+  // Updates are one row at a time — small batches in practice (≤ a few hundred).
+  let updated = 0
+  for (const u of toUpdate) {
+    const { error: updErr } = await supabaseAdmin
+      .from('diamond_price_matrix')
+      .update({ price_per_piece: u.price, updated_by, updated_at })
+      .eq('id', u.id)
+    if (updErr) return NextResponse.json({ error: updErr.message, inserted: toInsert.length, updated }, { status: 400 })
+    updated++
+  }
 
   return NextResponse.json({
-    inserted: rows.length,
+    inserted: toInsert.length,
+    updated,
     skipped_existing,
     skipped_no_carats,
     rate_per_carat: rate,

@@ -61,6 +61,8 @@ export default function DiamondPricingPage() {
   const [fillQuality, setFillQuality] = useState('')
   const [fillColor, setFillColor] = useState('')
   const [fillRate, setFillRate] = useState('')
+  const [fillShape, setFillShape] = useState('')        // '' = all shapes
+  const [fillOverwrite, setFillOverwrite] = useState(false)
   const [fillBusy, setFillBusy] = useState(false)
   const [fillMsg, setFillMsg] = useState('')
 
@@ -152,6 +154,10 @@ export default function DiamondPricingPage() {
     const rate = Number(fillRate)
     if (!fillQuality || !fillColor) { setFillMsg('Pick a quality and color bucket.'); return }
     if (!Number.isFinite(rate) || rate <= 0) { setFillMsg('Enter a positive ₹/ct rate.'); return }
+    if (fillOverwrite) {
+      const scope = fillShape ? (shapes.find(s => s.id === fillShape)?.name || 'this shape') : 'every shape'
+      if (!confirm(`Overwrite existing prices for ${scope} in this quality × color combo? Hand-tuned values will be replaced.`)) return
+    }
     setFillBusy(true); setFillMsg('')
     const r = await fetch('/api/diamonds/pricing-matrix/bulk-fill', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -160,16 +166,21 @@ export default function DiamondPricingPage() {
         color_bucket_id: fillColor,
         type: 'lgd',
         rate_per_carat: rate,
+        shape_id: fillShape || undefined,
+        overwrite: fillOverwrite,
       }),
     })
     setFillBusy(false)
     const j = await r.json().catch(() => ({}))
     if (!r.ok) { setFillMsg(j.error || 'Bulk fill failed.'); return }
-    const parts = [`Filled ${j.inserted} blank${j.inserted === 1 ? '' : 's'}.`]
-    if (j.skipped_existing) parts.push(`${j.skipped_existing} already had prices.`)
+    const parts: string[] = []
+    if (j.inserted) parts.push(`Filled ${j.inserted} blank${j.inserted === 1 ? '' : 's'}.`)
+    if (j.updated) parts.push(`Updated ${j.updated} existing price${j.updated === 1 ? '' : 's'}.`)
+    if (!j.inserted && !j.updated) parts.push('Nothing to change.')
+    if (j.skipped_existing) parts.push(`${j.skipped_existing} already had prices (overwrite was off).`)
     if (j.skipped_no_carats) parts.push(`${j.skipped_no_carats} size${j.skipped_no_carats === 1 ? '' : 's'} had no carat weight.`)
     setFillMsg(parts.join(' '))
-    if (j.inserted > 0) load()
+    if (j.inserted > 0 || j.updated > 0) load()
   }
 
   async function applyBulk() {
@@ -381,12 +392,24 @@ export default function DiamondPricingPage() {
               <h3 className="font-semibold text-stone-900">Bulk fill blank cells</h3>
             </div>
             <p className="text-xs text-stone-500 mb-4">
-              Sets every empty cell for one (color, quality) combo to{' '}
+              Sets every cell in the chosen scope to{' '}
               <span className="font-medium text-stone-700">approx_carats × ₹/ct</span>.
-              Existing prices are never overwritten — tune them by hand after.
+              By default existing prices are kept; flip <em>Overwrite existing</em> to replace them too.
             </p>
 
             <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-stone-600 mb-1">Shape</label>
+                <select
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+                  value={fillShape}
+                  onChange={e => setFillShape(e.target.value)}
+                  disabled={fillBusy}
+                >
+                  <option value="">All shapes</option>
+                  {shapes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
               <div>
                 <label className="block text-xs font-medium text-stone-600 mb-1">Quality bucket</label>
                 <select
@@ -422,6 +445,19 @@ export default function DiamondPricingPage() {
                   disabled={fillBusy}
                 />
               </div>
+              <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 accent-[#1E3A5F]"
+                  checked={fillOverwrite}
+                  onChange={e => setFillOverwrite(e.target.checked)}
+                  disabled={fillBusy}
+                />
+                <span className="text-sm text-stone-700">
+                  Overwrite existing prices
+                  <span className="text-xs text-stone-400 ml-1">(replace hand-tuned values too)</span>
+                </span>
+              </label>
             </div>
 
             {fillMsg && <p className="text-xs text-stone-700 mt-3">{fillMsg}</p>}
