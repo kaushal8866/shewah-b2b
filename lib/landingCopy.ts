@@ -30,31 +30,37 @@ export const STATS = [
 export const VALUE_PROPS = [
   {
     title: 'A live catalog you can show right at the counter',
+    metric: 'Today\'s 24K rate',
     body:
       'Browse hundreds of diamond and gold designs with photos, weights, and a price quoted at TODAY\'s 24K rate. Shortlist on your phone, share with the customer over WhatsApp, place the order in seconds.',
   },
   {
     title: 'Honest pricing, broken down line by line',
+    metric: 'Zero hidden fees',
     body:
       'Every quote shows the gold cost (at 24kt-pure rate, the way the trade actually works), the karigar\'s labour, the diamond cost, and our margin. No hidden multipliers, no "billing weight" games.',
   },
   {
     title: 'Custom design without losing a week',
+    metric: '48h CAD turnaround',
     body:
       'Send a brief or a reference photo. Our CAD team turns around renders in 48 hours. Approve on WhatsApp, and we manufacture, QC and ship — with a tracking link your customer can open.',
   },
   {
     title: 'Ready-to-Ship for the urgent customer',
+    metric: 'Next-day dispatch',
     body:
       'When a customer wants a piece tomorrow, browse cancelled-but-finished inventory and bid for the ones that fit. Pay the agreed price, we ship. No making-time, no excuses.',
   },
   {
     title: 'WhatsApp-native, not yet-another-portal',
+    metric: 'Your phone is the dashboard',
     body:
       'Order updates, dispatch alerts, payment reminders, even CAD approvals — all on the WhatsApp number you already use. Your phone is the dashboard.',
   },
   {
     title: 'A partner team that picks up the phone',
+    metric: 'A name, not a ticket queue',
     body:
       'You\'re assigned a real human who knows your store, your karigar relationships, your customers\' tastes. Not a ticket queue — a name and a number.',
   },
@@ -142,6 +148,64 @@ export const VOLUME_OPTIONS = [
   { value: '20-50',  label: '20–50 pieces / month' },
   { value: '50+',    label: '50+ pieces / month' },
 ]
+
+export const NAV = {
+  links: [
+    { href: '#what-you-get', label: 'What you get' },
+    { href: '#how-it-works', label: 'How it works' },
+    { href: '#faq',          label: 'FAQ' },
+  ],
+  partnerSignIn: 'Partner sign in',
+  whatsappCta:   'Chat on WhatsApp',
+}
+
+export const FORM_PANEL = {
+  title: 'Get trade access',
+  subtitle: 'A partner manager will WhatsApp you within one business day.',
+}
+
+export const SECTIONS = {
+  whatYouGet: {
+    eyebrow: 'What you get',
+    heading: 'A complete back-office for the diamond side of your store.',
+    body:
+      'No new software to learn. No setup fee. No exclusivity. Just the catalog, the tooling and the team you wish your existing manufacturer had.',
+  },
+  howItWorks: {
+    eyebrow: 'How it works',
+    heading: 'From hello to your first order in a week.',
+  },
+  socialProof: {
+    heading: 'Trusted by independent jewellers',
+  },
+  faq: {
+    eyebrow: 'FAQ',
+    heading: 'Questions retailers usually ask first.',
+  },
+}
+
+export const FINAL_CTA = {
+  heading: `Ready to add the ${BRAND.name} catalog to your store?`,
+  body: 'Tell us a bit about your store — we\'ll WhatsApp you within one business day.',
+}
+
+export const FOOTER = {
+  blurb:
+    'B2B diamond jewellery wholesale and manufacturing partner for independent Indian retailers.',
+  contactHeading: 'Get in touch',
+  partnerHeading: 'Already a partner?',
+  partnerLinkLabel: 'Sign in to your portal →',
+  whatsappLabel: 'WhatsApp',
+  copyright: (year: number) => `© ${year} ${BRAND.name}. All rights reserved.`,
+}
+
+export const MOBILE_BAR = {
+  primaryCta: 'Become a partner',
+  whatsappAria: 'Chat on WhatsApp',
+}
+
+export const WHATSAPP_INTRO_MESSAGE =
+  'Hi Shewah, I run a jewellery store and would like to learn more about partnering.'
 
 export const SEO = {
   title: 'Shewah — Diamond jewellery wholesale & manufacturing for Indian retailers',

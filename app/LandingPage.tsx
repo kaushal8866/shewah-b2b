@@ -3,9 +3,13 @@
 import Link from 'next/link'
 import Script from 'next/script'
 import { useEffect, useState } from 'react'
-import { Diamond, Check, ArrowRight, ChevronDown, MessageCircle } from 'lucide-react'
+import {
+  Diamond, ChevronDown, MessageCircle, ShieldCheck, ArrowRight,
+} from 'lucide-react'
 import {
   BRAND, HERO, STATS, VALUE_PROPS, HOW_IT_WORKS, FAQ, TESTIMONIALS,
+  NAV, FORM_PANEL, SECTIONS, FINAL_CTA, FOOTER, MOBILE_BAR,
+  WHATSAPP_INTRO_MESSAGE,
 } from '@/lib/landingCopy'
 import LeadForm from './LeadForm'
 
@@ -17,14 +21,15 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
   const gaId    = process.env.NEXT_PUBLIC_GA_ID
   const [openFaq, setOpenFaq] = useState<number | null>(0)
 
+  const waChatHref = `https://wa.me/${wa}?text=${encodeURIComponent(WHATSAPP_INTRO_MESSAGE)}`
+
   useEffect(() => {
     if (typeof window === 'undefined') return
-    // Meta Pixel page-view (after init via the Script tag below)
     try { (window as any).fbq && (window as any).fbq('track', 'PageView') } catch {}
   }, [])
 
   return (
-    <div className="min-h-screen bg-white text-stone-900">
+    <div className="min-h-screen bg-[#FDFDFD] text-slate-900 selection:bg-[#1E3A5F] selection:text-white">
       {/* Analytics */}
       {pixelId && (
         <>
@@ -62,110 +67,111 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
         </>
       )}
 
-      {/* ── Top bar ───────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-stone-100">
-        <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
+      {/* ── Header ────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-[#1E3A5F] flex items-center justify-center">
               <Diamond className="w-4 h-4 text-white" />
             </div>
-            <div className="leading-none">
-              <p className="font-semibold text-[15px]">{BRAND.name}</p>
-              <p className="text-[11px] text-stone-500 mt-0.5">B2B jewellery partner</p>
-            </div>
+            <span className="font-semibold text-lg tracking-tight">{BRAND.name}</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-7 text-sm text-stone-600">
-            <a href="#what-you-get" className="hover:text-stone-900">What you get</a>
-            <a href="#how-it-works" className="hover:text-stone-900">How it works</a>
-            <a href="#faq" className="hover:text-stone-900">FAQ</a>
-            <Link href="/login" className="hover:text-stone-900">Partner sign in</Link>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+            {NAV.links.map((l) => (
+              <a key={l.href} href={l.href} className="hover:text-[#1E3A5F] transition-colors">{l.label}</a>
+            ))}
+            <Link href="/login" className="hover:text-[#1E3A5F] transition-colors">{NAV.partnerSignIn}</Link>
+            <a
+              href={waChatHref}
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 text-[#1E3A5F] bg-[#1E3A5F]/10 px-4 py-2 rounded-full hover:bg-[#1E3A5F]/20 transition-colors">
+              <MessageCircle className="w-4 h-4" />
+              {NAV.whatsappCta}
+            </a>
           </nav>
-          <a href="#signup"
-            className="inline-flex items-center gap-1.5 bg-[#1E3A5F] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-[#172d49]">
-            Become a partner <ArrowRight className="w-3.5 h-3.5" />
-          </a>
         </div>
       </header>
 
       {/* ── Hero ──────────────────────────────────────────── */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F5F1EA] via-white to-white" aria-hidden />
-        <div className="relative max-w-6xl mx-auto px-5 pt-12 pb-16 md:pt-20 md:pb-24 grid md:grid-cols-2 gap-10 items-center">
-          <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-4">{HERO.eyebrow}</p>
-            <h1 className="text-3xl md:text-5xl font-serif leading-[1.08] text-stone-900">{HERO.headline}</h1>
-            <p className="mt-5 text-base md:text-lg text-stone-600 leading-relaxed">{HERO.subhead}</p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a href="#signup"
-                className="inline-flex items-center gap-1.5 bg-[#1E3A5F] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#172d49]">
-                {HERO.primaryCta} <ArrowRight className="w-4 h-4" />
-              </a>
-              <a href="#how-it-works"
-                className="inline-flex items-center gap-1.5 bg-white text-stone-900 px-5 py-3 rounded-xl font-medium border border-stone-200 hover:border-stone-300">
-                {HERO.secondaryCta}
-              </a>
+      <section className="pt-16 pb-20 md:pt-20 md:pb-24 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-100 via-white to-white -z-10" aria-hidden />
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_420px] gap-12 lg:gap-16 items-start">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[#1E3A5F] text-xs font-semibold uppercase tracking-widest mb-7">
+              <ShieldCheck className="w-4 h-4" />
+              {HERO.eyebrow}
             </div>
-            <p className="mt-4 text-xs text-stone-500">{HERO.trustLine}</p>
+
+            <h1 className="text-4xl md:text-5xl lg:text-[60px] font-serif leading-[1.08] text-slate-900 mb-6 tracking-tight">
+              {HERO.headline}
+            </h1>
+
+            <p className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-xl">
+              {HERO.subhead}
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-y border-slate-200 py-8 mt-10">
+              {STATS.map((s) => (
+                <div key={s.label} className="flex flex-col">
+                  <span className="text-2xl md:text-3xl font-serif text-[#1E3A5F] mb-1">{s.value}</span>
+                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">{s.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-6 text-sm text-slate-500">{HERO.trustLine}</p>
           </div>
-          <div className="bg-white rounded-2xl shadow-[0_20px_60px_-20px_rgba(30,58,95,0.25)] border border-stone-100 p-6 md:p-7">
-            <p className="text-xs uppercase tracking-wider text-stone-500 font-semibold">Tell us about your store</p>
-            <p className="mt-1 text-sm text-stone-600">A partner manager will reach out within one business day.</p>
-            <div id="signup" className="mt-5">
-              <LeadForm compact whatsappE164={wa} />
-            </div>
+
+          {/* Lead form (preserves existing LeadForm behaviour) */}
+          <div id="signup" className="bg-white p-7 md:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-[#1E3A5F] rounded-t-2xl" aria-hidden />
+            <h2 className="text-2xl font-serif font-medium mb-2">{FORM_PANEL.title}</h2>
+            <p className="text-slate-500 text-sm mb-6">{FORM_PANEL.subtitle}</p>
+            <LeadForm compact whatsappE164={wa} />
           </div>
         </div>
       </section>
 
-      {/* ── Stats strip ───────────────────────────────────── */}
-      <section className="bg-[#1E3A5F] text-white">
-        <div className="max-w-6xl mx-auto px-5 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
-          {STATS.map(s => (
-            <div key={s.label}>
-              <p className="text-2xl md:text-3xl font-serif">{s.value}</p>
-              <p className="text-xs md:text-sm text-white/70 mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ── What you get ──────────────────────────────────── */}
+      <section id="what-you-get" className="py-20 md:py-24 px-6 bg-slate-50 border-y border-slate-200">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-14 max-w-2xl">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">{SECTIONS.whatYouGet.eyebrow}</p>
+            <h2 className="text-3xl md:text-4xl font-serif leading-tight">{SECTIONS.whatYouGet.heading}</h2>
+            <p className="mt-4 text-lg text-slate-600">{SECTIONS.whatYouGet.body}</p>
+          </div>
 
-      {/* ── Value props ───────────────────────────────────── */}
-      <section id="what-you-get" className="max-w-6xl mx-auto px-5 py-16 md:py-24">
-        <div className="max-w-2xl">
-          <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">What you get</p>
-          <h2 className="text-2xl md:text-4xl font-serif leading-tight">A complete back-office for the diamond side of your store.</h2>
-          <p className="mt-4 text-stone-600">No new software to learn. No setup fee. No exclusivity. Just the catalog, the tooling and the team you wish your existing manufacturer had.</p>
-        </div>
-        <div className="mt-12 grid md:grid-cols-2 gap-6">
-          {VALUE_PROPS.map(v => (
-            <div key={v.title} className="bg-stone-50 rounded-2xl p-6 border border-stone-100">
-              <div className="w-9 h-9 rounded-lg bg-[#1E3A5F]/10 text-[#1E3A5F] flex items-center justify-center mb-4">
-                <Check className="w-4 h-4" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {VALUE_PROPS.map((v) => (
+              <div key={v.title} className="bg-white p-7 rounded-xl border border-slate-200 shadow-sm flex flex-col h-full hover:shadow-md transition-shadow">
+                {v.metric && (
+                  <div className="text-xs font-bold text-[#1E3A5F] uppercase tracking-widest mb-4 pb-4 border-b border-slate-100">
+                    {v.metric}
+                  </div>
+                )}
+                <h3 className="text-lg font-serif font-medium leading-snug mb-3">{v.title}</h3>
+                <p className="text-sm text-slate-600 leading-relaxed flex-grow">{v.body}</p>
               </div>
-              <h3 className="font-semibold text-lg leading-snug">{v.title}</h3>
-              <p className="mt-2 text-sm text-stone-600 leading-relaxed">{v.body}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── How it works ──────────────────────────────────── */}
-      <section id="how-it-works" className="bg-stone-50">
-        <div className="max-w-6xl mx-auto px-5 py-16 md:py-24">
-          <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">How it works</p>
-            <h2 className="text-2xl md:text-4xl font-serif leading-tight">From hello to your first order in a week.</h2>
+      <section id="how-it-works" className="py-20 md:py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-14">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">{SECTIONS.howItWorks.eyebrow}</p>
+            <h2 className="text-3xl md:text-4xl font-serif leading-tight">{SECTIONS.howItWorks.heading}</h2>
           </div>
-          <div className="mt-12 grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-4 gap-8">
             {HOW_IT_WORKS.map((s, i) => (
               <div key={s.step} className="relative">
-                <p className="text-[#1E3A5F]/30 font-serif text-3xl">{s.step}</p>
-                <h3 className="mt-2 font-semibold text-base">{s.title}</h3>
-                <p className="mt-2 text-sm text-stone-600 leading-relaxed">{s.body}</p>
+                <div className="text-4xl font-serif text-slate-200 mb-4">{s.step}</div>
+                <h3 className="text-lg font-medium mb-2">{s.title}</h3>
+                <p className="text-slate-600 text-sm leading-relaxed">{s.body}</p>
                 {i < HOW_IT_WORKS.length - 1 && (
-                  <div className="hidden md:block absolute top-4 -right-3 text-stone-300">
-                    <ArrowRight className="w-4 h-4" />
-                  </div>
+                  <ArrowRight className="hidden md:block absolute top-2 right-0 w-5 h-5 text-slate-200" />
                 )}
               </div>
             ))}
@@ -173,38 +179,54 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
         </div>
       </section>
 
-      {/* ── Testimonials ──────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-5 py-16 md:py-24">
-        <div className="grid md:grid-cols-2 gap-8">
-          {TESTIMONIALS.map(t => (
-            <figure key={t.quote} className="bg-white rounded-2xl p-7 border border-stone-100">
-              <blockquote className="text-stone-800 text-lg font-serif leading-snug">&ldquo;{t.quote}&rdquo;</blockquote>
-              <figcaption className="mt-4 text-sm text-stone-500">{t.name} · {t.location}</figcaption>
-            </figure>
-          ))}
+      {/* ── Social proof ──────────────────────────────────── */}
+      <section className="py-20 md:py-24 px-6 bg-[#1E3A5F] text-white">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-serif mb-12 text-center text-white">{SECTIONS.socialProof.heading}</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            {TESTIMONIALS.map((t) => (
+              <figure key={t.quote} className="bg-white/10 p-8 rounded-xl backdrop-blur-sm border border-white/20">
+                <blockquote className="text-lg md:text-xl font-serif italic text-white/90 leading-snug">
+                  &ldquo;{t.quote}&rdquo;
+                </blockquote>
+                <figcaption className="mt-6 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold">
+                    {t.name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'SP'}
+                  </div>
+                  <div>
+                    <div className="font-medium">{t.name}</div>
+                    <div className="text-sm text-white/60">{t.location}</div>
+                  </div>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── FAQ ───────────────────────────────────────────── */}
-      <section id="faq" className="bg-stone-50">
-        <div className="max-w-3xl mx-auto px-5 py-16 md:py-24">
-          <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">FAQ</p>
-            <h2 className="text-2xl md:text-4xl font-serif leading-tight">Questions retailers usually ask first.</h2>
+      <section id="faq" className="py-20 md:py-24 px-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-12">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">{SECTIONS.faq.eyebrow}</p>
+            <h2 className="text-3xl md:text-4xl font-serif leading-tight">{SECTIONS.faq.heading}</h2>
           </div>
-          <div className="mt-10 divide-y divide-stone-200 border-y border-stone-200">
+          <div className="space-y-4">
             {FAQ.map((f, i) => {
               const open = openFaq === i
               return (
-                <div key={f.q}>
+                <div key={f.q} className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                   <button
+                    className="w-full px-6 py-5 flex items-center justify-between hover:bg-slate-50 transition-colors text-left"
                     onClick={() => setOpenFaq(open ? null : i)}
-                    className="w-full text-left py-5 flex items-start justify-between gap-4">
-                    <span className="font-medium text-stone-900">{f.q}</span>
-                    <ChevronDown className={`w-5 h-5 text-stone-400 shrink-0 mt-0.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+                  >
+                    <span className="font-medium text-base md:text-lg pr-4">{f.q}</span>
+                    <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
                   </button>
                   {open && (
-                    <p className="pb-5 text-sm text-stone-600 leading-relaxed">{f.a}</p>
+                    <div className="px-6 pb-5 text-slate-600 leading-relaxed border-t border-slate-100 pt-4 text-sm md:text-base">
+                      {f.a}
+                    </div>
                   )}
                 </div>
               )
@@ -214,50 +236,70 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       </section>
 
       {/* ── Final CTA ─────────────────────────────────────── */}
-      <section className="bg-[#1E3A5F] text-white">
-        <div className="max-w-4xl mx-auto px-5 py-16 md:py-20 text-center">
-          <h2 className="text-2xl md:text-4xl font-serif leading-tight">Ready to add the Shewah catalog to your store?</h2>
-          <p className="mt-4 text-white/70">Tell us a bit about your store — we&rsquo;ll WhatsApp you within one business day.</p>
+      <section className="bg-slate-50 border-t border-slate-200">
+        <div className="max-w-4xl mx-auto px-6 py-16 md:py-20 text-center">
+          <h2 className="text-2xl md:text-4xl font-serif leading-tight">{FINAL_CTA.heading}</h2>
+          <p className="mt-4 text-slate-600">{FINAL_CTA.body}</p>
           <a href="#signup"
-            className="mt-7 inline-flex items-center gap-1.5 bg-white text-[#1E3A5F] px-6 py-3 rounded-xl font-medium hover:bg-stone-100">
+            className="mt-7 inline-flex items-center gap-1.5 bg-[#1E3A5F] text-white px-6 py-3 rounded-xl font-medium hover:bg-[#152943]">
             {HERO.primaryCta} <ArrowRight className="w-4 h-4" />
           </a>
         </div>
       </section>
 
       {/* ── Footer ────────────────────────────────────────── */}
-      <footer className="bg-stone-900 text-stone-400">
-        <div className="max-w-6xl mx-auto px-5 py-10 grid md:grid-cols-3 gap-8 text-sm">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
-                <Diamond className="w-4 h-4 text-white" />
-              </div>
-              <p className="text-white font-semibold">{BRAND.name}</p>
+      <footer className="bg-slate-900 text-slate-400 py-16 px-6 border-t border-slate-800">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-12 mb-12">
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-2 mb-4">
+              <Diamond className="w-5 h-5 text-white" />
+              <span className="text-xl font-bold text-white tracking-tight">{BRAND.name}</span>
             </div>
-            <p className="mt-3 text-xs leading-relaxed">B2B diamond jewellery wholesale and manufacturing partner for Indian retailers.</p>
+            <p className="max-w-xs text-sm leading-relaxed">{FOOTER.blurb}</p>
           </div>
           <div>
-            <p className="text-white text-xs uppercase tracking-wider font-semibold mb-3">Get in touch</p>
-            <p>{BRAND.contactEmail}</p>
-            <p className="mt-1">WhatsApp: +{wa.slice(0,2)} {wa.slice(2,7)} {wa.slice(7)}</p>
+            <h4 className="text-white text-xs uppercase tracking-wider font-semibold mb-4">{FOOTER.contactHeading}</h4>
+            <ul className="space-y-2 text-sm">
+              <li>{BRAND.contactEmail}</li>
+              <li>{FOOTER.whatsappLabel}: +{wa.slice(0,2)} {wa.slice(2,7)} {wa.slice(7)}</li>
+            </ul>
           </div>
           <div>
-            <p className="text-white text-xs uppercase tracking-wider font-semibold mb-3">Already a partner?</p>
-            <Link href="/login" className="hover:text-white">Sign in to your portal →</Link>
+            <h4 className="text-white text-xs uppercase tracking-wider font-semibold mb-4">{FOOTER.partnerHeading}</h4>
+            <Link href="/login" className="text-sm hover:text-white">{FOOTER.partnerLinkLabel}</Link>
           </div>
         </div>
-        <div className="border-t border-stone-800">
-          <p className="max-w-6xl mx-auto px-5 py-4 text-xs">© {new Date().getFullYear()} {BRAND.name}. All rights reserved.</p>
+        <div className="max-w-6xl mx-auto pt-8 border-t border-slate-800 text-xs">
+          <p>{FOOTER.copyright(new Date().getFullYear())}</p>
         </div>
       </footer>
 
-      {/* Floating WhatsApp CTA */}
+      {/* Sticky mobile CTA */}
+      <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-slate-200 md:hidden z-50 flex gap-3 shadow-[0_-4px_20px_rgb(0,0,0,0.05)]">
+        <a
+          href="#signup"
+          className="flex-1 bg-[#1E3A5F] text-white py-3.5 rounded-lg font-medium text-center"
+        >
+          {MOBILE_BAR.primaryCta}
+        </a>
+        <a
+          href={waChatHref}
+          target="_blank" rel="noopener noreferrer"
+          aria-label={MOBILE_BAR.whatsappAria}
+          className="w-14 flex-shrink-0 bg-[#25D366] text-white rounded-lg flex items-center justify-center shadow-sm"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </a>
+      </div>
+
+      {/* Desktop floating WhatsApp */}
       <a
-        href={`https://wa.me/${wa}?text=${encodeURIComponent('Hi Shewah, I run a jewellery store and would like to learn more about partnering.')}`}
+        href={waChatHref}
         target="_blank" rel="noopener noreferrer"
-        className="fixed bottom-5 right-5 z-50 bg-[#25D366] text-white rounded-full px-4 py-3 shadow-lg flex items-center gap-2 text-sm font-medium hover:bg-[#1da851]">
-        <MessageCircle className="w-4 h-4" /> Chat on WhatsApp
+        className="hidden md:flex fixed bottom-8 right-8 bg-[#25D366] text-white px-5 py-3 rounded-full shadow-lg items-center gap-2 text-sm font-medium hover:-translate-y-1 transition-transform z-50 hover:shadow-xl"
+      >
+        <MessageCircle className="w-5 h-5" />
+        {NAV.whatsappCta}
       </a>
     </div>
   )
