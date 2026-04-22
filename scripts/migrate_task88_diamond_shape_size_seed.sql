@@ -10,13 +10,6 @@
 -- Safe to re-run any number of times.
 
 -- ─────────────────────────────────────────────────────────────────────
--- 0. Defensive index — task 76 already creates this, but recreate
---    conditionally so this script is safely runnable on its own.
--- ─────────────────────────────────────────────────────────────────────
-CREATE UNIQUE INDEX IF NOT EXISTS diamond_sizes_shape_label_idx
-  ON diamond_sizes (shape_id, label);
-
--- ─────────────────────────────────────────────────────────────────────
 -- 1. New shapes — added on top of the 10 seeded by task 76.
 --    (Round, Oval, Pear, Cushion, Princess, Marquise, Emerald, Radiant,
 --    Heart, Asscher are already in place.)
@@ -75,7 +68,10 @@ CROSS JOIN (VALUES
   ('10.0mm', 3.87,    240)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'round'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Princess — square brilliant, mm = side length.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -94,7 +90,10 @@ CROSS JOIN (VALUES
   ('6.0mm',  1.25,  100)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'princess'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Asscher — square step-cut.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -113,7 +112,10 @@ CROSS JOIN (VALUES
   ('7.0mm',  2.00,  100)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'asscher'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Carre — small square step-cut, mostly used as side stones.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -128,7 +130,10 @@ CROSS JOIN (VALUES
   ('4.0mm',  0.36,   60)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'carre'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Cushion — square version, mm = side length.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -147,7 +152,10 @@ CROSS JOIN (VALUES
   ('7.0mm',  2.00,  100)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'cushion'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Rectangular Cushion — L×W mm.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -165,7 +173,10 @@ CROSS JOIN (VALUES
   ('10x8 mm',  3.00,  90)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'rectangular cushion'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Radiant — square version, mm = side length.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -183,7 +194,10 @@ CROSS JOIN (VALUES
   ('7.0mm',  2.00,   90)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'radiant'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Rectangular Radiant — L×W mm.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -201,7 +215,10 @@ CROSS JOIN (VALUES
   ('10x8 mm',  3.00,  90)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'rectangular radiant'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Emerald — L×W mm.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -220,7 +237,10 @@ CROSS JOIN (VALUES
   ('10x8 mm',  3.00, 100)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'emerald'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Oval — L×W mm.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -239,7 +259,10 @@ CROSS JOIN (VALUES
   ('10x8 mm',  2.50, 100)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'oval'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Pear — L×W mm.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -257,7 +280,10 @@ CROSS JOIN (VALUES
   ('11x8 mm',  2.50,  90)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'pear'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Marquise — L×W mm (long oval with pointed ends).
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -274,7 +300,10 @@ CROSS JOIN (VALUES
   ('10x5 mm',   1.50,  80)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'marquise'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Heart — L×W mm (square-ish).
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -290,7 +319,10 @@ CROSS JOIN (VALUES
   ('9x9 mm',   2.50,  70)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'heart'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Trillion (a.k.a. Trilliant).
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -305,7 +337,10 @@ CROSS JOIN (VALUES
   ('8x8 mm',   1.50,  60)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'trillion'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Baguette — straight rectangular step-cut, side-stone workhorse.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -321,7 +356,10 @@ CROSS JOIN (VALUES
   ('6x4 mm',     0.50,  70)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'baguette'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Tapered Baguette — same trade sizes as straight baguette.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -337,7 +375,10 @@ CROSS JOIN (VALUES
   ('6x4 mm',     0.50,  70)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'tapered baguette'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Half Moon.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -351,7 +392,10 @@ CROSS JOIN (VALUES
   ('6x4 mm',   0.50,  50)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'half moon'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Calf.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -364,7 +408,10 @@ CROSS JOIN (VALUES
   ('5x3 mm',   0.25,  40)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'calf'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Bullet.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -378,7 +425,10 @@ CROSS JOIN (VALUES
   ('7x4 mm',   0.55,  50)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'bullet'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Tapered Bullet — same trade sizes as straight bullet.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -392,7 +442,10 @@ CROSS JOIN (VALUES
   ('7x4 mm',   0.55,  50)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'tapered bullet'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Shield.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -405,7 +458,10 @@ CROSS JOIN (VALUES
   ('6x6 mm',   0.75,  40)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'shield'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Kite.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -419,7 +475,10 @@ CROSS JOIN (VALUES
   ('8x5 mm',   0.75,  50)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'kite'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Trapezoid.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -433,7 +492,10 @@ CROSS JOIN (VALUES
   ('8x5 mm',   0.75,  50)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'trapezoid'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Hexagon.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -447,7 +509,10 @@ CROSS JOIN (VALUES
   ('8x7 mm',   1.20,  50)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'hexagon'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Epaulette.
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -460,7 +525,10 @@ CROSS JOIN (VALUES
   ('7x4 mm',   0.55,  40)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'epaulette'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Rose Cut — flat-bottomed dome, mm = diameter (round-ish).
 INSERT INTO diamond_sizes (shape_id, label, approx_carats, sort_order)
@@ -476,7 +544,10 @@ CROSS JOIN (VALUES
   ('8.0mm',  1.30,   70)
 ) AS v(label, approx_carats, sort_order)
 WHERE lower(s.name) = 'rose cut'
-ON CONFLICT (shape_id, label) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM diamond_sizes z
+    WHERE z.shape_id = s.id AND lower(z.label) = lower(v.label)
+  );
 
 -- Done. Verify with:
 --   SELECT s.name, COUNT(z.*) AS sizes
