@@ -9,7 +9,10 @@ import {
 } from '@/lib/landingCopy'
 import LeadForm from './LeadForm'
 
-export default function LandingPage() {
+export default function LandingPage({ whatsappE164 }: { whatsappE164?: string }) {
+  // Operator-editable override flows in from `app/page.tsx` (Settings →
+  // Marketing landing page). Falls back to the build-time default.
+  const wa = (whatsappE164 || BRAND.whatsappE164).replace(/\D/g, '')
   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID
   const gaId    = process.env.NEXT_PUBLIC_GA_ID
   const [openFaq, setOpenFaq] = useState<number | null>(0)
@@ -108,7 +111,7 @@ export default function LandingPage() {
             <p className="text-xs uppercase tracking-wider text-stone-500 font-semibold">Tell us about your store</p>
             <p className="mt-1 text-sm text-stone-600">A partner manager will reach out within one business day.</p>
             <div id="signup" className="mt-5">
-              <LeadForm compact />
+              <LeadForm compact whatsappE164={wa} />
             </div>
           </div>
         </div>
@@ -237,7 +240,7 @@ export default function LandingPage() {
           <div>
             <p className="text-white text-xs uppercase tracking-wider font-semibold mb-3">Get in touch</p>
             <p>{BRAND.contactEmail}</p>
-            <p className="mt-1">WhatsApp: +{BRAND.whatsappE164.slice(0,2)} {BRAND.whatsappE164.slice(2,7)} {BRAND.whatsappE164.slice(7)}</p>
+            <p className="mt-1">WhatsApp: +{wa.slice(0,2)} {wa.slice(2,7)} {wa.slice(7)}</p>
           </div>
           <div>
             <p className="text-white text-xs uppercase tracking-wider font-semibold mb-3">Already a partner?</p>
@@ -251,7 +254,7 @@ export default function LandingPage() {
 
       {/* Floating WhatsApp CTA */}
       <a
-        href={`https://wa.me/${BRAND.whatsappE164}?text=${encodeURIComponent('Hi Shewah, I run a jewellery store and would like to learn more about partnering.')}`}
+        href={`https://wa.me/${wa}?text=${encodeURIComponent('Hi Shewah, I run a jewellery store and would like to learn more about partnering.')}`}
         target="_blank" rel="noopener noreferrer"
         className="fixed bottom-5 right-5 z-50 bg-[#25D366] text-white rounded-full px-4 py-3 shadow-lg flex items-center gap-2 text-sm font-medium hover:bg-[#1da851]">
         <MessageCircle className="w-4 h-4" /> Chat on WhatsApp

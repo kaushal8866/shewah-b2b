@@ -273,6 +273,33 @@ export default function SettingsPage() {
 
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <div className="flex items-center gap-2 mb-4">
+              <MessageCircle className="w-4 h-4 text-[#1E3A5F]" />
+              <h2 className="font-medium text-stone-900">Marketing landing page</h2>
+            </div>
+            <p className="text-xs text-stone-400 mb-4">
+              Number used by the floating WhatsApp button on the public landing page at <code>/</code> and the standalone <code>/partner-signup</code> form. Digits only with country code, no <code>+</code> or spaces (e.g. <code>919876543210</code> for +91&nbsp;98765&nbsp;43210). Leave blank to use the built-in default.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={label}>Public WhatsApp number (landing page)</label>
+                <input
+                  className={input}
+                  value={settings.landing_whatsapp_e164 || ''}
+                  onChange={e => set('landing_whatsapp_e164', e.target.value.replace(/\D/g, '').slice(0, 15))}
+                  placeholder="919876543210"
+                  inputMode="numeric"
+                />
+                {settings.landing_whatsapp_e164 && (
+                  <p className="text-xs text-stone-500 mt-1">
+                    Will display as <span className="font-medium">+{settings.landing_whatsapp_e164.slice(0,2)} {settings.landing_whatsapp_e164.slice(2,7)} {settings.landing_whatsapp_e164.slice(7)}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <div className="flex items-center gap-2 mb-4">
               <Calculator className="w-4 h-4 text-[#1E3A5F]" />
               <h2 className="font-medium text-stone-900">Default pricing parameters</h2>
             </div>

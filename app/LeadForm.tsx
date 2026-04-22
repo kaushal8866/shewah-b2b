@@ -40,7 +40,8 @@ function readUtm(): Record<string, string | null> {
   }
 }
 
-export default function LeadForm({ compact = false }: { compact?: boolean }) {
+export default function LeadForm({ compact = false, whatsappE164 }: { compact?: boolean; whatsappE164?: string }) {
+  const wa = (whatsappE164 || BRAND.whatsappE164).replace(/\D/g, '')
   const [f, setF] = useState<FormState>(empty)
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
@@ -116,7 +117,7 @@ export default function LeadForm({ compact = false }: { compact?: boolean }) {
           <div>
             <p className="font-semibold">Thanks — we&rsquo;ve got it.</p>
             <p className="mt-1 text-sm text-emerald-800">
-              Your assigned partner manager will reach out on WhatsApp within one business day. Save this number to your contacts so it doesn&rsquo;t go to spam: <span className="font-medium">{`+${BRAND.whatsappE164.slice(0,2)} ${BRAND.whatsappE164.slice(2)}`}</span>.
+              Your assigned partner manager will reach out on WhatsApp within one business day. Save this number to your contacts so it doesn&rsquo;t go to spam: <span className="font-medium">{`+${wa.slice(0,2)} ${wa.slice(2,7)} ${wa.slice(7)}`}</span>.
             </p>
           </div>
         </div>

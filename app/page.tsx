@@ -2,7 +2,26 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import LandingPage from './LandingPage'
-import { SEO } from '@/lib/landingCopy'
+import { BRAND, SEO } from '@/lib/landingCopy'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
+
+export const dynamic = 'force-dynamic'
+
+async function getLandingWhatsapp(): Promise<string> {
+  // Master admins set this via Settings → "Marketing landing page".
+  // Falls back to the build-time default in lib/landingCopy.ts.
+  try {
+    const { data } = await supabaseAdmin
+      .from('settings')
+      .select('value')
+      .eq('key', 'landing_whatsapp_e164')
+      .maybeSingle()
+    const v = (data?.value || '').replace(/\D/g, '')
+    return v.length >= 10 ? v : BRAND.whatsappE164
+  } catch {
+    return BRAND.whatsappE164
+  }
+}
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://shewah.in'
 
@@ -41,5 +60,6 @@ export default async function HomePage() {
   if (session?.user) {
     redirect(dashboardForRole((session.user as any).role))
   }
-  return <LandingPage />
+  const whatsappE164 = await getLandingWhatsapp()
+  return <LandingPage whatsappE164={whatsappE164} />
 }
