@@ -5,7 +5,7 @@ import { supabase, Partner } from '@/lib/supabase'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import {
   Plus, Search, Filter, Phone, MapPin,
-  ChevronRight, TrendingUp, Users
+  ChevronRight, TrendingUp, Users, Inbox
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -62,12 +62,20 @@ export default function PartnersPage() {
           <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Partners</h1>
           <p className="text-stone-500 text-sm mt-0.5">Jeweler CRM — {partners.length} contacts</p>
         </div>
-        <Link href="/partners/new"
-          className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add partner</span>
-          <span className="sm:hidden">Add</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/partners/leads"
+            className="flex items-center gap-2 bg-white border border-stone-200 text-stone-700 px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-stone-50 transition-colors">
+            <Inbox className="w-4 h-4" />
+            <span className="hidden sm:inline">Lead inbox</span>
+            <span className="sm:hidden">Leads</span>
+          </Link>
+          <Link href="/partners/new"
+            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add partner</span>
+            <span className="sm:hidden">Add</span>
+          </Link>
+        </div>
       </div>
 
       {/* Stat pills */}
