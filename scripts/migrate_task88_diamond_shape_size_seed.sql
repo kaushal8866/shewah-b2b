@@ -10,6 +10,13 @@
 -- Safe to re-run any number of times.
 
 -- ─────────────────────────────────────────────────────────────────────
+-- 0. Defensive index — task 76 already creates this, but recreate
+--    conditionally so this script is safely runnable on its own.
+-- ─────────────────────────────────────────────────────────────────────
+CREATE UNIQUE INDEX IF NOT EXISTS diamond_sizes_shape_label_idx
+  ON diamond_sizes (shape_id, label);
+
+-- ─────────────────────────────────────────────────────────────────────
 -- 1. New shapes — added on top of the 10 seeded by task 76.
 --    (Round, Oval, Pear, Cushion, Princess, Marquise, Emerald, Radiant,
 --    Heart, Asscher are already in place.)
@@ -54,9 +61,11 @@ SELECT s.id, v.label, v.approx_carats, v.sort_order
 FROM diamond_shapes s
 CROSS JOIN (VALUES
   ('0.8mm',  0.0025,   5),
+  ('3.75mm', 0.21,    115),  -- bridges the 3.5mm / 4.0mm gap left by task 76
   ('5.5mm',  0.66,    150),
   ('6.0mm',  0.84,    160),
   ('6.5mm',  1.00,    170),
+  ('6.5+',   NULL,    175),  -- catch-all bucket for anything 6.5mm and larger
   ('7.0mm',  1.30,    180),
   ('7.5mm',  1.67,    190),
   ('8.0mm',  2.00,    200),
