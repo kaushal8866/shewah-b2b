@@ -1,0 +1,22 @@
+kind = "design"
+previewPath = "/"
+title = "Landing Page Redesign Mockups"
+version = "1.0.0"
+id = "artifacts/landing-mockups"
+router = "path"
+
+[[integratedSkills]]
+name = "mockup-sandbox"
+version = "1.0.0"
+
+[[services]]
+name = "Component Preview Server"
+paths = [ "/" ]
+localPort = 20949
+
+[services.development]
+run = "npm run dev"
+
+[services.env]
+PORT = "20949"
+BASE_PATH = "/"
