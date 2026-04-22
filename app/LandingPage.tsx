@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Script from 'next/script'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Diamond, ChevronDown, MessageCircle, ShieldCheck, ArrowRight, Menu, X,
 } from 'lucide-react'
@@ -23,6 +23,8 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
   const [openFaq, setOpenFaq] = useState<number | null>(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isPhone, setIsPhone] = useState(false)
+  const mobileMenuButtonRef = useRef<HTMLButtonElement | null>(null)
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -47,6 +49,65 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [])
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    if (typeof document === 'undefined') return
+
+    const triggerEl = mobileMenuButtonRef.current
+    const previouslyFocused = document.activeElement as HTMLElement | null
+
+    const getFocusable = (): HTMLElement[] => {
+      const root = mobileMenuRef.current
+      if (!root) return []
+      return Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute('aria-hidden'))
+    }
+
+    const focusables = getFocusable()
+    if (focusables.length > 0) focusables[0].focus()
+    else mobileMenuRef.current?.focus()
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setMobileMenuOpen(false)
+        return
+      }
+      if (e.key === 'Tab') {
+        const items = getFocusable()
+        if (items.length === 0) {
+          e.preventDefault()
+          mobileMenuRef.current?.focus()
+          return
+        }
+        const first = items[0]
+        const last = items[items.length - 1]
+        const active = document.activeElement as HTMLElement | null
+        if (e.shiftKey) {
+          if (active === first || !mobileMenuRef.current?.contains(active)) {
+            e.preventDefault()
+            last.focus()
+          }
+        } else {
+          if (active === last || !mobileMenuRef.current?.contains(active)) {
+            e.preventDefault()
+            first.focus()
+          }
+        }
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      const target = triggerEl || previouslyFocused
+      if (target && typeof target.focus === 'function') target.focus()
+    }
+  }, [mobileMenuOpen])
 
   const waChatHref = `https://wa.me/${wa}?text=${encodeURIComponent(WHATSAPP_INTRO_MESSAGE)}`
 
@@ -160,6 +221,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
             </a>
           </nav>
           <button
+            ref={mobileMenuButtonRef}
             type="button"
             className="md:hidden inline-flex items-center justify-center w-10 h-10 -mr-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
@@ -180,8 +242,13 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
               onClick={() => setMobileMenuOpen(false)}
             />
             <div
+              ref={mobileMenuRef}
               id="mobile-menu"
-              className="absolute top-0 left-0 right-0 bg-white border-b border-slate-200 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Site menu"
+              tabIndex={-1}
+              className="absolute top-0 left-0 right-0 bg-white border-b border-slate-200 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto outline-none"
               style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom) + 5rem)' }}
             >
               <nav className="px-6 py-4 flex flex-col">
