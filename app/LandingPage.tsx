@@ -30,7 +30,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-slate-900 selection:bg-[#1E3A5F] selection:text-white">
+    <div className="min-h-screen bg-[#FDFDFD] text-slate-900 selection:bg-[#1E3A5F] selection:text-white pb-24 md:pb-0">
       {/* Analytics */}
       {pixelId && (
         <>
@@ -94,37 +94,37 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       </header>
 
       {/* ── Hero ──────────────────────────────────────────── */}
-      <section className="pt-16 pb-20 md:pt-20 md:pb-24 px-6 relative overflow-hidden">
+      <section className="pt-10 pb-12 md:pt-20 md:pb-24 px-5 sm:px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-100 via-white to-white -z-10" aria-hidden />
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_420px] gap-12 lg:gap-16 items-start">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_420px] gap-8 md:gap-12 lg:gap-16 items-start">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[#1E3A5F] text-xs font-semibold uppercase tracking-widest mb-7">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[#1E3A5F] text-[11px] sm:text-xs font-semibold uppercase tracking-widest mb-5 md:mb-7">
               <ShieldCheck className="w-4 h-4" />
               {HERO.eyebrow}
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-[60px] font-serif leading-[1.08] text-slate-900 mb-6 tracking-tight">
+            <h1 className="text-[2rem] sm:text-4xl md:text-5xl lg:text-[60px] font-serif leading-[1.1] text-slate-900 mb-4 md:mb-6 tracking-tight">
               {HERO.headline}
             </h1>
 
-            <p className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-xl">
+            <p className="text-base sm:text-lg md:text-xl text-slate-600 leading-relaxed max-w-xl">
               {HERO.subhead}
             </p>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-y border-slate-200 py-8 mt-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-5 sm:gap-6 border-y border-slate-200 py-6 md:py-8 mt-8 md:mt-10">
               {STATS.map((s) => (
-                <div key={s.label} className="flex flex-col">
-                  <span className="text-2xl md:text-3xl font-serif text-[#1E3A5F] mb-1">{s.value}</span>
-                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">{s.label}</span>
+                <div key={s.label} className="flex flex-col min-w-0">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-serif text-[#1E3A5F] mb-1 whitespace-nowrap">{s.value}</span>
+                  <span className="text-[11px] sm:text-xs font-medium text-slate-500 uppercase tracking-wider leading-tight">{s.label}</span>
                 </div>
               ))}
             </div>
 
-            <p className="mt-6 text-sm text-slate-500">{HERO.trustLine}</p>
+            <p className="mt-5 md:mt-6 text-sm text-slate-500">{HERO.trustLine}</p>
           </div>
 
           {/* Lead form (preserves existing LeadForm behaviour) */}
-          <div id="signup" className="bg-white p-7 md:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 relative">
+          <div id="signup" className="bg-white p-6 sm:p-7 md:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 relative scroll-mt-20">
             <div className="absolute top-0 left-0 w-full h-1 bg-[#1E3A5F] rounded-t-2xl" aria-hidden />
             <h2 className="text-2xl font-serif font-medium mb-2">{FORM_PANEL.title}</h2>
             <p className="text-slate-500 text-sm mb-6">{FORM_PANEL.subtitle}</p>
@@ -357,10 +357,13 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       </footer>
 
       {/* Sticky mobile CTA */}
-      <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-slate-200 md:hidden z-50 flex gap-3 shadow-[0_-4px_20px_rgb(0,0,0,0.05)]">
+      <div
+        className="fixed bottom-0 left-0 right-0 px-3 pt-3 bg-white border-t border-slate-200 md:hidden z-50 flex items-stretch gap-2 shadow-[0_-4px_20px_rgb(0,0,0,0.05)]"
+        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+      >
         <a
           href="#signup"
-          className="flex-1 bg-[#1E3A5F] text-white py-3.5 rounded-lg font-medium text-center"
+          className="flex-1 min-w-0 bg-[#1E3A5F] text-white py-3 rounded-lg font-medium text-center text-sm sm:text-base truncate"
         >
           {MOBILE_BAR.primaryCta}
         </a>
@@ -368,9 +371,9 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
           href={waChatHref}
           target="_blank" rel="noopener noreferrer"
           aria-label={MOBILE_BAR.whatsappAria}
-          className="w-14 flex-shrink-0 bg-[#25D366] text-white rounded-lg flex items-center justify-center shadow-sm"
+          className="w-12 shrink-0 bg-[#25D366] text-white rounded-lg flex items-center justify-center shadow-sm"
         >
-          <MessageCircle className="w-6 h-6" />
+          <MessageCircle className="w-5 h-5" />
         </a>
       </div>
 
