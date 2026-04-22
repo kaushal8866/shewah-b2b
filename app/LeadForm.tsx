@@ -1,29 +1,32 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { CheckCircle2, Loader2 } from 'lucide-react'
+import { CheckCircle2, Loader2, ArrowRight } from 'lucide-react'
 import { VOLUME_OPTIONS, BRAND } from '@/lib/landingCopy'
 
 type FormState = {
+  /* Step 1 — the only required fields */
   full_name: string
-  store_name: string
-  city: string
-  phone: string
   whatsapp: string
+  city: string
+  /* Step 2 — optional, captured when the user is willing */
+  store_name: string
+  phone: string
+  /* Mirror checkbox so users don't have to enter their phone twice */
+  phone_same_as_whatsapp: boolean
   email: string
   gst_number: string
   monthly_volume: string
   note: string
   /* Bot honeypot — real users never fill this */
   website: string
-  /* Mirror checkbox so users don't have to enter WhatsApp twice */
-  whatsapp_same: boolean
 }
 
 const empty: FormState = {
-  full_name: '', store_name: '', city: '', phone: '', whatsapp: '',
+  full_name: '', whatsapp: '', city: '',
+  store_name: '', phone: '', phone_same_as_whatsapp: true,
   email: '', gst_number: '', monthly_volume: '', note: '',
-  website: '', whatsapp_same: true,
+  website: '',
 }
 
 function readUtm(): Record<string, string | null> {
@@ -40,9 +43,23 @@ function readUtm(): Record<string, string | null> {
   }
 }
 
-export default function LeadForm({ compact = false, whatsappE164 }: { compact?: boolean; whatsappE164?: string }) {
+const validIndianMobile = (raw: string): boolean => {
+  const d10 = raw.replace(/\D/g, '').replace(/^(0|91)/, '')
+  return d10.length === 10 && /^[6-9]/.test(d10)
+}
+
+export default function LeadForm({
+  compact = false,
+  multiStep = false,
+  whatsappE164,
+}: {
+  compact?: boolean
+  multiStep?: boolean
+  whatsappE164?: string
+}) {
   const wa = (whatsappE164 || BRAND.whatsappE164).replace(/\D/g, '')
   const [f, setF] = useState<FormState>(empty)
+  const [step, setStep] = useState<1 | 2>(1)
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -51,40 +68,33 @@ export default function LeadForm({ compact = false, whatsappE164 }: { compact?: 
     setF(prev => ({ ...prev, [k]: v }))
   }
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
-    if (!f.full_name.trim() || !f.store_name.trim() || !f.city.trim() || !f.phone.trim()) {
-      setError('Please fill name, store, city and phone.')
-      return
+  function validateStep1(): string | null {
+    if (!f.full_name.trim() || !f.whatsapp.trim() || !f.city.trim()) {
+      return 'Please fill your name, WhatsApp number and city.'
     }
-    if (!f.monthly_volume) {
-      setError('Please choose your typical monthly diamond piece volume.')
-      return
+    if (!validIndianMobile(f.whatsapp)) {
+      return 'Please enter a valid 10-digit Indian WhatsApp number.'
     }
-    // Strict India 10-digit phone (allow optional +91 / 91 / 0 prefix).
-    const phoneDigits = f.phone.replace(/\D/g, '')
-    const phone10 = phoneDigits.replace(/^(0|91)/, '')
-    if (phone10.length !== 10 || !/^[6-9]/.test(phone10)) {
-      setError('Please enter a valid 10-digit Indian mobile number.')
-      return
-    }
-    if (!f.whatsapp_same) {
-      const waDigits = f.whatsapp.replace(/\D/g, '').replace(/^(0|91)/, '')
-      if (waDigits.length !== 10 || !/^[6-9]/.test(waDigits)) {
-        setError('Please enter a valid 10-digit WhatsApp number.')
-        return
-      }
+    return null
+  }
+
+  function validateStep2(): string | null {
+    if (!f.phone_same_as_whatsapp && f.phone.trim() && !validIndianMobile(f.phone)) {
+      return 'Please enter a valid 10-digit phone number, or check "same as WhatsApp".'
     }
     if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
-      setError('That email address doesn\u2019t look right.')
-      return
+      return 'That email address doesn\u2019t look right.'
     }
+    return null
+  }
+
+  async function submit() {
     setSubmitting(true)
     try {
+      const phone = f.phone_same_as_whatsapp || !f.phone.trim() ? f.whatsapp : f.phone
       const payload = {
         ...f,
-        whatsapp: f.whatsapp_same ? f.phone : f.whatsapp,
+        phone,
         ...readUtm(),
       }
       const res = await fetch('/api/public/partner-signup', {
@@ -102,11 +112,27 @@ export default function LeadForm({ compact = false, whatsappE164 }: { compact?: 
       try { (window as any).gtag && (window as any).gtag('event', 'generate_lead', { value: 1 }) } catch {}
       setDone(true)
       setF(empty)
+      setStep(1)
     } catch (err: any) {
       setError(err?.message || 'Network error. Please try again.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault()
+    setError(null)
+    const err1 = validateStep1()
+    if (err1) { setError(err1); if (multiStep) setStep(1); return }
+
+    if (multiStep && step === 1) {
+      setStep(2)
+      return
+    }
+    const err2 = validateStep2()
+    if (err2) { setError(err2); return }
+    await submit()
   }
 
   if (done) {
@@ -128,48 +154,75 @@ export default function LeadForm({ compact = false, whatsappE164 }: { compact?: 
   const inputCls =
     'w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:outline-none focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/15 bg-white'
 
-  return (
-    <form onSubmit={onSubmit} noValidate className={compact ? 'space-y-3' : 'space-y-4'}>
-      {/* Honeypot — hidden visually & from screen readers */}
-      <input
-        type="text"
-        name="website"
-        tabIndex={-1}
-        autoComplete="off"
-        value={f.website}
-        onChange={e => set('website', e.target.value)}
-        aria-hidden="true"
-        style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', opacity: 0 }}
-      />
+  const honeypot = (
+    <input
+      type="text"
+      name="website"
+      tabIndex={-1}
+      autoComplete="off"
+      value={f.website}
+      onChange={e => set('website', e.target.value)}
+      aria-hidden="true"
+      style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', opacity: 0 }}
+    />
+  )
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-stone-700 mb-1">Your name *</label>
-          <input className={inputCls} value={f.full_name} onChange={e => set('full_name', e.target.value)} required />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-stone-700 mb-1">Store name *</label>
-          <input className={inputCls} value={f.store_name} onChange={e => set('store_name', e.target.value)} required />
-        </div>
+  const stepIndicator = multiStep ? (
+    <div className="flex items-center gap-2 text-xs text-stone-500">
+      <span className={step === 1 ? 'font-semibold text-[#1E3A5F]' : ''}>Step 1 · Quick intro</span>
+      <span className="text-stone-300">›</span>
+      <span className={step === 2 ? 'font-semibold text-[#1E3A5F]' : ''}>Step 2 · A few optional details</span>
+    </div>
+  ) : null
+
+  const renderStep1 = (
+    <>
+      <div>
+        <label className="block text-xs font-medium text-stone-700 mb-1">Your name *</label>
+        <input className={inputCls} value={f.full_name} onChange={e => set('full_name', e.target.value)} required />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-stone-700 mb-1">City *</label>
-          <input className={inputCls} value={f.city} onChange={e => set('city', e.target.value)} required />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-stone-700 mb-1">Phone *</label>
-          <input type="tel" inputMode="tel" className={inputCls} value={f.phone} onChange={e => set('phone', e.target.value)} required />
-        </div>
+      <div>
+        <label className="block text-xs font-medium text-stone-700 mb-1">WhatsApp number *</label>
+        <input
+          type="tel"
+          inputMode="tel"
+          className={inputCls}
+          value={f.whatsapp}
+          onChange={e => set('whatsapp', e.target.value)}
+          placeholder="10-digit Indian mobile"
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-stone-700 mb-1">City *</label>
+        <input className={inputCls} value={f.city} onChange={e => set('city', e.target.value)} required />
+      </div>
+    </>
+  )
+
+  const renderStep2 = (
+    <>
+      <p className="text-xs text-stone-500">
+        These help us prep your call. All optional — skip anything you&rsquo;d rather share over WhatsApp.
+      </p>
+      <div>
+        <label className="block text-xs font-medium text-stone-700 mb-1">Store name <span className="text-stone-400 font-normal">(optional)</span></label>
+        <input className={inputCls} value={f.store_name} onChange={e => set('store_name', e.target.value)} />
       </div>
       <div className="flex items-center gap-2">
-        <input id="wa-same" type="checkbox" className="rounded border-stone-300" checked={f.whatsapp_same} onChange={e => set('whatsapp_same', e.target.checked)} />
-        <label htmlFor="wa-same" className="text-xs text-stone-600">My WhatsApp is the same as my phone</label>
+        <input
+          id="phone-same"
+          type="checkbox"
+          className="rounded border-stone-300"
+          checked={f.phone_same_as_whatsapp}
+          onChange={e => set('phone_same_as_whatsapp', e.target.checked)}
+        />
+        <label htmlFor="phone-same" className="text-xs text-stone-600">My phone is the same as my WhatsApp</label>
       </div>
-      {!f.whatsapp_same && (
+      {!f.phone_same_as_whatsapp && (
         <div>
-          <label className="block text-xs font-medium text-stone-700 mb-1">WhatsApp number *</label>
-          <input type="tel" inputMode="tel" className={inputCls} value={f.whatsapp} onChange={e => set('whatsapp', e.target.value)} required={!f.whatsapp_same} />
+          <label className="block text-xs font-medium text-stone-700 mb-1">Phone <span className="text-stone-400 font-normal">(optional)</span></label>
+          <input type="tel" inputMode="tel" className={inputCls} value={f.phone} onChange={e => set('phone', e.target.value)} />
         </div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -183,8 +236,8 @@ export default function LeadForm({ compact = false, whatsappE164 }: { compact?: 
         </div>
       </div>
       <div>
-        <label className="block text-xs font-medium text-stone-700 mb-1">Monthly diamond piece volume *</label>
-        <select className={inputCls} value={f.monthly_volume} onChange={e => set('monthly_volume', e.target.value)} required>
+        <label className="block text-xs font-medium text-stone-700 mb-1">Monthly diamond piece volume <span className="text-stone-400 font-normal">(optional)</span></label>
+        <select className={inputCls} value={f.monthly_volume} onChange={e => set('monthly_volume', e.target.value)}>
           {VOLUME_OPTIONS.map(o => (<option key={o.value} value={o.value}>{o.label}</option>))}
         </select>
       </div>
@@ -192,6 +245,16 @@ export default function LeadForm({ compact = false, whatsappE164 }: { compact?: 
         <label className="block text-xs font-medium text-stone-700 mb-1">Anything you&rsquo;d like us to know <span className="text-stone-400 font-normal">(optional)</span></label>
         <textarea rows={3} className={inputCls} value={f.note} onChange={e => set('note', e.target.value)} />
       </div>
+    </>
+  )
+
+  const showStep2 = multiStep && step === 2
+
+  return (
+    <form onSubmit={onSubmit} noValidate className={compact ? 'space-y-3' : 'space-y-4'}>
+      {honeypot}
+      {stepIndicator}
+      {showStep2 ? renderStep2 : renderStep1}
 
       {error && (
         <div className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2.5 text-sm text-rose-800">
@@ -199,13 +262,36 @@ export default function LeadForm({ compact = false, whatsappE164 }: { compact?: 
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full inline-flex items-center justify-center gap-2 bg-[#1E3A5F] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#172d49] disabled:opacity-60">
-        {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-        {submitting ? 'Sending…' : 'Request a call'}
-      </button>
+      {multiStep && step === 2 ? (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            type="button"
+            onClick={() => { setError(null); setStep(1) }}
+            className="sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-stone-700 border border-stone-200 px-4 py-3 rounded-xl font-medium hover:bg-stone-50">
+            Back
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-[#1E3A5F] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#172d49] disabled:opacity-60">
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {submitting ? 'Sending…' : 'Send my details'}
+          </button>
+        </div>
+      ) : (
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full inline-flex items-center justify-center gap-2 bg-[#1E3A5F] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#172d49] disabled:opacity-60">
+          {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+          {submitting
+            ? 'Sending…'
+            : multiStep
+              ? (<>Continue <ArrowRight className="w-4 h-4" /></>)
+              : 'Request a call'}
+        </button>
+      )}
+
       <p className="text-[11px] text-stone-500 text-center">
         By submitting you agree to receive a WhatsApp / call from a Shewah partner manager. We don&rsquo;t share your details with anyone outside Shewah.
       </p>

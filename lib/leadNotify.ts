@@ -9,10 +9,10 @@ export type DispatchOutcome = {
 type LeadPayload = {
   id: string
   full_name: string
-  store_name: string
   city: string
-  phone: string
   whatsapp: string
+  store_name?: string | null
+  phone?: string | null
   email?: string | null
   gst_number?: string | null
   monthly_volume?: string | null
@@ -59,10 +59,12 @@ function buildBodyText(lead: LeadPayload): string {
   lines.push(`New partner lead from the landing page.`)
   lines.push('')
   lines.push(`Name        : ${lead.full_name}`)
-  lines.push(`Store       : ${lead.store_name}`)
+  if (lead.store_name)   lines.push(`Store       : ${lead.store_name}`)
   lines.push(`City        : ${lead.city}`)
-  lines.push(`Phone       : ${lead.phone}`)
   lines.push(`WhatsApp    : ${lead.whatsapp}`)
+  if (lead.phone && lead.phone !== lead.whatsapp) {
+    lines.push(`Phone       : ${lead.phone}`)
+  }
   if (lead.email)        lines.push(`Email       : ${lead.email}`)
   if (lead.gst_number)   lines.push(`GST         : ${lead.gst_number}`)
   if (lead.monthly_volume) lines.push(`Volume      : ${lead.monthly_volume} pieces / month`)
@@ -82,13 +84,14 @@ function buildBodyText(lead: LeadPayload): string {
 function buildWhatsappText(lead: LeadPayload): string {
   const utmCamp = lead.utm_campaign ? `\nCampaign: ${lead.utm_campaign}` : ''
   const utmSrc  = lead.utm_source   ? ` (${lead.utm_source})` : ''
+  const who = lead.store_name ? `${lead.full_name} — ${lead.store_name}` : lead.full_name
   return [
     `New Shewah partner lead`,
     ``,
-    `${lead.full_name} — ${lead.store_name}`,
+    who,
     `${lead.city}`,
-    `Phone: ${lead.phone}`,
     `WhatsApp: ${lead.whatsapp}`,
+    lead.phone && lead.phone !== lead.whatsapp ? `Phone: ${lead.phone}` : '',
     lead.monthly_volume ? `Volume: ${lead.monthly_volume} pcs/mo` : '',
     lead.note ? `Note: ${lead.note}` : '',
     utmCamp + utmSrc,
@@ -112,7 +115,7 @@ async function dispatchEmail(s: Settings, lead: LeadPayload): Promise<DispatchOu
       body: JSON.stringify({
         from: s.emailFrom,
         to: recipients,
-        subject: `New Shewah partner lead — ${lead.full_name} (${lead.store_name})`,
+        subject: `New Shewah partner lead — ${lead.full_name}${lead.store_name ? ` (${lead.store_name})` : ` · ${lead.city}`}`,
         text: buildBodyText(lead),
       }),
     })

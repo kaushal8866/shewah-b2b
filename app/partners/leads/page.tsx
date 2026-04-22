@@ -12,7 +12,7 @@ type Lead = {
   id: string
   created_at: string
   full_name: string
-  store_name: string
+  store_name: string | null
   city: string
   phone: string
   whatsapp: string
@@ -153,7 +153,7 @@ export default function PartnerLeadsPage() {
 
   function convertHref(l: Lead): string {
     const params = new URLSearchParams()
-    params.set('store_name', l.store_name)
+    if (l.store_name) params.set('store_name', l.store_name)
     params.set('owner_name', l.full_name)
     params.set('phone', l.phone)
     if (l.email) params.set('email', l.email)
@@ -222,8 +222,10 @@ export default function PartnerLeadsPage() {
                     <div className="flex items-center flex-wrap gap-2">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${STATUS_STYLE[l.status]}`}>{l.status}</span>
                       <p className="font-semibold text-stone-900">{l.full_name}</p>
-                      <span className="text-stone-300">·</span>
-                      <p className="text-stone-700">{l.store_name}</p>
+                      {l.store_name && (<>
+                        <span className="text-stone-300">·</span>
+                        <p className="text-stone-700">{l.store_name}</p>
+                      </>)}
                       <span className="text-xs text-stone-400 flex items-center gap-1"><MapPin className="w-3 h-3" />{l.city}</span>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-stone-600">

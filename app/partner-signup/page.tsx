@@ -33,7 +33,7 @@ export default function PartnerSignupPage() {
           Tell us a bit about your store. Your assigned partner manager will reach out on WhatsApp within one business day.
         </p>
         <div className="mt-8 bg-white rounded-2xl border border-stone-100 p-6 md:p-7 shadow-sm">
-          <LeadForm />
+          <LeadForm multiStep />
         </div>
         <p className="mt-6 text-xs text-stone-500 text-center">
           Already a partner? <Link href="/login" className="text-[#1E3A5F] underline">Sign in</Link> instead.

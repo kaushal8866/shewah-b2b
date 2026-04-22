@@ -71,36 +71,39 @@ export async function POST(req: NextRequest) {
   }
 
   const full_name      = clean(body?.full_name,  120)
-  const store_name     = clean(body?.store_name, 200)
   const city           = clean(body?.city,       100)
-  const phone          = clean(body?.phone,      40)
-  const monthly_volume = clean(body?.monthly_volume, 40)
-  if (!full_name || !store_name || !city || !phone) {
+  const whatsapp       = clean(body?.whatsapp,   40)
+  // Step-2 / optional fields
+  const store_name     = clean(body?.store_name, 200)
+  const monthly_volume = clean(body?.monthly_volume, 40) || ''
+  if (!full_name || !city || !whatsapp) {
     return NextResponse.json(
-      { ok: false, error: 'Please fill name, store name, city and phone.' },
+      { ok: false, error: 'Please fill your name, WhatsApp number and city.' },
       { status: 400 },
     )
   }
-  if (!monthly_volume) {
-    return NextResponse.json(
-      { ok: false, error: 'Please choose your typical monthly diamond piece volume.' },
-      { status: 400 },
-    )
-  }
-  const whatsapp: string = clean(body?.whatsapp, 40) || phone
   // Strict India 10-digit phone (allow optional +91 / 91 / 0 prefix).
   const validIndian = (raw: string): boolean => {
     const d10 = raw.replace(/\D/g, '').replace(/^(0|91)/, '')
     return d10.length === 10 && /^[6-9]/.test(d10)
   }
-  if (!validIndian(phone)) {
+  if (!validIndian(whatsapp)) {
     return NextResponse.json(
-      { ok: false, error: 'Please enter a valid 10-digit Indian mobile number.' },
+      { ok: false, error: 'Please enter a valid 10-digit Indian WhatsApp number.' },
       { status: 400 },
     )
   }
+  // Phone is now optional; default to the WhatsApp number when omitted.
+  const phoneRaw = clean(body?.phone, 40)
+  if (phoneRaw && !validIndian(phoneRaw)) {
+    return NextResponse.json(
+      { ok: false, error: 'Please enter a valid 10-digit phone number, or leave it blank.' },
+      { status: 400 },
+    )
+  }
+  const phone = phoneRaw || whatsapp
 
-  if (!ALLOWED_VOLUMES.has(monthly_volume)) {
+  if (monthly_volume && !ALLOWED_VOLUMES.has(monthly_volume)) {
     return NextResponse.json({ ok: false, error: 'Invalid volume choice.' }, { status: 400 })
   }
   const email = clean(body?.email, 200)
