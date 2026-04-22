@@ -22,6 +22,16 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
   const gaId    = process.env.NEXT_PUBLIC_GA_ID
   const [openFaq, setOpenFaq] = useState<number | null>(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isPhone, setIsPhone] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(max-width: 767px)')
+    const update = () => setIsPhone(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -199,7 +209,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
             <div className="absolute top-0 left-0 w-full h-1 bg-[#1E3A5F] rounded-t-2xl" aria-hidden />
             <h2 className="text-2xl font-serif font-medium mb-2">{FORM_PANEL.title}</h2>
             <p className="text-slate-500 text-sm mb-6">{FORM_PANEL.subtitle}</p>
-            <LeadForm compact whatsappE164={wa} />
+            <LeadForm compact multiStep={isPhone} whatsappE164={wa} />
           </div>
         </div>
       </section>
