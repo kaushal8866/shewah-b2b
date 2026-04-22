@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import {
   BRAND, HERO, STATS, VALUE_PROPS, HOW_IT_WORKS, FAQ, TESTIMONIALS,
+  FOUNDER, PARTNER_LOGOS, PARTNER_BAND,
   NAV, FORM_PANEL, SECTIONS, FINAL_CTA, FOOTER, MOBILE_BAR,
   WHATSAPP_INTRO_MESSAGE,
 } from '@/lib/landingCopy'
@@ -180,29 +181,110 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       </section>
 
       {/* ── Social proof ──────────────────────────────────── */}
-      <section className="py-20 md:py-24 px-6 bg-[#1E3A5F] text-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-serif mb-12 text-center text-white">{SECTIONS.socialProof.heading}</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            {TESTIMONIALS.map((t) => (
-              <figure key={t.quote} className="bg-white/10 p-8 rounded-xl backdrop-blur-sm border border-white/20">
-                <blockquote className="text-lg md:text-xl font-serif italic text-white/90 leading-snug">
-                  &ldquo;{t.quote}&rdquo;
-                </blockquote>
-                <figcaption className="mt-6 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold">
-                    {t.name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'SP'}
-                  </div>
-                  <div>
-                    <div className="font-medium">{t.name}</div>
-                    <div className="text-sm text-white/60">{t.location}</div>
-                  </div>
-                </figcaption>
-              </figure>
-            ))}
+      {/* Hidden entirely until at least one real, consented testimonial has
+          been added to TESTIMONIALS in lib/landingCopy.ts. */}
+      {TESTIMONIALS.length > 0 && (
+        <section className="py-20 md:py-24 px-6 bg-[#1E3A5F] text-white">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-serif mb-12 text-center text-white">{SECTIONS.socialProof.heading}</h2>
+            <div className="grid md:grid-cols-2 gap-8">
+              {TESTIMONIALS.map((t) => {
+                const initials = t.name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'SP'
+                return (
+                  <figure key={t.quote} className="bg-white/10 p-8 rounded-xl backdrop-blur-sm border border-white/20">
+                    <blockquote className="text-lg md:text-xl font-serif italic text-white/90 leading-snug">
+                      &ldquo;{t.quote}&rdquo;
+                    </blockquote>
+                    <figcaption className="mt-6 flex items-center gap-4">
+                      {t.photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={t.photoUrl}
+                          alt={`${t.name} headshot`}
+                          className="w-10 h-10 rounded-full object-cover border border-white/30"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold">
+                          {initials}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-medium">{t.name}</div>
+                        <div className="text-sm text-white/60">{t.location}</div>
+                      </div>
+                    </figcaption>
+                  </figure>
+                )
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
+
+      {/* ── Partner-jeweller trust band ───────────────────── */}
+      {/* Hidden entirely until at least one real partner is added to
+          PARTNER_LOGOS in lib/landingCopy.ts. */}
+      {PARTNER_LOGOS.length > 0 && (
+        <section className="py-16 md:py-20 px-6 bg-white border-y border-slate-200">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">{PARTNER_BAND.eyebrow}</p>
+              <h2 className="text-2xl md:text-3xl font-serif leading-tight">{PARTNER_BAND.heading}</h2>
+            </div>
+            <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              {PARTNER_LOGOS.map((p) => {
+                const initials = p.name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'PJ'
+                return (
+                  <li key={`${p.name}-${p.city}`} className="flex flex-col items-center text-center gap-2">
+                    {p.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.logoUrl}
+                        alt={`${p.name} logo`}
+                        className="h-12 w-auto object-contain grayscale opacity-80 hover:opacity-100 hover:grayscale-0 transition"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-semibold text-[#1E3A5F]">
+                        {initials}
+                      </div>
+                    )}
+                    <div className="text-sm font-medium text-slate-800 leading-tight">{p.name}</div>
+                    <div className="text-xs text-slate-500">{p.city}</div>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* ── Founder note ──────────────────────────────────── */}
+      {/* Hidden entirely until FOUNDER.photoUrl is populated. */}
+      {FOUNDER.photoUrl && (
+        <section className="py-20 md:py-24 px-6 bg-slate-50 border-y border-slate-200">
+          <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-12">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={FOUNDER.photoUrl}
+              alt={FOUNDER.name ? `${FOUNDER.name} — ${FOUNDER.title || 'Founder'}` : 'Founder'}
+              className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-white shadow-md shrink-0"
+            />
+            <div className="text-center md:text-left">
+              {FOUNDER.note && (
+                <blockquote className="text-xl md:text-2xl font-serif leading-snug text-slate-800">
+                  &ldquo;{FOUNDER.note}&rdquo;
+                </blockquote>
+              )}
+              {(FOUNDER.name || FOUNDER.title) && (
+                <div className="mt-5">
+                  {FOUNDER.name && <div className="font-medium text-slate-900">{FOUNDER.name}</div>}
+                  {FOUNDER.title && <div className="text-sm text-slate-500">{FOUNDER.title}</div>}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── FAQ ───────────────────────────────────────────── */}
       <section id="faq" className="py-20 md:py-24 px-6">

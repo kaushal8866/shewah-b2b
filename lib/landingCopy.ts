@@ -124,22 +124,75 @@ export const FAQ = [
   },
 ]
 
-export const TESTIMONIALS = [
-  // Real quotes will replace these — the structure is in place so a single
-  // edit ships them to the page.
-  {
-    quote:
-      'The 24kt-pure pricing is the first time someone in this trade has been straight with me about gold costs. I quote the customer with confidence now.',
-    name: 'A Shewah retail partner',
-    location: 'Surat, Gujarat',
-  },
-  {
-    quote:
-      'Ready-to-Ship saved a wedding-season order for me. Customer wanted a pair of earrings the next day — I bid, paid, and they shipped that evening.',
-    name: 'A Shewah retail partner',
-    location: 'Indore, Madhya Pradesh',
-  },
+// ---------------------------------------------------------------------------
+// Testimonials, founder photo, and partner-jeweller logos
+// ---------------------------------------------------------------------------
+// Real assets have NOT been collected yet. The structure below is wired into
+// the landing page so that, once consent + assets are in hand, swapping the
+// values here is the only edit required to ship them.
+//
+// To go live with real data:
+//   1. Replace the TESTIMONIALS entries with named quotes (collect written
+//      consent first — store the consent record per the link in replit.md).
+//      Add `photoUrl` (Cloudinary or /public path) when available; the page
+//      falls back to an initials avatar when it's empty.
+//   2. Fill FOUNDER.photoUrl with the uploaded headshot URL. The founder
+//      block on the page hides itself entirely while photoUrl is empty.
+//   3. Add real partners to PARTNER_LOGOS. The trust band hides itself
+//      entirely while the array is empty. `logoUrl` is optional — when it's
+//      empty an initials chip is rendered instead (matches "initials-only is
+//      fine if naming is sensitive" in the brief).
+// ---------------------------------------------------------------------------
+
+export type Testimonial = {
+  quote: string
+  name: string
+  location: string
+  photoUrl?: string
+}
+
+export const TESTIMONIALS: Testimonial[] = [
+  // Intentionally empty until real, consented quotes are collected.
+  // Example shape (do NOT ship until the quote, name, and consent are real):
+  //   { quote: '…', name: 'Firstname Lastname', location: 'City, State',
+  //     photoUrl: 'https://res.cloudinary.com/…/headshot.jpg' },
 ]
+
+export type Founder = {
+  name: string
+  title: string
+  note: string
+  photoUrl: string
+}
+
+export const FOUNDER: Founder = {
+  name: '',
+  title: '',
+  note: '',
+  // Empty until a real headshot is uploaded to Cloudinary (or /public).
+  // While empty, the founder block on the landing page is not rendered.
+  photoUrl: '',
+}
+
+export type PartnerLogo = {
+  // Display name (or initials, if the partner asked to stay anonymous).
+  name: string
+  city: string
+  // Optional logo image. When empty, an initials chip is rendered.
+  logoUrl?: string
+}
+
+export const PARTNER_LOGOS: PartnerLogo[] = [
+  // Intentionally empty until real partner names + cities are collected.
+  // Aim for 6–10 entries. Example shape:
+  //   { name: 'Partner Jeweller', city: 'Jaipur, Rajasthan',
+  //     logoUrl: 'https://res.cloudinary.com/…/partner.png' },
+]
+
+export const PARTNER_BAND = {
+  eyebrow: 'Partner jewellers',
+  heading: 'Independent stores already selling Shewah pieces.',
+}
 
 export const VOLUME_OPTIONS = [
   { value: '',       label: 'Select your monthly volume' },
