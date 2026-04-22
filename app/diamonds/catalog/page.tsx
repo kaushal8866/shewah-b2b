@@ -5,8 +5,24 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Diamond, Plus, Trash2, ArrowLeft, AlertTriangle, Save, X, ChevronRight,
+  Diamond, Plus, Trash2, ArrowLeft, AlertTriangle, Save, X, ChevronRight, Copy,
 } from 'lucide-react'
+
+// Group shapes by category in the left rail so the catalog stays legible
+// once we go from 10 → 25+ shapes (task 88). Categories are name-based so
+// shapes a master adds later automatically fall into "Other".
+const SHAPE_CATEGORIES: { label: string; names: string[] }[] = [
+  { label: 'Round',                names: ['round'] },
+  { label: 'Square / cushion',     names: ['princess','asscher','cushion','rectangular cushion','radiant','rectangular radiant','carre'] },
+  { label: 'Fancy elongated',      names: ['oval','pear','marquise','emerald','heart','trillion'] },
+  { label: 'Side stones / calibre', names: ['baguette','tapered baguette','half moon','calf','bullet','tapered bullet','shield','kite','trapezoid','hexagon','epaulette'] },
+  { label: 'Antique / specialty',  names: ['rose cut'] },
+]
+function categoryFor(name: string): string {
+  const n = name.toLowerCase()
+  for (const c of SHAPE_CATEGORIES) if (c.names.includes(n)) return c.label
+  return 'Other'
+}
 
 type Shape = { id: string; name: string; sort_order: number; active: boolean }
 type Size = {
@@ -125,22 +141,49 @@ export default function DiamondsCatalogPage() {
               {shapes.length === 0 && (
                 <p className="px-4 py-6 text-sm text-stone-400">No shapes yet.</p>
               )}
-              {shapes.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => setActiveShapeId(s.id)}
-                  className={`w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-stone-50 ${
-                    activeShapeId === s.id ? 'bg-yellow-50' : ''
-                  }`}>
-                  <span className="flex-1 text-sm font-medium text-stone-900">
-                    {s.name}{!s.active && <span className="ml-2 text-[10px] text-stone-400">(inactive)</span>}
-                  </span>
-                  <span className="text-xs text-stone-400">
-                    {sizes.filter(z => z.shape_id === s.id).length} size(s)
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-stone-300" />
-                </button>
-              ))}
+              {(() => {
+                // Render shapes grouped by category. Order: predefined
+                // categories first, then any catch-all "Other" bucket.
+                const order = [...SHAPE_CATEGORIES.map(c => c.label), 'Other']
+                const buckets = new Map<string, Shape[]>()
+                for (const s of shapes) {
+                  const c = categoryFor(s.name)
+                  if (!buckets.has(c)) buckets.set(c, [])
+                  buckets.get(c)!.push(s)
+                }
+                return order
+                  .filter(label => buckets.has(label))
+                  .map(label => (
+                    <div key={label}>
+                      <div className="px-4 py-1.5 bg-stone-50/60 text-[10px] uppercase tracking-wide text-stone-400 font-semibold border-b border-stone-100">
+                        {label}
+                      </div>
+                      {buckets.get(label)!.map(s => {
+                        const count = sizes.filter(z => z.shape_id === s.id).length
+                        return (
+                          <button
+                            key={s.id}
+                            onClick={() => setActiveShapeId(s.id)}
+                            className={`w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-stone-50 ${
+                              activeShapeId === s.id ? 'bg-yellow-50' : ''
+                            }`}>
+                            <span className="flex-1 text-sm font-medium text-stone-900">
+                              {s.name}{!s.active && <span className="ml-2 text-[10px] text-stone-400">(inactive)</span>}
+                            </span>
+                            <span className={`text-[11px] rounded-full px-2 py-0.5 font-medium ${
+                              count === 0
+                                ? 'bg-stone-100 text-stone-400'
+                                : 'bg-[#1E3A5F]/10 text-[#1E3A5F]'
+                            }`}>
+                              {count} size{count === 1 ? '' : 's'}
+                            </span>
+                            <ChevronRight className="w-4 h-4 text-stone-300" />
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ))
+              })()}
             </div>
           </div>
 
@@ -151,7 +194,15 @@ export default function DiamondsCatalogPage() {
                 {activeShape ? `Sizes — ${activeShape.name}` : 'Sizes'}
               </h2>
               {isMaster && activeShape && (
-                <ShapeActions shape={activeShape} onChanged={load} />
+                <>
+                  <CopySizesAction
+                    target={activeShape}
+                    shapes={shapes}
+                    sizes={sizes}
+                    onCopied={load}
+                  />
+                  <ShapeActions shape={activeShape} onChanged={load} />
+                </>
               )}
             </div>
 
@@ -364,6 +415,75 @@ function SizeRow({
         )}
       </td>
     </tr>
+  )
+}
+
+function CopySizesAction({
+  target, shapes, sizes, onCopied,
+}: {
+  target: Shape
+  shapes: Shape[]
+  sizes: Size[]
+  onCopied: () => void
+}) {
+  // Lightweight inline picker — pick a source shape that has at least
+  // one size, then bulk-insert any non-duplicate labels onto the
+  // currently-selected target shape. Skipped duplicates are surfaced
+  // back so the master can tell what carried over and what didn't.
+  const [open, setOpen] = useState(false)
+  const [from, setFrom] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+
+  const sourceOptions = shapes.filter(s =>
+    s.id !== target.id && sizes.some(z => z.shape_id === s.id)
+  )
+
+  async function copy() {
+    if (!from) { setErr('Pick a source shape'); return }
+    setBusy(true); setErr('')
+    try {
+      const r = await fetch('/api/diamonds/sizes/copy', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from_shape_id: from, to_shape_id: target.id }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { setErr(d.error || 'Copy failed'); return }
+      setOpen(false); setFrom('')
+      onCopied()
+      alert(`Added ${d.inserted} size(s).${d.skipped ? ` ${d.skipped} duplicate(s) skipped.` : ''}`)
+    } finally { setBusy(false) }
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)}
+        className="text-xs flex items-center gap-1 text-[#1E3A5F] hover:underline"
+        title="Copy sizes from another shape">
+        <Copy className="w-3.5 h-3.5" /> Copy sizes
+      </button>
+    )
+  }
+  return (
+    <div className="flex items-center gap-1">
+      <select autoFocus value={from} onChange={e => { setFrom(e.target.value); setErr('') }}
+        className="text-xs border border-stone-200 rounded px-2 py-1 outline-none focus:border-[#1E3A5F] max-w-[160px]">
+        <option value="">Copy from…</option>
+        {sourceOptions.map(s => {
+          const n = sizes.filter(z => z.shape_id === s.id).length
+          return <option key={s.id} value={s.id}>{s.name} ({n})</option>
+        })}
+      </select>
+      <button disabled={busy || !from} onClick={copy}
+        className="text-xs bg-[#1E3A5F] text-white px-2 py-1 rounded disabled:opacity-50">
+        {busy ? '...' : 'Copy'}
+      </button>
+      <button onClick={() => { setOpen(false); setFrom(''); setErr('') }}
+        className="text-stone-400 hover:text-stone-700">
+        <X className="w-4 h-4" />
+      </button>
+      {err && <span className="text-xs text-red-500 ml-1">{err}</span>}
+    </div>
   )
 }
 
