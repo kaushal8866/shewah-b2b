@@ -55,6 +55,39 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
     try { (window as any).fbq && (window as any).fbq('track', 'PageView') } catch {}
   }, [])
 
+  const [activeSection, setActiveSection] = useState<string | null>(null)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const ids = Array.from(
+      new Set(
+        NAV.links
+          .map((l) => l.href)
+          .concat(['#signup'])
+          .filter((h) => h.startsWith('#'))
+          .map((h) => h.slice(1)),
+      ),
+    )
+    const sections = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => !!el)
+    if (!sections.length) return
+    const ratios = new Map<string, number>()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => ratios.set((e.target as HTMLElement).id, e.intersectionRatio))
+        let bestId: string | null = null
+        let bestRatio = 0
+        ratios.forEach((r, id) => {
+          if (r > bestRatio) { bestRatio = r; bestId = id }
+        })
+        if (bestId && bestRatio > 0) setActiveSection(bestId)
+      },
+      { rootMargin: '-80px 0px -55% 0px', threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
+    )
+    sections.forEach((s) => observer.observe(s))
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-slate-900 selection:bg-[#1E3A5F] selection:text-white pb-24 md:pb-0">
       {/* Analytics */}
@@ -104,9 +137,19 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
             <span className="font-semibold text-lg tracking-tight">{BRAND.name}</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            {NAV.links.map((l) => (
-              <a key={l.href} href={l.href} className="hover:text-[#1E3A5F] transition-colors">{l.label}</a>
-            ))}
+            {NAV.links.map((l) => {
+              const isActive = l.href.startsWith('#') && l.href.slice(1) === activeSection
+              return (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  aria-current={isActive ? 'true' : undefined}
+                  className={`relative transition-colors hover:text-[#1E3A5F] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:bg-[#1E3A5F] after:transition-all after:duration-300 ${isActive ? 'text-[#1E3A5F] after:w-full' : 'after:w-0'}`}
+                >
+                  {l.label}
+                </a>
+              )
+            })}
             <Link href="/login" className="hover:text-[#1E3A5F] transition-colors">{NAV.partnerSignIn}</Link>
             <a
               href={waChatHref}
@@ -142,16 +185,24 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
               style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom) + 5rem)' }}
             >
               <nav className="px-6 py-4 flex flex-col">
-                {NAV.links.map((l) => (
-                  <a
-                    key={l.href}
-                    href={l.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="py-3 text-base font-medium text-slate-700 hover:text-[#1E3A5F] border-b border-slate-100"
-                  >
-                    {l.label}
-                  </a>
-                ))}
+                {NAV.links.map((l) => {
+                  const isActive = l.href.startsWith('#') && l.href.slice(1) === activeSection
+                  return (
+                    <a
+                      key={l.href}
+                      href={l.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      aria-current={isActive ? 'true' : undefined}
+                      className={`py-3 text-base font-medium border-b border-slate-100 transition-colors flex items-center gap-3 ${isActive ? 'text-[#1E3A5F]' : 'text-slate-700 hover:text-[#1E3A5F]'}`}
+                    >
+                      <span
+                        aria-hidden
+                        className={`inline-block w-1 self-stretch rounded-full transition-colors ${isActive ? 'bg-[#1E3A5F]' : 'bg-transparent'}`}
+                      />
+                      {l.label}
+                    </a>
+                  )
+                })}
                 <Link
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
