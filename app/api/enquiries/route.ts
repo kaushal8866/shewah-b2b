@@ -57,13 +57,14 @@ export async function POST(req: NextRequest) {
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  await supabaseAdmin.from('customer_enquiry_activity').insert({
+  const { error: activityErr } = await supabaseAdmin.from('customer_enquiry_activity').insert({
     enquiry_id: data.id,
     actor_id:   actorId,
     type:       'created',
     payload:    { enquiry_number: data.enquiry_number },
     body:       null,
   })
+  if (activityErr) console.error('[enquiries.create] failed to write created activity', activityErr)
 
   return NextResponse.json({ enquiry: data })
 }

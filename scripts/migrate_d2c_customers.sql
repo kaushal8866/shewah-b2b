@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS customer_enquiry_activity (
   enquiry_id    uuid NOT NULL REFERENCES customer_enquiries(id) ON DELETE CASCADE,
   actor_id      uuid REFERENCES app_users(id) ON DELETE SET NULL,
   type          text NOT NULL
-    CHECK (type IN ('created', 'note', 'status_change', 'assigned', 'image_added', 'updated', 'followup_set')),
+    CHECK (type IN ('created', 'note', 'status_change', 'assigned', 'image_added', 'updated', 'followup_set', 'followup_cleared')),
   payload       jsonb,                            -- structured details (e.g. { from: 'new', to: 'in_discussion' })
   body          text                              -- free-text note body
 );

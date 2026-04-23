@@ -74,9 +74,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   if (events.length > 0) {
-    await supabaseAdmin.from('customer_enquiry_activity').insert(
-      events.map(e => ({ enquiry_id: params.id, actor_id: actorId, ...e }))
-    )
+    const { error: activityErr } = await supabaseAdmin
+      .from('customer_enquiry_activity')
+      .insert(events.map(e => ({ enquiry_id: params.id, actor_id: actorId, ...e })))
+    if (activityErr) {
+      // Don't roll back the enquiry update — but surface the failure so a CHECK
+      // constraint mismatch (e.g. a new activity type added in code but not in
+      // the migration) is loud rather than silently breaking the audit log.
+      console.error('[enquiries.activity] failed to write activity rows', activityErr)
+      return NextResponse.json({
+        enquiry: data,
+        warning: `Activity log not written: ${activityErr.message}`,
+      })
+    }
   }
 
   return NextResponse.json({ enquiry: data })

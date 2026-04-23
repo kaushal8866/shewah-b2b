@@ -34,7 +34,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Bump updated_at so the inbox surfaces freshness.
-  await supabaseAdmin.from('customer_enquiries').update({ updated_at: new Date().toISOString() }).eq('id', params.id)
+  const { error: bumpErr } = await supabaseAdmin
+    .from('customer_enquiries')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', params.id)
+  if (bumpErr) console.error('[enquiries.notes] failed to bump updated_at', bumpErr)
 
   return NextResponse.json({ activity: data })
 }
