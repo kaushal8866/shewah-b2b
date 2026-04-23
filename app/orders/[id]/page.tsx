@@ -861,8 +861,10 @@ export default function OrderDetailPage() {
 
       <OrderChangeRequestsPanel orderId={id} onApplied={load} />
 
-      {/* D2C-only — surfaces only when this order is flagged as a consumer order. */}
-      {(order?.audience === 'd2c' || order?.customer_id) && (
+      {/* D2C-only — strictly gated on order.audience to prevent B2B orders
+          from ever rendering consumer-journey UI, even if they happen to
+          carry a customer_id for legacy reasons. */}
+      {order?.audience === 'd2c' && (
         <>
           <CustomerJourneyPanel orderId={id} customerId={order?.customer_id || null} />
           <ProductionUpdatesPanel orderId={id} />

@@ -4,6 +4,58 @@ import { Diamond, Phone, MessageCircle, Check, Truck, Sparkles, Clock, Camera } 
 
 export const dynamic = 'force-dynamic'
 
+// Narrow row shapes for the DB reads on this page. Supabase's typed
+// client doesn't infer joined relations cleanly, so we keep tight local
+// types and cast once at the boundary.
+type LinkRow = {
+  token: string
+  customer_id: string
+  order_id: string | null
+  enquiry_id: string | null
+  expires_at: string
+  revoked_at: string | null
+}
+type CustomerRow = { id: string; full_name: string | null; city: string | null }
+type ProductRow = { name: string | null; code: string | null; image_urls: string[] | null }
+type OrderRow = {
+  id: string
+  order_number: string | null
+  status: string | null
+  order_date: string | null
+  expected_delivery: string | null
+  expected_delivery_date: string | null
+  actual_delivery: string | null
+  dispatch_date: string | null
+  courier: string | null
+  tracking_number: string | null
+  ring_size: string | null
+  quantity: number | null
+  gold_karat: number | null
+  audience: string | null
+  customer_id: string | null
+  updated_at?: string | null
+  products: ProductRow | ProductRow[] | null
+}
+type ProductionUpdateRow = {
+  id: string
+  title: string
+  body: string | null
+  photo_url: string | null
+  created_at: string
+}
+type CadRevisionRow = {
+  image_urls: string[] | null
+  is_approved: boolean | null
+  approved_at: string | null
+  created_at: string
+}
+type SettingsRow = { key: string; value: string | null }
+
+function pickProduct(p: OrderRow['products']): ProductRow | null {
+  if (!p) return null
+  return Array.isArray(p) ? (p[0] || null) : p
+}
+
 function fmtDate(d: string | null | undefined): string {
   if (!d) return '—'
   try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) } catch { return String(d) }
@@ -41,45 +93,59 @@ function ErrorPage({ title, message, contact }: { title: string; message: string
   )
 }
 
-async function loadPayload(token: string) {
-  const { data: link } = await supabaseAdmin
+type LoadResult =
+  | { kind: 'not_found' | 'revoked' | 'expired' }
+  | {
+      kind: 'ok'
+      link: LinkRow
+      customer: CustomerRow
+      order: OrderRow | null
+      productionUpdates: ProductionUpdateRow[]
+      cad: { images: string[]; approvedAt: string | null } | null
+      contact: { whatsapp: string | null; phone: string | null }
+    }
+
+async function loadPayload(token: string): Promise<LoadResult> {
+  const linkRes = await supabaseAdmin
     .from('customer_journey_links')
     .select('token, customer_id, order_id, enquiry_id, expires_at, revoked_at')
     .eq('token', token)
     .maybeSingle()
+  const link = linkRes.data as LinkRow | null
 
-  if (!link) return { kind: 'not_found' as const }
-  if ((link as any).revoked_at) return { kind: 'revoked' as const }
-  if (new Date((link as any).expires_at).getTime() < Date.now()) return { kind: 'expired' as const }
+  if (!link) return { kind: 'not_found' }
+  if (link.revoked_at) return { kind: 'revoked' }
+  if (new Date(link.expires_at).getTime() < Date.now()) return { kind: 'expired' }
 
   // Stamp visit (best-effort; function is SECURITY DEFINER).
   const stamp = await supabaseAdmin.rpc('customer_journey_record_visit', { p_token: token })
   if (stamp.error) console.error('[journey] record_visit failed', stamp.error)
 
-  const [{ data: customer }, orderRes] = await Promise.all([
-    supabaseAdmin.from('customers').select('id, full_name, city').eq('id', (link as any).customer_id).maybeSingle(),
-    (link as any).order_id
+  const [customerRes, orderRes] = await Promise.all([
+    supabaseAdmin.from('customers').select('id, full_name, city').eq('id', link.customer_id).maybeSingle(),
+    link.order_id
       ? supabaseAdmin.from('orders').select(`
           id, order_number, status, order_date, expected_delivery, expected_delivery_date,
           actual_delivery, dispatch_date, courier, tracking_number, ring_size, quantity,
-          gold_karat, audience, customer_id,
+          gold_karat, audience, customer_id, updated_at,
           products(name, code, image_urls)
-        `).eq('id', (link as any).order_id).maybeSingle()
-      : Promise.resolve({ data: null as any }),
+        `).eq('id', link.order_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
-  if (!customer) return { kind: 'not_found' as const }
-  const order: any = orderRes?.data || null
+  const customer = customerRes.data as CustomerRow | null
+  const order = (orderRes.data as OrderRow | null) || null
+  if (!customer) return { kind: 'not_found' }
 
-  let updates: any[] = []
+  let productionUpdates: ProductionUpdateRow[] = []
   if (order?.id) {
-    const { data: u } = await supabaseAdmin
+    const { data } = await supabaseAdmin
       .from('production_updates')
       .select('id, title, body, photo_url, created_at')
       .eq('order_id', order.id)
       .eq('is_customer_visible', true)
       .order('created_at', { ascending: false })
-    updates = u || []
+    productionUpdates = (data as ProductionUpdateRow[] | null) || []
   }
 
   let cad: { images: string[]; approvedAt: string | null } | null = null
@@ -87,37 +153,39 @@ async function loadPayload(token: string) {
     const { data: cads } = await supabaseAdmin
       .from('cad_requests').select('id').eq('order_id', order.id)
       .order('created_at', { ascending: false }).limit(1)
-    const cadId = cads?.[0]?.id
+    const cadId = (cads as { id: string }[] | null)?.[0]?.id
     if (cadId) {
-      const { data: revs } = await supabaseAdmin
+      const { data: revsData } = await supabaseAdmin
         .from('cad_revisions')
         .select('image_urls, is_approved, approved_at, created_at')
         .eq('cad_request_id', cadId)
         .order('created_at', { ascending: false })
         .limit(5)
-      if (revs && revs.length) {
-        const approved = revs.find((r: any) => r.is_approved)
-        const chosen: any = approved || revs[0]
-        cad = { images: chosen.image_urls || [], approvedAt: approved ? (approved as any).approved_at : null }
+      const revs = (revsData as CadRevisionRow[] | null) || []
+      if (revs.length) {
+        const approved = revs.find(r => r.is_approved) || null
+        const chosen = approved || revs[0]
+        cad = { images: chosen.image_urls || [], approvedAt: approved ? approved.approved_at : null }
       }
     }
   }
 
   // Operator contact (settings; falls back to env on the contact card).
-  const { data: contactRows } = await supabaseAdmin
+  const { data: contactData } = await supabaseAdmin
     .from('settings').select('key, value')
     .in('key', ['lead_notify_whatsapp_to', 'shewah_contact_phone'])
+  const contactRows = (contactData as SettingsRow[] | null) || []
   const cmap: Record<string, string> = {}
-  for (const r of contactRows || []) cmap[(r as any).key] = ((r as any).value || '').toString().trim()
+  for (const r of contactRows) cmap[r.key] = (r.value || '').toString().trim()
   const wa = (cmap['lead_notify_whatsapp_to'] || '').replace(/\D/g, '') || null
   const phone = cmap['shewah_contact_phone'] || wa
 
   return {
-    kind: 'ok' as const,
-    link: link as any,
-    customer: customer as any,
+    kind: 'ok',
+    link,
+    customer,
     order,
-    productionUpdates: updates,
+    productionUpdates,
     cad,
     contact: { whatsapp: wa, phone },
   }
@@ -204,7 +272,8 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
     delivered: order?.actual_delivery || undefined,
   }
 
-  const heroImage = cad?.images?.[0] || order?.products?.heroImage || (productionUpdates.find(u => u.photo_url)?.photo_url) || null
+  const product = pickProduct(order?.products ?? null)
+  const heroImage = cad?.images?.[0] || (product?.image_urls?.[0] ?? null) || (productionUpdates.find(u => u.photo_url)?.photo_url) || null
   const waNumber = contact.whatsapp
   const phoneNumber = contact.phone
 
