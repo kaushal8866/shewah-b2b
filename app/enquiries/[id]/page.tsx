@@ -12,7 +12,7 @@ import {
 } from '@/lib/customers'
 import {
   Loader2, ArrowLeft, MessageCircle, Phone, Mail, MapPin, Calendar,
-  ImagePlus, Send, X, Image as ImageIcon, User as UserIcon,
+  ImagePlus, Send, X, Image as ImageIcon, User as UserIcon, Link as LinkIcon, Eye, Copy, Check,
 } from 'lucide-react'
 
 type Staff = { id: string; display_name: string | null; username: string }
@@ -26,6 +26,7 @@ export default function EnquiryDetailPage() {
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [activity, setActivity] = useState<EnquiryActivity[]>([])
   const [staff, setStaff] = useState<Staff[]>([])
+  const [journeyLink, setJourneyLink] = useState<{ token: string; expires_at: string; revoked_at?: string | null; opened_count: number; last_opened_at?: string | null } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -45,6 +46,29 @@ export default function EnquiryDetailPage() {
     ])
     setCustomer((c as any) || null)
     setActivity((a as any) || [])
+
+    // Fetch the journey link for this customer's most-recent order, if any.
+    // Surfaced on the side rail so the operator can copy/share without
+    // hopping over to the order page.
+    if ((e as any).converted_order_id) {
+      const { data: jl } = await supabase
+        .from('customer_journey_links')
+        .select('token, expires_at, revoked_at, opened_count, last_opened_at')
+        .eq('order_id', (e as any).converted_order_id)
+        .maybeSingle()
+      setJourneyLink((jl as any) || null)
+    } else if ((e as any).customer_id) {
+      const { data: jl } = await supabase
+        .from('customer_journey_links')
+        .select('token, expires_at, revoked_at, opened_count, last_opened_at, created_at')
+        .eq('customer_id', (e as any).customer_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+      setJourneyLink((jl?.[0] as any) || null)
+    } else {
+      setJourneyLink(null)
+    }
+
     setLoading(false)
   }
   useEffect(() => { if (id) load() }, [id])
@@ -277,6 +301,8 @@ export default function EnquiryDetailPage() {
             </label>
           </Card>
 
+          {journeyLink && <JourneyLinkCard link={journeyLink} />}
+
           <Card title="Internal notes">
             <textarea rows={3}
               defaultValue={enquiry.internal_notes || ''}
@@ -287,6 +313,33 @@ export default function EnquiryDetailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function JourneyLinkCard({ link }: { link: { token: string; expires_at: string; revoked_at?: string | null; opened_count: number; last_opened_at?: string | null } }) {
+  const [copied, setCopied] = useState(false)
+  const url = typeof window !== 'undefined' ? `${window.location.origin}/c/${link.token}` : `/c/${link.token}`
+  const isRevoked = !!link.revoked_at
+  const isExpired = new Date(link.expires_at).getTime() < Date.now()
+  async function copy() { try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch {} }
+  return (
+    <Card title="Customer journey link">
+      <div className="flex items-center gap-2 text-xs text-stone-500 mb-2">
+        {isRevoked ? <span className="bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded">Revoked</span>
+          : isExpired ? <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Expired</span>
+          : <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">Active</span>}
+        <Eye className="w-3 h-3" />
+        <span>{link.last_opened_at ? `viewed ${new Date(link.last_opened_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : 'never viewed'}</span>
+        <span>· {link.opened_count} opens</span>
+      </div>
+      <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1.5">
+        <LinkIcon className="w-3 h-3 text-stone-400 shrink-0" />
+        <code className="text-[11px] text-stone-700 truncate flex-1">{url}</code>
+        <button onClick={copy} className="text-stone-400 hover:text-stone-700 p-0.5 shrink-0">
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+    </Card>
   )
 }
 

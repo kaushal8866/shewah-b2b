@@ -33,6 +33,8 @@ const ALLOWED_TABLES = new Set([
   'customer_addresses',
   'customer_enquiries',
   'customer_enquiry_activity',
+  'production_updates',
+  'customer_journey_links',
 ])
 
 const MASTER_ONLY_TABLES = new Set(['app_users', 'material_float', 'material_transactions', 'reconciliation_alerts', 'stock_movements'])

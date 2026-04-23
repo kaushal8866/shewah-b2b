@@ -98,7 +98,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/setup') ||
     pathname.startsWith('/showcase') ||
     pathname.startsWith('/track') ||
-    pathname.startsWith('/portal')
+    pathname.startsWith('/portal') ||
+    pathname.startsWith('/c/') ||
+    pathname.startsWith('/cad-share/')
   if (isPublic) return <>{children}</>  
 
   const role = session?.user?.role || 'sub'

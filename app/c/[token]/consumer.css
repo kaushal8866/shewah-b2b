@@ -1,0 +1,19 @@
+/* Consumer-skin scoped styles — only applied inside the /c/[token] tree.
+   Admin chrome is untouched. */
+
+.consumer-shell {
+  font-family: var(--font-consumer-sans), system-ui, sans-serif;
+}
+
+.consumer-shell h1,
+.consumer-shell h2,
+.consumer-shell h3,
+.consumer-shell .serif {
+  font-family: var(--font-consumer-serif), 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.consumer-shell .stage-glow {
+  box-shadow: 0 0 0 4px rgba(201, 168, 106, 0.18);
+}
