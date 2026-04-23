@@ -1,6 +1,8 @@
 export const MODULES = [
   { id: 'dashboard',       label: 'Dashboard',           href: '/' },
   { id: 'partners',        label: 'Partners CRM',        href: '/partners' },
+  { id: 'customers',       label: 'Customers (D2C)',     href: '/customers' },
+  { id: 'enquiries',       label: 'Enquiries (D2C)',     href: '/enquiries' },
   { id: 'orders',          label: 'Orders',              href: '/orders' },
   { id: 'cad_requests',    label: 'CAD Requests',        href: '/cad-requests' },
   { id: 'cad_partners',    label: 'CAD Partners',        href: '/cad-partners' },

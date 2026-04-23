@@ -8,13 +8,16 @@ import { canAccess } from '@/lib/modules'
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
-  Factory, Store, Menu, X, LogOut, ChevronDown, Coins, BookUser, MessageSquare, Boxes
+  Factory, Store, Menu, X, LogOut, ChevronDown, Coins, BookUser, MessageSquare, Boxes,
+  Heart, Inbox as InboxIcon
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 const nav = [
   { href: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard',     module: 'dashboard'     },
   { href: '/partners',        icon: Users,           label: 'Partners',      module: 'partners'      },
+  { href: '/customers',       icon: Heart,           label: 'Customers',     module: 'customers'     },
+  { href: '/enquiries',       icon: InboxIcon,       label: 'Enquiries',     module: 'enquiries'     },
   { href: '/orders',          icon: ShoppingBag,     label: 'Orders',        module: 'orders'        },
   { href: '/order-change-requests', icon: MessageSquare, label: 'Change Requests', module: 'orders'  },
   { href: '/cad-requests',    icon: Pen,             label: 'CAD Requests',  module: 'cad_requests'  },
