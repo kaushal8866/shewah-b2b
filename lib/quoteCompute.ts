@@ -1,0 +1,124 @@
+import { pure24kt } from './karat'
+
+export interface DiamondSpec {
+  shape_id: string
+  size_id: string
+  quality_id: string
+  color_id: string
+  type: 'lgd' | 'natural'
+  pieces: number
+  rate_per_pc: number
+  row_total?: number
+  igi_charge?: number
+}
+
+export interface QuoteItemInput {
+  gross_gold_weight_g: number
+  karat: string | number
+  gold_rate_24k: number
+  labour_rate_per_g: number
+  diamonds: DiamondSpec[]
+  making_charges: number
+  hallmarking: number
+  other_charges: number
+  quantity: number
+}
+
+export interface ComputedQuoteItem {
+  net_24kt_weight_g: number
+  labour_total: number
+  diamond_cost_total: number
+  unit_cogs: number
+  unit_trade: number
+  line_cogs: number
+  line_trade: number
+  line_total: number
+}
+
+export function computeQuoteItem(
+  input: QuoteItemInput,
+  marginPct: number = 28
+): ComputedQuoteItem {
+  const quantity = Math.max(Number(input.quantity) || 1, 1)
+  const grossGoldWeight = Math.max(Number(input.gross_gold_weight_g) || 0, 0)
+  
+  // Extract numeric karat from string (e.g. "18K" -> 18) or use number
+  let karatNum = 18
+  if (typeof input.karat === 'number') {
+    karatNum = input.karat
+  } else if (typeof input.karat === 'string') {
+    karatNum = parseInt(input.karat.replace(/[^\d]/g, '')) || 18
+  }
+
+  const net24ktWeight = pure24kt(grossGoldWeight, karatNum)
+  const goldRate24k = Math.max(Number(input.gold_rate_24k) || 0, 0)
+  const goldCostPerPc = Math.round(net24ktWeight * goldRate24k)
+
+  const labourRatePerG = Math.max(Number(input.labour_rate_per_g) || 0, 0)
+  const labourCostPerPc = Math.round(labourRatePerG * grossGoldWeight)
+  const labourTotal = labourCostPerPc * quantity
+
+  const diamonds = Array.isArray(input.diamonds) ? input.diamonds : []
+  const diamondCostPerPc = diamonds.reduce((sum, d) => {
+    const pcs = Math.max(Number(d.pieces) || 0, 0)
+    const rate = Math.max(Number(d.rate_per_pc) || 0, 0)
+    const igi = Math.max(Number(d.igi_charge) || 0, 0)
+    return sum + (pcs * rate) + igi
+  }, 0)
+
+  const makingCharges = Math.max(Number(input.making_charges) || 0, 0)
+  const hallmarking = Math.max(Number(input.hallmarking) || 0, 0)
+  const otherCharges = Math.max(Number(input.other_charges) || 0, 0)
+
+  const unitCogs = goldCostPerPc + labourCostPerPc + diamondCostPerPc + makingCharges + hallmarking + otherCharges
+  const unitTrade = Math.round(unitCogs * (1 + marginPct / 100))
+
+  return {
+    net_24kt_weight_g: net24ktWeight,
+    labour_total: labourTotal,
+    diamond_cost_total: diamondCostPerPc * quantity,
+    unit_cogs: unitCogs,
+    unit_trade: unitTrade,
+    line_cogs: unitCogs * quantity,
+    line_trade: unitTrade,
+    line_total: unitTrade * quantity,
+  }
+}
+
+export interface QuoteTotals {
+  subtotal: number
+  gst_amount: number
+  grand_total: number
+}
+
+export function computeQuoteTotals(
+  items: Array<{ line_total: number }>,
+  gstTreatment: 'exclusive' | 'inclusive' | 'none',
+  gstRatePct: number = 3
+): QuoteTotals {
+  const subtotal = items.reduce((sum, item) => sum + (Number(item.line_total) || 0), 0)
+  const gstRate = Math.max(Number(gstRatePct) || 0, 0) / 100
+
+  let gstAmount = 0
+  let grandTotal = subtotal
+
+  if (gstTreatment === 'exclusive') {
+    gstAmount = Math.round(subtotal * gstRate)
+    grandTotal = subtotal + gstAmount
+  } else if (gstTreatment === 'inclusive') {
+    grandTotal = subtotal
+    gstAmount = Math.round(grandTotal - (grandTotal / (1 + gstRate)))
+    // If inclusive, the subtotal stored in DB is typically net of tax
+    // Wait, let's keep subtotal as the sum of line_totals, and show gst_amount.
+  } else {
+    // none
+    gstAmount = 0
+    grandTotal = subtotal
+  }
+
+  return {
+    subtotal: Math.round(subtotal),
+    gst_amount: Math.round(gstAmount),
+    grand_total: Math.round(grandTotal),
+  }
+}

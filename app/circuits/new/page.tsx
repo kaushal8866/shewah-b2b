@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Save, Plus, X } from 'lucide-react'
 import Link from 'next/link'
+import { CIRCUITS } from '@/lib/utils'
 
 export default function NewCircuitPage() {
   const router = useRouter()
@@ -84,11 +85,9 @@ export default function NewCircuitPage() {
               <label className={label}>Region</label>
               <select className={input} value={form.region} onChange={e => set('region', e.target.value)}>
                 <option value="">Select region</option>
-                <option value="Gujarat">Gujarat</option>
-                <option value="Maharashtra">Maharashtra</option>
-                <option value="MP">Madhya Pradesh</option>
-                <option value="Rajasthan">Rajasthan</option>
-                <option value="Other">Other</option>
+                {CIRCUITS.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
               </select>
             </div>
             <div></div>

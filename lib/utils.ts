@@ -67,3 +67,16 @@ export function getStatusColor(status: string): string {
   }
   return colors[status] || neutral
 }
+
+export const CIRCUITS = [
+  { value: 'Gujarat', label: 'Gujarat' },
+  { value: 'Maharashtra', label: 'Maharashtra' },
+  { value: 'MP', label: 'Madhya Pradesh' },
+  { value: 'Rajasthan', label: 'Rajasthan' },
+  { value: 'Delhi NCR', label: 'Delhi NCR' },
+  { value: 'Punjab', label: 'Punjab' },
+  { value: 'Karnataka', label: 'Karnataka' },
+  { value: 'Tamil Nadu', label: 'Tamil Nadu' },
+  { value: 'Other', label: 'Other' },
+]
+

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
+import { CIRCUITS } from '@/lib/utils'
 
 export default function NewPartnerPage() {
   const router = useRouter()
@@ -136,10 +137,9 @@ export default function NewPartnerPage() {
               <label className={label}>Circuit</label>
               <select className={select} value={form.circuit} onChange={e => set('circuit', e.target.value)}>
                 <option value="">No circuit assigned</option>
-                <option value="Gujarat">Gujarat</option>
-                <option value="Maharashtra">Maharashtra</option>
-                <option value="MP">Madhya Pradesh</option>
-                <option value="Rajasthan">Rajasthan</option>
+                {CIRCUITS.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
               </select>
             </div>
             <div>

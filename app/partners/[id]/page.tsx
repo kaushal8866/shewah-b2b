@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { formatDate, getStatusColor } from '@/lib/utils'
+import { formatDate, getStatusColor, CIRCUITS } from '@/lib/utils'
 import {
   ArrowLeft, Save, Trash2, Phone, MapPin,
   MessageCircle, Plus, Edit2, X, FileText
@@ -193,7 +193,7 @@ export default function PartnerDetailPage() {
           </span>
           {partner.circuit && (
             <span className="status-pill bg-stone-100 text-stone-600">
-              {partner.circuit} circuit
+              {(CIRCUITS.find(c => c.value === partner.circuit)?.label || partner.circuit)} circuit
             </span>
           )}
         </div>
@@ -343,7 +343,9 @@ export default function PartnerDetailPage() {
                 <label className={lbl}>Circuit</label>
                 <select className={inp} value={form.circuit || ''} onChange={e => set('circuit', e.target.value)}>
                   <option value="">None</option>
-                  {['Gujarat','Maharashtra','MP','Rajasthan'].map(c => <option key={c} value={c}>{c}</option>)}
+                  {CIRCUITS.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
                 </select>
               </div>
               <div><label className={lbl}>Address / Market</label><input className={inp} value={form.address || ''} onChange={e => set('address', e.target.value)} /></div>

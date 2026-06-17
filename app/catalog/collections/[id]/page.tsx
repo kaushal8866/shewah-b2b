@@ -5,40 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase, computeOrderCogs } from '@/lib/supabase'
 import { ArrowLeft, Save, Globe, Lock, Trash2, Copy, Check, Search, Package, X, Eye } from 'lucide-react'
 import Link from 'next/link'
-
-type Collection = {
-  id: string
-  name: string
-  description?: string
-  circuit_target?: string
-  is_published: boolean
-  created_at: string
-}
-
-type Product = {
-  id: string
-  code: string
-  name: string
-  gold_karat?: number
-  gold_weight_g?: number
-  making_charges?: number
-  diamond_cost?: number
-  diamond_shape?: string
-  trade_price?: number
-  photo_urls?: string[]
-  is_active: boolean
-}
-
-type Partner = {
-  id: string
-  store_name: string
-  owner_name: string
-  city: string
-  circuit?: string
-  stage: string
-}
-
-const CIRCUITS = ['Gujarat', 'Maharashtra', 'Madhya Pradesh', 'Rajasthan', 'Delhi NCR', 'Punjab', 'Karnataka', 'Tamil Nadu', 'Other']
+import { CIRCUITS } from '@/lib/utils'
 
 export default function CollectionDetailPage() {
   const params = useParams()
@@ -48,6 +15,39 @@ export default function CollectionDetailPage() {
   const [collection, setCollection] = useState<Collection | null>(null)
   const [allProducts, setAllProducts] = useState<Product[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  // Types reintroduced for reference
+  type Collection = {
+    id: string
+    name: string
+    description?: string
+    circuit_target?: string
+    is_published: boolean
+    created_at: string
+  }
+
+  type Product = {
+    id: string
+    code: string
+    name: string
+    gold_karat?: number
+    gold_weight_g?: number
+    making_charges?: number
+    diamond_cost?: number
+    diamond_shape?: string
+    trade_price?: number
+    photo_urls?: string[]
+    is_active: boolean
+  }
+
+  type Partner = {
+    id: string
+    store_name: string
+    owner_name: string
+    city: string
+    circuit?: string
+    stage: string
+  }
   const [partners, setPartners] = useState<Partner[]>([])
   const [viewCounts, setViewCounts] = useState<Map<string, number>>(new Map())
   const [goldRate, setGoldRate] = useState<number | null>(null)
@@ -254,7 +254,9 @@ export default function CollectionDetailPage() {
                 <label className={lbl}>Target circuit</label>
                 <select className={inp} value={form.circuit_target} onChange={e => setF('circuit_target', e.target.value)}>
                   <option value="">All circuits</option>
-                  {CIRCUITS.map(c => <option key={c} value={c}>{c}</option>)}
+                  {CIRCUITS.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -276,16 +278,17 @@ export default function CollectionDetailPage() {
                 <div className="mt-3 space-y-2">
                   <p className="text-xs text-stone-400 mb-3">Copy a partner's personal link and paste it in WhatsApp. They open it to browse designs and shortlist their preferences.</p>
                   {filteredPartners.length === 0 ? (
-                    <p className="text-xs text-stone-400 italic">No active partners{collection.circuit_target ? ` in ${collection.circuit_target}` : ''}.</p>
+                    <p className="text-xs text-stone-400 italic">No active partners{collection.circuit_target ? ` in ${(CIRCUITS.find(c => c.value === collection.circuit_target)?.label || collection.circuit_target)}` : ''}.</p>
                   ) : (
                     filteredPartners.map(p => {
                       const views = viewCounts.get(p.id) || 0
+                      const pCircuitLabel = p.circuit ? (CIRCUITS.find(c => c.value === p.circuit)?.label || p.circuit) : ''
                       return (
                         <div key={p.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-stone-700 truncate">{p.store_name}</p>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <p className="text-xs text-stone-400">{p.city}{p.circuit ? ` · ${p.circuit}` : ''}</p>
+                              <p className="text-xs text-stone-400">{p.city}{pCircuitLabel ? ` · ${pCircuitLabel}` : ''}</p>
                               {views > 0 && (
                                 <span className="flex items-center gap-0.5 text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
                                   <Eye className="w-2.5 h-2.5" />{views}
@@ -305,7 +308,7 @@ export default function CollectionDetailPage() {
               )}
               {!showPartnerLinks && (
                 <p className="text-xs text-stone-400 mt-2">
-                  {collection.circuit_target ? `Showing ${collection.circuit_target} partners` : 'All active partners'}
+                  {collection.circuit_target ? `Showing ${(CIRCUITS.find(c => c.value === collection.circuit_target)?.label || collection.circuit_target)} partners` : 'All active partners'}
                 </p>
               )}
             </div>

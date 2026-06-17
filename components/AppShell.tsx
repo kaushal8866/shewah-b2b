@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
   Factory, Store, Menu, X, LogOut, ChevronDown, Coins, BookUser, MessageSquare, Boxes,
-  Heart, Inbox as InboxIcon
+  Heart, Inbox as InboxIcon, FileText
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -18,6 +18,7 @@ const nav = [
   { href: '/partners',        icon: Users,           label: 'Partners',      module: 'partners'      },
   { href: '/customers',       icon: Heart,           label: 'Customers',     module: 'customers'     },
   { href: '/enquiries',       icon: InboxIcon,       label: 'Enquiries',     module: 'enquiries'     },
+  { href: '/quotes',          icon: FileText,        label: 'Quotes',        module: 'orders'        },
   { href: '/orders',          icon: ShoppingBag,     label: 'Orders',        module: 'orders'        },
   { href: '/order-change-requests', icon: MessageSquare, label: 'Change Requests', module: 'orders'  },
   { href: '/cad-requests',    icon: Pen,             label: 'CAD Requests',  module: 'cad_requests'  },
@@ -100,6 +101,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/track') ||
     pathname.startsWith('/portal') ||
     pathname.startsWith('/c/') ||
+    pathname.startsWith('/q/') ||
     pathname.startsWith('/cad-share/')
   if (isPublic) return <>{children}</>  
 

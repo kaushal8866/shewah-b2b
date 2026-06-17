@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase, Circuit } from '@/lib/supabase'
-import { formatDate, formatCurrency, getStatusColor } from '@/lib/utils'
+import { formatDate, formatCurrency, getStatusColor, CIRCUITS } from '@/lib/utils'
 import { Plus, MapPin, Target, TrendingUp, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
@@ -99,7 +99,7 @@ export default function CircuitsPage() {
                     </span>
                     {c.region && (
                       <span className="text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full">
-                        {c.region}
+                        {CIRCUITS.find(r => r.value === c.region)?.label || c.region}
                       </span>
                     )}
                   </div>

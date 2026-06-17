@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
-
-const CIRCUITS = ['Gujarat', 'Maharashtra', 'Madhya Pradesh', 'Rajasthan', 'Delhi NCR', 'Punjab', 'Karnataka', 'Tamil Nadu', 'Other']
+import { CIRCUITS } from '@/lib/utils'
 
 export default function NewCollectionPage() {
   const router = useRouter()
@@ -59,7 +58,9 @@ export default function NewCollectionPage() {
           <label className={lbl}>Target circuit (optional)</label>
           <select className={inp} value={form.circuit_target} onChange={e => set('circuit_target', e.target.value)}>
             <option value="">All circuits</option>
-            {CIRCUITS.map(c => <option key={c} value={c}>{c}</option>)}
+            {CIRCUITS.map(c => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
           </select>
           <p className="text-xs text-stone-400 mt-1">Helps you filter which partners to share this with</p>
         </div>

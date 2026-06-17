@@ -81,7 +81,7 @@ export function sanitizeDbError(err: AnyDbError, fallback = 'Something went wron
 export function safeDbError(err: AnyDbError, context: string, fallback?: string): string {
   if (err) {
     // eslint-disable-next-line no-console
-    console.error(`[db-error] ${context}:`, err.code || '', err.message || err)
+    console.error(`[db-error] ${context}:`, err.code || '', err.message || err, (err as any).cause || '')
   }
   return sanitizeDbError(err, fallback)
 }

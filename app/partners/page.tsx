@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase, Partner } from '@/lib/supabase'
-import { formatDate, getStatusColor } from '@/lib/utils'
+import { formatDate, getStatusColor, CIRCUITS } from '@/lib/utils'
 import {
   Plus, Search, Filter, Phone, MapPin,
   ChevronRight, TrendingUp, Users, Inbox
@@ -11,7 +11,7 @@ import Link from 'next/link'
 
 const STATUS_FILTERS = ['all', 'hot', 'warm', 'cold']
 const STAGE_FILTERS = ['all', 'prospect', 'contacted', 'sample_sent', 'active', 'inactive']
-const CIRCUIT_FILTERS = ['all', 'Gujarat', 'Maharashtra', 'MP', 'Rajasthan']
+const CIRCUIT_FILTERS = ['all', ...CIRCUITS.map(c => c.value)]
 
 export default function PartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([])
@@ -120,9 +120,10 @@ export default function PartnersPage() {
           </select>
           <select value={circuitFilter} onChange={e => setCircuitFilter(e.target.value)}
             className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-            {CIRCUIT_FILTERS.map(s => (
-              <option key={s} value={s}>{s === 'all' ? 'All circuits' : s}</option>
-            ))}
+            {CIRCUIT_FILTERS.map(s => {
+              const label = s === 'all' ? 'All circuits' : (CIRCUITS.find(c => c.value === s)?.label || s)
+              return <option key={s} value={s}>{label}</option>
+            })}
           </select>
         </div>
       </div>

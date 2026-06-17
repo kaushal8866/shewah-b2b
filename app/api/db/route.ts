@@ -35,6 +35,9 @@ const ALLOWED_TABLES = new Set([
   'customer_enquiry_activity',
   'production_updates',
   'customer_journey_links',
+  'quotes',
+  'quote_items',
+  'quote_share_links',
 ])
 
 const MASTER_ONLY_TABLES = new Set(['app_users', 'material_float', 'material_transactions', 'reconciliation_alerts', 'stock_movements'])

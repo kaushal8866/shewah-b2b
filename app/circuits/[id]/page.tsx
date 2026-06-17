@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { formatDate, getStatusColor } from '@/lib/utils'
+import { formatDate, getStatusColor, CIRCUITS } from '@/lib/utils'
 import { ArrowLeft, Save, Edit2, X } from 'lucide-react'
 import Link from 'next/link'
 
@@ -86,7 +86,7 @@ export default function CircuitDetailPage() {
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-semibold text-stone-900">{circuit.name} Circuit</h1>
           <p className="text-stone-400 text-sm">
-            {circuit.region} · {partners.length} partners
+            {(CIRCUITS.find(r => r.value === circuit.region)?.label || circuit.region)} · {partners.length} partners
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -135,7 +135,7 @@ export default function CircuitDetailPage() {
             <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
               {[
                 ['Circuit name', circuit.name],
-                ['Region', circuit.region || '—'],
+                ['Region', circuit.region ? (CIRCUITS.find(r => r.value === circuit.region)?.label || circuit.region) : '—'],
                 ['Status', circuit.status],
                 ['Cities', Array.isArray(circuit.cities) ? circuit.cities.join(', ') || '—' : circuit.cities || '—'],
                 ['Start date', circuit.start_date ? formatDate(circuit.start_date) : '—'],
