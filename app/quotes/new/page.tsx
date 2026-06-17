@@ -42,6 +42,7 @@ interface ProductPreset {
 interface DiamondRow {
   id: string
   shape_id: string
+  shape_name: string
   size_id: string
   size_label: string
   role: 'center' | 'side' | 'accent' | 'melee'
@@ -365,6 +366,7 @@ function QuoteBuilderForm() {
         next.diamonds = [{
           id: Math.random().toString(36).substring(7),
           shape_id: '',
+          shape_name: '',
           size_id: '',
           size_label: '',
           role: 'melee',
@@ -393,6 +395,7 @@ function QuoteBuilderForm() {
           {
             id: Math.random().toString(36).substring(7),
             shape_id: '',
+            shape_name: '',
             size_id: '',
             size_label: '',
             role: 'melee',
@@ -498,6 +501,7 @@ function QuoteBuilderForm() {
         reference_images: i.reference_images,
         diamonds: i.diamonds.map(d => ({
           shape_id: d.shape_id || null,
+          shape_name: d.shape_name || null,
           size_id: d.size_id || null,
           size_label: d.size_label || null,
           role: d.role,
@@ -863,6 +867,7 @@ function QuoteBuilderForm() {
                           compact
                           onChange={picked => {
                             handleUpdateDiamond(item.id, d.id, 'shape_id', picked.shape_id)
+                            handleUpdateDiamond(item.id, d.id, 'shape_name', picked.shape_name)
                             handleUpdateDiamond(item.id, d.id, 'size_id', picked.size_id)
                             handleUpdateDiamond(item.id, d.id, 'size_label', picked.size_label)
                             if (picked.approx_carats) {

@@ -43,7 +43,7 @@ export interface QuotePDFData {
   walk_in_phone?: string
   walk_in_city?: string
   partners?: {
-    name: string
+    owner_name: string
     store_name?: string
     city?: string
     phone?: string
@@ -146,7 +146,7 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
       let customerPhone = '—'
       
       if (quote.partners) {
-        customerName = quote.partners.store_name || quote.partners.name
+        customerName = quote.partners.store_name || quote.partners.owner_name
         customerCity = quote.partners.city || '—'
         customerPhone = quote.partners.phone || '—'
       } else if (quote.walk_in_name) {
@@ -230,10 +230,10 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
 
         // Line item total on the far right
         doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(11)
-           .text(`₹ ${item.line_total.toLocaleString('en-IN')}`, rightMarginX - 120, itemStartY + 10, { width: 100, align: 'right' })
+           .text(`Rs. ${item.line_total.toLocaleString('en-IN')}`, rightMarginX - 120, itemStartY + 10, { width: 100, align: 'right' })
         
         doc.fillColor(lightText).font('Helvetica').fontSize(8)
-        doc.text(`(₹ ${item.line_trade.toLocaleString('en-IN')} / pc)`, rightMarginX - 120, itemStartY + 24, { width: 100, align: 'right' })
+        doc.text(`(Rs. ${item.line_trade.toLocaleString('en-IN')} / pc)`, rightMarginX - 120, itemStartY + 24, { width: 100, align: 'right' })
 
         // Detailed Cost Breakup Table (if show_breakup is enabled)
         if (quote.show_breakup) {
@@ -258,35 +258,37 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
           if (quote.show_24kt_column) {
             goldText += `\nNet 24kt: ${item.net_24kt_weight_g.toFixed(3)}g`
           }
-          goldText += `\nRate 24kt: ₹${item.gold_rate_24k.toLocaleString('en-IN')}/g`
+          goldText += `\nRate 24kt: Rs.${item.gold_rate_24k.toLocaleString('en-IN')}/g`
           doc.text(goldText, 56, tableY + 18, { lineGap: 2 })
 
           // Labour Column
-          const labourText = `Rate: ₹${item.labour_rate_per_g.toLocaleString('en-IN')}/g\nTotal: ₹${item.labour_total.toLocaleString('en-IN')}`
+          const labourText = `Rate: Rs.${item.labour_rate_per_g.toLocaleString('en-IN')}/g\nTotal: Rs.${item.labour_total.toLocaleString('en-IN')}`
           doc.text(labourText, 160, tableY + 18, { lineGap: 2 })
 
           // Diamonds Column
           if (item.diamonds && item.diamonds.length > 0) {
             let diamondY = tableY + 18
             item.diamonds.forEach((d) => {
-              const dShape = d.shape_id || 'Round'
+              // Use shape_name (set by picker) or shape_label, falling back gracefully
+              const dShape = d.shape_name || d.shape_label || d.role || 'Diamond'
               const dPieces = d.pieces || 0
               const dWeight = d.approx_carats ? `${d.approx_carats}ct` : ''
-              const dRate = d.rate_per_pc ? `₹${d.rate_per_pc}/pc` : ''
-              const dIgi = d.igi_charge ? ` + IGI: ₹${d.igi_charge}` : ''
+              const dRate = d.rate_per_pc ? `Rs.${Number(d.rate_per_pc).toLocaleString('en-IN')}/pc` : ''
+              const dIgi = d.igi_charge && Number(d.igi_charge) > 0 ? ` + IGI: Rs.${Number(d.igi_charge).toLocaleString('en-IN')}` : ''
+              const sizeLabel = d.size_label ? ` (${d.size_label})` : ''
               
-              const dText = `${dShape} × ${dPieces}pcs ${dWeight} (${dRate})${dIgi}`
+              const dText = `${dShape}${sizeLabel} x${dPieces}pcs ${dWeight} (${dRate})${dIgi}`
               doc.fontSize(7).text(dText, 240, diamondY, { width: 130 })
-              diamondY += 10
+              diamondY += 12
             })
           } else {
             doc.text('None', 240, tableY + 18)
           }
 
           // Charges Column
-          let chargesText = `Making: ₹${item.making_charges.toLocaleString('en-IN')}\nHallmark: ₹${item.hallmarking.toLocaleString('en-IN')}`
+          let chargesText = `Making: Rs.${item.making_charges.toLocaleString('en-IN')}\nHallmark: Rs.${item.hallmarking.toLocaleString('en-IN')}`
           if (item.other_charges > 0) {
-            chargesText += `\nOther: ₹${item.other_charges.toLocaleString('en-IN')} (${item.other_charges_label || 'Charges'})`
+            chargesText += `\nOther: Rs.${item.other_charges.toLocaleString('en-IN')} (${item.other_charges_label || 'Charges'})`
           }
           doc.fontSize(8).text(chargesText, 380, tableY + 18, { lineGap: 2 })
         }
@@ -327,19 +329,19 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
         currentTotalY += 18
       }
 
-      drawTotalRow('Subtotal:', `₹ ${quote.subtotal.toLocaleString('en-IN')}`)
+      drawTotalRow('Subtotal:', `Rs. ${quote.subtotal.toLocaleString('en-IN')}`)
       
       if (quote.gst_treatment === 'exclusive') {
-        drawTotalRow(`GST (${quote.gst_rate_pct}%):`, `₹ ${quote.gst_amount.toLocaleString('en-IN')}`)
+        drawTotalRow(`GST (${quote.gst_rate_pct}%):`, `Rs. ${quote.gst_amount.toLocaleString('en-IN')}`)
       } else if (quote.gst_treatment === 'inclusive') {
-        drawTotalRow(`GST (${quote.gst_rate_pct}% Incl.):`, `₹ ${quote.gst_amount.toLocaleString('en-IN')}`)
+        drawTotalRow(`GST (${quote.gst_rate_pct}% Incl.):`, `Rs. ${quote.gst_amount.toLocaleString('en-IN')}`)
       }
 
       // Divider line before Grand Total
       doc.strokeColor(brandColor).lineWidth(1).moveTo(totalColX, currentTotalY - 2).lineTo(rightMarginX, currentTotalY - 2).stroke()
       currentTotalY += 4
 
-      drawTotalRow('Grand Total:', `₹ ${quote.grand_total.toLocaleString('en-IN')}`, true)
+      drawTotalRow('Grand Total:', `Rs. ${quote.grand_total.toLocaleString('en-IN')}`, true)
 
       // Amount in words
       doc.y = currentTotalY + 5
