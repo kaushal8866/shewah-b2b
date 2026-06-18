@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -15,6 +15,14 @@ import { Loader2, Search, UserPlus, X, Image as ImageIcon, Check } from 'lucide-
 type Staff = { id: string; display_name: string | null; username: string }
 
 export default function NewEnquiryPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-secondary">Loading...</div>}>
+      <NewEnquiryForm />
+    </Suspense>
+  )
+}
+
+function NewEnquiryForm() {
   const router = useRouter()
   const params = useSearchParams()
   const presetCustomerId = params.get('customer_id')

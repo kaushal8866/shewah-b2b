@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Save } from 'lucide-react'
@@ -8,6 +8,14 @@ import Link from 'next/link'
 import { CIRCUITS } from '@/lib/utils'
 
 export default function NewPartnerPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-secondary">Loading...</div>}>
+      <NewPartnerForm />
+    </Suspense>
+  )
+}
+
+function NewPartnerForm() {
   const router = useRouter()
   const search = useSearchParams()
   const [saving, setSaving] = useState(false)

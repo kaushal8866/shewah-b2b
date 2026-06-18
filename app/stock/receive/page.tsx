@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, AlertTriangle } from 'lucide-react'
@@ -22,6 +22,14 @@ const SOURCES = [
 ]
 
 export default function StockReceivePage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-secondary">Loading...</div>}>
+      <StockReceiveForm />
+    </Suspense>
+  )
+}
+
+function StockReceiveForm() {
   const router = useRouter()
   // Order detail "Request stock" CTAs deep-link in here with a
   // material/shape/size/pieces prefill so the operator can save in one click.

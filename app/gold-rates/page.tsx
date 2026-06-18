@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase, GoldRate, calculateGoldRates, calculateTradePrice, recomputeCatalogPrices } from '@/lib/supabase'
 import { SELLABLE_KARATS, KARAT_FACTORS } from '@/lib/karat'
 import { formatDate, formatCurrency } from '@/lib/utils'
-import { TrendingUp, Plus, Calculator, Save, RefreshCw } from 'lucide-react'
+import { TrendingUp, Plus, Calculator, Save, RefreshCw, Wrench } from 'lucide-react'
 
 export default function GoldRatesPage() {
   const [rates, setRates] = useState<GoldRate[]>([])
@@ -36,9 +36,10 @@ export default function GoldRatesPage() {
 
   async function loadRates() {
     setLoading(true)
-    const [resRates, resSettings] = await Promise.all([
+    const [resRates, resSettings, resLabour] = await Promise.all([
       supabase.from('gold_rates').select('*').order('recorded_at', { ascending: false }).limit(30),
-      supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c'])
+      supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c']),
+      supabase.from('labour_rates').select('*').order('karat')
     ])
     
     const all = resRates.data || []
@@ -63,7 +64,7 @@ export default function GoldRatesPage() {
       if (d2c) setSilverRateD2C(d2c)
     }
     // Initialize labour rates with defaults if empty
-    const existingRates = lr || []
+    const existingRates = resLabour.data || []
     if (existingRates.length === 0) {
       setLabourRates([
         { karat: 14, rate_per_gram: 900 },

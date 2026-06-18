@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useToast } from '@/app/components/Toast'
 import { supabase } from '@/lib/supabase'
 import { useSession } from 'next-auth/react'
 import { MODULES } from '@/lib/modules'
