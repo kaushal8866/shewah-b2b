@@ -243,9 +243,9 @@ function ProductsTab() {
           { label: '14K designs', value: stats.k14 },
           { label: '18K designs', value: stats.k18 },
         ].map(s => (
-          <div key={s.label} className="bg-white rounded-xl border border-stone-200 px-4 py-3">
-            <p className="text-xs text-stone-400">{s.label}</p>
-            <p className="text-2xl font-semibold text-stone-900 mt-0.5">{s.value}</p>
+          <div key={s.label} className="bg-surface-low hover:bg-surface-highest transition-colors px-6 py-5 flex flex-col justify-center">
+            <p className="label-md">{s.label}</p>
+            <p className="display-sm mt-2">{s.value}</p>
           </div>
         ))}
       </div>
@@ -254,7 +254,25 @@ function ProductsTab() {
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-stone-400" />
           <input type="text" placeholder="Search by name, code, shape..."
             value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 rounded-lg bg-white" />
+            className="w-full pl-11 pr-4 py-3 text-sm bg-surface-lowest ghost-border" />
+        </div>
+        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+          <select value={karatFilter} onChange={e => setKaratFilter(e.target.value)}
+            className="flex-1 sm:flex-none text-sm px-4 py-3 bg-surface-lowest ghost-border">
+            <option value="all">All karats</option>
+            <option value="14">14K gold</option>
+            <option value="18">18K gold</option>
+          </select>
+          <select value={shapeFilter} onChange={e => setShapeFilter(e.target.value)}
+            className="flex-1 sm:flex-none text-sm px-4 py-3 bg-surface-lowest ghost-border capitalize">
+            <option value="all">All shapes</option>
+            {shapes.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button onClick={() => setShowInactive(!showInactive)}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 text-sm transition-colors ${showInactive ? 'bg-surface-highest text-primary' : 'bg-surface text-secondary hover:text-primary ghost-border'}`}>
+            {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            {showInactive ? 'Hiding inactive' : 'Show inactive'}
+          </button>
         </div>
         <select value={karatFilter} onChange={e => setKaratFilter(e.target.value)}
           className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
@@ -294,7 +312,7 @@ function ProductsTab() {
         </button>
       </div>
       {loading ? (
-        <div className="text-center py-16 text-stone-400">Loading catalog...</div>
+        <div className="text-center py-20 text-secondary headline-lg">Loading catalog...</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <Package className="w-10 h-10 text-stone-200 mx-auto mb-3" />
@@ -322,13 +340,13 @@ function ProductsTab() {
             <div key={p.id} className={`bg-white rounded-xl border overflow-hidden transition-all ${p.is_active ? 'border-stone-200' : 'border-stone-100 opacity-60'}`}>
               <Link href={`/catalog/${p.id}`} className="block aspect-square bg-gradient-to-br from-stone-50 to-yellow-50 flex items-center justify-center relative cursor-pointer hover:opacity-95 transition-opacity" title="Open product">
                 {p.photo_urls && p.photo_urls.length > 0 ? (
-                  <img src={p.photo_urls[0]} alt={p.name} className="w-full h-full object-cover" />
+                  <img src={p.photo_urls[0]} alt={p.name} className="w-full h-full object-cover mix-blend-multiply" />
                 ) : (
                   <div className="text-center"><div className="text-4xl mb-1">◆</div><p className="text-xs text-stone-300">{p.code}</p></div>
                 )}
                 {!p.is_active && (
-                  <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-                    <span className="bg-stone-200 text-stone-500 text-xs px-2 py-1 rounded-full">Inactive</span>
+                  <div className="absolute inset-0 bg-surface-low/60 flex items-center justify-center">
+                    <span className="status-pill text-secondary">Inactive</span>
                   </div>
                 )}
                 <div className="absolute top-2 left-2">
@@ -367,9 +385,9 @@ function ProductsTab() {
                   <p className="text-xs text-stone-400">{p.delivery_days} days delivery</p>
                   <div className="flex gap-1.5">
                     <button onClick={() => toggleActive(p.id, p.is_active)}
-                      className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors"
+                      className="p-1.5 rounded-sm hover:bg-surface-highest text-secondary hover:text-primary transition-colors"
                       title={p.is_active ? 'Deactivate' : 'Activate'}>
-                      {p.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      {p.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
                     <Link href={`/catalog/${p.id}`} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors" title="Edit">
                       <Edit2 className="w-3.5 h-3.5" />

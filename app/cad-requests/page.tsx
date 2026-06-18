@@ -44,7 +44,7 @@ export default function CADRequestsPage() {
       .select(`*, partners(store_name, city)`)
       .order('received_date', { ascending: false })
     setRequests(
-      (data || []).map((r: any) => ({
+      (data || []).map((r: CADRequest & { partners?: { store_name: string; city: string } | null }) => ({
         ...r,
         partner_name: r.partners?.store_name,
         partner_city: r.partners?.city,
@@ -150,9 +150,9 @@ export default function CADRequestsPage() {
         {statsBar.map(s => (
           <button key={s.label}
             onClick={() => setStatusFilter(s.label.toLowerCase().replace(' ', '_') === statusFilter ? 'all' : s.label.toLowerCase().replace(' ', '_'))}
-            className="bg-white rounded-xl border border-stone-200 px-3 py-3 text-center hover:border-stone-300 transition-colors">
+            className="bg-white rounded-xl border border-stone-200 px-3 py-3 text-center hover:border-stone-300 transition-colors shrink-0 min-w-[110px] w-auto sm:w-full snap-start sm:shrink">
             <p className={`text-2xl font-semibold ${s.color}`}>{s.count}</p>
-            <p className="text-xs text-stone-400 mt-0.5">{s.label}</p>
+            <p className="text-xs text-stone-400 mt-0.5 whitespace-nowrap">{s.label}</p>
           </button>
         ))}
       </div>

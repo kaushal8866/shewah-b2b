@@ -8,6 +8,13 @@ import { formatDate } from '@/lib/utils'
 import { ArrowLeft, Plus, ArrowDown, ArrowUp, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
+const GOLD_KARATS = [
+  { value: 14, label: '14K', purity: 0.585 },
+  { value: 18, label: '18K', purity: 0.750 },
+  { value: 22, label: '22K', purity: 0.916 },
+  { value: 24, label: '24K', purity: 1.000 },
+]
+
 const MATERIAL_TYPES = [
   { value: 'gold_24k', label: 'Gold (24kt net)', unit: 'grams' },
   { value: 'diamond_lgd', label: 'Lab Diamond', unit: 'carats' },
@@ -87,7 +94,7 @@ function MaterialFloatInner() {
         .select('*, material_float(material_type), orders(order_number)')
         .eq('manufacturing_partner_id', partnerId)
         .order('created_at', { ascending: false })
-        .limit(30),
+        .limit(50),
     ])
     setPartner(p)
     // Task 78 read-layer safety net: collapse any legacy gold_<N>k float rows
@@ -215,13 +222,32 @@ function MaterialFloatInner() {
       quantity: qty,
       unit: floatRecord.unit,
       rate_per_unit: parseFloat(form.rate_per_unit) || null,
-      total_value: form.rate_per_unit ? qty * parseFloat(form.rate_per_unit) : null,
+      total_value: form.rate_per_unit ? storedQty * parseFloat(form.rate_per_unit) : null,
       reference: form.reference || null,
-      notes: form.notes || null,
+      notes: isGoldType && inputKarat !== 24
+        ? `${inputQty}g @ ${inputKarat}K → ${storedQty.toFixed(3)}g 24kt${form.notes ? '. ' + form.notes : ''}`
+        : form.notes || null,
       date: form.date,
       order_id: form.order_id || null,
       negative_confirmed: willGoNegative,
     }])
+
+    // Auto-update float balance
+    const balanceUpdate: Record<string, any> = {}
+    if (txType === 'deposit') {
+      balanceUpdate.total_deposited = (floatRecord.total_deposited || 0) + storedQty
+      balanceUpdate.balance = (floatRecord.balance || 0) + storedQty
+    } else if (txType === 'withdrawal') {
+      balanceUpdate.total_withdrawn = (floatRecord.total_withdrawn || 0) + storedQty
+      balanceUpdate.balance = (floatRecord.balance || 0) - storedQty
+    } else {
+      // Adjustment — can be positive (add) or negative (subtract)
+      balanceUpdate.balance = (floatRecord.balance || 0) + storedQty
+    }
+
+    await supabase.from('material_float')
+      .update(balanceUpdate)
+      .eq('id', floatRecord.id)
 
     setSaving(false)
 
@@ -259,14 +285,14 @@ function MaterialFloatInner() {
   }
 
   return (
-    <div className="p-4 lg:p-7 max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href={`/manufacturing/partners/${partnerId}`} className="text-stone-400 hover:text-stone-600">
+    <div className="p-4 sm:p-6 lg:p-16 lg:pr-32 max-w-3xl">
+      <div className="flex items-center gap-4 mb-10">
+        <Link href={`/manufacturing/partners/${partnerId}`} className="text-secondary hover:text-primary">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-xl font-semibold text-stone-900">Material Float</h1>
-          <p className="text-stone-500 text-sm">{partner?.name}</p>
+          <h1 className="display-sm">Material Float</h1>
+          <p className="text-secondary mt-1">{partner?.name}</p>
         </div>
       </div>
 
@@ -317,8 +343,46 @@ function MaterialFloatInner() {
           <div className="text-center py-6 text-stone-400 text-sm bg-white rounded-xl border border-stone-200">
             No material deposited yet — use the form below to deposit gold
           </div>
-        )}
-      </div>
+          <p className="display-md mb-4">{goldFloat.balance.toFixed(3)}g <span className="text-secondary text-lg font-normal">24kt fine gold</span></p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+            {GOLD_KARATS.map(k => (
+              <div key={k.value} className="bg-surface-lowest px-4 py-3">
+                <p className="label-md text-outline-variant">{k.label}</p>
+                <p className="text-lg font-semibold text-primary mt-1">
+                  {fromFineGold24k(goldFloat.balance, k.value).toFixed(3)}g
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-secondary mt-3">
+            Of {goldFloat.total_deposited?.toFixed(3)}g total deposited (24kt) · {((goldFloat.total_withdrawn || 0) + (goldFloat.total_consumed || 0)).toFixed(3)}g consumed/withdrawn
+          </p>
+        </div>
+      )}
+
+      {/* Non-gold balances */}
+      {floats.filter(f => f.material_type !== 'gold_24k').length > 0 && (
+        <div className="grid grid-cols-2 gap-1 mb-8">
+          {floats.filter(f => f.material_type !== 'gold_24k').map(f => {
+            const info = MATERIAL_TYPES.find(m => m.value === f.material_type)
+            return (
+              <div key={f.id} className="bg-surface-low px-5 py-4">
+                <p className="label-md">{info?.label || f.material_type.replace(/_/g, ' ')}</p>
+                <p className="display-sm mt-2">{f.balance?.toFixed(3)}{info?.unit === 'carats' ? 'ct' : 'g'}</p>
+                <p className="text-xs text-secondary mt-1">of {f.total_deposited}{info?.unit === 'carats' ? 'ct' : 'g'} deposited</p>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {floats.length === 0 && !loading && (
+        <div className="bg-surface-low p-8 text-center mb-8">
+          <Scale className="w-10 h-10 text-outline-variant mx-auto mb-4" />
+          <p className="text-secondary text-sm">No material deposited yet — use the form below to deposit gold</p>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-stone-200 p-4 mb-6">
         <div className="flex gap-1 mb-4 bg-stone-100 rounded-lg p-1">
@@ -374,9 +438,24 @@ function MaterialFloatInner() {
               <input type="number" inputMode="decimal" className={inp} value={form.rate_per_unit} onChange={e => set('rate_per_unit', e.target.value)} placeholder="Gold rate today" />
             </div>
           )}
+
           <div>
-            <label className={lbl}>Reference / voucher no.</label>
-            <input className={inp} value={form.reference} onChange={e => set('reference', e.target.value)} placeholder="Optional receipt no." />
+            <label className="label-md block mb-2">
+              Quantity ({MATERIAL_TYPES.find(m => m.value === form.material_type)?.unit})
+            </label>
+            <input type="number" step="0.001"
+              value={form.quantity} onChange={e => set('quantity', e.target.value)}
+              placeholder={activeTab === 'deposit' ? 'e.g. 10' : 'Amount to withdraw'} />
+            {isGoldType && inputQty > 0 && inputKarat !== 24 && (
+              <p className="text-xs text-secondary mt-2">
+                = <strong>{fineGoldQty.toFixed(3)}g in 24kt</strong> fine gold ({inputQty}g × {KARAT_PURITY[inputKarat]})
+              </p>
+            )}
+            {insufficientBalance && (
+              <p className="text-xs text-red-500 mt-2 font-medium">
+                Insufficient balance. Available: {currentBalance.toFixed(3)}g (24kt)
+              </p>
+            )}
           </div>
           <div className="col-span-2">
             <label className={lbl}>Notes</label>
@@ -453,9 +532,9 @@ function MaterialFloatInner() {
         <div className="px-4 py-3 border-b border-stone-100">
           <h2 className="font-medium text-stone-900 text-sm">Transaction history</h2>
         </div>
-        <div className="divide-y divide-stone-50">
+        <div className="divide-y divide-outline-variant/20">
           {transactions.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-stone-400 text-center">No transactions yet</p>
+            <p className="px-6 py-10 text-sm text-secondary text-center">No transactions yet</p>
           ) : (
             transactions.map(t => (
               <div key={t.id} className="flex items-center gap-3 px-4 py-3">
@@ -482,7 +561,8 @@ function MaterialFloatInner() {
                   <p className={`text-sm font-semibold ${txColors[t.transaction_type as string]}`}>
                     {['consumption','return'].includes(t.transaction_type) ? '-' : '+'}{t.quantity}
                   </p>
-                  <p className="text-xs text-stone-400">{formatDate(t.date)}</p>
+                  <p className="text-xs text-secondary">{formatDate(t.date)}</p>
+                  {t.total_value && <p className="text-xs text-outline-variant">₹{Math.round(t.total_value).toLocaleString('en-IN')}</p>}
                 </div>
               </div>
             ))

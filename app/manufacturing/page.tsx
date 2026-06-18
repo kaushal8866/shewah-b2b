@@ -31,7 +31,7 @@ export default function ManufacturingPage() {
   const isMaster = (session?.user as any)?.role === 'master'
   const [partners, setPartners] = useState<MfgPartner[]>([])
   const [floats, setFloats] = useState<FloatSummary[]>([])
-  const [orders, setOrders] = useState<any[]>([])
+  const [orders, setOrders] = useState<(ManufacturingOrder & { manufacturing_partners?: { name: string } })[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { load() }, [isMaster])

@@ -9,6 +9,8 @@ import {
   MessageCircle, Plus, Edit2, X, FileText, Diamond
 } from 'lucide-react'
 import Link from 'next/link'
+import VisitModal from '@/app/components/VisitModal'
+import { useToast } from '@/app/components/Toast'
 
 const STAGES = ['prospect', 'contacted', 'sample_sent', 'active', 'inactive']
 const STATUSES = ['hot', 'warm', 'cold']
@@ -27,7 +29,9 @@ export default function PartnerDetailPage() {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [form, setForm] = useState<any>({})
+  const [showVisitModal, setShowVisitModal] = useState(false)
+  const [form, setForm] = useState<Partial<Partner>>({})
+  const { toast } = useToast()
 
   useEffect(() => { load() }, [id])
 
@@ -79,7 +83,8 @@ export default function PartnerDetailPage() {
       notify_whatsapp: form.notify_whatsapp !== false,
     }).eq('id', id)
     setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
+    if (error) { toast('Error: ' + error.message, 'error'); return }
+    toast('Partner updated')
     setEditing(false)
     load()
   }
@@ -104,26 +109,11 @@ export default function PartnerDetailPage() {
     ])
     const { error } = await supabase.from('partners').delete().eq('id', id)
     setDeleting(false)
-    if (error) { alert('Error: ' + error.message); return }
+    if (error) { toast('Error: ' + error.message, 'error'); return }
+    toast('Partner deleted')
     router.push('/partners')
   }
 
-  async function addVisit() {
-    const outcome = prompt('Visit outcome (interested / not_interested / callback / sample_requested):')
-    if (!outcome) return
-    const notes = prompt('Notes from the visit:') || ''
-    await supabase.from('visits').insert([{
-      partner_id: id,
-      visit_date: new Date().toISOString().split('T')[0],
-      city: partner.city,
-      circuit: partner.circuit,
-      outcome,
-      notes,
-      catalog_left: confirm('Did you leave a catalog?'),
-      sample_offered: confirm('Did you offer a sample?'),
-    }])
-    load()
-  }
 
   const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
@@ -220,7 +210,7 @@ export default function PartnerDetailPage() {
             className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-xl text-sm hover:bg-green-100">
             <MessageCircle className="w-4 h-4" /> WhatsApp
           </a>
-          <button onClick={addVisit}
+          <button onClick={() => setShowVisitModal(true)}
             className="flex items-center gap-2 bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-xl text-sm hover:bg-stone-50">
             <Plus className="w-4 h-4" /> Log visit
           </button>
@@ -462,8 +452,41 @@ export default function PartnerDetailPage() {
               </div>
             </div>
           </div>
+
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <h2 className="font-medium text-stone-900 mb-4">Financial Governance</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={lbl}>Credit Limit (INR)</label>
+                <input type="number" className={inp} 
+                  value={(form.credit_limit_paise || 0) / 100} 
+                  onChange={e => setForm(prev => ({ ...prev, credit_limit_paise: Number(e.target.value) * 100 }))} 
+                  placeholder="e.g. 500000" />
+              </div>
+              <div className="flex items-center gap-2 pt-6">
+                <input type="checkbox" id="require_approval"
+                  checked={form.credit_approval_required || false}
+                  onChange={e => setForm(prev => ({ ...prev, credit_approval_required: e.target.checked }))}
+                  className="w-4 h-4 rounded border-stone-300 text-[#C49C64] focus:ring-[#C49C64]" />
+                <label htmlFor="require_approval" className="text-sm text-stone-600 cursor-pointer">
+                  Require manual approval for all orders
+                </label>
+              </div>
+            </div>
+          </div>
+
         </div>
       )}
+
+      {/* Visit modal */}
+      <VisitModal
+        isOpen={showVisitModal}
+        onClose={() => setShowVisitModal(false)}
+        partnerId={id}
+        partnerCity={partner.city}
+        partnerCircuit={partner.circuit}
+        onSaved={load}
+      />
     </div>
   )
 }

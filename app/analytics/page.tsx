@@ -16,6 +16,8 @@ export default function AnalyticsPage() {
     conversionFunnel: { visited: number; contacted: number; sample: number; active: number }
     modelSplit: { model: string; count: number; revenue: number }[]
     cadStats: { total: number; avgTurnaround: number; approvalRate: number }
+    revenueByCity: { city: string; revenue: number }[]
+    karigarFloat: { name: string; gold_mg: number; diamond_cents: number }[]
   }>({
     revenueByMonth: [],
     partnersByStage: [],
@@ -25,6 +27,8 @@ export default function AnalyticsPage() {
     conversionFunnel: { visited: 0, contacted: 0, sample: 0, active: 0 },
     modelSplit: [],
     cadStats: { total: 0, avgTurnaround: 0, approvalRate: 0 },
+    revenueByCity: [],
+    karigarFloat: [],
   })
 
   useEffect(() => { loadAnalytics() }, [])
@@ -36,15 +40,18 @@ export default function AnalyticsPage() {
         { data: orders },
         { data: partners },
         { data: cadReqs },
+        { data: floatData },
       ] = await Promise.all([
         supabase.from('order_pipeline').select('*'),
         supabase.from('partners').select('*'),
         supabase.from('cad_requests').select('*'),
+        supabase.from('material_float').select('*, manufacturing_partners(name)'),
       ])
 
       const allOrders = orders || []
       const allPartners = partners || []
       const allCAD = cadReqs || []
+      const allFloat = floatData || []
 
       // Revenue by month (last 6 months)
       const monthMap: Record<string, { revenue: number; orders: number }> = {}
@@ -99,7 +106,7 @@ export default function AnalyticsPage() {
 
       // Conversion funnel
       const conversionFunnel = {
-        visited: allPartners.filter(p => ['contacted', 'sample_sent', 'active'].includes(p.stage)).length + allPartners.length,
+        visited: allPartners.length,
         contacted: allPartners.filter(p => ['contacted', 'sample_sent', 'active'].includes(p.stage)).length,
         sample: allPartners.filter(p => ['sample_sent', 'active'].includes(p.stage)).length,
         active: allPartners.filter(p => p.stage === 'active').length,
@@ -123,7 +130,31 @@ export default function AnalyticsPage() {
         approvalRate: allCAD.length ? Math.round((approved / allCAD.length) * 100) : 0,
       }
 
-      setData({ revenueByMonth, partnersByStage, partnersByCircuit, ordersByStatus, topPartners, conversionFunnel, modelSplit, cadStats })
+      // Revenue by City
+      const cityRevMap: Record<string, number> = {}
+      allOrders.forEach(o => {
+        const city = o.partner_city || 'Unknown'
+        cityRevMap[city] = (cityRevMap[city] || 0) + (o.total_amount || 0)
+      })
+      const revenueByCity = Object.entries(cityRevMap)
+        .map(([city, revenue]) => ({ city, revenue }))
+        .sort((a, b) => b.revenue - a.revenue)
+
+      // Karigar Float summary
+      const floatMap: Record<string, { name: string; gold_mg: number; diamond_cents: number }> = {}
+      allFloat.forEach((f: any) => {
+        const name = f.manufacturing_partners?.name || 'Unknown'
+        if (!floatMap[name]) floatMap[name] = { name, gold_mg: 0, diamond_cents: 0 }
+        if (f.material_type?.startsWith('gold')) floatMap[name].gold_mg += (f.balance || 0)
+        if (f.material_type?.startsWith('diamond')) floatMap[name].diamond_cents += (f.balance || 0)
+      })
+      const karigarFloat = Object.values(floatMap)
+
+      setData({ 
+        revenueByMonth, partnersByStage, partnersByCircuit, 
+        ordersByStatus, topPartners, conversionFunnel, 
+        modelSplit, cadStats, revenueByCity, karigarFloat 
+      })
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }

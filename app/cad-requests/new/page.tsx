@@ -33,8 +33,13 @@ function NewCADRequestForm() {
   })
 
   useEffect(() => {
-    supabase.from('partners').select('id, store_name, city').eq('stage', 'active')
-      .order('store_name').then(({ data }) => setPartners(data || []))
+    Promise.all([
+      supabase.from('partners').select('id, store_name, city').eq('stage', 'active').order('store_name'),
+      supabase.from('vendors').select('id, name, city').eq('category', 'cad_service').order('name'),
+    ]).then(([{ data: p }, { data: v }]) => {
+      setPartners(p || [])
+      setCadParties(v || [])
+    })
   }, [])
 
   useEffect(() => {
@@ -151,6 +156,16 @@ function NewCADRequestForm() {
             <div>
               <label className={label}>Due date</label>
               <input type="date" className={input} value={form.due_date} onChange={e => set('due_date', e.target.value)} />
+            </div>
+            <div className="col-span-2">
+              <label className={label}>CAD service party</label>
+              <select className={input} value={form.cad_party_id} onChange={e => set('cad_party_id', e.target.value)}>
+                <option value="">In-house / Select external party...</option>
+                {cadParties.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}{v.city ? ` — ${v.city}` : ''}</option>
+                ))}
+              </select>
+              <p className="text-xs text-stone-400 mt-1">Select the vendor handling the CAD design work</p>
             </div>
           </div>
         </div>

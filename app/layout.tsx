@@ -2,7 +2,10 @@ import './globals.css'
 import SessionProvider from '@/components/SessionProvider'
 import AppShell from '@/components/AppShell'
 
-export const dynamic = 'force-dynamic'
+export const metadata: Metadata = {
+  title: 'Shewah B2B Admin',
+  description: 'B2B operations management for Shewah Jewelry — LGD rings, Surat',
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

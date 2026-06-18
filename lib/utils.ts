@@ -5,21 +5,24 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number) {
+export function formatCurrency(amountPaise: number) {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 0,
-  }).format(amount)
+  }).format(amountPaise / 100)
 }
 
-export function formatDate(date: string) {
+export function formatDate(dateStr: string) {
+  if (!dateStr) return '—'
   return new Intl.DateTimeFormat('en-IN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(date))
+    timeZone: 'Asia/Kolkata',
+  }).format(new Date(dateStr))
 }
+
 
 export function generateOrderNumber(count: number) {
   const year = new Date().getFullYear()

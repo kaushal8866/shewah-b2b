@@ -20,6 +20,10 @@ export default function GoldRatesPage() {
   const [silverRateB2B, setSilverRateB2B] = useState('')
   const [silverRateD2C, setSilverRateD2C] = useState('')
 
+  // Labour rates state
+  const [labourRates, setLabourRates] = useState<{ id?: string; karat: number; rate_per_gram: number }[]>([])
+  const [savingLabour, setSavingLabour] = useState(false)
+
   // Calculator state
   const [calcDiamond, setCalcDiamond] = useState('8000')
   const [calcGoldKarat, setCalcGoldKarat] = useState('18')
@@ -57,6 +61,17 @@ export default function GoldRatesPage() {
       const d2c = resSettings.data.find(s => s.key === 'silver_rate_d2c')?.value
       if (b2b) setSilverRateB2B(b2b)
       if (d2c) setSilverRateD2C(d2c)
+    }
+    // Initialize labour rates with defaults if empty
+    const existingRates = lr || []
+    if (existingRates.length === 0) {
+      setLabourRates([
+        { karat: 14, rate_per_gram: 900 },
+        { karat: 18, rate_per_gram: 1200 },
+        { karat: 22, rate_per_gram: 1500 },
+      ])
+    } else {
+      setLabourRates(existingRates)
     }
     setLoading(false)
   }
@@ -128,6 +143,26 @@ export default function GoldRatesPage() {
 
   const computed = newRate24k ? calculateGoldRates(parseFloat(newRate24k) || 0) : null
 
+  // Labour rate handlers
+  function updateLabourRate(karat: number, value: string) {
+    setLabourRates(prev =>
+      prev.map(r => r.karat === karat ? { ...r, rate_per_gram: parseFloat(value) || 0 } : r)
+    )
+  }
+
+  async function saveLabourRates() {
+    setSavingLabour(true)
+    for (const rate of labourRates) {
+      if (rate.id) {
+        await supabase.from('labour_rates').update({ rate_per_gram: rate.rate_per_gram }).eq('id', rate.id)
+      } else {
+        await supabase.from('labour_rates').upsert({ karat: rate.karat, rate_per_gram: rate.rate_per_gram }, { onConflict: 'karat' })
+      }
+    }
+    setSavingLabour(false)
+    loadRates()
+  }
+
   const tradePrice = calculateTradePrice(
     parseFloat(calcDiamond) || 0,
     parseInt(calcGoldKarat) || 18,
@@ -158,8 +193,8 @@ export default function GoldRatesPage() {
         <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-5 mb-6">
           <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-yellow-600" />
-              <span className="text-sm font-medium text-yellow-800">Current gold rates</span>
+              <TrendingUp className="w-5 h-5 text-secondary" />
+              <span className="headline-md">Current gold rates</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs text-yellow-700">{formatDate(latest.recorded_at)} · {latest.source}</span>
@@ -187,10 +222,10 @@ export default function GoldRatesPage() {
               { karat: '10K', rate: latest.rate_10k, purity: `${(KARAT_FACTORS[10] * 100).toFixed(0)}%` },
               { karat: '9K',  rate: latest.rate_9k,  purity: `${(KARAT_FACTORS[9]  * 100).toFixed(0)}%` },
             ].map(r => (
-              <div key={r.karat} className="text-center bg-white rounded-lg p-3 border border-yellow-200">
-                <p className="text-xs text-stone-400">{r.karat} ({r.purity})</p>
-                <p className="text-xl font-semibold text-stone-900">₹{r.rate?.toLocaleString('en-IN')}</p>
-                <p className="text-xs text-stone-400">per gram</p>
+              <div key={r.karat} className="bg-surface-lowest hover:bg-surface-highest transition-colors flex flex-col justify-center items-center py-6 px-4">
+                <p className="label-md mb-2 text-outline-variant">{r.karat} <span className="lowercase">({r.purity})</span></p>
+                <p className="display-sm text-primary">₹{r.rate?.toLocaleString('en-IN')}</p>
+                <p className="text-[10px] text-secondary mt-1 uppercase tracking-widest">per gram</p>
               </div>
             ))}
           </div>
@@ -218,13 +253,13 @@ export default function GoldRatesPage() {
               <Plus className="w-4 h-4 text-[#1E3A5F]" />
               Update today's rate
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-6">
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">24K gold rate (₹ per gram) *</label>
-                <input type="number" className={input}
+                <label className="label-md block mb-2">24K gold rate (₹ per gram) *</label>
+                <input type="number"
                   value={newRate24k} onChange={e => setNewRate24k(e.target.value)}
                   placeholder="e.g. 7350" />
-                <p className="text-xs text-stone-400 mt-1">Check: IBJA, MCX, or your local market</p>
+                <p className="text-xs text-secondary mt-2">Check: IBJA, MCX, or your local market</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-1">
@@ -277,8 +312,8 @@ export default function GoldRatesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">Notes (optional)</label>
-                <input className={input} value={rateNotes} onChange={e => setRateNotes(e.target.value)}
+                <label className="label-md block mb-2">Notes (optional)</label>
+                <input type="text" value={rateNotes} onChange={e => setRateNotes(e.target.value)}
                   placeholder="e.g. post-budget rate" />
               </div>
 
@@ -290,29 +325,63 @@ export default function GoldRatesPage() {
             </div>
           </div>
 
-          {/* Rate history */}
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-stone-100">
-              <h2 className="font-medium text-stone-900">Rate history</h2>
+          {/* Labour Rate Management */}
+          <div className="card bg-surface-low">
+            <h2 className="headline-md mb-6 flex items-center gap-3">
+              <Wrench className="w-5 h-5 text-secondary" />
+              Labour rates (₹/gram)
+            </h2>
+            <p className="text-sm text-secondary mb-6">
+              Global per-gram labour charges. Used in manufacturing order costing and catalog pricing. Partner-specific overrides take priority.
+            </p>
+            <div className="space-y-4">
+              {labourRates.map(r => (
+                <div key={r.karat} className="flex items-center gap-4">
+                  <span className="label-md w-16">{r.karat}K</span>
+                  <div className="flex-1 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary">₹</span>
+                    <input
+                      type="number"
+                      value={r.rate_per_gram || ''}
+                      onChange={e => updateLabourRate(r.karat, e.target.value)}
+                      className="w-full pl-7"
+                      placeholder="per gram"
+                    />
+                  </div>
+                  <span className="text-xs text-secondary w-24 text-right">/gram</span>
+                </div>
+              ))}
             </div>
-            <div className="divide-y divide-stone-50">
+            <button onClick={saveLabourRates} disabled={savingLabour}
+              className="w-full mt-6 flex items-center justify-center gap-2 bg-primary text-surface-lowest py-3 text-sm font-medium hover:bg-surface-highest hover:text-primary disabled:opacity-40 transition-colors">
+              <Save className="w-4 h-4" />
+              {savingLabour ? 'Saving...' : 'Save labour rates'}
+            </button>
+          </div>
+
+          {/* Rate history */}
+          <div className="card bg-surface-low !p-0">
+            <div className="px-6 py-5 border-b ghost-border">
+              <h2 className="headline-md">Rate history</h2>
+            </div>
+            <div className="divide-y divide-outline-variant/20 max-h-[500px] overflow-y-auto hide-scrollbar">
               {loading ? (
-                <div className="px-5 py-4 text-sm text-stone-400">Loading...</div>
+                <div className="px-6 py-6 text-sm text-secondary">Loading...</div>
               ) : rates.length === 0 ? (
-                <div className="px-5 py-4 text-sm text-stone-400">No rates recorded yet</div>
+                <div className="px-6 py-6 text-sm text-secondary">No rates recorded yet</div>
               ) : (
                 rates.map((r, i) => (
-                  <div key={r.id} className="px-5 py-3 flex items-center justify-between">
+                  <div key={r.id} className="px-6 py-4 flex items-center justify-between hover:bg-surface-highest transition-colors">
                     <div>
-                      <p className="text-sm font-medium text-stone-900">
-                        ₹{r.rate_24k?.toLocaleString('en-IN')}/g (24K)
-                        {i === 0 && <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">current</span>}
+                      <p className="text-base font-medium text-primary flex items-center gap-3">
+                        ₹{r.rate_24k?.toLocaleString('en-IN')}/g <span className="text-secondary font-normal">(24K)</span>
+                        {i === 0 && <span className="status-pill success ml-2">current</span>}
                       </p>
-                      <p className="text-xs text-stone-400">{formatDate(r.recorded_at)} · {r.source}</p>
+                      <p className="text-xs text-secondary mt-1">{formatDate(r.recorded_at)} · {r.source}</p>
                     </div>
-                    <div className="text-right text-xs text-stone-400">
+                    <div className="text-right text-sm text-secondary">
                       <p>18K: ₹{r.rate_18k?.toLocaleString('en-IN')}</p>
-                      <p>14K: ₹{r.rate_14k?.toLocaleString('en-IN')}</p>
+                      <p className="mt-0.5">14K: ₹{r.rate_14k?.toLocaleString('en-IN')}</p>
                     </div>
                   </div>
                 ))
@@ -328,19 +397,19 @@ export default function GoldRatesPage() {
             Trade price calculator
           </h2>
           {!latest && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700 mb-4">
+            <div className="bg-surface-highest border border-outline-variant/30 p-4 text-sm text-primary mb-6">
               Update today's gold rate first to get accurate pricing.
             </div>
           )}
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-6">
               <div>
                 <label className="block text-xs font-medium text-stone-500 mb-1">Diamond cost (₹)</label>
                 <input type="number" inputMode="decimal" className={input} value={calcDiamond} onChange={e => setCalcDiamond(e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">Gold karat</label>
-                <select className={input} value={calcGoldKarat} onChange={e => setCalcGoldKarat(e.target.value)}>
+                <label className="label-md block mb-2">Gold karat</label>
+                <select value={calcGoldKarat} onChange={e => setCalcGoldKarat(e.target.value)}>
                   <option value="14">14K</option>
                   <option value="18">18K</option>
                   <option value="22">22K</option>
@@ -365,28 +434,28 @@ export default function GoldRatesPage() {
             </div>
 
             {/* Result */}
-            <div className="bg-stone-50 rounded-xl p-4 mt-2 space-y-2">
-              <div className="flex justify-between text-xs text-stone-500">
+            <div className="bg-surface-lowest ghost-border p-6 mt-8 space-y-3">
+              <div className="flex justify-between text-sm text-secondary">
                 <span>Diamond cost</span>
                 <span>₹{parseFloat(calcDiamond).toLocaleString('en-IN') || 0}</span>
               </div>
-              <div className="flex justify-between text-xs text-stone-500">
+              <div className="flex justify-between text-sm text-secondary">
                 <span>Gold cost ({calcGoldKarat}K, {calcGoldWeight}g)</span>
                 <span>₹{Math.round(goldCost).toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-xs text-stone-500">
+              <div className="flex justify-between text-sm text-secondary">
                 <span>Making charges</span>
                 <span>₹{parseFloat(calcMaking).toLocaleString('en-IN') || 0}</span>
               </div>
-              <div className="flex justify-between text-xs text-stone-500">
+              <div className="flex justify-between text-sm text-secondary">
                 <span>IGI certification</span>
                 <span>₹{parseFloat(calcIGI).toLocaleString('en-IN') || 0}</span>
               </div>
-              <div className="border-t border-stone-200 pt-2 flex justify-between text-sm font-medium text-stone-700">
+              <div className="border-t ghost-border pt-4 mt-2 flex justify-between text-base font-medium text-primary">
                 <span>COGS</span>
                 <span>₹{Math.round(cogs).toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-sm font-medium text-stone-500">
+              <div className="flex justify-between text-sm text-secondary mb-4">
                 <span>Margin ({calcMargin}%)</span>
                 <span>₹{Math.round(cogs * parseFloat(calcMargin) / 100).toLocaleString('en-IN')}</span>
               </div>
@@ -394,13 +463,14 @@ export default function GoldRatesPage() {
                 <span className="text-white font-medium">Trade price</span>
                 <span className="text-white text-2xl font-semibold">₹{tradePrice.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-xs text-stone-500">
-                <span>Suggested MRP (jeweler +40%)</span>
-                <span className="font-medium">₹{Math.round(tradePrice * 1.40).toLocaleString('en-IN')}</span>
+              
+              <div className="flex justify-between text-sm text-secondary pt-2">
+                <span>Suggested MRP (retail +40%)</span>
+                <span className="font-medium text-primary">₹{Math.round(tradePrice * 1.40).toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-xs text-stone-500">
-                <span>Jeweler's margin</span>
-                <span className="text-green-600 font-medium">₹{Math.round(tradePrice * 0.40).toLocaleString('en-IN')}</span>
+              <div className="flex justify-between text-sm text-secondary">
+                <span>Retailer's margin</span>
+                <span className="font-medium text-primary">₹{Math.round(tradePrice * 0.40).toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>

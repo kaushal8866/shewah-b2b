@@ -106,7 +106,7 @@ input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible
   input, select, textarea { font-size: 16px !important; }
 }
 
-/* Safe area for iPhone notch/home indicator */
+/* Safe area for iPhone notch */
 .safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0); }
 
 /* Print styles */
@@ -115,9 +115,6 @@ input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible
   body { background: white; }
   .print\:block { display: block !important; }
 }
-
-/* Responsive padding utility */
-.page-pad { @apply p-4 lg:p-7; }
 
 /* Touch-friendly tap targets */
 @media (max-width: 1023px) {

@@ -53,6 +53,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const { toast } = useToast()
 
   // User management
   const [users, setUsers] = useState<AppUser[]>([])
@@ -140,7 +141,7 @@ export default function SettingsPage() {
     const upserts = Object.entries(settings).map(([key, value]) => ({ key, value, updated_at: new Date().toISOString() }))
     const { error } = await supabase.from('settings').upsert(upserts, { onConflict: 'key' })
     setSaving(false)
-    if (error) { alert('Error: ' + error.message); return }
+    if (error) { toast('Error: ' + error.message, 'error'); return }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }

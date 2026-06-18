@@ -407,6 +407,16 @@ function NewOrderForm() {
     if (!form.trade_price || !form.total_amount) { alert('Enter pricing'); return }
 
     setSaving(true)
+    
+    // 1. Fetch Partner for Credit Evaluation
+    const { data: partner } = await supabase.from('partners').select('*').eq('id', form.partner_id).single()
+    if (!partner) { alert('Partner not found'); setSaving(false); return }
+
+    // 2. Evaluate Risk
+    const totalAmountPaise = parseFloat(form.total_amount) * 100
+    const { evaluateCreditRisk } = await import('@/lib/ethics')
+    const risk = evaluateCreditRisk(partner, totalAmountPaise)
+
     const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true })
     const orderNumber = `SH-ORD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
 

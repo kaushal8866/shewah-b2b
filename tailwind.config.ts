@@ -74,6 +74,12 @@ const config: Config = {
           'neutral-bg':  '#EEF0F4',
           'neutral-fg':  '#454B5C',
         },
+        'on-surface': '#1b1c1c',
+        'outline-variant': '#cfc4c5',
+        secondary: '#5f5e5e',
+      },
+      boxShadow: {
+        'ambient': '0 20px 40px rgba(0,0,0, 0.04)',
       },
       fontFamily: {
         sans:    ['Inter',   'ui-sans-serif', 'system-ui', 'sans-serif'],
