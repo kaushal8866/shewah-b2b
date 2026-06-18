@@ -249,67 +249,55 @@ function ProductsTab() {
           </div>
         ))}
       </div>
-      <div className="flex gap-3 mb-4 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-stone-400" />
-          <input type="text" placeholder="Search by name, code, shape..."
-            value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 text-sm bg-surface-lowest ghost-border" />
+      <div className="flex flex-col gap-3 mb-6">
+        <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
+          {/* Search bar */}
+          <div className="relative flex-1 min-w-[280px]">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <input type="text" placeholder="Search by name, code, shape..."
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-stone-200 rounded-xl focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] outline-none transition-all shadow-sm" />
+          </div>
+          {/* Filters container */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full lg:w-auto">
+            <select value={karatFilter} onChange={e => setKaratFilter(e.target.value)}
+              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] transition-all">
+              <option value="all">All karats</option>
+              <option value="14">14K gold</option>
+              <option value="18">18K gold</option>
+            </select>
+            <select value={shapeFilter} onChange={e => setShapeFilter(e.target.value)}
+              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] transition-all capitalize">
+              <option value="all">All shapes</option>
+              {shapes.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] transition-all capitalize">
+              <option value="all">All categories</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select value={marginFilter} onChange={e => setMarginFilter(e.target.value)}
+              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] transition-all" disabled={!goldRate}>
+              <option value="all">All margins</option>
+              <option value="high">High (≥25%)</option>
+              <option value="mid">Mid (10–25%)</option>
+              <option value="low">Low (&lt;10%)</option>
+            </select>
+            <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
+              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] transition-all">
+              <option value="code">Sort: Code</option>
+              <option value="category_asc">Sort: Category (A-Z)</option>
+              <option value="category_desc">Sort: Category (Z-A)</option>
+              <option value="margin_desc" disabled={!goldRate}>Sort: Margin % (high→low)</option>
+              <option value="margin_asc" disabled={!goldRate}>Sort: Margin % (low→high)</option>
+            </select>
+            <button onClick={() => setShowInactive(!showInactive)}
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm border transition-all shadow-sm ${showInactive ? 'bg-stone-100 border-stone-300 text-stone-700 font-medium' : 'border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-50 bg-white'}`}>
+              {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              <span className="whitespace-nowrap">{showInactive ? 'Hiding inactive' : 'Show inactive'}</span>
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-          <select value={karatFilter} onChange={e => setKaratFilter(e.target.value)}
-            className="flex-1 sm:flex-none text-sm px-4 py-3 bg-surface-lowest ghost-border">
-            <option value="all">All karats</option>
-            <option value="14">14K gold</option>
-            <option value="18">18K gold</option>
-          </select>
-          <select value={shapeFilter} onChange={e => setShapeFilter(e.target.value)}
-            className="flex-1 sm:flex-none text-sm px-4 py-3 bg-surface-lowest ghost-border capitalize">
-            <option value="all">All shapes</option>
-            {shapes.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <button onClick={() => setShowInactive(!showInactive)}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 text-sm transition-colors ${showInactive ? 'bg-surface-highest text-primary' : 'bg-surface text-secondary hover:text-primary ghost-border'}`}>
-            {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-            {showInactive ? 'Hiding inactive' : 'Show inactive'}
-          </button>
-        </div>
-        <select value={karatFilter} onChange={e => setKaratFilter(e.target.value)}
-          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-          <option value="all">All karats</option>
-          <option value="14">14K gold</option>
-          <option value="18">18K gold</option>
-        </select>
-        <select value={shapeFilter} onChange={e => setShapeFilter(e.target.value)}
-          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-          <option value="all">All shapes</option>
-          {shapes.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-          <option value="all">All categories</option>
-          {categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
-        </select>
-        <select value={marginFilter} onChange={e => setMarginFilter(e.target.value)}
-          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white" disabled={!goldRate}>
-          <option value="all">All margins</option>
-          <option value="high">High (≥25%)</option>
-          <option value="mid">Mid (10–25%)</option>
-          <option value="low">Low (&lt;10%)</option>
-        </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
-          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
-          <option value="code">Sort: Code</option>
-          <option value="category_asc">Sort: Category (A-Z)</option>
-          <option value="category_desc">Sort: Category (Z-A)</option>
-          <option value="margin_desc" disabled={!goldRate}>Sort: Margin % (high→low)</option>
-          <option value="margin_asc" disabled={!goldRate}>Sort: Margin % (low→high)</option>
-        </select>
-        <button onClick={() => setShowInactive(!showInactive)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${showInactive ? 'bg-stone-100 border-stone-300 text-stone-700' : 'border-stone-200 text-stone-400 hover:text-stone-600'}`}>
-          {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-          {showInactive ? 'Hiding inactive' : 'Show inactive'}
-        </button>
       </div>
       {loading ? (
         <div className="text-center py-20 text-secondary headline-lg">Loading catalog...</div>
@@ -327,7 +315,7 @@ function ProductsTab() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map(p => {
             const est = estimateForProduct(p)
             const pct = est?.marginPct
@@ -337,63 +325,65 @@ function ProductsTab() {
               : pct >= 10 ? 'bg-amber-100 text-amber-700'
               : 'bg-red-100 text-red-700'
             return (
-            <div key={p.id} className={`bg-white rounded-xl border overflow-hidden transition-all ${p.is_active ? 'border-stone-200' : 'border-stone-100 opacity-60'}`}>
-              <Link href={`/catalog/${p.id}`} className="block aspect-square bg-gradient-to-br from-stone-50 to-yellow-50 flex items-center justify-center relative cursor-pointer hover:opacity-95 transition-opacity" title="Open product">
+            <div key={p.id} className={`bg-white rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-md ${p.is_active ? 'border-stone-200' : 'border-stone-100 opacity-60'} flex flex-row sm:flex-col`}>
+              <Link href={`/catalog/${p.id}`} className="block w-28 h-28 sm:w-full sm:h-auto sm:aspect-square bg-gradient-to-br from-stone-50 to-yellow-50 flex items-center justify-center relative cursor-pointer hover:opacity-95 transition-opacity shrink-0" title="Open product">
                 {p.photo_urls && p.photo_urls.length > 0 ? (
                   <img src={p.photo_urls[0]} alt={p.name} className="w-full h-full object-cover mix-blend-multiply" />
                 ) : (
-                  <div className="text-center"><div className="text-4xl mb-1">◆</div><p className="text-xs text-stone-300">{p.code}</p></div>
+                  <div className="text-center"><div className="text-3xl sm:text-4xl mb-1">◆</div><p className="text-[10px] text-stone-300">{p.code}</p></div>
                 )}
                 {!p.is_active && (
                   <div className="absolute inset-0 bg-surface-low/60 flex items-center justify-center">
-                    <span className="status-pill text-secondary">Inactive</span>
+                    <span className="status-pill text-secondary text-[10px] sm:text-xs">Inactive</span>
                   </div>
                 )}
-                <div className="absolute top-2 left-2">
-                  <span className="bg-white text-stone-600 text-xs px-2 py-0.5 rounded-full border border-stone-200 font-medium">{p.code}</span>
+                <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2">
+                  <span className="bg-white/90 backdrop-blur-sm text-stone-600 text-[10px] sm:text-xs px-2 py-0.5 rounded-full border border-stone-200 font-semibold">{p.code}</span>
                 </div>
               </Link>
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-1">
-                  <p className="font-medium text-stone-900 text-sm">{p.name}</p>
-                  <span className="text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full">{p.gold_karat}K</span>
+              <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between min-w-0">
+                <div>
+                  <div className="flex items-start justify-between mb-1 gap-2">
+                    <p className="font-semibold text-stone-900 text-xs sm:text-sm truncate" title={p.name}>{p.name}</p>
+                    <span className="text-[10px] sm:text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full shrink-0">{p.gold_karat}K</span>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-stone-400 mb-2 truncate">{p.diamond_weight}ct {p.diamond_shape} · {p.diamond_quality}/{p.diamond_color}</p>
+                  <div className="grid grid-cols-3 gap-1 mb-2.5">
+                    <div className="bg-stone-50 rounded-lg py-1 px-1.5 text-center">
+                      <p className="text-[9px] sm:text-xs text-stone-400">Trade</p>
+                      <p className="text-[10px] sm:text-xs font-semibold text-stone-700 mt-0.5">{p.trade_price ? `₹${(p.trade_price/1000).toFixed(0)}K` : '—'}</p>
+                    </div>
+                    <div className="bg-stone-50 rounded-lg py-1 px-1.5 text-center" title="Estimated COGS at today's gold rate">
+                      <p className="text-[9px] sm:text-xs text-stone-400">Est. COGS</p>
+                      <p className="text-[10px] sm:text-xs font-semibold text-stone-700 mt-0.5">{est ? `₹${(est.total_cogs/1000).toFixed(0)}K` : '—'}</p>
+                    </div>
+                    <div className={`rounded-lg py-1 px-1.5 text-center ${badgeClass}`} title="Estimated margin vs trade price">
+                      <p className="text-[9px] sm:text-xs opacity-80">Margin</p>
+                      <p className="text-[10px] sm:text-xs font-semibold mt-0.5">{est ? `${est.marginPct.toFixed(0)}%` : '—'}</p>
+                    </div>
+                  </div>
+                  {est && (
+                    <p className="text-[9px] sm:text-[10px] text-stone-400 mb-0.5">≈ ₹{(est.margin/1000).toFixed(1)}K margin · MRP {p.mrp_suggested ? `₹${(p.mrp_suggested/1000).toFixed(0)}K` : '—'}</p>
+                  )}
+                  {p.priced_at_rate && p.priced_at && (
+                    <p className="text-[9px] sm:text-[10px] text-stone-400 mb-2" title={new Date(p.priced_at).toLocaleString('en-IN')}>
+                      Last priced: ₹{Number(p.priced_at_rate).toLocaleString('en-IN')}/g · {new Date(p.priced_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-stone-400 mb-3">{p.diamond_weight}ct {p.diamond_shape} · {p.diamond_quality}/{p.diamond_color}</p>
-                <div className="grid grid-cols-3 gap-1 mb-2">
-                  <div className="bg-stone-50 rounded-lg p-2 text-center">
-                    <p className="text-xs text-stone-400">Trade</p>
-                    <p className="text-xs font-semibold text-stone-700">{p.trade_price ? `₹${(p.trade_price/1000).toFixed(0)}K` : '—'}</p>
-                  </div>
-                  <div className="bg-stone-50 rounded-lg p-2 text-center" title="Estimated COGS at today's gold rate">
-                    <p className="text-xs text-stone-400">Est. COGS</p>
-                    <p className="text-xs font-semibold text-stone-700">{est ? `₹${(est.total_cogs/1000).toFixed(0)}K` : '—'}</p>
-                  </div>
-                  <div className={`rounded-lg p-2 text-center ${badgeClass}`} title="Estimated margin vs trade price">
-                    <p className="text-xs opacity-80">Margin</p>
-                    <p className="text-xs font-semibold">{est ? `${est.marginPct.toFixed(0)}%` : '—'}</p>
-                  </div>
-                </div>
-                {est && (
-                  <p className="text-[10px] text-stone-400 mb-1">≈ ₹{(est.margin/1000).toFixed(1)}K margin · MRP {p.mrp_suggested ? `₹${(p.mrp_suggested/1000).toFixed(0)}K` : '—'}</p>
-                )}
-                {p.priced_at_rate && p.priced_at && (
-                  <p className="text-[10px] text-stone-400 mb-2" title={new Date(p.priced_at).toLocaleString('en-IN')}>
-                    Last priced at ₹{Number(p.priced_at_rate).toLocaleString('en-IN')}/g · {new Date(p.priced_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                  </p>
-                )}
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-stone-400">{p.delivery_days} days delivery</p>
-                  <div className="flex gap-1.5">
+                <div className="flex items-center justify-between mt-1 pt-2 border-t border-stone-100 sm:mt-0 sm:pt-0 sm:border-t-0">
+                  <p className="text-[10px] sm:text-xs text-stone-400">{p.delivery_days} days delivery</p>
+                  <div className="flex gap-1">
                     <button onClick={() => toggleActive(p.id, p.is_active)}
-                      className="p-1.5 rounded-sm hover:bg-surface-highest text-secondary hover:text-primary transition-colors"
+                      className="p-1 rounded-md hover:bg-stone-50 text-stone-400 hover:text-stone-600 transition-colors"
                       title={p.is_active ? 'Deactivate' : 'Activate'}>
-                      {p.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      {p.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     </button>
-                    <Link href={`/catalog/${p.id}`} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors" title="Edit">
+                    <Link href={`/catalog/${p.id}`} className="p-1 rounded-md hover:bg-stone-50 text-stone-400 hover:text-stone-600 transition-colors" title="Edit">
                       <Edit2 className="w-3.5 h-3.5" />
                     </Link>
                     <button onClick={() => handleDeleteProduct(p.id, p.code)} disabled={deleting === p.id}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                      className="p-1 rounded-md hover:bg-red-50 text-stone-400 hover:text-red-600 transition-colors disabled:opacity-50"
                       title="Delete permanently">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
