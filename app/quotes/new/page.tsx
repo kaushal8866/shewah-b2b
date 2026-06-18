@@ -53,6 +53,7 @@ interface DiamondRow {
   type: 'lgd' | 'natural'
   rate_per_pc: string
   igi_charge: string
+  is_suggested?: boolean
 }
 
 interface QuoteItem {
@@ -86,6 +87,10 @@ function QuoteBuilderForm() {
   const [karigars, setKarigars] = useState<MfgPartner[]>([])
   const [products, setProducts] = useState<ProductPreset[]>([])
   const [latestGoldRate, setLatestGoldRate] = useState<number>(0)
+  const [qualityBuckets, setQualityBuckets] = useState<{ id: string; label: string }[]>([])
+  const [colorBuckets, setColorBuckets] = useState<{ id: string; label: string }[]>([])
+  const [silverRateB2B, setSilverRateB2B] = useState<number>(80)
+  const [silverRateD2C, setSilverRateD2C] = useState<number>(120)
   const [loadingInitial, setLoadingInitial] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -131,17 +136,29 @@ function QuoteBuilderForm() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [resPartners, resKarigars, resProducts, resGold] = await Promise.all([
+        const [resPartners, resKarigars, resProducts, resGold, resQualities, resColors, resSilverRates] = await Promise.all([
           supabase.from('partners').select('id, owner_name, store_name, city, phone').order('store_name'),
           supabase.from('manufacturing_partners').select('id, name, city, labour_rate_9k, labour_rate_10k, labour_rate_14k, labour_rate_18k, labour_rate_22k').eq('status', 'active'),
-          supabase.from('products').select('id, code, name, category, gold_weight_g, making_charges, diamond_cost, photo_urls').order('name'),
+          supabase.from('products').select('id, code, name, category, gold_weight_g, making_charges, diamond_cost, photo_urls, metal_type').order('name'),
           supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
+          fetch('/api/diamonds/quality-buckets').then(r => r.json().catch(() => ({ buckets: [] }))),
+          fetch('/api/diamonds/color-buckets').then(r => r.json().catch(() => ({ buckets: [] }))),
+          supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c'])
         ])
 
         if (resPartners.data) setPartners(resPartners.data)
         if (resKarigars.data) setKarigars(resKarigars.data)
         if (resProducts.data) setProducts(resProducts.data)
         if (resGold.data?.[0]) setLatestGoldRate(Number(resGold.data[0].rate_24k) || 0)
+        if (resQualities?.buckets) setQualityBuckets(resQualities.buckets)
+        if (resColors?.buckets) setColorBuckets(resColors.buckets)
+
+        if (resSilverRates.data) {
+          const b2b = resSilverRates.data.find((d: any) => d.key === 'silver_rate_b2b')?.value
+          const d2c = resSilverRates.data.find((d: any) => d.key === 'silver_rate_d2c')?.value
+          if (b2b) setSilverRateB2B(Number(b2b))
+          if (d2c) setSilverRateD2C(Number(d2c))
+        }
 
         // If editing, load the quote
         if (editId) {
@@ -321,6 +338,24 @@ function QuoteBuilderForm() {
       if (item.id !== id) return item
       const next = { ...item, [field]: value }
 
+      // If karat was modified, check if we need to adjust partner labour rate or metal rates
+      if (field === 'karat') {
+        if (value === 'Silver') {
+          const defaultRate = isWalkIn ? silverRateD2C : silverRateB2B
+          next.gold_rate_24k = String(defaultRate || '80')
+        } else if (item.karat === 'Silver') {
+          next.gold_rate_24k = String(latestGoldRate || '0')
+        }
+
+        if (item.labour_source === 'partner' && item.labour_partner_id) {
+          const selectedKarigar = karigars.find(k => k.id === item.labour_partner_id)
+          if (selectedKarigar) {
+            const karatKey = `labour_rate_${value.toLowerCase()}` as keyof MfgPartner
+            next.labour_rate_per_g = String(selectedKarigar[karatKey] || '')
+          }
+        }
+      }
+
       // If labour partner was modified and source is partner, prefill their rate
       if (field === 'labour_partner_id' && item.labour_source === 'partner') {
         const selectedKarigar = karigars.find(k => k.id === value)
@@ -330,16 +365,18 @@ function QuoteBuilderForm() {
         }
       }
 
-      // If karat was modified, check if we need to adjust partner labour rate
-      if (field === 'karat' && item.labour_source === 'partner' && item.labour_partner_id) {
-        const selectedKarigar = karigars.find(k => k.id === item.labour_partner_id)
-        if (selectedKarigar) {
-          const karatKey = `labour_rate_${value.toLowerCase()}` as keyof MfgPartner
-          next.labour_rate_per_g = String(selectedKarigar[karatKey] || '')
-        }
-      }
-
       return next as QuoteItem
+    }))
+  }
+
+  function handleSetWalkIn(val: boolean) {
+    setIsWalkIn(val)
+    setItems(prev => prev.map(item => {
+      if (item.karat === 'Silver') {
+        const defaultRate = val ? silverRateD2C : silverRateB2B
+        return { ...item, gold_rate_24k: String(defaultRate || '80') }
+      }
+      return item
     }))
   }
 
@@ -351,12 +388,15 @@ function QuoteBuilderForm() {
     setItems(prev => prev.map(item => {
       if (item.id !== itemId) return item
       
+      const isSilverProd = (prod as any).metal_type === 'silver'
       const next = {
         ...item,
         product_id: prod.id,
         name: prod.name,
         category: prod.category || 'Ring',
+        karat: isSilverProd ? 'Silver' : '18K',
         gross_gold_weight_g: prod.gold_weight_g ? String(prod.gold_weight_g) : '',
+        gold_rate_24k: isSilverProd ? String(isWalkIn ? silverRateD2C : silverRateB2B) : String(latestGoldRate || '0'),
         making_charges: prod.making_charges ? String(prod.making_charges) : '',
         reference_images: prod.photo_urls || [],
       }
@@ -372,8 +412,8 @@ function QuoteBuilderForm() {
           role: 'melee',
           weight: '',
           pieces: '1',
-          quality_id: 'VS',
-          color_id: 'F-G',
+          quality_id: qualityBuckets[0]?.label || 'VS',
+          color_id: colorBuckets[0]?.label || 'F-G',
           type: 'lgd',
           rate_per_pc: String(prod.diamond_cost),
           igi_charge: '0'
@@ -401,8 +441,8 @@ function QuoteBuilderForm() {
             role: 'melee',
             weight: '',
             pieces: '1',
-            quality_id: 'VS',
-            color_id: 'F-G',
+            quality_id: qualityBuckets[0]?.label || 'VS',
+            color_id: colorBuckets[0]?.label || 'F-G',
             type: 'lgd',
             rate_per_pc: '',
             igi_charge: '0',
@@ -422,14 +462,62 @@ function QuoteBuilderForm() {
     }))
   }
 
-  function handleUpdateDiamond(itemId: string, diamondId: string, field: keyof DiamondRow, value: any) {
-    setItems(prev => prev.map(item => {
-      if (item.id !== itemId) return item
-      return {
-        ...item,
-        diamonds: item.diamonds.map(d => d.id === diamondId ? { ...d, [field]: value } : d)
+  async function triggerDiamondMatrixLookup(itemId: string, diamondId: string, d: DiamondRow) {
+    if (!d.shape_id || !d.size_id || !d.quality_id || !d.color_id || !d.type) return
+    try {
+      const qBucket = qualityBuckets.find(qb => qb.label.toLowerCase() === d.quality_id.toLowerCase())
+      const cBucket = colorBuckets.find(cb => cb.label.toLowerCase() === d.color_id.toLowerCase())
+      if (!qBucket || !cBucket) return
+
+      const res = await fetch(`/api/diamonds/pricing-matrix?shape_id=${d.shape_id}&size_id=${d.size_id}&type=${d.type}`)
+      if (!res.ok) return
+      const { cells } = await res.json()
+      if (!cells) return
+
+      const match = cells.find((c: any) =>
+        c.quality_bucket_id === qBucket.id &&
+        c.color_bucket_id === cBucket.id
+      )
+
+      if (match && match.price_per_piece > 0) {
+        setItems(prev => prev.map(item => {
+          if (item.id !== itemId) return item
+          return {
+            ...item,
+            diamonds: item.diamonds.map(x => x.id === diamondId ? { ...x, rate_per_pc: String(match.price_per_piece), is_suggested: true } : x)
+          }
+        }))
       }
-    }))
+    } catch (err) {
+      console.error("Matrix price lookup failed:", err)
+    }
+  }
+
+  function handleUpdateDiamond(itemId: string, diamondId: string, field: keyof DiamondRow, value: any) {
+    setItems(prev => {
+      const nextItems = prev.map(item => {
+        if (item.id !== itemId) return item
+        return {
+          ...item,
+          diamonds: item.diamonds.map(d => {
+            if (d.id !== diamondId) return d
+            const nextD = { ...d, [field]: value }
+            if (field === 'rate_per_pc') {
+              nextD.is_suggested = false
+            }
+            return nextD
+          })
+        }
+      })
+
+      const item = nextItems.find(i => i.id === itemId)
+      const d = item?.diamonds.find(x => x.id === diamondId)
+      if (d && ['shape_id', 'size_id', 'quality_id', 'color_id', 'type'].includes(field)) {
+        triggerDiamondMatrixLookup(itemId, diamondId, d)
+      }
+
+      return nextItems
+    })
   }
 
   // Handle uploading item reference images
@@ -667,11 +755,11 @@ function QuoteBuilderForm() {
             
             <div className="flex items-center gap-2 mb-2">
               <label className="text-xs font-medium text-stone-500">Customer Type:</label>
-              <button type="button" onClick={() => setIsWalkIn(false)}
+              <button type="button" onClick={() => handleSetWalkIn(false)}
                 className={`text-xs px-2.5 py-1 rounded-md border font-medium ${!isWalkIn ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
                 Registered Partner
               </button>
-              <button type="button" onClick={() => setIsWalkIn(true)}
+              <button type="button" onClick={() => handleSetWalkIn(true)}
                 className={`text-xs px-2.5 py-1 rounded-md border font-medium ${isWalkIn ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
                 Walk-in customer
               </button>
@@ -786,23 +874,23 @@ function QuoteBuilderForm() {
                   </div>
                 </div>
 
-                {/* Gold specs */}
+                {/* Metal & Karat specs */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-stone-50 p-3.5 rounded-lg border border-stone-100">
                   <div>
-                    <label className={labelClass}>Gold Karat</label>
+                    <label className={labelClass}>{item.karat === 'Silver' ? 'Metal' : 'Gold Karat'}</label>
                     <select className={inputClass} value={item.karat} onChange={e => updateItemField(item.id, 'karat', e.target.value)}>
-                      {['9K', '10K', '14K', '18K', '22K', '24K'].map(k => (
+                      {['9K', '10K', '14K', '18K', '22K', '24K', 'Silver'].map(k => (
                         <option key={k} value={k}>{k}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className={labelClass}>Gross Gold Weight (g)</label>
+                    <label className={labelClass}>{item.karat === 'Silver' ? 'Silver Weight (g)' : 'Gross Gold Weight (g)'}</label>
                     <input type="number" step="0.0001" className={inputClass} placeholder="e.g. 5.2340"
                       value={item.gross_gold_weight_g} onChange={e => updateItemField(item.id, 'gross_gold_weight_g', e.target.value)} />
                   </div>
                   <div>
-                    <label className={labelClass}>Gold Rate 24kt (₹/g)</label>
+                    <label className={labelClass}>{item.karat === 'Silver' ? 'Silver Rate (₹/g)' : 'Gold Rate 24kt (₹/g)'}</label>
                     <input type="number" className={inputClass} placeholder="e.g. 7100"
                       value={item.gold_rate_24k} onChange={e => updateItemField(item.id, 'gold_rate_24k', e.target.value)} />
                   </div>
@@ -876,7 +964,7 @@ function QuoteBuilderForm() {
                           }}
                         />
 
-                        <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs">
+                        <div className="grid grid-cols-2 sm:grid-cols-8 gap-2 text-xs">
                           <div>
                             <label className="text-stone-400 mb-0.5 block">Role</label>
                             <select className={inputClass + ' py-1'} value={d.role} onChange={e => handleUpdateDiamond(item.id, d.id, 'role', e.target.value)}>
@@ -897,6 +985,26 @@ function QuoteBuilderForm() {
                               value={d.pieces} onChange={e => handleUpdateDiamond(item.id, d.id, 'pieces', e.target.value)} />
                           </div>
                           <div>
+                            <label className="text-stone-400 mb-0.5 block">Quality</label>
+                            <select className={inputClass + ' py-1'} value={d.quality_id} onChange={e => handleUpdateDiamond(item.id, d.id, 'quality_id', e.target.value)}>
+                              {qualityBuckets.length > 0 ? (
+                                qualityBuckets.map(qb => <option key={qb.id} value={qb.label}>{qb.label}</option>)
+                              ) : (
+                                ['VVS', 'VS', 'SI'].map(q => <option key={q} value={q}>{q}</option>)
+                              )}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-stone-400 mb-0.5 block">Color</label>
+                            <select className={inputClass + ' py-1'} value={d.color_id} onChange={e => handleUpdateDiamond(item.id, d.id, 'color_id', e.target.value)}>
+                              {colorBuckets.length > 0 ? (
+                                colorBuckets.map(cb => <option key={cb.id} value={cb.label}>{cb.label}</option>)
+                              ) : (
+                                ['D-E', 'F-G', 'H-I'].map(c => <option key={c} value={c}>{c}</option>)
+                              )}
+                            </select>
+                          </div>
+                          <div>
                             <label className="text-stone-400 mb-0.5 block">Type</label>
                             <select className={inputClass + ' py-1'} value={d.type} onChange={e => handleUpdateDiamond(item.id, d.id, 'type', e.target.value)}>
                               <option value="lgd">LGD</option>
@@ -904,7 +1012,10 @@ function QuoteBuilderForm() {
                             </select>
                           </div>
                           <div>
-                            <label className="text-stone-400 mb-0.5 block">Rate/pc (₹)</label>
+                            <label className="text-stone-400 mb-0.5 block flex items-center gap-1">
+                              Rate/pc (₹)
+                              {d.is_suggested && <span className="bg-green-100 text-green-700 font-bold px-1 rounded text-[8px] scale-90 origin-left">Matrix</span>}
+                            </label>
                             <input type="number" className={inputClass + ' py-1'} placeholder="2500"
                               value={d.rate_per_pc} onChange={e => handleUpdateDiamond(item.id, d.id, 'rate_per_pc', e.target.value)} />
                           </div>

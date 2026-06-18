@@ -1,5 +1,5 @@
 import { supabaseAdmin } from './supabaseAdmin'
-import { KARAT_FACTORS } from './karat'
+import { KARAT_FACTORS, normalizeGoldMaterialType } from './karat'
 
 /**
  * Task 78 read-layer safety net: gold MUST live as `gold_24k` only across
@@ -10,23 +10,7 @@ import { KARAT_FACTORS } from './karat'
  * KARAT_FACTORS the migration script uses. The DB row is left alone (no
  * data loss); only the read view is normalized.
  */
-const LEGACY_GOLD_KARATS: Record<string, number> = {
-  gold_22k: KARAT_FACTORS[22],
-  gold_18k: KARAT_FACTORS[18],
-  gold_14k: KARAT_FACTORS[14],
-  gold_10k: KARAT_FACTORS[10],
-  gold_9k:  KARAT_FACTORS[9],
-}
 
-export function normalizeGoldMaterialType(mt: string): {
-  material_type: string
-  factor: number
-  wasLegacy: boolean
-} {
-  const f = LEGACY_GOLD_KARATS[mt]
-  if (f != null) return { material_type: 'gold_24k', factor: f, wasLegacy: true }
-  return { material_type: mt, factor: 1, wasLegacy: false }
-}
 
 export type Bucket = {
   material_type: string
@@ -129,6 +113,7 @@ export async function getAvailableForMaterial(
  * the float reservation is always against the gold_24k bucket, with the
  * quantity converted via KARAT_FACTORS at the call site.
  */
-export function materialTypeForKarat(_karat: number | string | null | undefined): string {
+export function materialTypeForKarat(karat: number | string | null | undefined): string {
+  if (String(karat).toLowerCase() === 'silver') return 'silver'
   return 'gold_24k'
 }

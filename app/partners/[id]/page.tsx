@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, getStatusColor, CIRCUITS } from '@/lib/utils'
 import {
   ArrowLeft, Save, Trash2, Phone, MapPin,
-  MessageCircle, Plus, Edit2, X, FileText
+  MessageCircle, Plus, Edit2, X, FileText, Diamond
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -21,6 +21,7 @@ export default function PartnerDetailPage() {
   const [partner, setPartner] = useState<any>(null)
   const [visits, setVisits] = useState<any[]>([])
   const [orders, setOrders] = useState<any[]>([])
+  const [trades, setTrades] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -32,16 +33,25 @@ export default function PartnerDetailPage() {
 
   async function load() {
     setLoading(true)
-    const [{ data: p }, { data: v }, { data: o }] = await Promise.all([
+    const [{ data: p }, { data: v }, { data: o }, { data: t }] = await Promise.all([
       supabase.from('partners').select('*').eq('id', id).single(),
       supabase.from('visits').select('*').eq('partner_id', id).order('visit_date', { ascending: false }),
       supabase.from('orders').select('*').eq('partner_id', id).order('created_at', { ascending: false }),
+      supabase.from('partner_diamond_trades')
+        .select(`
+          *,
+          diamond_shapes:diamond_shape_id (name),
+          diamond_sizes:diamond_size_id (label)
+        `)
+        .eq('partner_id', id)
+        .order('trade_date', { ascending: false })
     ])
     if (!p) { router.push('/partners'); return }
     setPartner(p)
     setForm(p)
     setVisits(v || [])
     setOrders(o || [])
+    setTrades(t || [])
     setLoading(false)
   }
 
@@ -218,6 +228,10 @@ export default function PartnerDetailPage() {
             className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#162B47]">
             <Plus className="w-4 h-4" /> New order
           </Link>
+          <Link href={`/stock/partner-trade?partner_id=${id}`}
+            className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-xl text-sm hover:bg-stone-800">
+            <Diamond className="w-4 h-4" /> Record Trade
+          </Link>
         </div>
       )}
 
@@ -315,6 +329,44 @@ export default function PartnerDetailPage() {
                     <p className="text-sm font-medium text-stone-700">₹{o.total_amount?.toLocaleString('en-IN')}</p>
                   </Link>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Loose Diamond Trades */}
+          {trades.length > 0 && (
+            <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+              <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+                <h2 className="font-medium text-stone-900">Loose Diamond Trades ({trades.length})</h2>
+                <Link href="/stock/partner-trades" className="text-xs text-[#1E3A5F] hover:underline">
+                  Manage trades →
+                </Link>
+              </div>
+              <div className="divide-y divide-stone-50">
+                {trades.map(t => {
+                  const isReturn = t.trade_type === 'return'
+                  const balance = t.total_amount - t.paid_amount
+                  return (
+                    <div key={t.id} className="flex items-center justify-between px-5 py-3 hover:bg-stone-50">
+                      <div>
+                        <p className="text-sm font-medium text-stone-800">
+                          {t.trade_type === 'sale' ? 'Sale' : 'Return'} — {t.pieces} pcs ({Number(t.carats).toFixed(3)} ct)
+                        </p>
+                        <p className="text-xs text-stone-400">
+                          {formatDate(t.trade_date)} · {t.diamond_shapes?.name || 'Shape'} · {t.diamond_sizes?.label || 'Size'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-stone-900">₹{Number(t.total_amount).toLocaleString('en-IN')}</p>
+                        {t.trade_type === 'sale' && (
+                          <p className={`text-[10px] font-medium ${t.payment_status === 'paid' ? 'text-green-600' : 'text-amber-600'}`}>
+                            {t.payment_status === 'paid' ? 'Paid' : `Due: ₹${balance.toLocaleString('en-IN')}`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}

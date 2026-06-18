@@ -396,6 +396,7 @@ export function computeOrderCogs(opts: {
   gold_weight_actual?: number | null
   gold_rate_at_order?: number | null
   gold_karat?: number | null
+  metal_type?: string | null
   // Task #68 inputs — preferred path when an assigned partner exists:
   labour_per_gram?: number | null
   gross_weight?: number | null
@@ -409,9 +410,10 @@ export function computeOrderCogs(opts: {
 }) {
   const w = Number(opts.gold_weight_actual) || 0
   const rate = Number(opts.gold_rate_at_order) || 0
-  const karat = Number(opts.gold_karat) || 18
-  const mult = (KARAT_FACTORS as Record<number, number>)[karat] ?? KARAT_FACTORS[18]
-  const goldCost = w * rate * mult
+  const isSilver = opts.metal_type === 'silver' || String(opts.gold_karat).toLowerCase() === 'silver'
+  const goldCost = isSilver
+    ? w * rate
+    : w * rate * ((KARAT_FACTORS as Record<number, number>)[Number(opts.gold_karat) || 18] ?? KARAT_FACTORS[18])
 
   const labourPerG = Number(opts.labour_per_gram) || 0
   const grossW = Number(opts.gross_weight ?? opts.gold_weight_actual) || 0
@@ -466,13 +468,17 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
 
   const { data: products, error } = await supabase
     .from('products')
-    .select('id, gold_karat, gold_weight_g, gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k, diamond_cost, diamond_specs, making_charges, igi_cert_cost, trade_price, mrp_suggested, karat_pricing')
+    .select('id, gold_karat, gold_weight_g, gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k, diamond_cost, diamond_specs, making_charges, igi_cert_cost, trade_price, mrp_suggested, karat_pricing, metal_type')
     .eq('is_active', true)
   if (error) return { updated: 0, skipped: 0, failed: 0, error: error.message }
   if (!products) return { updated: 0, skipped: 0, failed: 0 }
 
   let updated = 0, skipped = 0, failed = 0
   for (const p of products) {
+    if ((p as any).metal_type === 'silver') {
+      skipped++
+      continue
+    }
     // Resolve the single net-gold-weight input for this product. Catalog form
     // saves it into `gold_weight_22k` (numerically the user-entered value).
     // For super-legacy rows that only have gold_weight_g + gold_karat, we

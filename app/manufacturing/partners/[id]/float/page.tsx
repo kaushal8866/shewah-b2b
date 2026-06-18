@@ -3,8 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { KARAT_FACTORS } from '@/lib/karat'
-import { normalizeGoldMaterialType } from '@/lib/floatBuckets'
+import { KARAT_FACTORS, normalizeGoldMaterialType } from '@/lib/karat'
 import { formatDate } from '@/lib/utils'
 import { ArrowLeft, Plus, ArrowDown, ArrowUp, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
@@ -23,15 +22,15 @@ function MaterialFloatInner() {
   const partnerId = params.id as string
 
   // Pre-fill from order context (e.g. "Record gold consumption for this order")
-  const orderIdParam = searchParams.get('order_id') || ''
+  const orderIdParam = searchParams ? (searchParams.get('order_id') || '') : ''
   // Accept both `type` (full word) and `deposit` (just the material type for
   // the over-issue shortcut from the new-order page).
-  const depositShortcut = searchParams.get('deposit')
+  const depositShortcut = searchParams ? searchParams.get('deposit') : null
   const typeParam = depositShortcut
     ? ('deposit' as Tab)
-    : ((searchParams.get('type') as Tab) || 'deposit')
-  const materialParam = depositShortcut || searchParams.get('material_type') || 'gold_24k'
-  const amountParam = searchParams.get('amount') || ''
+    : (searchParams ? ((searchParams.get('type') as Tab) || 'deposit') : 'deposit')
+  const materialParam = depositShortcut || (searchParams ? searchParams.get('material_type') : null) || 'gold_24k'
+  const amountParam = searchParams ? (searchParams.get('amount') || '') : ''
 
   const [partner, setPartner] = useState<any>(null)
   const [floats, setFloats] = useState<any[]>([])

@@ -3,13 +3,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase, ORDER_STATUSES, computeOrderCogs, partnerLabourRate, type ManufacturingPartnerLite } from '@/lib/supabase'
+import {
+  getAlloyDensity,
+  getStoneSeatVolume,
+  getNetVolume,
+  scaleWeightBySize,
+  FINISH_FACTOR
+} from '@/lib/cadWeight'
 import { KARAT_FACTORS } from '@/lib/karat'
 import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
 import { formatDate, getStatusColor } from '@/lib/utils'
-import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare, CreditCard, Bell, Plus } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare, CreditCard, Bell, Plus, Download, FileText } from 'lucide-react'
 import Link from 'next/link'
 import CustomerJourneyPanel from '@/components/CustomerJourneyPanel'
 import ProductionUpdatesPanel from '@/components/ProductionUpdatesPanel'
+import { useSession } from 'next-auth/react'
 
 function OrderChangeRequestsPanel({ orderId, onApplied }: { orderId: string, onApplied: () => void }) {
   const [requests, setRequests] = useState<any[]>([])
@@ -370,8 +378,41 @@ export default function OrderDetailPage() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
+  const { data: session } = useSession()
+  const isMaster = session?.user?.role === 'master'
 
   const [order, setOrder] = useState<any>(null)
+  const [invoices, setInvoices] = useState<any[]>([])
+  const [generateInvoiceOpen, setGenerateInvoiceOpen] = useState(false)
+  const [invoiceForm, setInvoiceForm] = useState<any>({
+    tax_treatment: 'inclusive',
+    invoice_date: new Date().toISOString().split('T')[0],
+    buyer_name: '',
+    buyer_gstin: '',
+    buyer_address: '',
+    buyer_state: 'Gujarat',
+    hsn_code: '7113',
+  })
+  const [generatingInvoice, setGeneratingInvoice] = useState(false)
+  const [invoiceError, setInvoiceError] = useState('')
+
+  const [cancelTarget, setCancelTarget] = useState<any>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState('')
+
+  useEffect(() => {
+    if (!order) return
+    setInvoiceForm({
+      tax_treatment: 'inclusive',
+      invoice_date: new Date().toISOString().split('T')[0],
+      buyer_name: order.partners?.store_name || order.partners?.owner_name || '',
+      buyer_gstin: order.partners?.gst_number || '',
+      buyer_address: order.partners?.address || '',
+      buyer_state: order.partners?.state || 'Gujarat',
+      hsn_code: '7113',
+    })
+  }, [order])
   const [mfgPartners, setMfgPartners] = useState<ManufacturingPartnerLite[]>([])
   const [consumptionTxn, setConsumptionTxn] = useState<any | null>(null)
   // Task #76: live diamond inventory keyed by `${material_type}|${shape_id}|${size_id}`
@@ -380,10 +421,13 @@ export default function OrderDetailPage() {
   const [diamondStock, setDiamondStock] = useState<Record<string, { pieces: number; carats: number; min_pieces: number }>>({})
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
+  const [weightCalcMethod, setWeightCalcMethod] = useState<'manual' | 'cad'>('manual')
   const [saving, setSaving] = useState(false)
   const [advancing, setAdvancing] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [form, setForm] = useState<any>({})
+  const [latestGoldRate, setLatestGoldRate] = useState(0)
+  const [latestSilverRate, setLatestSilverRate] = useState(80)
   const [guardError, setGuardError] = useState<string | null>(null)
   // Surfaced when the admin tries to move an order into `production` and the
   // assigned manufacturer is short on the gold/diamond float needed for it.
@@ -453,20 +497,78 @@ export default function OrderDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing, overrideLabour, assignmentChanged, editPartnerRate, editGrossWeight])
 
+  // Initialize weight calculation method when editing order
+  useEffect(() => {
+    if (editing && order) {
+      setWeightCalcMethod(order.gross_volume ? 'cad' : 'manual')
+    }
+  }, [editing, order])
+
+  // Dynamic CAD volume calculations in edit mode
+  useEffect(() => {
+    if (!editing || weightCalcMethod !== 'cad') return
+
+    const gV = parseFloat(form.gross_volume) || 0
+    const hV = parseFloat(form.hollow_volume) || 0
+    const gcV = parseFloat(form.gallery_cut_volume) || 0
+
+    const sV = getStoneSeatVolume(form.diamond_specs || order?.diamond_specs || [])
+    const nV = getNetVolume(gV, sV, hV, gcV)
+
+    const karat = form.gold_karat
+    const tone = form.metal_tone || 'yellow'
+    const density = getAlloyDensity(karat, tone)
+
+    const castingWeight = nV * density
+
+    setForm(prev => {
+      const weightStr = castingWeight > 0 ? castingWeight.toFixed(4) : ''
+      return prev.gold_weight_estimated === weightStr ? prev : { ...prev, gold_weight_estimated: weightStr }
+    })
+  }, [editing, weightCalcMethod, form.gross_volume, form.hollow_volume, form.gallery_cut_volume, form.gold_karat, form.metal_tone, form.diamond_specs, order])
+
+  // Size scaling logic under manual mode in Edit Form
+  useEffect(() => {
+    if (!editing || weightCalcMethod !== 'manual') return
+    if (order?.type !== 'catalog' || !order?.product_id) return
+
+    const product = order.products
+    if (!product || !product.gold_weight_g) return
+
+    const baseWeight = product.gold_weight_g
+    const category = product.category || ''
+
+    if (!form.ring_size) {
+      setForm(prev => prev.gold_weight_estimated === String(baseWeight) ? prev : { ...prev, gold_weight_estimated: String(baseWeight) })
+      return
+    }
+
+    const scaled = scaleWeightBySize(baseWeight, '', form.ring_size, category)
+    const scaledStr = scaled > 0 ? scaled.toFixed(4) : String(baseWeight)
+    setForm(prev => prev.gold_weight_estimated === scaledStr ? prev : { ...prev, gold_weight_estimated: scaledStr })
+  }, [editing, form.ring_size, weightCalcMethod, order])
+
   async function load() {
     setLoading(true)
-    const [{ data }, { data: mp }] = await Promise.all([
+    const [{ data }, { data: mp }, { data: gr }, { data: sd }] = await Promise.all([
       supabase
         .from('orders')
-        .select('*, partners(store_name, owner_name, phone, city), products(code, name, gold_weight_g, gold_karat, diamond_weight, diamond_type, diamond_specs)')
+        .select('*, partners(store_name, owner_name, phone, city, state, address, gst_number), products(code, name, category, gold_weight_g, gold_karat, diamond_weight, diamond_type, diamond_specs, metal_type)')
         .eq('id', id)
         .single(),
       supabase.from('manufacturing_partners').select('id, name, city, min_labour_grams, labour_rate_9k, labour_rate_10k, labour_rate_14k, labour_rate_18k, labour_rate_22k').order('name'),
+      supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
+      supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b'])
     ])
     if (!data) { router.push('/orders'); return }
     setOrder(data)
     setForm(data)
     setMfgPartners((mp || []) as ManufacturingPartnerLite[])
+    if (gr?.[0]) setLatestGoldRate(gr[0].rate_24k)
+    if (sd) {
+      const rate = sd.find(s => s.key === 'silver_rate_b2b')?.value
+      if (rate) setLatestSilverRate(Number(rate))
+    }
 
     // Payments ledger for this order (Task #69). The migration table may not
     // be present in older environments — fall through silently if so.
@@ -516,10 +618,191 @@ export default function OrderDetailPage() {
       console.warn('[diamond stock] fetch failed', e)
     }
 
+    try {
+      const { data: invs } = await supabase
+        .from('gst_invoices')
+        .select('*')
+        .eq('order_id', id)
+        .order('created_at', { ascending: false })
+      setInvoices(invs || [])
+    } catch (e) {
+      console.warn('Failed to load order invoices', e)
+    }
+
     setLoading(false)
   }
 
   function set(k: string, v: any) { setForm((prev: any) => ({ ...prev, [k]: v })) }
+
+  async function handleGenerateInvoice() {
+    setGeneratingInvoice(true)
+    setInvoiceError('')
+    try {
+      const qty = Number(order.quantity) || 1
+      const totalAmount = Number(order.total_amount) || 0
+
+      // Compute components
+      const goldWeight = Number(order.gold_weight_actual) || Number(order.gold_weight_estimated) || Number(order.products?.gold_weight_g) || 0
+      const goldKarat = Number(order.gold_karat) || Number(order.products?.gold_karat) || 18
+      const isSilver = order.metal_type === 'silver' || String(order.gold_karat).toLowerCase() === 'silver' || order.products?.metal_type === 'silver'
+      const goldRate24k = Number(order.gold_rate_at_order) || 0
+      const karatFactor = isSilver ? 1 : (KARAT_FACTORS[goldKarat] || 0.75)
+      
+      const goldCost = goldWeight * goldRate24k * karatFactor
+      const diamondCost = Number(order.stone_cost) || 0
+      
+      const labourPerG = Number(order.retail_labour_at_order) || 0
+      const grossW = Number(order.gross_weight_at_karat ?? order.gold_weight_actual ?? order.gold_weight_estimated ?? order.products?.gold_weight_g) || 0
+      const labourCost = labourPerG > 0 ? (labourPerG * grossW) : (Number(order.making_charges) || 0)
+      
+      const cadCost = Number(order.cad_cost) || 0
+      
+      const totalCogs = goldCost + diamondCost + labourCost + cadCost
+      
+      const items: any[] = []
+
+      if (totalCogs > 0) {
+        const markup = totalAmount / totalCogs
+        
+        let goldAmt = Math.round(goldCost * markup * 100) / 100
+        let diamondAmt = Math.round(diamondCost * markup * 100) / 100
+        let labourAmt = Math.round(labourCost * markup * 100) / 100
+        let cadAmt = Math.round(cadCost * markup * 100) / 100
+        
+        // Adjust to match totalAmount exactly
+        const diff = totalAmount - (goldAmt + diamondAmt + labourAmt + cadAmt)
+        if (Math.abs(diff) > 0.001) {
+          if (goldAmt > 0) goldAmt = Math.round((goldAmt + diff) * 100) / 100
+          else if (labourAmt > 0) labourAmt = Math.round((labourAmt + diff) * 100) / 100
+          else if (diamondAmt > 0) diamondAmt = Math.round((diamondAmt + diff) * 100) / 100
+          else if (cadAmt > 0) cadAmt = Math.round((cadAmt + diff) * 100) / 100
+        }
+
+        if (goldWeight > 0 && goldAmt > 0) {
+          items.push({
+            description: isSilver ? 'Silver (Metal)' : `Gold ${goldKarat}K (Metal)`,
+            hsn_code: invoiceForm.hsn_code || '7113',
+            qty: goldWeight,
+            rate: goldWeight > 0 ? goldAmt / goldWeight : 0,
+            amount: goldAmt,
+            unit: 'grams'
+          })
+        }
+
+        const diamondWeight = Number(order.products?.diamond_weight) || 0
+        if (diamondWeight > 0 && diamondAmt > 0) {
+          items.push({
+            description: 'Diamonds',
+            hsn_code: '7102',
+            qty: diamondWeight * qty,
+            rate: diamondWeight * qty > 0 ? diamondAmt / (diamondWeight * qty) : 0,
+            amount: diamondAmt,
+            unit: 'carats'
+          })
+        } else if (diamondAmt > 0) {
+          items.push({
+            description: 'Diamonds / Stones',
+            hsn_code: '7102',
+            qty: 1,
+            rate: diamondAmt,
+            amount: diamondAmt,
+            unit: 'pcs'
+          })
+        }
+
+        if (labourAmt > 0) {
+          const qtyLabour = grossW || goldWeight || 1
+          items.push({
+            description: 'Labour / Making Charges',
+            hsn_code: '9988',
+            qty: qtyLabour,
+            rate: qtyLabour > 0 ? labourAmt / qtyLabour : 0,
+            amount: labourAmt,
+            unit: 'grams'
+          })
+        }
+
+        if (cadAmt > 0) {
+          items.push({
+            description: 'CAD Design Charges',
+            hsn_code: '9988',
+            qty: 1,
+            rate: cadAmt,
+            amount: cadAmt,
+            unit: 'pcs'
+          })
+        }
+      }
+
+      if (items.length === 0) {
+        const rate = totalAmount / qty
+        items.push({
+          description: order.products ? `${order.products.name} (${order.products.code})` : 'Custom Jewellery Design',
+          hsn_code: invoiceForm.hsn_code || '7113',
+          qty,
+          rate,
+          amount: totalAmount,
+          unit: 'pcs'
+        })
+      }
+
+      const r = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoice_type: 'order',
+          target_id: id,
+          tax_treatment: invoiceForm.tax_treatment,
+          items,
+          buyer_details: {
+            buyer_name: invoiceForm.buyer_name,
+            buyer_address: invoiceForm.buyer_address || null,
+            buyer_gstin: invoiceForm.buyer_gstin || null,
+            buyer_state: invoiceForm.buyer_state,
+            partner_id: order.partner_id,
+          },
+          invoice_date: invoiceForm.invoice_date,
+        })
+      })
+
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || 'Failed to generate invoice')
+
+      setGenerateInvoiceOpen(false)
+      await load()
+    } catch (e: any) {
+      setInvoiceError(e.message)
+    } finally {
+      setGeneratingInvoice(false)
+    }
+  }
+
+  async function handleCancelInvoice() {
+    if (!cancelReason.trim()) {
+      setCancelError('Please enter a cancellation reason.')
+      return
+    }
+
+    setCancelling(true)
+    setCancelError('')
+    try {
+      const r = await fetch(`/api/invoices/${cancelTarget.id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: cancelReason })
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || 'Failed to cancel invoice')
+      
+      setCancelTarget(null)
+      setCancelReason('')
+      await load()
+    } catch (e: any) {
+      setCancelError(e.message)
+    } finally {
+      setCancelling(false)
+    }
+  }
 
   const currentStageIdx = ORDER_STATUSES.findIndex(s => s.value === order?.status)
   const nextStage = currentStageIdx < ORDER_STATUSES.length - 1 ? ORDER_STATUSES[currentStageIdx + 1] : null
@@ -561,11 +844,12 @@ export default function OrderDetailPage() {
 
     const qty = parseInt(order.quantity) || 1
     const goldKarat = order.gold_karat || order.products?.gold_karat || 18
+    const isSilverOrder = order.metal_type === 'silver' || String(goldKarat).toLowerCase() === 'silver'
     // Task 78: floats are denominated in 24kt-net only. The order's gold_weight
     // is gross-at-karat — convert to its 24kt-pure equivalent for the readiness
     // check and the deposit shortcut amount.
-    const goldType = 'gold_24k'
-    const karatFactor = KARAT_FACTORS[Number(goldKarat)] ?? 1
+    const goldType = isSilverOrder ? 'silver' : 'gold_24k'
+    const karatFactor = isSilverOrder ? 1 : (KARAT_FACTORS[Number(goldKarat)] ?? 1)
     const goldPerPieceGross = parseFloat(order.gold_weight_estimated) || parseFloat(order.products?.gold_weight_g) || 0
     const goldNeeded = Math.round(goldPerPieceGross * qty * karatFactor * 10000) / 10000
 
@@ -721,17 +1005,28 @@ export default function OrderDetailPage() {
     // snapshot (`making_charges`) so unrelated edits on old in-flight
     // orders don't silently reprice them with today's rate.
     const savePartner = mfgPartners.find(p => p.id === form.assigned_manufacturer_id)
-    const saveKarat = parseInt(form.gold_karat) || 18
+    const isSilverOrder = String(form.gold_karat).toLowerCase() === 'silver'
+    const wasSilverOrder = order.metal_type === 'silver' || String(order.gold_karat).toLowerCase() === 'silver'
+    const metalTypeChanged = isSilverOrder !== wasSilverOrder
+    const karatChanged = String(form.gold_karat || '') !== String(order.gold_karat || '')
+
+    let saveGoldRate = order.gold_rate_at_order
+    if (metalTypeChanged || (karatChanged && !isSilverOrder)) {
+      saveGoldRate = isSilverOrder ? latestSilverRate : latestGoldRate
+    }
+
+    const saveKarat = isSilverOrder ? null : (parseInt(form.gold_karat) || 18)
     const useLivePartnerRate = assignmentChanged && !overrideLabour
-    const saveLabourPerG = useLivePartnerRate ? partnerLabourRate(savePartner, saveKarat) : 0
+    const saveLabourPerG = (useLivePartnerRate && saveKarat) ? partnerLabourRate(savePartner, saveKarat) : 0
     const saveGrossW = Math.max(
       parseFloat(form.gold_weight_actual) || parseFloat(form.gold_weight_estimated) || 0,
       Number(savePartner?.min_labour_grams) || 1,
     )
     const cogs = computeOrderCogs({
       gold_weight_actual: parseFloat(form.gold_weight_actual) || 0,
-      gold_rate_at_order: order.gold_rate_at_order,
+      gold_rate_at_order: saveGoldRate,
       gold_karat: saveKarat,
+      metal_type: isSilverOrder ? 'silver' : 'gold',
       labour_per_gram: saveLabourPerG,
       gross_weight: saveGrossW,
       min_labour_grams: Number(savePartner?.min_labour_grams) || 1,
@@ -741,7 +1036,7 @@ export default function OrderDetailPage() {
       total_amount: parseFloat(form.total_amount) || 0,
     })
 
-    const { error } = await supabase.from('orders').update({
+    const updatePayload: any = {
       status: form.status,
       quantity: parseInt(form.quantity) || 1,
       ring_size: form.ring_size || null,
@@ -756,7 +1051,9 @@ export default function OrderDetailPage() {
       courier: form.courier || null,
       // COGS / gold ledger
       gold_source: form.gold_source || 'self',
-      gold_karat: parseInt(form.gold_karat) || null,
+      gold_rate_at_order: saveGoldRate,
+      metal_type: isSilverOrder ? 'silver' : 'gold',
+      gold_karat: saveKarat,
       gold_weight_estimated: parseFloat(form.gold_weight_estimated) || null,
       gold_weight_actual: parseFloat(form.gold_weight_actual) || null,
       making_charges: parseFloat(form.making_charges) || null,
@@ -765,7 +1062,36 @@ export default function OrderDetailPage() {
       assigned_manufacturer_id: form.assigned_manufacturer_id || null,
       total_cogs: Math.round(cogs.total_cogs) || null,
       margin: Math.round(cogs.margin) || null,
-    }).eq('id', id)
+      // CAD gold weight pipeline fields
+      gross_volume: weightCalcMethod === 'cad' ? (parseFloat(form.gross_volume) || null) : null,
+      stone_seat_volume: weightCalcMethod === 'cad' ? (getStoneSeatVolume(form.diamond_specs || order?.diamond_specs || []) || null) : null,
+      hollow_volume: weightCalcMethod === 'cad' ? (parseFloat(form.hollow_volume) || null) : null,
+      gallery_cut_volume: weightCalcMethod === 'cad' ? (parseFloat(form.gallery_cut_volume) || null) : null,
+      net_volume: weightCalcMethod === 'cad' ? (getNetVolume(
+        parseFloat(form.gross_volume) || 0,
+        getStoneSeatVolume(form.diamond_specs || order?.diamond_specs || []),
+        parseFloat(form.hollow_volume) || 0,
+        parseFloat(form.gallery_cut_volume) || 0
+      ) || null) : null,
+      alloy_density_used: weightCalcMethod === 'cad' ? (getAlloyDensity(form.gold_karat, form.metal_tone || 'yellow') || null) : null,
+      casting_weight_g: weightCalcMethod === 'cad' ? (parseFloat(form.gold_weight_estimated) || null) : null,
+      final_weight_g: weightCalcMethod === 'cad' ? ((parseFloat(form.gold_weight_estimated) || 0) * FINISH_FACTOR || null) : null,
+      metal_tone: weightCalcMethod === 'cad' ? (form.metal_tone || 'yellow') : null,
+    }
+
+    let { error } = await supabase.from('orders').update(updatePayload).eq('id', id)
+
+    // Gracefully handle missing columns in database
+    if (error && (error as any).code === '42703') {
+      const retryPayload = { ...updatePayload }
+      const cadCols = [
+        'gross_volume', 'stone_seat_volume', 'hollow_volume', 'gallery_cut_volume',
+        'net_volume', 'alloy_density_used', 'casting_weight_g', 'final_weight_g', 'metal_tone'
+      ]
+      cadCols.forEach(col => delete retryPayload[col])
+      const retryRes = await supabase.from('orders').update(retryPayload).eq('id', id)
+      error = retryRes.error
+    }
     if (error) { setSaving(false); alert('Error: ' + error.message); return }
 
     if (form.status !== order.status && (form.status === 'cancelled' || form.status === 'returned')) {
@@ -809,6 +1135,7 @@ export default function OrderDetailPage() {
     gold_weight_actual: order.gold_weight_actual,
     gold_rate_at_order: order.gold_rate_at_order,
     gold_karat: order.gold_karat,
+    metal_type: order.metal_type,
     making_charges: order.making_charges,
     cad_cost: order.cad_cost,
     stone_cost: order.stone_cost,
@@ -817,8 +1144,9 @@ export default function OrderDetailPage() {
 
   // Build link for "Record gold consumption for this order"
   // Task 78: float consumption is always logged against the 24kt-net bucket.
+  const isSilver = order.metal_type === 'silver' || String(order.gold_karat).toLowerCase() === 'silver'
   const consumptionHref = order.assigned_manufacturer_id
-    ? `/manufacturing/partners/${order.assigned_manufacturer_id}/float?order_id=${id}&type=consumption&material_type=gold_24k`
+    ? `/manufacturing/partners/${order.assigned_manufacturer_id}/float?order_id=${id}&type=consumption&material_type=${isSilver ? 'silver' : 'gold_24k'}`
     : null
 
   return (
@@ -1157,11 +1485,11 @@ export default function OrderDetailPage() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 text-sm">
               {[
-                ['Gold source', (order.gold_source || 'self') === 'self' ? 'Self (our float)' : 'Manufacturer'],
+                [isSilver ? 'Metal source' : 'Gold source', (order.gold_source || 'self') === 'self' ? (isSilver ? 'Self (our float)' : 'Self (our float)') : 'Karigar'],
                 ['Assigned manufacturer', mfgPartners.find(m => m.id === order.assigned_manufacturer_id)?.name || '—'],
-                ['Karat', order.gold_karat ? `${order.gold_karat}K` : '—'],
-                ['Gold wt — estimated', order.gold_weight_estimated ? `${order.gold_weight_estimated}g` : '—'],
-                ['Gold wt — actual', order.gold_weight_actual ? `${order.gold_weight_actual}g` : '—'],
+                [isSilver ? 'Metal' : 'Karat', isSilver ? 'Silver' : (order.gold_karat ? `${order.gold_karat}K` : '—')],
+                [isSilver ? 'Silver wt — estimated' : 'Gold wt — estimated', order.gold_weight_estimated ? `${order.gold_weight_estimated}g` : '—'],
+                [isSilver ? 'Silver wt — actual' : 'Gold wt — actual', order.gold_weight_actual ? `${order.gold_weight_actual}g` : '—'],
                 ['Making charges', order.making_charges ? `₹${Number(order.making_charges).toLocaleString('en-IN')}` : '—'],
                 ['CAD cost', order.cad_cost ? `₹${Number(order.cad_cost).toLocaleString('en-IN')}` : '—'],
                 ['Stone cost', order.stone_cost ? `₹${Number(order.stone_cost).toLocaleString('en-IN')}` : '—'],
@@ -1173,11 +1501,44 @@ export default function OrderDetailPage() {
               ))}
             </div>
 
+            {order.gross_volume && (
+              <div className="mt-4 pt-4 border-t border-stone-200">
+                <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">CAD Density Breakdown</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 text-sm">
+                  {[
+                    ['Metal Tone', order.metal_tone || '—'],
+                    ['Gross Volume', order.gross_volume ? `${order.gross_volume} cm³` : '—'],
+                    ['Stone Seat Volume', order.stone_seat_volume ? `${Number(order.stone_seat_volume).toFixed(4)} cm³` : '—'],
+                    ['Hollow Volume', order.hollow_volume ? `${order.hollow_volume} cm³` : '—'],
+                    ['Gallery Cut Volume', order.gallery_cut_volume ? `${order.gallery_cut_volume} cm³` : '—'],
+                    ['Net Metal Volume', order.net_volume ? `${Number(order.net_volume).toFixed(4)} cm³` : '—'],
+                    ['Alloy Density Used', order.alloy_density_used ? `${order.alloy_density_used} g/cm³` : '—'],
+                    ['Casting Weight (Gross)', order.casting_weight_g ? `${order.casting_weight_g}g` : '—'],
+                    ['Expected Final Weight', order.final_weight_g ? `${Number(order.final_weight_g).toFixed(4)}g` : '—'],
+                  ].map(([k, v]) => (
+                    <div key={String(k)}>
+                      <p className="text-xs text-stone-400">{k}</p>
+                      <p className="text-stone-800 mt-0.5 capitalize">{String(v)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {(order.gold_weight_actual || order.making_charges) && (
               <div className="mt-4 bg-stone-50 rounded-lg p-3 text-sm space-y-1">
                 <div className="flex justify-between text-stone-500">
-                  <span>Gold cost ({order.gold_weight_actual || 0}g × ₹{order.gold_rate_at_order || 0}/g × purity)</span>
-                  <span>₹{Math.round(savedCogs.gold_cost).toLocaleString('en-IN')}</span>
+                  {isSilver ? (
+                    <>
+                      <span>Silver cost ({order.gold_weight_actual || 0}g × ₹{order.gold_rate_at_order || 0}/g)</span>
+                      <span>₹{Math.round((parseFloat(order.gold_weight_actual) || 0) * (order.gold_rate_at_order || 0)).toLocaleString('en-IN')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Gold cost ({order.gold_weight_actual || 0}g × ₹{order.gold_rate_at_order || 0}/g × purity)</span>
+                      <span>₹{Math.round(savedCogs.gold_cost).toLocaleString('en-IN')}</span>
+                    </>
+                  )}
                 </div>
                 <div className="flex justify-between font-semibold text-stone-900 border-t border-stone-200 pt-1">
                   <span>Total COGS</span>
@@ -1289,6 +1650,56 @@ export default function OrderDetailPage() {
             )}
           </div>
 
+          {(currentStageIdx >= ORDER_STATUSES.findIndex(s => s.value === 'dispatched' || invoices.length > 0)) && (
+            <div className="bg-white rounded-xl border border-stone-200 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-medium text-stone-900 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#1E3A5F]" /> GST Tax Invoices
+                </h2>
+                {isMaster && !invoices.some(inv => inv.status === 'active') && !isCancelled && (
+                  <button onClick={() => setGenerateInvoiceOpen(true)}
+                    className="flex items-center gap-1 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Generate Invoice
+                  </button>
+                )}
+              </div>
+              
+              {invoices.length === 0 ? (
+                <p className="text-xs text-stone-400 italic">No tax invoices generated for this order yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {invoices.map((inv) => (
+                    <div key={inv.id} className={`flex items-center justify-between border rounded-lg p-3 ${inv.status === 'cancelled' ? 'bg-stone-50 border-stone-100 opacity-60' : 'bg-white border-stone-200'}`}>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-stone-900">{inv.invoice_number}</p>
+                          {inv.status === 'cancelled' && (
+                            <span className="text-[9px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">VOID</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          Date: {formatDate(inv.invoice_date)} · Total: ₹{Number(inv.grand_total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <a href={`/api/invoices/${inv.id}/pdf`} target="_blank" rel="noreferrer"
+                          className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 bg-white rounded-lg transition-colors flex items-center gap-1 text-xs">
+                          <Download className="w-3.5 h-3.5" /> PDF
+                        </a>
+                        {inv.status === 'active' && isMaster && (
+                          <button onClick={() => setCancelTarget(inv)}
+                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 bg-white rounded-lg transition-colors flex items-center gap-1 text-xs">
+                            <Trash2 className="w-3.5 h-3.5" /> Void
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {(currentStageIdx >= ORDER_STATUSES.findIndex(s => s.value === 'dispatched')) && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
@@ -1380,6 +1791,20 @@ export default function OrderDetailPage() {
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-4">Costing &amp; gold</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="col-span-1 sm:col-span-2 mb-2">
+                <label className={lbl}>Weight Calculation Method</label>
+                <div className="flex gap-6 mt-1">
+                  <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
+                    <input type="radio" name="weightCalcMethodEdit" value="manual" checked={weightCalcMethod === 'manual'} onChange={() => setWeightCalcMethod('manual')} className="text-[#1E3A5F] focus:ring-[#1E3A5F]" />
+                    <span>Manual / Sizing Scale</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
+                    <input type="radio" name="weightCalcMethodEdit" value="cad" checked={weightCalcMethod === 'cad'} onChange={() => setWeightCalcMethod('cad')} className="text-[#1E3A5F] focus:ring-[#1E3A5F]" />
+                    <span>CAD Alloy-Density Engine</span>
+                  </label>
+                </div>
+              </div>
+
               <div>
                 <label className={lbl}>Gold source</label>
                 <select className={inp} value={form.gold_source || 'self'} onChange={e => set('gold_source', e.target.value)}>
@@ -1395,21 +1820,102 @@ export default function OrderDetailPage() {
                 </select>
               </div>
               <div>
-                <label className={lbl}>Gold karat</label>
+                <label className={lbl}>{String(form.gold_karat).toLowerCase() === 'silver' ? 'Metal' : 'Gold karat'}</label>
                 <select className={inp} value={form.gold_karat || '18'} onChange={e => set('gold_karat', e.target.value)}>
                   {[9,10,14,18,22,24].map(k => <option key={k} value={k}>{k}K</option>)}
+                  <option value="silver">Silver</option>
                 </select>
               </div>
               <div>
-                <label className={lbl}>Gold weight estimated (g)</label>
-                <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
+                <label className={lbl}>{String(form.gold_karat).toLowerCase() === 'silver' ? 'Silver weight estimated (g)' : 'Gold weight estimated (g)'}</label>
+                <input type="number" inputMode="decimal" step="0.0001" min="0"
+                  className={inp + (weightCalcMethod === 'cad' ? ' bg-stone-50 cursor-not-allowed' : '')}
+                  readOnly={weightCalcMethod === 'cad'}
                   value={form.gold_weight_estimated || ''} onChange={e => set('gold_weight_estimated', e.target.value)} />
               </div>
               <div>
-                <label className={lbl}>Gold weight actual (g)</label>
+                <label className={lbl}>{String(form.gold_karat).toLowerCase() === 'silver' ? 'Silver weight actual (g)' : 'Gold weight actual (g)'}</label>
                 <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
                   value={form.gold_weight_actual || ''} onChange={e => set('gold_weight_actual', e.target.value)} />
               </div>
+
+              {weightCalcMethod === 'cad' && (
+                <>
+                  <div>
+                    <label className={lbl}>Metal Tone</label>
+                    <select className={inp} value={form.metal_tone || 'yellow'} onChange={e => set('metal_tone', e.target.value)}>
+                      <option value="yellow">Yellow Gold</option>
+                      <option value="rose">Rose Gold</option>
+                      <option value="white">White Gold</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={lbl}>CAD Gross Volume (cm³)</label>
+                    <input type="number" inputMode="decimal" step="0.001" min="0" className={inp}
+                      value={form.gross_volume || ''}
+                      onChange={e => set('gross_volume', e.target.value)}
+                      placeholder="e.g. 0.50" />
+                  </div>
+                  <div>
+                    <label className={lbl}>Hollow Volume (cm³)</label>
+                    <input type="number" inputMode="decimal" step="0.001" min="0" className={inp}
+                      value={form.hollow_volume || ''}
+                      onChange={e => set('hollow_volume', e.target.value)}
+                      placeholder="e.g. 0.05" />
+                  </div>
+                  <div>
+                    <label className={lbl}>Gallery Cut Volume (cm³)</label>
+                    <input type="number" inputMode="decimal" step="0.001" min="0" className={inp}
+                      value={form.gallery_cut_volume || ''}
+                      onChange={e => set('gallery_cut_volume', e.target.value)}
+                      placeholder="e.g. 0.02" />
+                  </div>
+
+                  <div className="col-span-1 sm:col-span-2 bg-stone-50 rounded-xl p-4 border border-stone-200 text-xs space-y-2 mt-2">
+                    <p className="font-semibold text-stone-700 text-sm mb-2">CAD Density Engine Breakdown</p>
+                    <div className="grid grid-cols-2 gap-2 text-stone-600">
+                      <div>CAD Gross Volume:</div>
+                      <div className="font-medium text-right text-stone-900">{parseFloat(form.gross_volume) || 0} cm³</div>
+
+                      <div>(-) Stone Seat Deduction:</div>
+                      <div className="font-medium text-right text-stone-900">
+                        {getStoneSeatVolume(form.diamond_specs || order?.diamond_specs || []).toFixed(4)} cm³
+                      </div>
+
+                      <div>(-) Hollow Volume:</div>
+                      <div className="font-medium text-right text-stone-900">{parseFloat(form.hollow_volume) || 0} cm³</div>
+
+                      <div>(-) Gallery Cut Volume:</div>
+                      <div className="font-medium text-right text-stone-900">{parseFloat(form.gallery_cut_volume) || 0} cm³</div>
+
+                      <div className="border-t border-stone-200 pt-1 font-semibold">Net Metal Volume:</div>
+                      <div className="border-t border-stone-200 pt-1 font-semibold text-right text-stone-900">
+                        {getNetVolume(
+                          parseFloat(form.gross_volume) || 0,
+                          getStoneSeatVolume(form.diamond_specs || order?.diamond_specs || []),
+                          parseFloat(form.hollow_volume) || 0,
+                          parseFloat(form.gallery_cut_volume) || 0
+                        ).toFixed(4)} cm³
+                      </div>
+
+                      <div>Alloy Density ({form.gold_karat === 'silver' ? 'Silver' : `${form.gold_karat}K` + ' ' + (form.metal_tone || 'yellow')}):</div>
+                      <div className="font-medium text-right text-stone-900">
+                        {getAlloyDensity(form.gold_karat, form.metal_tone || 'yellow').toFixed(2)} g/cm³
+                      </div>
+
+                      <div className="border-t border-stone-200 pt-1 font-semibold text-[#1E3A5F]">Casting Weight (Estimated Gross):</div>
+                      <div className="border-t border-stone-200 pt-1 font-semibold text-right text-[#1E3A5F]">
+                        {parseFloat(form.gold_weight_estimated) ? `${parseFloat(form.gold_weight_estimated).toFixed(4)}g` : '—'}
+                      </div>
+
+                      <div className="font-semibold text-emerald-700">Expected Final Weight (Finished · 81.7%):</div>
+                      <div className="font-semibold text-right text-emerald-700">
+                        {parseFloat(form.gold_weight_estimated) ? `${(parseFloat(form.gold_weight_estimated) * FINISH_FACTOR).toFixed(4)}g` : '—'}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
               <div>
                 <div className="flex items-center justify-between">
                   <label className={lbl}>Making charges (₹)</label>
@@ -1452,6 +1958,174 @@ export default function OrderDetailPage() {
             <p className="text-xs text-stone-400 mt-3">
               COGS = (gold weight × rate × karat purity) + labour (auto-filled from karigar's per-karat rate) + CAD + stone. Margin recalculated against total amount.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Generate Invoice Modal */}
+      {generateInvoiceOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl border border-stone-200 p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div>
+              <h3 className="font-semibold text-stone-900 text-lg flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#1E3A5F]" />
+                Generate GST Tax Invoice
+              </h3>
+              <p className="text-xs text-stone-500 mt-1">
+                Confirm tax details for this order. Generating an invoice freezes transaction numbers for accounting audit.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={lbl}>Invoice Date</label>
+                <input type="date" className={inp} value={invoiceForm.invoice_date}
+                  onChange={e => setInvoiceForm((p: any) => ({ ...p, invoice_date: e.target.value }))} />
+              </div>
+              <div>
+                <label className={lbl}>HSN Code</label>
+                <input type="text" className={inp} value={invoiceForm.hsn_code}
+                  onChange={e => setInvoiceForm((p: any) => ({ ...p, hsn_code: e.target.value }))} placeholder="7113" />
+              </div>
+              <div className="col-span-2">
+                <label className={lbl}>Tax Treatment</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-sm text-stone-700">
+                    <input type="radio" checked={invoiceForm.tax_treatment === 'inclusive'}
+                      onChange={() => setInvoiceForm((p: any) => ({ ...p, tax_treatment: 'inclusive' }))} />
+                    <span>Tax Inclusive</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-stone-700">
+                    <input type="radio" checked={invoiceForm.tax_treatment === 'exclusive'}
+                      onChange={() => setInvoiceForm((p: any) => ({ ...p, tax_treatment: 'exclusive' }))} />
+                    <span>Tax Exclusive</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-stone-100 pt-4 space-y-3">
+              <h4 className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Buyer (Recipient) Details</h4>
+              <div>
+                <label className={lbl}>Buyer Name</label>
+                <input type="text" className={inp} value={invoiceForm.buyer_name}
+                  onChange={e => setInvoiceForm((p: any) => ({ ...p, buyer_name: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={lbl}>GSTIN (Optional)</label>
+                  <input type="text" className={inp} value={invoiceForm.buyer_gstin}
+                    onChange={e => setInvoiceForm((p: any) => ({ ...p, buyer_gstin: e.target.value }))} placeholder="e.g. 24ABCDE1234F1Z5" />
+                </div>
+                <div>
+                  <label className={lbl}>Buyer State</label>
+                  <input type="text" className={inp} value={invoiceForm.buyer_state}
+                    onChange={e => setInvoiceForm((p: any) => ({ ...p, buyer_state: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <label className={lbl}>Billing Address</label>
+                <textarea className={`${inp} resize-none`} rows={2} value={invoiceForm.buyer_address}
+                  onChange={e => setInvoiceForm((p: any) => ({ ...p, buyer_address: e.target.value }))} />
+              </div>
+            </div>
+
+            {/* Calculations Preview */}
+            {(() => {
+              const standardRate = 3.0
+              const isSameState = invoiceForm.buyer_state?.toLowerCase().trim() === 'gujarat'
+              const totalAmount = Number(order?.total_amount) || 0
+              
+              let subtotalAmount = totalAmount
+              let totalTax = 0
+              let grandTotal = totalAmount
+
+              if (invoiceForm.tax_treatment === 'inclusive') {
+                grandTotal = totalAmount
+                subtotalAmount = totalAmount / (1 + standardRate / 100)
+                totalTax = grandTotal - subtotalAmount
+              } else {
+                subtotalAmount = totalAmount
+                totalTax = subtotalAmount * (standardRate / 100)
+                grandTotal = subtotalAmount + totalTax
+              }
+
+              subtotalAmount = Math.round(subtotalAmount * 100) / 100
+              totalTax = Math.round(totalTax * 100) / 100
+              grandTotal = Math.round(grandTotal * 100) / 100
+
+              const taxLabel = isSameState
+                ? `CGST (1.5%) + SGST (1.5%)`
+                : `IGST (3.0%)`
+
+              return (
+                <div className="bg-stone-50 rounded-xl p-3 border border-stone-200 text-xs space-y-1">
+                  <div className="flex justify-between text-stone-500">
+                    <span>Taxable Subtotal:</span>
+                    <span>₹{subtotalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between text-stone-500">
+                    <span>{taxLabel}:</span>
+                    <span>₹{totalTax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-stone-900 border-t border-stone-200 pt-1 text-sm">
+                    <span>Grand Total:</span>
+                    <span className="text-[#1E3A5F]">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {invoiceError && <p className="text-xs text-red-600 font-medium">{invoiceError}</p>}
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setGenerateInvoiceOpen(false)}
+                className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50">
+                Cancel
+              </button>
+              <button onClick={handleGenerateInvoice} disabled={generatingInvoice}
+                className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-[#162B47] disabled:opacity-50">
+                {generatingInvoice ? 'Generating...' : 'Confirm & Generate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Invoice Modal */}
+      {cancelTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl border border-stone-200 p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-stone-900">Cancel Tax Invoice?</h3>
+                <p className="text-sm text-stone-500 mt-1">
+                  You are about to cancel invoice <strong>{cancelTarget.invoice_number}</strong>. This action will keep the record in the database for accounting audits but mark it as voided.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-stone-500 mb-1">Reason for cancellation *</label>
+              <textarea className={`${inp} resize-none`} rows={3} placeholder="e.g. Return of items, clerical typo, order modified"
+                value={cancelReason} onChange={e => setCancelReason(e.target.value)} />
+            </div>
+
+            {cancelError && <p className="text-xs text-red-600 font-medium">{cancelError}</p>}
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => { setCancelTarget(null); setCancelReason(''); setCancelError('') }}
+                className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm hover:bg-stone-50">
+                Back
+              </button>
+              <button onClick={handleCancelInvoice} disabled={cancelling}
+                className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-red-600 disabled:opacity-50">
+                {cancelling ? 'Cancelling...' : 'Confirm Cancel'}
+              </button>
+            </div>
           </div>
         </div>
       )}

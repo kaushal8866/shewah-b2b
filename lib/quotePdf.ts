@@ -242,8 +242,9 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
           // Header row for sub-table
           doc.strokeColor('#E2E8F0').lineWidth(0.5).moveTo(56, tableY).lineTo(rightMarginX - 8, tableY).stroke()
           
+          const isSilver = String(item.karat).toLowerCase() === 'silver'
           doc.fillColor(lightText).font('Helvetica-Bold').fontSize(7)
-          doc.text('GOLD SPEC', 56, tableY + 4)
+          doc.text(isSilver ? 'SILVER SPEC' : 'GOLD SPEC', 56, tableY + 4)
           doc.text('LABOUR', 160, tableY + 4)
           doc.text('DIAMONDS & GEMS', 240, tableY + 4)
           doc.text('CHARGES', 380, tableY + 4)
@@ -253,12 +254,16 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
           // Data row
           doc.fillColor(textColor).font('Helvetica').fontSize(8)
           
-          // Gold Column
+          // Metal Column (Gold/Silver)
           let goldText = `Gross: ${item.gross_gold_weight_g.toFixed(3)}g`
-          if (quote.show_24kt_column) {
-            goldText += `\nNet 24kt: ${item.net_24kt_weight_g.toFixed(3)}g`
+          if (isSilver) {
+            goldText += `\nRate: Rs.${item.gold_rate_24k.toLocaleString('en-IN')}/g`
+          } else {
+            if (quote.show_24kt_column) {
+              goldText += `\nNet 24kt: ${item.net_24kt_weight_g.toFixed(3)}g`
+            }
+            goldText += `\nRate 24kt: Rs.${item.gold_rate_24k.toLocaleString('en-IN')}/g`
           }
-          goldText += `\nRate 24kt: Rs.${item.gold_rate_24k.toLocaleString('en-IN')}/g`
           doc.text(goldText, 56, tableY + 18, { lineGap: 2 })
 
           // Labour Column

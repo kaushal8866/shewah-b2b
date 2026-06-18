@@ -26,6 +26,7 @@ export type MaterialType =
 
 export type MovementType =
   | 'purchase' | 'issue' | 'return_in' | 'adjustment_in' | 'adjustment_out'
+  | 'sale' | 'partner_return'
 
 export type StockBalance = {
   material_type: MaterialType
@@ -371,3 +372,94 @@ export async function recordAdjustment(input: CommonInput & {
   if (r.error) throw r.error
   return r.data
 }
+
+export type PartnerTradeInput = {
+  partner_id: string
+  trade_type: 'sale' | 'return'
+  material_type: 'diamond_lgd' | 'diamond_natural'
+  diamond_shape_id: string
+  diamond_size_id: string
+  carats: number
+  pieces: number
+  rate_per_carat: number
+  reference?: string | null
+  notes?: string | null
+  trade_date?: string | null
+  created_by?: string | null
+  allow_negative_central?: boolean
+}
+
+export async function recordPartnerTrade(input: PartnerTradeInput) {
+  if (input.carats <= 0) throw new Error('Carats must be positive')
+  if (input.pieces <= 0 || !Number.isInteger(input.pieces)) {
+    throw new Error('Pieces must be a positive whole number')
+  }
+  if (input.rate_per_carat < 0) throw new Error('Rate per carat cannot be negative')
+
+  const unit = 'carats'
+  const isSale = input.trade_type === 'sale'
+  const movementType = isSale ? 'sale' : 'partner_return'
+
+  if (isSale && !input.allow_negative_central) {
+    const groups = await getDiamondStockByGroup()
+    const g = groups.find(x =>
+      x.material_type === input.material_type &&
+      x.diamond_shape_id === input.diamond_shape_id &&
+      x.diamond_size_id === input.diamond_size_id,
+    )
+    const onHandCt = g?.carats || 0
+    const onHandPcs = g?.pieces || 0
+    if (onHandPcs < input.pieces || onHandCt < input.carats) {
+      throw new Error(
+        `Not enough diamonds on hand — ${onHandCt} ct / ${onHandPcs} pcs available, ` +
+        `requested ${input.carats} ct / ${input.pieces} pcs. ` +
+        `Check inventory or allow negative central stock.`
+      )
+    }
+  }
+
+  const sm = await supabaseAdmin.from('stock_movements').insert([{
+    movement_type: movementType,
+    material_type: input.material_type,
+    unit,
+    quantity: input.carats,
+    pieces: input.pieces,
+    partner_id: input.partner_id,
+    reference: input.reference || null,
+    notes: input.notes || null,
+    movement_date: input.trade_date || new Date().toISOString().split('T')[0],
+    created_by: input.created_by || null,
+    diamond_shape_id: input.diamond_shape_id,
+    diamond_size_id: input.diamond_size_id,
+  }]).select('*').single()
+
+  if (sm.error) throw sm.error
+  const stockMovementId = sm.data.id
+
+  const totalAmount = Math.round(input.carats * input.rate_per_carat * 100) / 100
+
+  const pt = await supabaseAdmin.from('partner_diamond_trades').insert([{
+    partner_id: input.partner_id,
+    trade_type: input.trade_type,
+    trade_date: input.trade_date || new Date().toISOString().split('T')[0],
+    material_type: input.material_type,
+    diamond_shape_id: input.diamond_shape_id,
+    diamond_size_id: input.diamond_size_id,
+    carats: input.carats,
+    pieces: input.pieces,
+    rate_per_carat: input.rate_per_carat,
+    total_amount: totalAmount,
+    paid_amount: 0,
+    payment_status: 'unpaid',
+    notes: input.notes || null,
+    stock_movement_id: stockMovementId,
+  }]).select('*').single()
+
+  if (pt.error) {
+    await supabaseAdmin.from('stock_movements').delete().eq('id', stockMovementId)
+    throw pt.error
+  }
+
+  return pt.data
+}
+

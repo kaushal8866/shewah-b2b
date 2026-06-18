@@ -250,11 +250,68 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
                       </div>
                     )}
                     <div className="flex-1 min-w-0 text-xs">
-                      <p className="font-semibold text-stone-800 truncate">{item.name}</p>
-                      <p className="text-stone-400 mt-0.5">
-                        Karat: {item.karat} · Qty: {item.quantity} {item.ring_size ? `· Size: ${item.ring_size}` : ''}
-                      </p>
-                      <p className="text-stone-500 mt-1 font-medium">₹ {item.line_total.toLocaleString('en-IN')}</p>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-stone-800 truncate">{item.name}</p>
+                          <p className="text-stone-400 mt-0.5">
+                            Karat: {item.karat} · Qty: {item.quantity} {item.ring_size ? `· Size: ${item.ring_size}` : ''}
+                          </p>
+                        </div>
+                        <p className="text-stone-800 font-medium whitespace-nowrap">₹ {item.line_total.toLocaleString('en-IN')}</p>
+                      </div>
+
+                      {/* Detailed Price Breakdown */}
+                      {quote.show_breakup && (
+                        <div className="mt-2.5 pt-2 border-t border-stone-100/60 space-y-2">
+                          {/* Gold Breakdown */}
+                          <div className="flex justify-between items-start text-[10px]">
+                            <div className="text-stone-500">
+                              <span className="font-medium text-stone-600">Gold</span> ({item.gross_gold_weight_g}g @ ₹ {item.gold_rate_24k?.toLocaleString('en-IN')}/g)
+                            </div>
+                          </div>
+
+                          {/* Labour Breakdown */}
+                          {item.labour_total > 0 && (
+                            <div className="flex justify-between items-start text-[10px]">
+                              <div className="text-stone-500">
+                                <span className="font-medium text-stone-600">Labour</span> ({item.labour_rate_per_g ? `₹ ${item.labour_rate_per_g.toLocaleString('en-IN')}/g` : 'Fixed'})
+                              </div>
+                              <span className="text-stone-600">₹ {item.labour_total.toLocaleString('en-IN')}</span>
+                            </div>
+                          )}
+
+                          {/* Diamonds Breakdown */}
+                          {item.diamonds && item.diamonds.length > 0 && (
+                            <div className="space-y-1">
+                              {item.diamonds.map((d: any, dIdx: number) => {
+                                const shapeName = d.shape_name || d.shape_label || d.role || 'Diamond';
+                                const weightText = d.approx_carats ? `${d.approx_carats}ct` : '';
+                                const dRate = d.rate_per_pc ? `@ ₹ ${Number(d.rate_per_pc).toLocaleString('en-IN')}/pc` : '';
+                                const dTotal = (d.rate_per_pc && d.pieces) ? (d.rate_per_pc * d.pieces) : 0;
+                                return (
+                                  <div key={dIdx} className="flex justify-between items-start text-[10px]">
+                                    <div className="text-stone-500">
+                                      <span className="font-medium text-stone-600">{shapeName}</span> ({d.pieces} pcs {weightText} {dRate})
+                                    </div>
+                                    {dTotal > 0 && <span className="text-stone-600">₹ {dTotal.toLocaleString('en-IN')}</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Making / Hallmarking / Other Charges */}
+                          {(item.making_charges > 0 || item.hallmarking > 0 || item.other_charges > 0) && (
+                            <div className="flex justify-between items-start text-[10px]">
+                              <div className="text-stone-500 space-x-2">
+                                {item.making_charges > 0 && <span><span className="font-medium text-stone-600">Making:</span> ₹ {item.making_charges.toLocaleString('en-IN')}</span>}
+                                {item.hallmarking > 0 && <span><span className="font-medium text-stone-600">Hallmark:</span> ₹ {item.hallmarking.toLocaleString('en-IN')}</span>}
+                                {item.other_charges > 0 && <span><span className="font-medium text-stone-600">{item.other_charges_label || 'Other'}:</span> ₹ {item.other_charges.toLocaleString('en-IN')}</span>}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

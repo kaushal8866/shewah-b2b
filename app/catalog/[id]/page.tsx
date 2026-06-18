@@ -58,6 +58,8 @@ export default function CatalogProductEditPage() {
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [loading, setLoading] = useState(true)
   const [pricedAt, setPricedAt] = useState<{ rate: number | null; at: string | null }>({ rate: null, at: null })
+  const [silverRateB2B, setSilverRateB2B] = useState(80)
+  const [silverRateD2C, setSilverRateD2C] = useState(120)
   // Pre-#81 products may have non-null gross_weight / making_charges in the
   // database. We never expose those inputs on this form anymore, but we hold
   // the originally-loaded values here so save() can pass them through
@@ -65,6 +67,7 @@ export default function CatalogProductEditPage() {
   const [legacy, setLegacy] = useState<{ gross_weight: number | null; making_charges: number | null }>({ gross_weight: null, making_charges: null })
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'ring',
+    metal_type: 'gold',
     gold_weight_22k: '',
     gross_weight: '',
     making_charges: '2500', igi_cert_cost: '1500',
@@ -78,7 +81,8 @@ export default function CatalogProductEditPage() {
         .select('rate_24k, retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
         .order('recorded_at', { ascending: false }).limit(1),
       supabase.from('products').select('*').eq('id', id).single(),
-    ]).then(([{ data: gr }, { data }]: any) => {
+      supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c'])
+    ]).then(([{ data: gr }, { data }, { data: sd }]: any) => {
       const r = gr?.[0]
       if (r) {
         setGoldRate(Number(r.rate_24k) || 0)
@@ -89,6 +93,12 @@ export default function CatalogProductEditPage() {
           10: Number(r.retail_labour_10k) || 0,
           9:  Number(r.retail_labour_9k)  || 0,
         })
+      }
+      if (sd) {
+        const b2b = sd.find((s: any) => s.key === 'silver_rate_b2b')?.value
+        const d2c = sd.find((s: any) => s.key === 'silver_rate_d2c')?.value
+        if (b2b) setSilverRateB2B(Number(b2b))
+        if (d2c) setSilverRateD2C(Number(d2c))
       }
       if (data) {
         setPricedAt({
@@ -107,6 +117,7 @@ export default function CatalogProductEditPage() {
           name: data.name || '',
           description: data.description || '',
           category: data.category || 'ring',
+          metal_type: data.metal_type || 'gold',
           gold_weight_22k: w22 ? String(w22) : '',
           gross_weight: data.gross_weight ? String(data.gross_weight) : '',
           making_charges: String(data.making_charges ?? '0'),
@@ -152,14 +163,34 @@ export default function CatalogProductEditPage() {
   const makingCharges = legacy.making_charges ?? 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
 
-  const pricing = computeKaratPricing({
+  const isSilver = form.metal_type === 'silver'
+  const silverB2BCost = weight22 * silverRateB2B
+  const silverD2CCost = weight22 * silverRateD2C
+  const silverB2B_cogs = silverB2BCost + totalDiamondCost + makingCharges + igiCost
+  const silverD2C_cogs = silverD2CCost + totalDiamondCost + makingCharges + igiCost
+
+  const silverTrade = Math.round(silverB2B_cogs * 1.28)
+  const silverMrp = Math.round(silverTrade * 1.40)
+
+  const pricing = isSilver ? [
+    {
+      karat: 'Silver',
+      weight: weight22,
+      goldCost: silverB2BCost,
+      labourCost: 0,
+      cogs: silverB2B_cogs,
+      trade: silverTrade,
+      mrp: silverMrp
+    }
+  ] : computeKaratPricing({
     netGoldWeight: weight22, rate24k: goldRate, retailLabour,
     diamondCost: totalDiamondCost, makingCharges, igiCost,
   })
+
   const default22 = pricing.find(p => p.karat === 22)
-  const tradePrice = default22?.trade || 0
-  const mrp = default22?.mrp || 0
-  const cogs22 = default22?.cogs || 0
+  const tradePrice = isSilver ? silverTrade : (default22?.trade || 0)
+  const mrp = isSilver ? silverMrp : (default22?.mrp || 0)
+  const cogs22 = isSilver ? silverB2B_cogs : (default22?.cogs || 0)
   const yourMargin = tradePrice - cogs22
   const jewelerMargin = mrp - tradePrice
 
@@ -233,33 +264,33 @@ export default function CatalogProductEditPage() {
 
   async function handleSave() {
     if (!form.code || !form.name) { alert('Product code and name are required'); return }
-    if (!weight22) { alert('Net gold weight is required'); return }
+    if (!weight22) { alert('Net weight is required'); return }
     setSaving(true)
     const primary = diamonds[0]
     const karat_pricing: Record<string, any> = {}
     for (const row of pricing) karat_pricing[String(row.karat)] = row
     const updatePayload: Record<string, any> = {
       code: form.code, name: form.name, description: form.description, category: form.category,
-      gold_karat: 22,
+      metal_type: form.metal_type,
+      gold_karat: isSilver ? null : 22,
       // gold_weight_22k stores the user-entered net gold weight (24kt
       // consumption). The other per-karat columns store the 24kt-pure
       // billed mass at that karat = net × KARAT_FACTORS[k].
       gold_weight_g: weight22 || null,
-      gold_weight_22k: weight22 || null,
-      gold_weight_18k: weights[18] || null,
-      gold_weight_14k: weights[14] || null,
-      gold_weight_10k: weights[10] || null,
-      gold_weight_9k:  weights[9]  || null,
-      // gross_weight + making_charges are pass-through from the original
+      gold_weight_22k: isSilver ? null : (weight22 || null),
+      gold_weight_18k: isSilver ? null : (weights[18] || null),
+      gold_weight_14k: isSilver ? null : (weights[14] || null),
+      gold_weight_10k: isSilver ? null : (weights[10] || null),
+      gold_weight_9k:  isSilver ? null : (weights[9]  || null),
+      // making_charges is pass-through from the original
       // load — this form no longer exposes them, but we don't want to
       // clobber legacy values either.
-      gross_weight: legacy.gross_weight,
       karat_pricing,
       making_charges: legacy.making_charges, igi_cert_cost: igiCost,
       trade_price: tradePrice, mrp_suggested: mrp,
       // Stamp the gold rate the prices were computed at so the catalog can
       // show "Last priced at ₹X on <date>" (Task #72).
-      priced_at_rate: goldRate || null,
+      priced_at_rate: isSilver ? null : (goldRate || null),
       priced_at: new Date().toISOString(),
       delivery_days: parseInt(form.delivery_days) || 14,
       models_available: form.models_available, photo_urls: photoUrls,
@@ -274,7 +305,7 @@ export default function CatalogProductEditPage() {
         size_id: d.size_id || null,
         size_label: d.size_label || null,
       })),
-      detailed_pricing: { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
+      detailed_pricing: isSilver ? { karat_pricing, silver_rate_b2b_used: silverRateB2B, silver_rate_d2c_used: silverRateD2C } : { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
     }
     let { error } = await supabase.from('products').update(updatePayload).eq('id', id)
     if (error && /priced_at|column .* does not exist/i.test(error.message || '')) {
@@ -314,10 +345,18 @@ export default function CatalogProductEditPage() {
       <div className="space-y-4">
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
           <h2 className="font-medium text-stone-900 mb-4">Basic information</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div><label className={lbl}>Product code *</label><input className={inp} value={form.code} onChange={e => set('code', e.target.value.toUpperCase())} /></div>
             <div><label className={lbl}>Product name *</label><input className={inp} value={form.name} onChange={e => set('name', e.target.value)} /></div>
-            <div className="sm:col-span-2"><label className={lbl}>Description</label><textarea className={`${inp} resize-none`} rows={2} value={form.description} onChange={e => set('description', e.target.value)} /></div>
+            <div>
+              <label className={lbl}>Category *</label>
+              <select className={inp} value={form.category} onChange={e => set('category', e.target.value)}>
+                {['Ring', 'Earring', 'Pendant', 'Bangles', 'Necklace', 'Bracelet', 'Other'].map(c => (
+                  <option key={c} value={c.toLowerCase()}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3"><label className={lbl}>Description</label><textarea className={`${inp} resize-none`} rows={2} value={form.description} onChange={e => set('description', e.target.value)} /></div>
           </div>
         </div>
 
@@ -453,21 +492,30 @@ export default function CatalogProductEditPage() {
           </div>
         </div>
 
-        {/* GOLD */}
+        {/* METAL SPECIFICATIONS */}
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
-          <h2 className="font-medium text-stone-900 mb-1">Gold specifications</h2>
+          <h2 className="font-medium text-stone-900 mb-1">Metal specifications</h2>
           <p className="text-xs text-stone-400 mb-4">
-            Net gold weight is the 24kt consumption for this piece. Per-karat 24kt-pure billed mass = net × that karat's purity factor.
+            Configure the metal type and net weight specifications.
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className={lbl}>Net gold weight (24kt consumption) (g) *</label>
+              <label className={lbl}>Metal Type *</label>
+              <select className={inp} value={form.metal_type} onChange={e => set('metal_type', e.target.value)}>
+                <option value="gold">Gold</option>
+                <option value="silver">Silver</option>
+              </select>
+            </div>
+            <div>
+              <label className={lbl}>
+                {isSilver ? 'Net silver weight (g) *' : 'Net gold weight (24kt consumption) (g) *'}
+              </label>
               <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
                 value={form.gold_weight_22k} onChange={e => set('gold_weight_22k', e.target.value)} />
             </div>
             <div><label className={lbl}>IGI cert cost (₹)</label><input type="number" inputMode="decimal" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} /></div>
           </div>
-          {weight22 > 0 && (
+          {!isSilver && weight22 > 0 && (
             <div className="mt-4 rounded-xl border border-stone-100 overflow-hidden">
               <div className="bg-stone-50 px-3 py-2 text-xs font-medium text-stone-500 uppercase tracking-wide">24kt-pure content per karat</div>
               <div className="grid grid-cols-5 divide-x divide-stone-100 text-center">
@@ -487,14 +535,14 @@ export default function CatalogProductEditPage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-medium text-stone-900 flex items-center gap-2">
               <Calculator className="w-4 h-4 text-[#1E3A5F]" />
-              Per-karat pricing
+              {isSilver ? 'Silver pricing' : 'Per-karat pricing'}
             </h2>
             <div>
               <label className={lbl + ' inline-block mr-2'}>Delivery (days)</label>
               <input type="number" inputMode="decimal" className={`${inp} inline-block w-20`} value={form.delivery_days} onChange={e => set('delivery_days', e.target.value)} />
             </div>
           </div>
-          {goldRate === 0 && (
+          {!isSilver && goldRate === 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 mb-3">
               No gold rate. <Link href="/gold-rates" className="underline">Set today's rate &amp; retail labour</Link> to see prices.
             </div>
@@ -502,42 +550,78 @@ export default function CatalogProductEditPage() {
           <div className="overflow-x-auto rounded-xl border border-stone-100">
             <table className="w-full text-sm">
               <thead className="bg-stone-50 text-xs text-stone-500 uppercase tracking-wide">
-                <tr>
-                  <th className="px-3 py-2 text-left">Karat</th>
-                  <th className="px-3 py-2 text-right">24kt-pure (g)</th>
-                  <th className="px-3 py-2 text-right">Gold ₹</th>
-                  <th className="px-3 py-2 text-right">Labour ₹</th>
-                  <th className="px-3 py-2 text-right">COGS ₹</th>
-                  <th className="px-3 py-2 text-right">Trade ₹</th>
-                  <th className="px-3 py-2 text-right">MRP ₹</th>
-                </tr>
+                {isSilver ? (
+                  <tr>
+                    <th className="px-3 py-2 text-left">Metal</th>
+                    <th className="px-3 py-2 text-right">Weight (g)</th>
+                    <th className="px-3 py-2 text-right">B2B Rate ₹/g</th>
+                    <th className="px-3 py-2 text-right">D2C Rate ₹/g</th>
+                    <th className="px-3 py-2 text-right">COGS (B2B) ₹</th>
+                    <th className="px-3 py-2 text-right">Trade ₹</th>
+                    <th className="px-3 py-2 text-right">MRP ₹</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th className="px-3 py-2 text-left">Karat</th>
+                    <th className="px-3 py-2 text-right">24kt-pure (g)</th>
+                    <th className="px-3 py-2 text-right">Gold ₹</th>
+                    <th className="px-3 py-2 text-right">Labour ₹</th>
+                    <th className="px-3 py-2 text-right">COGS ₹</th>
+                    <th className="px-3 py-2 text-right">Trade ₹</th>
+                    <th className="px-3 py-2 text-right">MRP ₹</th>
+                  </tr>
+                )}
               </thead>
               <tbody>
-                {pricing.map(row => (
-                  <tr key={row.karat} className={`border-t border-stone-100 ${row.karat === 22 ? 'bg-yellow-50' : ''}`}>
-                    <td className="px-3 py-2 font-medium text-stone-700">{row.karat}kt {row.karat === 22 && <span className="text-[10px] text-yellow-700 ml-1">default</span>}</td>
-                    <td className="px-3 py-2 text-right text-stone-600">{row.weight.toFixed(4)}</td>
-                    <td className="px-3 py-2 text-right text-stone-600">{row.goldCost.toLocaleString('en-IN')}</td>
-                    <td className="px-3 py-2 text-right text-stone-600">
-                      {row.labourCost.toLocaleString('en-IN')}
-                      {(retailLabour[row.karat] || 0) === 0 && <span className="text-[10px] text-amber-600 ml-1">(no rate)</span>}
-                    </td>
-                    <td className="px-3 py-2 text-right text-stone-700">{row.cogs.toLocaleString('en-IN')}</td>
-                    <td className="px-3 py-2 text-right font-semibold text-[#1E3A5F]">{row.trade.toLocaleString('en-IN')}</td>
-                    <td className="px-3 py-2 text-right font-medium text-stone-800">{row.mrp.toLocaleString('en-IN')}</td>
+                {isSilver ? (
+                  <tr className="border-t border-stone-100 bg-yellow-50/40">
+                    <td className="px-3 py-2 font-medium text-stone-700">Silver</td>
+                    <td className="px-3 py-2 text-right text-stone-600">{weight22.toFixed(3)}</td>
+                    <td className="px-3 py-2 text-right text-stone-600">₹{silverRateB2B}</td>
+                    <td className="px-3 py-2 text-right text-stone-600">₹{silverRateD2C}</td>
+                    <td className="px-3 py-2 text-right text-stone-750">₹{silverB2B_cogs.toLocaleString('en-IN')}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-[#1E3A5F]">₹{silverTrade.toLocaleString('en-IN')}</td>
+                    <td className="px-3 py-2 text-right font-medium text-stone-800">₹{silverMrp.toLocaleString('en-IN')}</td>
                   </tr>
-                ))}
+                ) : (
+                  pricing.map(row => (
+                    <tr key={row.karat} className={`border-t border-stone-100 ${row.karat === 22 ? 'bg-yellow-50' : ''}`}>
+                      <td className="px-3 py-2 font-medium text-stone-700">{row.karat}kt {row.karat === 22 && <span className="text-[10px] text-yellow-700 ml-1">default</span>}</td>
+                      <td className="px-3 py-2 text-right text-stone-600">{row.weight.toFixed(4)}</td>
+                      <td className="px-3 py-2 text-right text-stone-600">{row.goldCost.toLocaleString('en-IN')}</td>
+                      <td className="px-3 py-2 text-right text-stone-600">
+                        {row.labourCost.toLocaleString('en-IN')}
+                        {(retailLabour[row.karat] || 0) === 0 && <span className="text-[10px] text-amber-600 ml-1">(no rate)</span>}
+                      </td>
+                      <td className="px-3 py-2 text-right text-stone-700">{row.cogs.toLocaleString('en-IN')}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-[#1E3A5F]">{row.trade.toLocaleString('en-IN')}</td>
+                      <td className="px-3 py-2 text-right font-medium text-stone-800">{row.mrp.toLocaleString('en-IN')}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
           <button onClick={() => setShowBreakdown(!showBreakdown)}
             className="w-full flex items-center justify-between text-sm text-stone-500 hover:text-stone-700 py-2 mt-3 border-t border-stone-100">
-            <span className="font-medium">22kt margin analysis</span>
+            <span className="font-medium">{isSilver ? 'Silver breakdown & margin analysis' : '22kt breakdown & margin analysis'}</span>
             {showBreakdown ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
-          {showBreakdown && default22 && (
+          {showBreakdown && (isSilver || default22) && (
             <div className="mt-3 rounded-xl border border-stone-100 px-4 py-3 space-y-2 bg-stone-50">
-              <div className="flex justify-between text-sm"><span className="text-stone-500">Trade price (22K)</span><span className="font-medium">₹{tradePrice.toLocaleString('en-IN')}</span></div>
+              {isSilver ? (
+                <>
+                  <div className="flex justify-between text-sm"><span className="text-stone-500">Silver B2B Metal ({weight22.toFixed(3)}g @ ₹{silverRateB2B}/g)</span><span className="text-stone-700">₹{silverB2BCost.toLocaleString('en-IN')}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-stone-500">Diamonds (all rows)</span><span className="text-stone-700">₹{totalDiamondCost.toLocaleString('en-IN')}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-stone-500">Making / Labour charges</span><span className="text-stone-700">₹{makingCharges.toLocaleString('en-IN')}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-stone-500">IGI certification</span><span className="text-stone-700">₹{igiCost.toLocaleString('en-IN')}</span></div>
+                  <div className="flex justify-between text-sm font-semibold text-stone-800 pt-2 border-t border-stone-200"><span>Total B2B COGS</span><span>₹{silverB2B_cogs.toLocaleString('en-IN')}</span></div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between text-sm"><span className="text-stone-500">Trade price (22K)</span><span className="font-medium">₹{tradePrice.toLocaleString('en-IN')}</span></div>
+                </>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-stone-500">Your margin</span>
                 <span className={`font-medium ${yourMargin >= 0 ? 'text-green-600' : 'text-red-500'}`}>

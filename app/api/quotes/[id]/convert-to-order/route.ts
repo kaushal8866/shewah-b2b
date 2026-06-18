@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 // POST /api/quotes/[id]/convert-to-order
 // Returns pre-filled order creation payloads for each item in the quote.
 export async function POST(
-  _: Request,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions)
@@ -18,6 +18,7 @@ export async function POST(
   }
 
   const id = params.id
+
 
   // 1. Fetch quote
   const { data: quote, error: quoteError } = await supabaseAdmin
@@ -47,9 +48,13 @@ export async function POST(
 
   // 3. Map items to order creation payloads
   const payloads = items.map((item: any) => {
-    let karatNum = 18
+    let goldKarat = '18'
     if (item.karat) {
-      karatNum = parseInt(String(item.karat).replace(/[^\d]/g, ''), 10) || 18
+      if (String(item.karat).toLowerCase().includes('silver')) {
+        goldKarat = 'silver'
+      } else {
+        goldKarat = String(parseInt(String(item.karat).replace(/[^\d]/g, ''), 10) || 18)
+      }
     }
 
     const itemDiamonds = Array.isArray(item.diamonds) ? item.diamonds : []
@@ -58,17 +63,21 @@ export async function POST(
       shape_id: d.shape_id || '',
       size_id: d.size_id || '',
       role: d.role || 'center',
-      weight: d.approx_carats || '',
+      weight: String(d.approx_carats != null ? d.approx_carats : (d.weight || '')),
       pieces: String(d.pieces || 1),
-      quality: d.quality_id || 'VS',
-      color: d.color_id || 'F-G',
+      quality: d.quality_id || d.quality || 'VS2',
+      color: d.color_id || d.color || 'F',
       type: d.type || 'lgd',
-      cost: String(d.rate_per_pc || 0),
+      cost: String(d.rate_per_pc != null ? d.rate_per_pc : (d.cost || 0)),
+      shape: (d.shape_name || d.shape || 'round').toLowerCase(),
+      size_label: d.size_label || '',
     }))
 
     // Calculate sum of diamond costs
     const stoneCost = itemDiamonds.reduce((sum: number, d: any) => {
-      return sum + (Number(d.pieces) || 0) * (Number(d.rate_per_pc) || 0)
+      const pcs = Number(d.pieces) || 0
+      const rate = Number(d.rate_per_pc != null ? d.rate_per_pc : d.cost) || 0
+      return sum + (pcs * rate)
     }, 0)
 
     return {
@@ -80,11 +89,14 @@ export async function POST(
       quantity: String(item.quantity || 1),
       ring_size: item.ring_size || '',
       special_notes: quote.reference_no
-        ? `Converted from Quote ${quote.quote_number}. Ref Ref: ${quote.reference_no}`
+        ? `Converted from Quote ${quote.quote_number}. Ref: ${quote.reference_no}`
         : `Converted from Quote ${quote.quote_number}`,
-      gold_karat: String(karatNum),
+      gold_karat: goldKarat,
       gold_weight_estimated: String(item.gross_gold_weight_g || 0),
-      making_charges: String(item.making_charges || 0),
+      making_charges: String(
+        (Number(item.making_charges) || 0) * (Number(item.quantity) || 1) +
+        (Number(item.labour_total) || 0)
+      ),
       cad_cost: '0',
       stone_cost: String(stoneCost),
       trade_price: String(item.line_trade || 0),
@@ -96,8 +108,55 @@ export async function POST(
       diamonds: mappedDiamonds,
       quote_id: quote.id,
       quote_item_id: item.id,
+      assigned_manufacturer_id: item.labour_partner_id || '',
+      metal_type: String(item.karat).toLowerCase().includes('silver') ? 'silver' : 'gold',
     }
   })
 
   return NextResponse.json({ quote, items: payloads })
 }
+
+// PATCH /api/quotes/[id]/convert-to-order
+// Links a newly created order back to the quote and updates its status.
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
+  if (!session || (role !== 'master' && role !== 'sub')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  }
+
+  const id = params.id
+  let body: any
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const { order_id } = body
+  if (!order_id) {
+    return NextResponse.json({ error: 'order_id is required' }, { status: 400 })
+  }
+
+  // Update the quote to link the order and mark it as converted
+  const { data: updatedQuote, error: updateError } = await supabaseAdmin
+    .from('quotes')
+    .update({
+      converted_order_id: order_id,
+      status: 'converted_to_order',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select('*')
+    .single()
+
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true, quote: updatedQuote })
+}
+

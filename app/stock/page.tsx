@@ -104,6 +104,10 @@ export default function StockPage() {
           <p className="text-stone-500 text-sm mt-0.5">Live central inventory — every gram in or out</p>
         </div>
         <div className="flex gap-2">
+          <Link href="/stock/partner-trades"
+            className="flex items-center gap-1.5 border border-[#1E3A5F] text-[#1E3A5F] px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
+            <Diamond className="w-4 h-4" /> Partner Trades
+          </Link>
           <Link href="/stock/movements"
             className="flex items-center gap-1.5 border border-stone-200 bg-white text-stone-700 px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
             <ClipboardList className="w-4 h-4" /> History

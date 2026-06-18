@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase, Product, computeOrderCogs, recomputeCatalogPrices } from '@/lib/supabase'
-import { Plus, Search, Package, Edit2, Eye, EyeOff, Library, Heart, Trash2, Copy, Check, Globe, Lock, ChevronRight, Terminal, RefreshCw } from 'lucide-react'
+import { Plus, Search, Package, Edit2, Eye, EyeOff, Library, Heart, Trash2, Copy, Check, Globe, Lock, ChevronRight, Terminal, RefreshCw, Download } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 
@@ -90,10 +90,11 @@ function ProductsTab() {
   const [search, setSearch] = useState('')
   const [karatFilter, setKaratFilter] = useState('all')
   const [shapeFilter, setShapeFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
   const [showInactive, setShowInactive] = useState(false)
   const [goldRate, setGoldRate] = useState<number | null>(null)
   const [marginFilter, setMarginFilter] = useState('all')
-  const [sortBy, setSortBy] = useState<'code' | 'margin_desc' | 'margin_asc'>('code')
+  const [sortBy, setSortBy] = useState<'code' | 'margin_desc' | 'margin_asc' | 'category_asc' | 'category_desc'>('code')
   const [deleting, setDeleting] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -168,6 +169,7 @@ function ProductsTab() {
         p.diamond_shape?.toLowerCase().includes(search.toLowerCase())
       const matchKarat = karatFilter === 'all' || String(p.gold_karat) === karatFilter
       const matchShape = shapeFilter === 'all' || p.diamond_shape === shapeFilter
+      const matchCategory = categoryFilter === 'all' || p.category?.toLowerCase() === categoryFilter.toLowerCase()
       const matchActive = showInactive || p.is_active
       let matchMargin = true
       if (marginFilter !== 'all') {
@@ -178,7 +180,7 @@ function ProductsTab() {
         else if (marginFilter === 'mid') matchMargin = pct >= 10 && pct < 25
         else if (marginFilter === 'low') matchMargin = pct < 10
       }
-      return matchSearch && matchKarat && matchShape && matchActive && matchMargin
+      return matchSearch && matchKarat && matchShape && matchCategory && matchActive && matchMargin
     })
     if (sortBy === 'margin_desc' || sortBy === 'margin_asc') {
       list.sort((a, b) => {
@@ -186,11 +188,18 @@ function ProductsTab() {
         const eb = estimateForProduct(b)?.marginPct ?? -Infinity
         return sortBy === 'margin_desc' ? eb - ea : ea - eb
       })
+    } else if (sortBy === 'category_asc' || sortBy === 'category_desc') {
+      list.sort((a, b) => {
+        const ca = a.category || ''
+        const cb = b.category || ''
+        return sortBy === 'category_asc' ? ca.localeCompare(cb) : cb.localeCompare(ca)
+      })
     }
     return list
-  }, [products, search, karatFilter, shapeFilter, showInactive, marginFilter, sortBy, goldRate])
+  }, [products, search, karatFilter, shapeFilter, categoryFilter, showInactive, marginFilter, sortBy, goldRate])
 
   const shapes = Array.from(new Set(products.map(p => p.diamond_shape).filter((s): s is string => Boolean(s))))
+  const categories = Array.from(new Set(products.map(p => p.category).filter((c): c is string => Boolean(c))))
   const stats = {
     total: products.length,
     active: products.filter(p => p.is_active).length,
@@ -208,12 +217,24 @@ function ProductsTab() {
             {goldRate ? <span className="ml-2 text-stone-400">· Margins estimated at today&apos;s 24K rate ₹{goldRate.toLocaleString('en-IN')}/g</span> : <span className="ml-2 text-amber-600">· Add today&apos;s gold rate to see margin estimates</span>}
           </p>
         </div>
-        <button onClick={handleRefreshPrices} disabled={refreshing || !goldRate}
-          title={goldRate ? 'Recompute trade price + MRP for every active product using the current 24K rate' : 'Add today\'s gold rate first'}
-          className="flex items-center gap-1.5 bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40">
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Refreshing prices…' : 'Refresh catalog prices'}
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <a href="/api/catalog/pdf?showPrice=false" download
+            className="flex items-center gap-1.5 bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 px-3 py-1.5 rounded-lg text-xs font-medium">
+            <Download className="w-3.5 h-3.5" />
+            Catalog (No Price)
+          </a>
+          <a href="/api/catalog/pdf?showPrice=true&priceType=both" download
+            className="flex items-center gap-1.5 bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 px-3 py-1.5 rounded-lg text-xs font-medium">
+            <Download className="w-3.5 h-3.5" />
+            Catalog (With Price)
+          </a>
+          <button onClick={handleRefreshPrices} disabled={refreshing || !goldRate}
+            title={goldRate ? 'Recompute trade price + MRP for every active product using the current 24K rate' : 'Add today\'s gold rate first'}
+            className="flex items-center gap-1.5 bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40">
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing prices…' : 'Refresh catalog prices'}
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 my-5">
         {[
@@ -246,6 +267,11 @@ function ProductsTab() {
           <option value="all">All shapes</option>
           {shapes.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
+          <option value="all">All categories</option>
+          {categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
+        </select>
         <select value={marginFilter} onChange={e => setMarginFilter(e.target.value)}
           className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white" disabled={!goldRate}>
           <option value="all">All margins</option>
@@ -254,10 +280,12 @@ function ProductsTab() {
           <option value="low">Low (&lt;10%)</option>
         </select>
         <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
-          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white" disabled={!goldRate}>
+          className="text-sm border border-stone-200 rounded-lg px-3 py-2 bg-white">
           <option value="code">Sort: Code</option>
-          <option value="margin_desc">Sort: Margin % (high→low)</option>
-          <option value="margin_asc">Sort: Margin % (low→high)</option>
+          <option value="category_asc">Sort: Category (A-Z)</option>
+          <option value="category_desc">Sort: Category (Z-A)</option>
+          <option value="margin_desc" disabled={!goldRate}>Sort: Margin % (high→low)</option>
+          <option value="margin_asc" disabled={!goldRate}>Sort: Margin % (low→high)</option>
         </select>
         <button onClick={() => setShowInactive(!showInactive)}
           className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${showInactive ? 'bg-stone-100 border-stone-300 text-stone-700' : 'border-stone-200 text-stone-400 hover:text-stone-600'}`}>
@@ -275,7 +303,7 @@ function ProductsTab() {
             <Link href="/catalog/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">Add first product →</Link>
           ) : (
             <button
-              onClick={() => { setSearch(''); setKaratFilter('all'); setShapeFilter('all'); setMarginFilter('all'); setShowInactive(false) }}
+              onClick={() => { setSearch(''); setKaratFilter('all'); setShapeFilter('all'); setCategoryFilter('all'); setMarginFilter('all'); setShowInactive(false) }}
               className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline"
             >Clear all filters</button>
           )}

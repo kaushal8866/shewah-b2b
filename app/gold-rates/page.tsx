@@ -17,6 +17,8 @@ export default function GoldRatesPage() {
   const [newRate24k, setNewRate24k] = useState('')
   const [rateNotes, setRateNotes] = useState('')
   const [retailLabour, setRetailLabour] = useState<Record<number, string>>({ 22: '', 18: '', 14: '', 10: '', 9: '' })
+  const [silverRateB2B, setSilverRateB2B] = useState('')
+  const [silverRateD2C, setSilverRateD2C] = useState('')
 
   // Calculator state
   const [calcDiamond, setCalcDiamond] = useState('8000')
@@ -30,12 +32,12 @@ export default function GoldRatesPage() {
 
   async function loadRates() {
     setLoading(true)
-    const { data } = await supabase
-      .from('gold_rates')
-      .select('*')
-      .order('recorded_at', { ascending: false })
-      .limit(30)
-    const all = data || []
+    const [resRates, resSettings] = await Promise.all([
+      supabase.from('gold_rates').select('*').order('recorded_at', { ascending: false }).limit(30),
+      supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c'])
+    ])
+    
+    const all = resRates.data || []
     setRates(all)
     if (all.length > 0) {
       const top = all[0]
@@ -49,6 +51,13 @@ export default function GoldRatesPage() {
         9:  top.retail_labour_9k  != null ? String(top.retail_labour_9k)  : '',
       })
     }
+
+    if (resSettings.data) {
+      const b2b = resSettings.data.find(s => s.key === 'silver_rate_b2b')?.value
+      const d2c = resSettings.data.find(s => s.key === 'silver_rate_d2c')?.value
+      if (b2b) setSilverRateB2B(b2b)
+      if (d2c) setSilverRateD2C(d2c)
+    }
     setLoading(false)
   }
 
@@ -56,6 +65,27 @@ export default function GoldRatesPage() {
     const rate = parseFloat(newRate24k)
     if (!rate || rate < 1000) { alert('Enter a valid gold rate (₹/gram)'); return }
     setSaving(true)
+
+    // Save silver rates to settings
+    const b2bVal = parseFloat(silverRateB2B)
+    const d2cVal = parseFloat(silverRateD2C)
+    if (isNaN(b2bVal) || isNaN(d2cVal) || b2bVal <= 0 || d2cVal <= 0) {
+      setSaving(false)
+      alert('Enter valid silver rates (₹/gram)')
+      return
+    }
+
+    const silverUpserts = [
+      { key: 'silver_rate_b2b', value: String(b2bVal), updated_at: new Date().toISOString() },
+      { key: 'silver_rate_d2c', value: String(d2cVal), updated_at: new Date().toISOString() }
+    ]
+    const { error: settingsErr } = await supabase.from('settings').upsert(silverUpserts, { onConflict: 'key' })
+    if (settingsErr) {
+      setSaving(false)
+      alert('Error saving silver rates: ' + settingsErr.message)
+      return
+    }
+
     const computed = calculateGoldRates(rate)
     const labourPayload: Record<string, number | null> = {}
     for (const k of SELLABLE_KARATS) {
@@ -64,7 +94,6 @@ export default function GoldRatesPage() {
     }
     const { error } = await supabase.from('gold_rates').insert([{
       ...computed,
-      // Backfill 10kt and 9kt rates from the 24kt rate so derived numbers stay consistent.
       rate_10k: Math.round(rate * KARAT_FACTORS[10]),
       rate_9k:  Math.round(rate * KARAT_FACTORS[9]),
       ...labourPayload,
@@ -72,12 +101,11 @@ export default function GoldRatesPage() {
     }])
     if (error) { setSaving(false); alert('Error: ' + error.message); return }
     setRateNotes('')
-    // Auto-refresh every active product's per-karat pricing using the new rate + labour.
     const result = await recomputeCatalogPrices(rate)
     setLastRecalc(result)
     setSaving(false)
     loadRates()
-    alert(formatRecalcResult('Rate saved.', result))
+    alert(formatRecalcResult('Rates saved successfully.', result))
   }
 
   async function recalcNow() {
@@ -121,8 +149,8 @@ export default function GoldRatesPage() {
   return (
     <div className="p-4 lg:p-7">
       <div className="mb-5 lg:mb-6">
-        <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Gold Rates</h1>
-        <p className="text-stone-500 text-sm mt-0.5">Track rates and calculate trade pricing</p>
+        <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">Metal Rates</h1>
+        <p className="text-stone-500 text-sm mt-0.5">Track metal rates and calculate trade pricing</p>
       </div>
 
       {/* Current rates banner */}
@@ -166,6 +194,19 @@ export default function GoldRatesPage() {
               </div>
             ))}
           </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-4 border-t border-yellow-200/50">
+            <div className="text-center bg-white rounded-lg p-3 border border-yellow-200">
+              <p className="text-xs text-stone-400 font-medium text-amber-800">Silver B2B Rate</p>
+              <p className="text-xl font-semibold text-stone-900">₹{parseFloat(silverRateB2B || '0').toLocaleString('en-IN')}</p>
+              <p className="text-xs text-stone-400">per gram</p>
+            </div>
+            <div className="text-center bg-white rounded-lg p-3 border border-yellow-200">
+              <p className="text-xs text-stone-400 font-medium text-amber-800">Silver D2C Rate</p>
+              <p className="text-xl font-semibold text-stone-900">₹{parseFloat(silverRateD2C || '0').toLocaleString('en-IN')}</p>
+              <p className="text-xs text-stone-400">per gram</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -184,6 +225,21 @@ export default function GoldRatesPage() {
                   value={newRate24k} onChange={e => setNewRate24k(e.target.value)}
                   placeholder="e.g. 7350" />
                 <p className="text-xs text-stone-400 mt-1">Check: IBJA, MCX, or your local market</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-medium text-stone-500 mb-1">Silver B2B Rate (₹/g) *</label>
+                  <input type="number" className={input}
+                    value={silverRateB2B} onChange={e => setSilverRateB2B(e.target.value)}
+                    placeholder="e.g. 80" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-stone-500 mb-1">Silver D2C Rate (₹/g) *</label>
+                  <input type="number" className={input}
+                    value={silverRateD2C} onChange={e => setSilverRateD2C(e.target.value)}
+                    placeholder="e.g. 120" />
+                </div>
               </div>
 
               {/* Live preview */}

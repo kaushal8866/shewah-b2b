@@ -103,3 +103,22 @@ export function startsFrom(pricing: KaratPrice[]): KaratPrice | null {
   if (!pricing.length) return null
   return pricing.reduce((min, p) => (p.trade > 0 && (min === null || p.trade < min.trade) ? p : min), null as KaratPrice | null)
 }
+
+const LEGACY_GOLD_KARATS: Record<string, number> = {
+  gold_22k: KARAT_FACTORS[22],
+  gold_18k: KARAT_FACTORS[18],
+  gold_14k: KARAT_FACTORS[14],
+  gold_10k: KARAT_FACTORS[10],
+  gold_9k:  KARAT_FACTORS[9],
+}
+
+export function normalizeGoldMaterialType(mt: string): {
+  material_type: string
+  factor: number
+  wasLegacy: boolean
+} {
+  const f = LEGACY_GOLD_KARATS[mt]
+  if (f != null) return { material_type: 'gold_24k', factor: f, wasLegacy: true }
+  return { material_type: mt, factor: 1, wasLegacy: false }
+}
+

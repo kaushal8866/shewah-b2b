@@ -12,3 +12,11 @@ node_modules/
 
 # Agent local logs
 .local/
+
+# Temporary scratch folder and scripts
+scratch/
+.DS_Store
+scripts/check-db-*.js
+scripts/test-prod-pdf.js
+scripts/test-catalog-pdf.js
+scripts/test-pdf-response.out

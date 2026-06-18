@@ -30,6 +30,7 @@ export default function CollectionDetailPage() {
     id: string
     code: string
     name: string
+    category?: string
     gold_karat?: number
     gold_weight_g?: number
     making_charges?: number
@@ -57,6 +58,8 @@ export default function CollectionDetailPage() {
   const [deleting, setDeleting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [productSearch, setProductSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [productSortBy, setProductSortBy] = useState<'code' | 'category_asc' | 'category_desc'>('code')
   const [showPartnerLinks, setShowPartnerLinks] = useState(false)
   const [form, setForm] = useState({ name: '', description: '', circuit_target: '' })
 
@@ -66,7 +69,7 @@ export default function CollectionDetailPage() {
     setLoading(true)
     const [{ data: coll }, { data: prods }, { data: collProds }, { data: parts }, viewsRes, { data: g }] = await Promise.all([
       supabase.from('design_collections').select('*').eq('id', id).single(),
-      supabase.from('products').select('id, code, name, gold_karat, gold_weight_g, making_charges, diamond_cost, diamond_shape, trade_price, photo_urls, is_active').order('code'),
+      supabase.from('products').select('id, code, name, category, gold_karat, gold_weight_g, making_charges, diamond_cost, diamond_shape, trade_price, photo_urls, is_active').order('code'),
       supabase.from('design_collection_products').select('product_id').eq('collection_id', id),
       supabase.from('partners').select('id, store_name, owner_name, city, circuit, stage').order('store_name'),
       fetch(`/api/collections/${id}/views`).then(r => r.ok ? r.json() as Promise<{ partner_id: string | null }[]> : Promise.resolve([])),
@@ -171,11 +174,21 @@ export default function CollectionDetailPage() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const filteredProducts = allProducts.filter(p =>
-    !productSearch ||
-    p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    p.code.toLowerCase().includes(productSearch.toLowerCase())
-  )
+  const filteredProducts = allProducts.filter(p => {
+    const matchSearch = !productSearch ||
+      p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+      p.code.toLowerCase().includes(productSearch.toLowerCase())
+    const matchCategory = categoryFilter === 'all' || p.category?.toLowerCase() === categoryFilter.toLowerCase()
+    return matchSearch && matchCategory
+  })
+
+  if (productSortBy === 'category_asc' || productSortBy === 'category_desc') {
+    filteredProducts.sort((a, b) => {
+      const ca = a.category || ''
+      const cb = b.category || ''
+      return productSortBy === 'category_asc' ? ca.localeCompare(cb) : cb.localeCompare(ca)
+    })
+  }
 
   const selectedAvgMargin = (() => {
     if (!goldRate) return null
@@ -199,6 +212,8 @@ export default function CollectionDetailPage() {
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
   if (!collection) return null
+
+  const categories = Array.from(new Set(allProducts.map(p => p.category).filter((c): c is string => Boolean(c))))
 
   return (
     <div className="p-4 lg:p-7 max-w-4xl">
@@ -347,6 +362,19 @@ export default function CollectionDetailPage() {
                   <Save className="w-3.5 h-3.5" /> {savingProducts ? 'Saving…' : 'Save selection'}
                 </button>
               </div>
+            </div>
+            <div className="bg-stone-50 border-b border-stone-100 px-4 py-2 flex gap-2 items-center flex-wrap">
+              <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+                className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-white font-medium text-stone-600 outline-none">
+                <option value="all">All categories</option>
+                {categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
+              </select>
+              <select value={productSortBy} onChange={e => setProductSortBy(e.target.value as typeof productSortBy)}
+                className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-white font-medium text-stone-600 outline-none">
+                <option value="code">Sort: Code</option>
+                <option value="category_asc">Sort: Category (A-Z)</option>
+                <option value="category_desc">Sort: Category (Z-A)</option>
+              </select>
             </div>
 
             {filteredProducts.length === 0 ? (

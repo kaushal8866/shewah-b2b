@@ -150,13 +150,14 @@ export async function GET(
       karat: item.karat,
       gross_gold_weight_g: item.gross_gold_weight_g,
       net_24kt_weight_g: quote.show_24kt_column ? item.net_24kt_weight_g : undefined,
-      // Only include specific charges if showing breakup
       ...(quote.show_breakup ? {
         gold_rate_24k: item.gold_rate_24k,
         making_charges: item.making_charges,
         hallmarking: item.hallmarking,
         other_charges: item.other_charges,
         other_charges_label: item.other_charges_label,
+        labour_rate_per_g: item.labour_rate_per_g,
+        labour_total: item.labour_total,
         diamonds: sanitizedDiamonds,
       } : {}),
       line_trade: item.line_trade,

@@ -273,6 +273,55 @@ export default function SettingsPage() {
 
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <div className="flex items-center gap-2 mb-4">
+              <Shield className="w-4 h-4 text-[#1E3A5F]" />
+              <h2 className="font-medium text-stone-900">GST & Billing Details</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={label}>Company GSTIN</label>
+                <input className={input} value={settings.business_gstin || ''} onChange={e => set('business_gstin', e.target.value)} placeholder="24ABCDE1234F1Z5" />
+              </div>
+              <div>
+                <label className={label}>Company State</label>
+                <input className={input} value={settings.business_state || ''} onChange={e => set('business_state', e.target.value)} placeholder="Gujarat" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className={label}>Billing Address</label>
+                <input className={input} value={settings.business_billing_address || ''} onChange={e => set('business_billing_address', e.target.value)} placeholder="Billing address printed on invoice" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mt-6 mb-4">
+              <Calculator className="w-4 h-4 text-[#1E3A5F]" />
+              <h3 className="font-semibold text-stone-800 text-sm">Bank account details</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={label}>Account Name</label>
+                <input className={input} value={settings.bank_details_account_name || ''} onChange={e => set('bank_details_account_name', e.target.value)} />
+              </div>
+              <div>
+                <label className={label}>Bank Name</label>
+                <input className={input} value={settings.bank_details_bank_name || ''} onChange={e => set('bank_details_bank_name', e.target.value)} />
+              </div>
+              <div>
+                <label className={label}>Account Number</label>
+                <input className={input} value={settings.bank_details_account_no || ''} onChange={e => set('bank_details_account_no', e.target.value)} />
+              </div>
+              <div>
+                <label className={label}>IFSC Code</label>
+                <input className={input} value={settings.bank_details_ifsc || ''} onChange={e => set('bank_details_ifsc', e.target.value)} />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className={label}>Invoice Terms & Conditions</label>
+              <textarea className={`${input} resize-none`} rows={3} value={settings.invoice_terms_conditions || ''} onChange={e => set('invoice_terms_conditions', e.target.value)} placeholder="Terms & conditions printed on PDF" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-stone-200 p-5">
+            <div className="flex items-center gap-2 mb-4">
               <MessageCircle className="w-4 h-4 text-[#1E3A5F]" />
               <h2 className="font-medium text-stone-900">Marketing landing page</h2>
             </div>

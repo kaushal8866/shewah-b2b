@@ -35,10 +35,14 @@ export function safeName(s: string, fallback: string): string {
 export async function fetchImage(url: string): Promise<Buffer | null> {
   try {
     if (!isAllowedAssetUrl(url)) return null
-    const res = await fetch(url)
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(2000),
+      cache: 'no-store',
+    })
     if (!res.ok) return null
     return Buffer.from(await res.arrayBuffer())
   } catch {
     return null
   }
 }
+

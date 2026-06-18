@@ -42,17 +42,27 @@ export function computeQuoteItem(
   const quantity = Math.max(Number(input.quantity) || 1, 1)
   const grossGoldWeight = Math.max(Number(input.gross_gold_weight_g) || 0, 0)
   
-  // Extract numeric karat from string (e.g. "18K" -> 18) or use number
-  let karatNum = 18
-  if (typeof input.karat === 'number') {
-    karatNum = input.karat
-  } else if (typeof input.karat === 'string') {
-    karatNum = parseInt(input.karat.replace(/[^\d]/g, '')) || 18
-  }
+  const isSilver = String(input.karat).toLowerCase() === 'silver'
+  
+  let net24ktWeight = 0
+  let goldCostPerPc = 0
 
-  const net24ktWeight = pure24kt(grossGoldWeight, karatNum)
-  const goldRate24k = Math.max(Number(input.gold_rate_24k) || 0, 0)
-  const goldCostPerPc = Math.round(net24ktWeight * goldRate24k)
+  if (isSilver) {
+    net24ktWeight = grossGoldWeight
+    const silverRate = Math.max(Number(input.gold_rate_24k) || 0, 0)
+    goldCostPerPc = Math.round(net24ktWeight * silverRate)
+  } else {
+    // Extract numeric karat from string (e.g. "18K" -> 18) or use number
+    let karatNum = 18
+    if (typeof input.karat === 'number') {
+      karatNum = input.karat
+    } else if (typeof input.karat === 'string') {
+      karatNum = parseInt(input.karat.replace(/[^\d]/g, '')) || 18
+    }
+    net24ktWeight = pure24kt(grossGoldWeight, karatNum)
+    const goldRate24k = Math.max(Number(input.gold_rate_24k) || 0, 0)
+    goldCostPerPc = Math.round(net24ktWeight * goldRate24k)
+  }
 
   const labourRatePerG = Math.max(Number(input.labour_rate_per_g) || 0, 0)
   const labourCostPerPc = Math.round(labourRatePerG * grossGoldWeight)

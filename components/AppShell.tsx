@@ -20,6 +20,7 @@ const nav = [
   { href: '/enquiries',       icon: InboxIcon,       label: 'Enquiries',     module: 'enquiries'     },
   { href: '/quotes',          icon: FileText,        label: 'Quotes',        module: 'orders'        },
   { href: '/orders',          icon: ShoppingBag,     label: 'Orders',        module: 'orders'        },
+  { href: '/invoices',        icon: FileText,        label: 'Invoices',      module: 'orders'        },
   { href: '/order-change-requests', icon: MessageSquare, label: 'Change Requests', module: 'orders'  },
   { href: '/cad-requests',    icon: Pen,             label: 'CAD Requests',  module: 'cad_requests'  },
   { href: '/cad-partners',    icon: BookUser,        label: 'CAD Partners',  module: 'cad_partners'  },
