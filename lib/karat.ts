@@ -89,15 +89,17 @@ export function computeKaratPricing(inp: KaratPriceInputs): KaratPrice[] {
   const mrpM = inp.mrpMult ?? 1.40
   return SELLABLE_KARATS.map(k => {
     let w = 0
+    let gross = 0
     if (inp.metalWeights) {
-      const gross = getMetalWeight(inp.metalWeights, `${k}K`, 'yellow')
+      gross = getMetalWeight(inp.metalWeights, `${k}K`, 'yellow')
       w = pureGoldMass(gross, `${k}K`)
     } else {
       w = r4((inp.netGoldWeight || 0) * KARAT_FACTORS[k])
+      gross = r4(w / KARAT_FACTORS[k])
     }
     const goldCost = Math.round(w * (inp.rate24k || 0))
     const labourPerG = inp.retailLabour[k] || 0
-    const labourCost = Math.round(labourPerG * Math.max(w, 1))
+    const labourCost = Math.round(labourPerG * Math.max(gross, 1))
     const cogs = goldCost + labourCost + (inp.diamondCost || 0) + (inp.makingCharges || 0) + (inp.igiCost || 0)
     const trade = Math.round(cogs * margin)
     const mrp = Math.round(trade * mrpM)
