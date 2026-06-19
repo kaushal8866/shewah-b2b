@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
-import { KARAT_FACTORS, SELLABLE_KARATS, pureMassByKarat, computeKaratPricing } from '@/lib/karat'
+import { KARAT_FACTORS, SELLABLE_KARATS, pureMassByKarat, computeKaratPricing, getMetalWeight, pureGoldMass, computeAllMetalWeights } from '@/lib/karat'
 import { ArrowLeft, Save, Calculator, Plus, X, Upload, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import Link from 'next/link'
+import MetalWeightCalculator from '@/components/MetalWeightCalculator'
 
 type DiamondRow = {
   id: string
@@ -65,6 +66,9 @@ export default function CatalogProductEditPage() {
   // the originally-loaded values here so save() can pass them through
   // unchanged instead of clobbering them.
   const [legacy, setLegacy] = useState<{ gross_weight: number | null; making_charges: number | null }>({ gross_weight: null, making_charges: null })
+  const [metalWeights, setMetalWeights] = useState<any>({})
+  const [refKarat, setRefKarat] = useState<string>('22K')
+  const [refColor, setRefColor] = useState<string>('yellow')
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'ring',
     metal_type: 'gold',
@@ -112,6 +116,20 @@ export default function CatalogProductEditPage() {
         if (!w22 && data.gold_weight_g) {
           w22 = Number(data.gold_weight_g) || 0
         }
+        
+        const isSil = data.metal_type === 'silver'
+        const initKarat = data.ref_karat || (isSil ? 'silver_925' : '22K')
+        const initColor = data.ref_color || (isSil ? 'default' : 'yellow')
+        let initWeights = data.metal_weights || {}
+
+        if (Object.keys(initWeights).length === 0 && w22 > 0) {
+          initWeights = computeAllMetalWeights(w22, initKarat, initColor)
+        }
+
+        setRefKarat(initKarat)
+        setRefColor(initColor)
+        setMetalWeights(initWeights)
+
         setForm({
           code: data.code || '',
           name: data.name || '',
@@ -154,16 +172,15 @@ export default function CatalogProductEditPage() {
     })
   }, [id])
 
-  const weight22 = parseFloat(form.gold_weight_22k) || 0
-  const weights = pureMassByKarat(weight22)
+  const isSilver = form.metal_type === 'silver'
+  const weight22 = isSilver
+    ? (getMetalWeight(metalWeights, refKarat, 'default') || 0)
+    : (getMetalWeight(metalWeights, '22K', 'yellow') || 0)
+
   const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1), 0)
-  // Pricing uses the legacy making_charges value as-is so existing products
-  // keep their previously computed COGS/Trade/MRP. New products start at 0
-  // because making charges no longer belong on this form.
   const makingCharges = legacy.making_charges ?? 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
 
-  const isSilver = form.metal_type === 'silver'
   const silverB2BCost = weight22 * silverRateB2B
   const silverD2CCost = weight22 * silverRateD2C
   const silverB2B_cogs = silverB2BCost + totalDiamondCost + makingCharges + igiCost
@@ -185,6 +202,7 @@ export default function CatalogProductEditPage() {
   ] : computeKaratPricing({
     netGoldWeight: weight22, rate24k: goldRate, retailLabour,
     diamondCost: totalDiamondCost, makingCharges, igiCost,
+    metalWeights: metalWeights && Object.keys(metalWeights).length > 0 ? metalWeights : undefined,
   })
 
   const default22 = pricing.find(p => p.karat === 22)
@@ -273,23 +291,18 @@ export default function CatalogProductEditPage() {
       code: form.code, name: form.name, description: form.description, category: form.category,
       metal_type: form.metal_type,
       gold_karat: isSilver ? null : 22,
-      // gold_weight_22k stores the user-entered net gold weight (24kt
-      // consumption). The other per-karat columns store the 24kt-pure
-      // billed mass at that karat = net × KARAT_FACTORS[k].
       gold_weight_g: weight22 || null,
       gold_weight_22k: isSilver ? null : (weight22 || null),
-      gold_weight_18k: isSilver ? null : (weights[18] || null),
-      gold_weight_14k: isSilver ? null : (weights[14] || null),
-      gold_weight_10k: isSilver ? null : (weights[10] || null),
-      gold_weight_9k:  isSilver ? null : (weights[9]  || null),
-      // making_charges is pass-through from the original
-      // load — this form no longer exposes them, but we don't want to
-      // clobber legacy values either.
+      gold_weight_18k: isSilver ? null : (getMetalWeight(metalWeights, '18K', 'yellow') || null),
+      gold_weight_14k: isSilver ? null : (getMetalWeight(metalWeights, '14K', 'yellow') || null),
+      gold_weight_10k: isSilver ? null : (getMetalWeight(metalWeights, '10K', 'yellow') || null),
+      gold_weight_9k:  isSilver ? null : (getMetalWeight(metalWeights, '9K', 'yellow')  || null),
+      metal_weights: metalWeights,
+      ref_karat: refKarat,
+      ref_color: refColor,
       karat_pricing,
       making_charges: legacy.making_charges, igi_cert_cost: igiCost,
       trade_price: tradePrice, mrp_suggested: mrp,
-      // Stamp the gold rate the prices were computed at so the catalog can
-      // show "Last priced at ₹X on <date>" (Task #72).
       priced_at_rate: isSilver ? null : (goldRate || null),
       priced_at: new Date().toISOString(),
       delivery_days: parseInt(form.delivery_days) || 14,
@@ -308,11 +321,14 @@ export default function CatalogProductEditPage() {
       detailed_pricing: isSilver ? { karat_pricing, silver_rate_b2b_used: silverRateB2B, silver_rate_d2c_used: silverRateD2C } : { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
     }
     let { error } = await supabase.from('products').update(updatePayload).eq('id', id)
-    if (error && /priced_at|column .* does not exist/i.test(error.message || '')) {
+    if (error && /priced_at|column .* does not exist|metal_weights/i.test(error.message || '')) {
       // Migration not yet applied — drop the new columns and retry so
       // editing keeps working until the operator runs task-72 SQL.
       delete updatePayload.priced_at_rate
       delete updatePayload.priced_at
+      delete updatePayload.metal_weights
+      delete updatePayload.ref_karat
+      delete updatePayload.ref_color
       ;({ error } = await supabase.from('products').update(updatePayload).eq('id', id))
     }
     setSaving(false)
@@ -498,7 +514,7 @@ export default function CatalogProductEditPage() {
           <p className="text-xs text-stone-400 mb-4">
             Configure the metal type and net weight specifications.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className={lbl}>Metal Type *</label>
               <select className={inp} value={form.metal_type} onChange={e => set('metal_type', e.target.value)}>
@@ -507,27 +523,22 @@ export default function CatalogProductEditPage() {
               </select>
             </div>
             <div>
-              <label className={lbl}>
-                {isSilver ? 'Net silver weight (g) *' : 'Net gold weight (24kt consumption) (g) *'}
-              </label>
-              <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
-                value={form.gold_weight_22k} onChange={e => set('gold_weight_22k', e.target.value)} />
+              <label className={lbl}>IGI cert cost (₹)</label>
+              <input type="number" inputMode="decimal" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} />
             </div>
-            <div><label className={lbl}>IGI cert cost (₹)</label><input type="number" inputMode="decimal" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} /></div>
           </div>
-          {!isSilver && weight22 > 0 && (
-            <div className="mt-4 rounded-xl border border-stone-100 overflow-hidden">
-              <div className="bg-stone-50 px-3 py-2 text-xs font-medium text-stone-500 uppercase tracking-wide">24kt-pure content per karat</div>
-              <div className="grid grid-cols-5 divide-x divide-stone-100 text-center">
-                {SELLABLE_KARATS.map(k => (
-                  <div key={k} className="px-2 py-3">
-                    <p className="text-xs text-stone-400">{k}kt</p>
-                    <p className="text-sm font-semibold text-stone-800">{weights[k]?.toFixed(4)} g</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
+          <MetalWeightCalculator
+            metalType={form.metal_type as 'gold' | 'silver'}
+            initialRefKarat={refKarat}
+            initialRefColor={refColor}
+            initialWeights={metalWeights}
+            onChange={({ metalWeights: mw, refKarat: rk, refColor: rc }) => {
+              setMetalWeights(mw)
+              setRefKarat(rk)
+              setRefColor(rc)
+            }}
+          />
         </div>
 
         {/* PRICING */}

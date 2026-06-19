@@ -61,6 +61,8 @@ export async function POST(req: Request) {
     9:  Number(latest.retail_labour_9k)  || 0,
   }
 
+  const metalWeights = body.metal_weights || undefined
+
   const pricing = computeKaratPricing({
     netGoldWeight: goldWeight,
     rate24k: Number(latest.rate_24k) || 0,
@@ -68,6 +70,7 @@ export async function POST(req: Request) {
     diamondCost,
     makingCharges,
     igiCost,
+    metalWeights,
   })
   const row = pricing.find(p => p.karat === karat) || null
 

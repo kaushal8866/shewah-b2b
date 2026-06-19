@@ -594,7 +594,7 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
 
   const { data: products, error } = await supabase
     .from('products')
-    .select('id, gold_karat, gold_weight_g, gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k, diamond_cost, diamond_specs, making_charges, igi_cert_cost, trade_price, mrp_suggested, karat_pricing, metal_type')
+    .select('id, gold_karat, gold_weight_g, gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k, diamond_cost, diamond_specs, making_charges, igi_cert_cost, trade_price, mrp_suggested, karat_pricing, metal_type, metal_weights, ref_karat, ref_color')
     .eq('is_active', true)
   if (error) return { updated: 0, skipped: 0, failed: 0, error: error.message }
   if (!products) return { updated: 0, skipped: 0, failed: 0 }
@@ -637,6 +637,7 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
       diamondCost,
       makingCharges: Number(p.making_charges) || 0,
       igiCost: Number(p.igi_cert_cost) || 0,
+      metalWeights: (p as any).metal_weights || undefined,
     })
 
     // Stash full breakdown as jsonb for the retailer portal to read directly.

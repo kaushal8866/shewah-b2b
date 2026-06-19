@@ -10,7 +10,7 @@ import {
   scaleWeightBySize,
   FINISH_FACTOR
 } from '@/lib/cadWeight'
-import { KARAT_FACTORS } from '@/lib/karat'
+import { KARAT_FACTORS, SELLABLE_KARATS, pureMassByKarat, computeKaratPricing, getMetalWeight } from '@/lib/karat'
 import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare, CreditCard, Bell, Plus, Download, FileText } from 'lucide-react'
@@ -533,9 +533,23 @@ export default function OrderDetailPage() {
     if (order?.type !== 'catalog' || !order?.product_id) return
 
     const product = order.products
-    if (!product || !product.gold_weight_g) return
+    if (!product) return
 
-    const baseWeight = product.gold_weight_g
+    const isSil = product.metal_type === 'silver'
+    let baseWeight = Number(product.gold_weight_g) || 0
+    if (product.metal_weights && Object.keys(product.metal_weights).length > 0) {
+      if (isSil) {
+        const k = product.ref_karat || 'silver_925'
+        baseWeight = getMetalWeight(product.metal_weights, k, 'default') || 0
+      } else {
+        const k = form.gold_karat === 'silver' ? '22K' : `${form.gold_karat}K`
+        const c = form.gold_color || 'yellow'
+        baseWeight = getMetalWeight(product.metal_weights, k, c) || 0
+      }
+    }
+
+    if (!baseWeight) return
+
     const category = product.category || ''
 
     if (!form.ring_size) {
@@ -546,14 +560,14 @@ export default function OrderDetailPage() {
     const scaled = scaleWeightBySize(baseWeight, '', form.ring_size, category)
     const scaledStr = scaled > 0 ? scaled.toFixed(4) : String(baseWeight)
     setForm(prev => prev.gold_weight_estimated === scaledStr ? prev : { ...prev, gold_weight_estimated: scaledStr })
-  }, [editing, form.ring_size, weightCalcMethod, order])
+  }, [editing, form.ring_size, weightCalcMethod, form.gold_karat, form.gold_color, order])
 
   async function load() {
     setLoading(true)
     const [{ data }, { data: mp }, { data: gr }, { data: sd }] = await Promise.all([
       supabase
         .from('orders')
-        .select('*, partners(store_name, owner_name, phone, city, state, address, gst_number), products(code, name, category, gold_weight_g, gold_karat, diamond_weight, diamond_type, diamond_specs, metal_type)')
+        .select('*, partners(store_name, owner_name, phone, city, state, address, gst_number), products(code, name, category, gold_weight_g, gold_karat, diamond_weight, diamond_type, diamond_specs, metal_type, metal_weights, ref_karat, ref_color)')
         .eq('id', id)
         .single(),
       supabase.from('manufacturing_partners').select('id, name, city, min_labour_grams, labour_rate_9k, labour_rate_10k, labour_rate_14k, labour_rate_18k, labour_rate_22k').order('name'),
@@ -632,7 +646,15 @@ export default function OrderDetailPage() {
     setLoading(false)
   }
 
-  function set(k: string, v: any) { setForm((prev: any) => ({ ...prev, [k]: v })) }
+  function set(k: string, v: any) {
+    setForm((prev: any) => {
+      const next = { ...prev, [k]: v }
+      if (k === 'gold_color') {
+        next.metal_tone = v
+      }
+      return next
+    })
+  }
 
   async function handleGenerateInvoice() {
     setGeneratingInvoice(true)
@@ -1054,6 +1076,7 @@ export default function OrderDetailPage() {
       gold_rate_at_order: saveGoldRate,
       metal_type: isSilverOrder ? 'silver' : 'gold',
       gold_karat: saveKarat,
+      gold_color: isSilverOrder ? 'yellow' : (form.gold_color || 'yellow'),
       gold_weight_estimated: parseFloat(form.gold_weight_estimated) || null,
       gold_weight_actual: parseFloat(form.gold_weight_actual) || null,
       making_charges: parseFloat(form.making_charges) || null,
@@ -1086,7 +1109,8 @@ export default function OrderDetailPage() {
       const retryPayload = { ...updatePayload }
       const cadCols = [
         'gross_volume', 'stone_seat_volume', 'hollow_volume', 'gallery_cut_volume',
-        'net_volume', 'alloy_density_used', 'casting_weight_g', 'final_weight_g', 'metal_tone'
+        'net_volume', 'alloy_density_used', 'casting_weight_g', 'final_weight_g', 'metal_tone',
+        'gold_color'
       ]
       cadCols.forEach(col => delete retryPayload[col])
       const retryRes = await supabase.from('orders').update(retryPayload).eq('id', id)
@@ -1826,6 +1850,16 @@ export default function OrderDetailPage() {
                   <option value="silver">Silver</option>
                 </select>
               </div>
+              {String(form.gold_karat).toLowerCase() !== 'silver' && (
+                <div>
+                  <label className={lbl}>Gold color</label>
+                  <select className={inp} value={form.gold_color || 'yellow'} onChange={e => set('gold_color', e.target.value)}>
+                    <option value="yellow">Yellow Gold</option>
+                    <option value="white">White Gold</option>
+                    <option value="rose">Rose Gold</option>
+                  </select>
+                </div>
+              )}
               <div>
                 <label className={lbl}>{String(form.gold_karat).toLowerCase() === 'silver' ? 'Silver weight estimated (g)' : 'Gold weight estimated (g)'}</label>
                 <input type="number" inputMode="decimal" step="0.0001" min="0"

@@ -18,7 +18,7 @@ type ProductListRow = {
 }
 
 const LIST_COLS = `
-  id, code, name, category, trade_price, gold_karat,
+  id, code, name, category, trade_price, gold_karat, metal_weights,
   diamond_weight, delivery_days, photo_urls, karat_pricing
 `
 

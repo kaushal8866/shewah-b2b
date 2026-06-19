@@ -1,4 +1,4 @@
-import { pure24kt } from './karat'
+import { pure24kt, getMetalWeight, pureGoldMass } from './karat'
 
 export interface DiamondSpec {
   shape_id: string
@@ -22,6 +22,7 @@ export interface QuoteItemInput {
   hallmarking: number
   other_charges: number
   quantity: number
+  metal_weights?: any
 }
 
 export interface ComputedQuoteItem {
@@ -40,10 +41,26 @@ export function computeQuoteItem(
   marginPct: number = 28
 ): ComputedQuoteItem {
   const quantity = Math.max(Number(input.quantity) || 1, 1)
-  const grossGoldWeight = Math.max(Number(input.gross_gold_weight_g) || 0, 0)
   
   const isSilver = String(input.karat).toLowerCase() === 'silver'
   
+  let grossGoldWeight = Math.max(Number(input.gross_gold_weight_g) || 0, 0)
+  if (input.metal_weights && Object.keys(input.metal_weights).length > 0) {
+    if (isSilver) {
+      const silverGrade = String(input.karat).toLowerCase().includes('999') ? 'silver_999' : 'silver_925'
+      grossGoldWeight = getMetalWeight(input.metal_weights, silverGrade, 'default') || grossGoldWeight
+    } else {
+      let karatStr = '22K'
+      if (typeof input.karat === 'number') {
+        karatStr = `${input.karat}K`
+      } else if (typeof input.karat === 'string') {
+        const num = parseInt(input.karat.replace(/[^\d]/g, '')) || 22
+        karatStr = `${num}K`
+      }
+      grossGoldWeight = getMetalWeight(input.metal_weights, karatStr, 'yellow') || grossGoldWeight
+    }
+  }
+
   let net24ktWeight = 0
   let goldCostPerPc = 0
 
@@ -52,14 +69,14 @@ export function computeQuoteItem(
     const silverRate = Math.max(Number(input.gold_rate_24k) || 0, 0)
     goldCostPerPc = Math.round(net24ktWeight * silverRate)
   } else {
-    // Extract numeric karat from string (e.g. "18K" -> 18) or use number
-    let karatNum = 18
+    let karatStr = '18K'
     if (typeof input.karat === 'number') {
-      karatNum = input.karat
+      karatStr = `${input.karat}K`
     } else if (typeof input.karat === 'string') {
-      karatNum = parseInt(input.karat.replace(/[^\d]/g, '')) || 18
+      const num = parseInt(input.karat.replace(/[^\d]/g, '')) || 18
+      karatStr = `${num}K`
     }
-    net24ktWeight = pure24kt(grossGoldWeight, karatNum)
+    net24ktWeight = pureGoldMass(grossGoldWeight, karatStr)
     const goldRate24k = Math.max(Number(input.gold_rate_24k) || 0, 0)
     goldCostPerPc = Math.round(net24ktWeight * goldRate24k)
   }

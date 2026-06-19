@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase, partnerLabourRate, type ManufacturingPartnerLite } from '@/lib/supabase'
-import { KARAT_FACTORS } from '@/lib/karat'
+import { KARAT_FACTORS, getMetalWeight } from '@/lib/karat'
 import { uploadToCloudinary, uploadFileToCloudinary } from '@/lib/cloudinaryUpload'
 import { formatCurrency } from '@/lib/utils'
 import { ArrowLeft, Save, Upload, X, Printer, Package, FileUp, FileDown, AlertTriangle } from 'lucide-react'
@@ -51,7 +51,7 @@ function NewMfgOrderForm() {
   useEffect(() => {
     Promise.all([
       supabase.from('manufacturing_partners').select('*').eq('status', 'active').order('name'),
-      supabase.from('orders').select('id, order_number, quantity, ring_size, special_notes, gold_karat, gold_weight_estimated, gold_weight_actual, products(code, name, gold_karat, gold_weight_g, diamond_weight, diamond_shape, diamond_quality, diamond_color), partners(store_name)').order('order_date', { ascending: false }).limit(20),
+      supabase.from('orders').select('id, order_number, quantity, ring_size, special_notes, gold_karat, gold_color, gold_weight_estimated, gold_weight_actual, products(code, name, gold_karat, gold_weight_g, diamond_weight, diamond_shape, diamond_quality, diamond_color, metal_type, metal_weights, ref_karat, ref_color), partners(store_name)').order('order_date', { ascending: false }).limit(20),
     ]).then(([{ data: p }, { data: co }]) => {
       setPartners((p || []) as ManufacturingPartnerLite[])
       setCustomerOrders(co || [])
@@ -120,7 +120,24 @@ function NewMfgOrderForm() {
     const co: any = customerOrders.find((o: any) => o.id === coId)
     if (!co) return
     const product = co.products
-    const goldWeight = co.gold_weight_actual || co.gold_weight_estimated || product?.gold_weight_g || ''
+    
+    let goldWeight = co.gold_weight_actual || co.gold_weight_estimated || ''
+    if (!goldWeight && product) {
+      if (product.metal_weights && Object.keys(product.metal_weights).length > 0) {
+        const isSil = product.metal_type === 'silver'
+        if (isSil) {
+          const k = product.ref_karat || 'silver_925'
+          goldWeight = getMetalWeight(product.metal_weights, k, 'default') || ''
+        } else {
+          const k = co.gold_karat ? (String(co.gold_karat).toLowerCase() === 'silver' ? '22K' : `${co.gold_karat}K`) : '22K'
+          const c = co.gold_color || 'yellow'
+          goldWeight = getMetalWeight(product.metal_weights, k, c) || ''
+        }
+      } else {
+        goldWeight = product.gold_weight_g || ''
+      }
+    }
+
     const diamondLine = product
       ? [
           product.diamond_weight ? `${product.diamond_weight}ct` : '',

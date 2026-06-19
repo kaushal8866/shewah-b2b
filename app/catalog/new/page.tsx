@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
-import { KARAT_FACTORS, SELLABLE_KARATS, pureMassByKarat, computeKaratPricing } from '@/lib/karat'
+import { KARAT_FACTORS, SELLABLE_KARATS, pureMassByKarat, computeKaratPricing, getMetalWeight, pureGoldMass } from '@/lib/karat'
 import { ArrowLeft, Save, Calculator, Plus, X, Upload, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
+import MetalWeightCalculator from '@/components/MetalWeightCalculator'
 
 type DiamondRow = {
   id: string
@@ -66,6 +67,9 @@ export default function NewProductPage() {
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
   const [diamonds, setDiamonds] = useState<DiamondRow[]>([newDiamondRow()])
   const [showBreakdown, setShowBreakdown] = useState(false)
+  const [metalWeights, setMetalWeights] = useState<any>({})
+  const [refKarat, setRefKarat] = useState<string>('22K')
+  const [refColor, setRefColor] = useState<string>('yellow')
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'ring',
     metal_type: 'gold',
@@ -108,13 +112,15 @@ export default function NewProductPage() {
     })
   }, [])
 
-  const weight22 = parseFloat(form.gold_weight_22k) || 0
-  const weights = pureMassByKarat(weight22)
+  const isSilver = form.metal_type === 'silver'
+  const weight22 = isSilver
+    ? (getMetalWeight(metalWeights, refKarat, 'default') || 0)
+    : (getMetalWeight(metalWeights, '22K', 'yellow') || 0)
+
   const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1), 0)
   const makingCharges = parseFloat(form.making_charges) || 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
 
-  const isSilver = form.metal_type === 'silver'
   const silverB2BCost = weight22 * silverRateB2B
   const silverD2CCost = weight22 * silverRateD2C
   const silverB2B_cogs = silverB2BCost + totalDiamondCost + makingCharges + igiCost
@@ -140,6 +146,7 @@ export default function NewProductPage() {
     diamondCost: totalDiamondCost,
     makingCharges,
     igiCost,
+    metalWeights: metalWeights && Object.keys(metalWeights).length > 0 ? metalWeights : undefined,
   })
 
   const default22 = pricing.find(p => p.karat === 22)
@@ -241,10 +248,13 @@ export default function NewProductPage() {
       gold_karat: isSilver ? null : 22,
       gold_weight_g: weight22 || null,
       gold_weight_22k: isSilver ? null : (weight22 || null),
-      gold_weight_18k: isSilver ? null : (weights[18] || null),
-      gold_weight_14k: isSilver ? null : (weights[14] || null),
-      gold_weight_10k: isSilver ? null : (weights[10] || null),
-      gold_weight_9k:  isSilver ? null : (weights[9]  || null),
+      gold_weight_18k: isSilver ? null : (getMetalWeight(metalWeights, '18K', 'yellow') || null),
+      gold_weight_14k: isSilver ? null : (getMetalWeight(metalWeights, '14K', 'yellow') || null),
+      gold_weight_10k: isSilver ? null : (getMetalWeight(metalWeights, '10K', 'yellow') || null),
+      gold_weight_9k:  isSilver ? null : (getMetalWeight(metalWeights, '9K', 'yellow')  || null),
+      metal_weights: metalWeights,
+      ref_karat: refKarat,
+      ref_color: refColor,
       karat_pricing,
       igi_cert_cost: igiCost,
       trade_price: tradePrice, mrp_suggested: mrp,
@@ -267,10 +277,13 @@ export default function NewProductPage() {
       is_active: true,
     }
     let { error } = await supabase.from('products').insert([insertPayload])
-    if (error && /priced_at|column .* does not exist/i.test(error.message || '')) {
+    if (error && /priced_at|column .* does not exist|metal_weights/i.test(error.message || '')) {
       // Migration not yet applied — drop the new columns and retry.
       delete insertPayload.priced_at_rate
       delete insertPayload.priced_at
+      delete insertPayload.metal_weights
+      delete insertPayload.ref_karat
+      delete insertPayload.ref_color
       ;({ error } = await supabase.from('products').insert([insertPayload]))
     }
     setSaving(false)
@@ -502,7 +515,7 @@ export default function NewProductPage() {
           <p className="text-xs text-stone-400 mb-4">
             Configure the metal type and net weight specifications.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className={lbl}>Metal Type *</label>
               <select className={inp} value={form.metal_type} onChange={e => set('metal_type', e.target.value)}>
@@ -511,33 +524,22 @@ export default function NewProductPage() {
               </select>
             </div>
             <div>
-              <label className={lbl}>
-                {isSilver ? 'Net silver weight (g) *' : 'Net gold weight (24kt consumption) (g) *'}
-              </label>
-              <input type="number" inputMode="decimal" step="0.0001" min="0" className={inp}
-                value={form.gold_weight_22k} onChange={e => set('gold_weight_22k', e.target.value)} placeholder="e.g. 2.8000" />
-            </div>
-            <div>
               <label className={lbl}>IGI cert cost (₹)</label>
               <input type="number" inputMode="decimal" className={inp} value={form.igi_cert_cost} onChange={e => set('igi_cert_cost', e.target.value)} />
             </div>
           </div>
 
-          {!isSilver && weight22 > 0 && (
-            <div className="mt-4 rounded-xl border border-stone-100 overflow-hidden">
-              <div className="bg-stone-50 px-3 py-2 text-xs font-medium text-stone-500 uppercase tracking-wide">
-                24kt-pure content per karat
-              </div>
-              <div className="grid grid-cols-5 divide-x divide-stone-100 text-center">
-                {SELLABLE_KARATS.map(k => (
-                  <div key={k} className="px-2 py-3">
-                    <p className="text-xs text-stone-400">{k}kt</p>
-                    <p className="text-sm font-semibold text-stone-800">{weights[k]?.toFixed(4)} g</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <MetalWeightCalculator
+            metalType={form.metal_type as 'gold' | 'silver'}
+            initialRefKarat={refKarat}
+            initialRefColor={refColor}
+            initialWeights={metalWeights}
+            onChange={({ metalWeights: mw, refKarat: rk, refColor: rc }) => {
+              setMetalWeights(mw)
+              setRefKarat(rk)
+              setRefColor(rc)
+            }}
+          />
         </div>
 
         {/* PRICING */}

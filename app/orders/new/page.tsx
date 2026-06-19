@@ -13,6 +13,7 @@ import {
   scaleWeightBySize,
   FINISH_FACTOR
 } from '@/lib/cadWeight'
+import { getMetalWeight } from '@/lib/karat'
 
 type DiamondRow = {
   id: string
@@ -53,7 +54,7 @@ function NewOrderForm() {
 
   const [saving, setSaving] = useState(false)
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
-  const [products, setProducts] = useState<{ id: string; code: string; name: string; category?: string; trade_price: number; delivery_days: number; gold_karat?: number; gold_weight_g?: number; making_charges?: number; diamond_cost?: number; diamond_weight?: number; diamond_shape?: string; diamond_quality?: string; diamond_color?: string; diamond_specs?: any; metal_type?: string | null }[]>([])
+  const [products, setProducts] = useState<{ id: string; code: string; name: string; category?: string; trade_price: number; delivery_days: number; gold_karat?: number; gold_weight_g?: number; making_charges?: number; diamond_cost?: number; diamond_weight?: number; diamond_shape?: string; diamond_quality?: string; diamond_color?: string; diamond_specs?: any; metal_type?: string | null; metal_weights?: any; ref_karat?: string; ref_color?: string; }[]>([])
   const [mfgPartners, setMfgPartners] = useState<{ id: string; name: string; city: string; min_labour_grams?: number; labour_rate_9k?: number; labour_rate_10k?: number; labour_rate_14k?: number; labour_rate_18k?: number; labour_rate_22k?: number }[]>([])
   // Track whether the operator has hand-edited the labour-charges field. Once
   // they type into it, we stop auto-recomputing so we don't clobber their value.
@@ -95,6 +96,7 @@ function NewOrderForm() {
     // COGS / gold
     gold_source: 'self' as 'self' | 'manufacturer',
     gold_karat: '18',
+    gold_color: 'yellow' as 'yellow' | 'white' | 'rose',
     gold_weight_estimated: '',
     making_charges: '',
     cad_cost: '0',
@@ -106,7 +108,7 @@ function NewOrderForm() {
     if (prePartner || preProduct) setFromInterest(true)
     Promise.all([
       supabase.from('partners').select('id, store_name, city').order('store_name'),
-      supabase.from('products').select('id, code, name, category, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges, diamond_cost, diamond_weight, diamond_shape, diamond_quality, diamond_color, diamond_specs, metal_type').eq('is_active', true).order('code'),
+      supabase.from('products').select('id, code, name, category, trade_price, delivery_days, gold_karat, gold_weight_g, making_charges, diamond_cost, diamond_weight, diamond_shape, diamond_quality, diamond_color, diamond_specs, metal_type, metal_weights, ref_karat, ref_color').eq('is_active', true).order('code'),
       supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
       supabase.from('manufacturing_partners').select('id, name, city, min_labour_grams, labour_rate_9k, labour_rate_10k, labour_rate_14k, labour_rate_18k, labour_rate_22k').eq('status', 'active').order('name'),
       supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b'])
@@ -192,7 +194,42 @@ function NewOrderForm() {
     }
   }, [])
 
-  function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
+  function set(k: string, v: string) {
+    setForm(prev => ({ ...prev, [k]: v }))
+    if (k === 'gold_color') {
+      setMetalTone(v)
+    }
+  }
+
+  // Mirror to stone_cost while operator hasn't manually edited that field.
+  useEffect(() => {
+    if (stoneTouched) return
+    if (totalDiamondCost <= 0) return
+    setForm(prev => prev.stone_cost === String(totalDiamondCost) ? prev : { ...prev, stone_cost: String(totalDiamondCost) })
+  }, [totalDiamondCost, stoneTouched])
+
+  // Automatically adjust estimated weight when product, karat, or color changes
+  useEffect(() => {
+    if (!form.product_id) return
+    const product = products.find(p => p.id === form.product_id)
+    if (!product || !product.metal_weights || Object.keys(product.metal_weights).length === 0) return
+
+    const isSil = product.metal_type === 'silver'
+    if (isSil) {
+      const k = product.ref_karat || 'silver_925'
+      const w = getMetalWeight(product.metal_weights, k, 'default')
+      if (w > 0) {
+        setForm(prev => ({ ...prev, gold_weight_estimated: String(w) }))
+      }
+    } else {
+      const currentK = form.gold_karat === 'silver' ? '22K' : `${form.gold_karat}K`
+      const currentC = form.gold_color || 'yellow'
+      const w = getMetalWeight(product.metal_weights, currentK, currentC)
+      if (w > 0) {
+        setForm(prev => ({ ...prev, gold_weight_estimated: String(w) }))
+      }
+    }
+  }, [form.product_id, form.gold_karat, form.gold_color, products])
 
   function addDiamondRow() { setDiamonds(prev => [...prev, newDiamondRow()]) }
   function removeDiamondRow(id: string) {
@@ -243,13 +280,6 @@ function NewOrderForm() {
     (s, d) => s + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1),
     0
   )
-  // Mirror to stone_cost while operator hasn't manually edited that field.
-  useEffect(() => {
-    if (stoneTouched) return
-    if (totalDiamondCost <= 0) return
-    setForm(prev => prev.stone_cost === String(totalDiamondCost) ? prev : { ...prev, stone_cost: String(totalDiamondCost) })
-  }, [totalDiamondCost, stoneTouched])
-
   // Pull every catalog field we know about into the order form. Diamond info
   // (carats / shape / quality) lives on the order's special_notes by default
   // so production has it; stone_cost is autofilled from the catalog row.
@@ -263,14 +293,29 @@ function NewOrderForm() {
       product.diamond_shape || '',
       [product.diamond_quality, product.diamond_color].filter(Boolean).join('/'),
     ].filter(Boolean).join(' ')
+
+    const targetKarat = product.gold_karat ? String(product.gold_karat) : (product.metal_type === 'silver' ? 'silver' : form.gold_karat)
+    let estWeight = product.gold_weight_g ? String(product.gold_weight_g) : form.gold_weight_estimated
+
+    if (product.metal_weights && Object.keys(product.metal_weights).length > 0) {
+      if (product.metal_type === 'silver') {
+        const silverK = product.ref_karat || 'silver_925'
+        estWeight = String(getMetalWeight(product.metal_weights, silverK, 'default') || '')
+      } else {
+        const k = targetKarat === 'silver' ? '22K' : `${targetKarat}K`
+        const c = form.gold_color || 'yellow'
+        estWeight = String(getMetalWeight(product.metal_weights, k, c) || '')
+      }
+    }
+
     setForm(prev => ({
       ...prev,
       product_id: product.id,
       trade_price: String(product.trade_price || ''),
       total_amount: total ? String(total) : String(product.trade_price || ''),
       expected_delivery: delivery,
-      gold_karat: product.gold_karat ? String(product.gold_karat) : (product.metal_type === 'silver' ? 'silver' : prev.gold_karat),
-      gold_weight_estimated: product.gold_weight_g ? String(product.gold_weight_g) : prev.gold_weight_estimated,
+      gold_karat: targetKarat,
+      gold_weight_estimated: estWeight,
       making_charges: product.making_charges && !makingTouched ? String(product.making_charges) : prev.making_charges,
       stone_cost: product.diamond_cost && !stoneTouched ? String(product.diamond_cost) : prev.stone_cost,
       special_notes: prev.special_notes || (diamondLine ? `Diamond: ${diamondLine}` : ''),
@@ -432,6 +477,7 @@ function NewOrderForm() {
       brief_text: form.type === 'custom' ? form.brief_text : null,
       gold_rate_at_order: isSilverOrder ? silverRate : goldRate,
       gold_karat: isSilverOrder ? null : (parseInt(form.gold_karat) || 18),
+      gold_color: isSilverOrder ? 'yellow' : (form.gold_color || 'yellow'),
       metal_type: isSilverOrder ? 'silver' : 'gold',
       trade_price: parseFloat(form.trade_price),
       total_amount: parseFloat(form.total_amount),
@@ -496,7 +542,8 @@ function NewOrderForm() {
       const retryPayload = { ...payload }
       const cadCols = [
         'gross_volume', 'stone_seat_volume', 'hollow_volume', 'gallery_cut_volume',
-        'net_volume', 'alloy_density_used', 'casting_weight_g', 'final_weight_g', 'metal_tone'
+        'net_volume', 'alloy_density_used', 'casting_weight_g', 'final_weight_g', 'metal_tone',
+        'gold_color'
       ]
       cadCols.forEach(col => delete retryPayload[col])
       
@@ -819,6 +866,16 @@ function NewOrderForm() {
                 <option value="silver">Silver</option>
               </select>
             </div>
+            {!isSilverOrder && (
+              <div>
+                <label className={label}>Gold color</label>
+                <select className={input} value={form.gold_color} onChange={e => set('gold_color', e.target.value)}>
+                  <option value="yellow">Yellow Gold</option>
+                  <option value="white">White Gold</option>
+                  <option value="rose">Rose Gold</option>
+                </select>
+              </div>
+            )}
             <div>
               <label className={label}>{isSilverOrder ? 'Estimated silver weight (g)' : 'Estimated gold weight (g)'}</label>
               <input type="number" inputMode="decimal" step="0.0001" min="0"

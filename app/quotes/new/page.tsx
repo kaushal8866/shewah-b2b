@@ -8,6 +8,7 @@ import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import { ArrowLeft, Save, Plus, Trash2, Upload, FileText, Share2, HelpCircle } from 'lucide-react'
 import Link from 'next/link'
 import { DEFAULT_QUOTE_MARGIN_PCT, DEFAULT_QUOTE_GST_RATE_PCT, DEFAULT_QUOTE_TERMS } from '@/lib/quoteDefaults'
+import { getMetalWeight } from '@/lib/karat'
 
 interface Partner {
   id: string
@@ -75,6 +76,7 @@ interface QuoteItem {
   other_charges_label: string
   diamonds: DiamondRow[]
   reference_images: string[]
+  metal_weights?: any
 }
 
 function QuoteBuilderForm() {
@@ -139,7 +141,7 @@ function QuoteBuilderForm() {
         const [resPartners, resKarigars, resProducts, resGold, resQualities, resColors, resSilverRates] = await Promise.all([
           supabase.from('partners').select('id, owner_name, store_name, city, phone').order('store_name'),
           supabase.from('manufacturing_partners').select('id, name, city, labour_rate_9k, labour_rate_10k, labour_rate_14k, labour_rate_18k, labour_rate_22k').eq('status', 'active'),
-          supabase.from('products').select('id, code, name, category, gold_weight_g, making_charges, diamond_cost, photo_urls, metal_type').order('name'),
+          supabase.from('products').select('id, code, name, category, gold_weight_g, making_charges, diamond_cost, photo_urls, metal_type, metal_weights, ref_karat, ref_color').order('name'),
           supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
           fetch('/api/diamonds/quality-buckets').then(r => r.json().catch(() => ({ buckets: [] }))),
           fetch('/api/diamonds/color-buckets').then(r => r.json().catch(() => ({ buckets: [] }))),
@@ -260,6 +262,7 @@ function QuoteBuilderForm() {
           hallmarking: parseFloat(i.hallmarking) || 0,
           other_charges: parseFloat(i.other_charges) || 0,
           quantity: parseInt(i.quantity, 10) || 1,
+          metal_weights: i.metal_weights || null,
           diamonds: i.diamonds.map(d => ({
             pieces: parseInt(d.pieces, 10) || 0,
             rate_per_pc: parseFloat(d.rate_per_pc) || 0,
@@ -347,6 +350,16 @@ function QuoteBuilderForm() {
           next.gold_rate_24k = String(latestGoldRate || '0')
         }
 
+        if (item.product_id && item.metal_weights && Object.keys(item.metal_weights).length > 0) {
+          const isSil = value === 'Silver'
+          if (isSil) {
+            next.gross_gold_weight_g = String(getMetalWeight(item.metal_weights, 'silver_925', 'default') || '')
+          } else {
+            const karatStr = value.endsWith('K') ? value : `${value}K`
+            next.gross_gold_weight_g = String(getMetalWeight(item.metal_weights, karatStr, 'yellow') || '')
+          }
+        }
+
         if (item.labour_source === 'partner' && item.labour_partner_id) {
           const selectedKarigar = karigars.find(k => k.id === item.labour_partner_id)
           if (selectedKarigar) {
@@ -389,16 +402,25 @@ function QuoteBuilderForm() {
       if (item.id !== itemId) return item
       
       const isSilverProd = (prod as any).metal_type === 'silver'
+      const defaultKarat = isSilverProd ? ((prod as any).ref_karat || 'silver_925') : '18K'
+      const defaultColor = isSilverProd ? 'default' : 'yellow'
+      
+      let initialWeight = prod.gold_weight_g ? String(prod.gold_weight_g) : ''
+      if ((prod as any).metal_weights && Object.keys((prod as any).metal_weights).length > 0) {
+        initialWeight = String(getMetalWeight((prod as any).metal_weights, isSilverProd ? defaultKarat : '18K', defaultColor) || initialWeight)
+      }
+
       const next = {
         ...item,
         product_id: prod.id,
         name: prod.name,
         category: prod.category || 'Ring',
         karat: isSilverProd ? 'Silver' : '18K',
-        gross_gold_weight_g: prod.gold_weight_g ? String(prod.gold_weight_g) : '',
+        gross_gold_weight_g: initialWeight,
         gold_rate_24k: isSilverProd ? String(isWalkIn ? silverRateD2C : silverRateB2B) : String(latestGoldRate || '0'),
         making_charges: prod.making_charges ? String(prod.making_charges) : '',
         reference_images: prod.photo_urls || [],
+        metal_weights: (prod as any).metal_weights || null,
       }
 
       // Prefill diamond rows if cost exists, or make a blank row with the catalog cost

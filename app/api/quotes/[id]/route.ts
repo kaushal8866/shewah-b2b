@@ -113,6 +113,7 @@ export async function PATCH(
       hallmarking: Number(item.hallmarking) || 0,
       other_charges: Number(item.other_charges) || 0,
       quantity: Number(item.quantity) || 1,
+      metal_weights: item.metal_weights || null,
     }, marginPct)
 
     return {

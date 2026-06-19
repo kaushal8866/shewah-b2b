@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, computeOrderCogs, partnerLabourRate } from './supabase'
 import { KARAT_FACTORS } from './karat'
 
 // Task 78: float quantities are denominated in 24kt-net. Order/mfg-order rows
@@ -58,6 +58,20 @@ export async function applyMfgStatusChange(opts: {
       .eq('manufacturing_order_id', mfgOrderId)
       .eq('transaction_type', 'consumption')
       .eq('lifecycle', 'pending')
+
+    // Also trigger parent order COGS recalculation!
+    try {
+      const { data: mfg } = await supabase
+        .from('manufacturing_orders')
+        .select('order_id')
+        .eq('id', mfgOrderId)
+        .single()
+      if (mfg && mfg.order_id && goldWeightActual && goldWeightActual > 0) {
+        await recalculateParentOrderCogs(mfg.order_id, goldWeightActual)
+      }
+    } catch (err) {
+      console.error('Error recalculating parent order cogs:', err)
+    }
     return
   }
 
@@ -152,4 +166,55 @@ export async function cascadeOrderStatusToMfg(opts: {
     affected += 1
   }
   return { affected }
+}
+
+async function recalculateParentOrderCogs(orderId: string, actualWeight: number): Promise<void> {
+  const { data: order } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('id', orderId)
+    .single()
+
+  if (!order) return
+
+  let saveLabourPerG = 0
+  let minLabourGrams = 1
+
+  if (order.assigned_manufacturer_id) {
+    const { data: partner } = await supabase
+      .from('manufacturing_partners')
+      .select('*')
+      .eq('id', order.assigned_manufacturer_id)
+      .single()
+    if (partner) {
+      minLabourGrams = Number(partner.min_labour_grams) || 1
+      const goldKarat = order.gold_karat
+      if (goldKarat) {
+        saveLabourPerG = partnerLabourRate(partner, Number(goldKarat))
+      }
+    }
+  }
+
+  const cogs = computeOrderCogs({
+    gold_weight_actual: actualWeight,
+    gold_rate_at_order: order.gold_rate_at_order,
+    gold_karat: order.gold_karat,
+    metal_type: order.metal_type,
+    labour_per_gram: saveLabourPerG,
+    gross_weight: actualWeight,
+    min_labour_grams: minLabourGrams,
+    making_charges: order.making_charges,
+    cad_cost: order.cad_cost,
+    stone_cost: order.stone_cost,
+    total_amount: order.total_amount,
+  })
+
+  await supabase
+    .from('orders')
+    .update({
+      gold_weight_actual: actualWeight,
+      total_cogs: Math.round(cogs.total_cogs) || null,
+      margin: Math.round(cogs.margin) || null,
+    })
+    .eq('id', orderId)
 }

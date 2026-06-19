@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 const DETAIL_COLS = `
-  id, code, name, category, description, trade_price, gold_karat,
+  id, code, name, category, description, trade_price, gold_karat, metal_weights,
   diamond_weight, delivery_days, photo_urls
 `
 
