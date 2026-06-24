@@ -1,6 +1,8 @@
 import './globals.css'
 import SessionProvider from '@/components/SessionProvider'
 import AppShell from '@/components/AppShell'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Shewah B2B Admin',
@@ -20,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </AppShell>
         </SessionProvider>
+        <SpeedInsights />
       </body>
     </html>
   )
