@@ -161,6 +161,6 @@ export default withAuth(
 export const config = {
   matcher: [
     // SECURITY: anything matched here is excluded from NextAuth middleware.
-    '/((?!login|partner-signup|setup|showcase|track|m/|cad-share/|q/|c/|accept-invite/|r/|api/r/|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|api/cad-share/|api/quotes/share/|api/quotes/test-compute|api/c/|api/public|_next|_vercel|favicon\\.ico|opengraph-image|.*\\.).*)',
+    '/((?!login|partner-signup|setup|showcase|track|m/|cad-share/|q/|c/|accept-invite/|r/|api/r/|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|api/cad-share/|api/quotes/share/|api/quotes/test-compute|api/c/|api/public|api/upload|_next|_vercel|favicon\\.ico|opengraph-image|.*\\.).*)',
   ],
 }
