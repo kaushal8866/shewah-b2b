@@ -291,7 +291,7 @@ export default function PublicStorefront() {
 
       {/* Header */}
       <header
-        className="px-6 py-4 flex items-center justify-between sticky top-0 z-35 border-b header-blur transition-all duration-300"
+        className="px-6 py-4 flex items-center justify-between sticky top-0 z-30 border-b header-blur transition-all duration-300"
         style={{ borderColor: c.borders }}
       >
         <div className="flex items-center gap-3">

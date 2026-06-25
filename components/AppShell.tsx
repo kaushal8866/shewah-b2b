@@ -139,12 +139,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname === '/' ||
     pathname === '/login' ||
     pathname.startsWith('/partner-signup') ||
+    pathname.startsWith('/apply') ||
     pathname.startsWith('/setup') ||
     pathname.startsWith('/showcase') ||
     pathname.startsWith('/track') ||
     pathname.startsWith('/portal') ||
     pathname.startsWith('/c/') ||
     pathname.startsWith('/q/') ||
+    pathname.startsWith('/r/') ||
+    pathname.startsWith('/accept-invite/') ||
     pathname.startsWith('/cad-share/')
   if (isPublic) return <>{children}</>  
 
