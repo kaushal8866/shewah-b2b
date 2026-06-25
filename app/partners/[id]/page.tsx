@@ -274,7 +274,7 @@ export default function PartnerDetailPage() {
           <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
               <h2 className="font-medium text-stone-900">Visit history ({visits.length})</h2>
-              <button onClick={addVisit}
+              <button onClick={() => setShowVisitModal(true)}
                 className="text-xs text-[#1E3A5F] hover:underline flex items-center gap-1">
                 <Plus className="w-3.5 h-3.5" /> Log visit
               </button>
