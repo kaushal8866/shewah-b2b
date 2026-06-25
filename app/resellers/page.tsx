@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase, Reseller } from '@/lib/supabase'
-import { Plus, Search, Store, CreditCard, ShieldAlert, Award, FileText, Settings, UserPlus, ShieldCheck } from 'lucide-react'
+import { Plus, Search, Store, CreditCard, ShieldAlert, Award, FileText, Settings, UserPlus, ShieldCheck, Activity, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ResellersDirectoryPage() {
@@ -80,6 +80,20 @@ export default function ResellersDirectoryPage() {
 
         <div className="flex flex-wrap gap-2">
           <Link
+            href="/resellers/operations"
+            className="flex items-center gap-2 border border-stone-200 bg-white text-stone-600 hover:bg-stone-55 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm"
+          >
+            <Activity className="w-4 h-4 text-amber-600" />
+            Operations Hub
+          </Link>
+          <Link
+            href="/resellers/messages"
+            className="flex items-center gap-2 border border-stone-200 bg-white text-stone-600 hover:bg-stone-55 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm"
+          >
+            <MessageSquare className="w-4 h-4 text-indigo-650" />
+            Support Chats
+          </Link>
+          <Link
             href="/resellers/invitations"
             className="flex items-center gap-2 border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm"
           >
@@ -95,7 +109,7 @@ export default function ResellersDirectoryPage() {
           </Link>
           <Link
             href="/resellers/settings"
-            className="flex items-center gap-2 border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 p-2.5 rounded-xl transition-all shadow-sm"
+            className="flex items-center gap-2 border border-stone-200 bg-white text-stone-600 hover:bg-stone-55 p-2.5 rounded-xl transition-all shadow-sm"
             title="Settings"
           >
             <Settings className="w-4 h-4 text-stone-500" />

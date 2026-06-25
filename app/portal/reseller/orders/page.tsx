@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
+  customer_placed: 'Storefront Order',
   payment_pending: 'Payment Pending',
   brief_received: 'Order Received',
   cad_in_progress: 'CAD in Progress',
@@ -26,6 +27,7 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
 }
 
 const STATUS_CLASSES: Record<string, string> = {
+  customer_placed: 'bg-indigo-50 text-indigo-700 border-indigo-150',
   payment_pending: 'bg-red-50 text-red-700 border-red-150',
   brief_received: 'bg-blue-50 text-blue-700 border-blue-150',
   cad_in_progress: 'bg-purple-50 text-purple-700 border-purple-150',
@@ -69,6 +71,9 @@ export default function ResellerOrdersList() {
       (o.products?.code || '').toLowerCase().includes(search.toLowerCase())
 
     // Tab filter
+    if (tabFilter === 'customer_placed') {
+      return matchesSearch && o.status === 'customer_placed'
+    }
     if (tabFilter === 'pending_payment') {
       return matchesSearch && o.status === 'payment_pending'
     }
@@ -112,6 +117,7 @@ export default function ResellerOrdersList() {
         <div className="flex border-b border-stone-100 overflow-x-auto gap-2">
           {[
             { id: 'all', label: 'All Orders' },
+            { id: 'customer_placed', label: 'Storefront Queue' },
             { id: 'pending_payment', label: 'Payment Pending' },
             { id: 'production', label: 'In Production' },
             { id: 'completed', label: 'Shipped / Completed' },

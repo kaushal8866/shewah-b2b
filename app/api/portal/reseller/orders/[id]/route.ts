@@ -102,3 +102,109 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   return NextResponse.json({ payment: newPayment })
 }
+
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const { reseller, error } = await getResellerSession()
+  if (error || !reseller) {
+    return NextResponse.json({ error: error || 'Forbidden' }, { status: 403 })
+  }
+
+  const orderId = params.id
+  let body: any
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
+  }
+
+  const { action, rejection_reason } = body
+
+  // Fetch order details
+  const { data: order, error: orderErr } = await supabaseAdmin
+    .from('reseller_orders')
+    .select('*')
+    .eq('id', orderId)
+    .eq('reseller_id', reseller.id)
+    .maybeSingle()
+
+  if (orderErr || !order) {
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+  }
+
+  if (action === 'confirm') {
+    if (order.status !== 'customer_placed') {
+      return NextResponse.json({ error: 'Order is already processed' }, { status: 400 })
+    }
+
+    const { data: updated, error: updErr } = await supabaseAdmin
+      .from('reseller_orders')
+      .update({
+        status: 'payment_pending',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+      .select('*')
+      .single()
+
+    if (updErr) {
+      return NextResponse.json({ error: 'Could not confirm order: ' + updErr.message }, { status: 500 })
+    }
+    
+    // Log system message in chat thread
+    await supabaseAdmin.from('reseller_messages').insert({
+      reseller_id: reseller.id,
+      sender_role: 'system',
+      body: `Reseller ${reseller.owner_name} has confirmed customer storefront order ${order.order_number}. Awaiting floor price payment confirmation.`,
+      thread_type: 'order',
+      linked_order_id: orderId
+    })
+
+    return NextResponse.json({ order: updated })
+  }
+
+  if (action === 'reject') {
+    if (order.status !== 'customer_placed') {
+      return NextResponse.json({ error: 'Order is already processed' }, { status: 400 })
+    }
+
+    const { data: updated, error: updErr } = await supabaseAdmin
+      .from('reseller_orders')
+      .update({
+        status: 'cancelled',
+        custom_attributes: {
+          ...order.custom_attributes,
+          rejection_reason: rejection_reason || 'Rejected by reseller boutique'
+        },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+      .select('*')
+      .single()
+
+    if (updErr) {
+      return NextResponse.json({ error: 'Could not reject order: ' + updErr.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ order: updated })
+  }
+
+  if (action === 'mark-paid') {
+    const { data: updated, error: updErr } = await supabaseAdmin
+      .from('reseller_orders')
+      .update({
+        customer_payment_status: 'paid',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+      .select('*')
+      .single()
+
+    if (updErr) {
+      return NextResponse.json({ error: 'Could not update payment status: ' + updErr.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ order: updated })
+  }
+
+  return NextResponse.json({ error: 'Unsupported action' }, { status: 400 })
+}

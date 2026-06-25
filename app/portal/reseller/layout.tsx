@@ -17,7 +17,9 @@ import {
   Diamond, 
   Menu, 
   X,
-  CreditCard
+  CreditCard,
+  MessageSquare,
+  Tag
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -76,6 +78,8 @@ export default function ResellerPortalLayout({ children }: { children: React.Rea
     { href: '/portal/reseller/samples',    label: 'Samples',   icon: CreditCard },
     { href: '/portal/reseller/theme',      label: 'Branding',  icon: Palette },
     { href: '/portal/reseller/share',      label: 'Storefront',icon: Share2 },
+    { href: '/portal/reseller/marketing',  label: 'Marketing', icon: Tag },
+    { href: '/portal/reseller/messages',   label: 'Support Chat', icon: MessageSquare },
   ]
 
   function isActive(t: { href: string; exact?: boolean }) {
@@ -144,23 +148,25 @@ export default function ResellerPortalLayout({ children }: { children: React.Rea
 
       {/* Bottom Navigation for Mobile */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 flex justify-around md:hidden z-40 shadow-lg py-1 px-2 shrink-0">
-        {tabs.map(t => {
-          const Icon = t.icon
-          const active = isActive(t)
-          return (
-            <Link
-              key={t.href}
-              href={t.href}
-              className={cn(
-                'flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-bold transition-colors',
-                active ? 'text-amber-600' : 'text-stone-400 hover:text-stone-700'
-              )}
-            >
-              <Icon className="w-5 h-5 mb-0.5" />
-              <span className="truncate max-w-[64px]">{t.label}</span>
-            </Link>
-          )
-        })}
+        {tabs
+          .filter(t => ['/portal/reseller', '/portal/reseller/catalog', '/portal/reseller/orders', '/portal/reseller/theme', '/portal/reseller/marketing'].includes(t.href))
+          .map(t => {
+            const Icon = t.icon
+            const active = isActive(t)
+            return (
+              <Link
+                key={t.href}
+                href={t.href}
+                className={cn(
+                  'flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-bold transition-colors',
+                  active ? 'text-amber-600' : 'text-stone-400 hover:text-stone-700'
+                )}
+              >
+                <Icon className="w-5 h-5 mb-0.5" />
+                <span className="truncate max-w-[64px]">{t.label}</span>
+              </Link>
+            )
+          })}
       </nav>
     </div>
   )

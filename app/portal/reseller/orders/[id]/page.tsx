@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
+  customer_placed: 'Storefront Order',
   payment_pending: 'Payment Pending',
   brief_received: 'Order Received',
   cad_in_progress: 'CAD in Progress',
@@ -35,10 +36,11 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
 }
 
 const TIMELINE_STEPS = [
-  { key: 'payment_pending', label: 'Payment Pending' },
-  { key: 'brief_received', label: 'Brief Received' },
-  { key: 'production', label: 'In Production' },
-  { key: 'qc', label: 'Quality Check' },
+  { key: 'customer_placed', label: 'Storefront' },
+  { key: 'payment_pending', label: 'Verify' },
+  { key: 'brief_received', label: 'Received' },
+  { key: 'production', label: 'Production' },
+  { key: 'qc', label: 'QC' },
   { key: 'dispatched', label: 'Dispatched' },
   { key: 'delivered', label: 'Delivered' }
 ]
@@ -135,6 +137,62 @@ export default function ResellerOrderDetail() {
     }
   }
 
+  async function handleConfirmStorefrontOrder() {
+    if (!confirm('Are you sure you want to confirm this storefront order?')) return
+    try {
+      const res = await fetch(`/api/portal/reseller/orders/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm' })
+      })
+      const data = await res.json()
+      if (data.error) alert(data.error)
+      else {
+        alert('Order confirmed successfully! It is now pending payment floor cost.')
+        loadData()
+      }
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+
+  async function handleRejectStorefrontOrder(reason: string) {
+    try {
+      const res = await fetch(`/api/portal/reseller/orders/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject', rejection_reason: reason })
+      })
+      const data = await res.json()
+      if (data.error) alert(data.error)
+      else {
+        alert('Order rejected!')
+        loadData()
+      }
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+
+  async function handleMarkCustomerPaid() {
+    if (!confirm('Are you sure you want to mark customer payment as received?')) return
+    try {
+      const res = await fetch(`/api/portal/reseller/orders/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark-paid' })
+      })
+      const data = await res.json()
+      if (data.error) alert(data.error)
+      else {
+        alert('Customer payment marked as received!')
+        loadData()
+      }
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading order details...</div>
   if (error) return <div className="p-4 lg:p-7 max-w-4xl mx-auto"><div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div></div>
   if (!order) return <div className="p-4 lg:p-7 text-stone-450 text-sm">Order not found.</div>
@@ -145,16 +203,20 @@ export default function ResellerOrderDetail() {
 
   // Resolve current active step index in timeline
   let activeTimelineIdx = 0
-  if (order.status === 'brief_received' || order.status === 'cad_in_progress' || order.status === 'cad_sent' || order.status === 'design_approved') {
+  if (order.status === 'customer_placed') {
+    activeTimelineIdx = 0
+  } else if (order.status === 'payment_pending') {
     activeTimelineIdx = 1
-  } else if (order.status === 'production') {
+  } else if (order.status === 'brief_received' || order.status === 'cad_in_progress' || order.status === 'cad_sent' || order.status === 'design_approved') {
     activeTimelineIdx = 2
-  } else if (order.status === 'qc') {
+  } else if (order.status === 'production') {
     activeTimelineIdx = 3
-  } else if (order.status === 'dispatched') {
+  } else if (order.status === 'qc') {
     activeTimelineIdx = 4
-  } else if (order.status === 'delivered') {
+  } else if (order.status === 'dispatched') {
     activeTimelineIdx = 5
+  } else if (order.status === 'delivered') {
+    activeTimelineIdx = 6
   }
 
   const isOverdue = order.status === 'payment_pending' && new Date(order.payment_deadline) < new Date()
@@ -237,20 +299,53 @@ export default function ResellerOrderDetail() {
                   <span className="font-bold text-stone-900">{order.ring_size}</span>
                 </div>
               )}
+              {(order.configuration_summary?.karat || order.custom_attributes?.karat) && (
+                <div className="flex justify-between py-1 border-b border-stone-50 text-stone-600">
+                  <span>Metal Karat:</span>
+                  <span className="font-bold text-stone-900">{order.configuration_summary?.karat || order.custom_attributes?.karat}</span>
+                </div>
+              )}
             </div>
 
             {/* Custom attributes */}
-            {Object.keys(order.custom_attributes || {}).length > 0 && (
+            {Object.keys(order.custom_attributes || {}).filter(k => k !== 'customer_notes' && k !== 'reference_images' && k !== 'karat').length > 0 && (
               <div className="space-y-2 pt-2 border-t border-stone-100">
                 <p className="text-[10px] text-stone-450 font-bold uppercase tracking-wider">Custom Specs Details</p>
                 <dl className="grid grid-cols-2 gap-3 text-xs">
-                  {Object.entries(order.custom_attributes).map(([k, v]) => (
-                    <div key={k} className="border-b border-stone-50 pb-1">
-                      <dt className="text-stone-400">{k.replace(/_/g, ' ')}</dt>
-                      <dd className="font-bold text-stone-850 mt-0.5">{String(v)}</dd>
-                    </div>
-                  ))}
+                  {Object.entries(order.custom_attributes)
+                    .filter(([k]) => k !== 'customer_notes' && k !== 'reference_images' && k !== 'karat')
+                    .map(([k, v]) => (
+                      <div key={k} className="border-b border-stone-50 pb-1">
+                        <dt className="text-stone-400 capitalize">{k.replace(/_/g, ' ')}</dt>
+                        <dd className="font-bold text-stone-850 mt-0.5">{String(v)}</dd>
+                      </div>
+                    ))}
                 </dl>
+              </div>
+            )}
+
+            {/* Customer Notes */}
+            {(order.customer_notes || order.custom_attributes?.customer_notes) && (
+              <div className="space-y-1.5 pt-3 border-t border-stone-100 text-xs">
+                <p className="text-[10px] text-stone-450 font-bold uppercase tracking-wider">Customer Brief/Notes</p>
+                <p className="text-stone-850 font-semibold leading-relaxed bg-stone-50 p-2.5 rounded-xl border border-stone-150">
+                  {order.customer_notes || order.custom_attributes?.customer_notes}
+                </p>
+              </div>
+            )}
+
+            {/* Custom Brief Images */}
+            {order.custom_attributes?.reference_images && order.custom_attributes.reference_images.length > 0 && (
+              <div className="space-y-2 pt-3 border-t border-stone-100">
+                <p className="text-[10px] text-stone-450 font-bold uppercase tracking-wider">Reference Brief Images</p>
+                <div className="flex gap-2 flex-wrap">
+                  {order.custom_attributes.reference_images.map((url: string, idx: number) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block relative w-16 h-16 rounded-xl overflow-hidden border border-stone-200 hover:border-amber-600 transition-all shrink-0">
+                      <img src={url} alt={`Reference ${idx + 1}`} className="w-full h-full object-cover" />
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -316,6 +411,76 @@ export default function ResellerOrderDetail() {
               </div>
             </div>
           </div>
+
+          {/* Storefront Actions block */}
+          {order.status === 'customer_placed' && (
+            <div className="bg-white border border-indigo-200 rounded-2xl p-5 shadow-sm space-y-4">
+              <h3 className="font-bold text-indigo-900 text-sm pb-2 border-b border-indigo-50 flex items-center gap-1.5">
+                <Info className="w-4 h-4 text-indigo-650" /> Storefront Order Action Required
+              </h3>
+              <p className="text-xs text-stone-600 leading-relaxed font-semibold">
+                This order was placed by a storefront shopper. Review the custom details on the left, then accept or reject.
+              </p>
+              <div className="space-y-3 pt-2">
+                <button
+                  onClick={handleConfirmStorefrontOrder}
+                  className="w-full bg-indigo-650 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1 transition-colors"
+                >
+                  <Check className="w-4 h-4" /> Confirm &amp; Accept Order
+                </button>
+                
+                <div className="border-t border-stone-100 pt-3">
+                  <p className="text-[10px] text-stone-400 font-bold uppercase mb-2">Reject Order</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      id="rejection_reason_input"
+                      placeholder="Reason for cancellation..."
+                      className="flex-1 border border-stone-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-500/20 focus:border-red-650 bg-white"
+                    />
+                    <button
+                      onClick={() => {
+                        const input = document.getElementById('rejection_reason_input') as HTMLInputElement
+                        const reason = input?.value || 'Cancelled by boutique'
+                        handleRejectStorefrontOrder(reason)
+                      }}
+                      className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold px-3 py-1.5 rounded-xl text-xs transition-colors flex items-center gap-1 shrink-0"
+                    >
+                      <X className="w-3.5 h-3.5" /> Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Customer Payment Status Card */}
+          {order.status !== 'cancelled' && (
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 className="font-bold text-stone-900 text-sm pb-1 flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 text-stone-400" /> Customer Payment Status
+              </h3>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-stone-500">Retail Payment Status:</span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                  order.customer_payment_status === 'paid'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-yellow-50 text-yellow-750 border-yellow-250'
+                }`}>
+                  {order.customer_payment_status === 'paid' ? 'Paid / Received' : 'Pending / Unpaid'}
+                </span>
+              </div>
+              {order.customer_payment_status !== 'paid' && (
+                <button
+                  type="button"
+                  onClick={handleMarkCustomerPaid}
+                  className="w-full mt-2 bg-stone-900 hover:bg-stone-850 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors"
+                >
+                  Mark Customer Paid Offline
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Payment submission form */}
           {order.status === 'payment_pending' && (

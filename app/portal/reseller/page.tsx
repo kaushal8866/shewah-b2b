@@ -15,7 +15,10 @@ import {
   ArrowRight,
   Plus,
   AlertTriangle,
-  Info
+  Info,
+  Bell,
+  Tag,
+  MessageSquare
 } from 'lucide-react'
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
@@ -49,18 +52,25 @@ export default function ResellerDashboard() {
   const [orders, setOrders] = useState<any[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
 
   useEffect(() => {
     Promise.all([
       fetch('/api/portal/reseller/profile').then(r => r.json()),
-      fetch('/api/portal/reseller/orders').then(r => r.json())
+      fetch('/api/portal/reseller/orders').then(r => r.json()),
+      fetch('/api/portal/reseller/notifications').then(r => r.json()).catch(() => ({ notifications: [] }))
     ])
-      .then(([profData, ordersData]) => {
+      .then(([profData, ordersData, notifData]) => {
         if (profData.error) setError(profData.error)
         else setProfile(profData.profile)
 
         if (ordersData.error) setError(ordersData.error)
         else setOrders(ordersData.orders || [])
+
+        if (notifData && !notifData.error) {
+          const count = (notifData.notifications || []).filter((n: any) => !n.is_read).length
+          setUnreadNotifications(count)
+        }
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -97,8 +107,21 @@ export default function ResellerDashboard() {
             Manage your white-label store, check orders, and track your profit earnings.
           </p>
         </div>
-        <div className="flex items-center gap-2 font-mono text-xs text-amber-700 font-bold bg-amber-50 border border-amber-100 px-3 py-1 rounded-lg self-start sm:self-auto">
-          <Store className="w-4 h-4" /> {profile?.reseller_code}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Link
+            href="/portal/reseller/activity"
+            className="relative p-2 border border-stone-200 hover:bg-stone-50 text-stone-500 rounded-xl transition-colors shrink-0 bg-white"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadNotifications > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white">
+                {unreadNotifications}
+              </span>
+            )}
+          </Link>
+          <div className="flex items-center gap-2 font-mono text-xs text-amber-700 font-bold bg-amber-50 border border-amber-100 px-3 py-1 rounded-lg">
+            <Store className="w-4 h-4" /> {profile?.reseller_code}
+          </div>
         </div>
       </div>
 
@@ -184,15 +207,15 @@ export default function ResellerDashboard() {
       </div>
 
       {/* Quick Action Navigation Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Link href="/portal/reseller/catalog"
           className="bg-white border border-stone-200 hover:border-amber-600 rounded-2xl p-4 flex items-center gap-3.5 transition-colors shadow-sm">
           <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
             <Package className="w-5.5 h-5.5" />
           </div>
           <div>
-            <p className="font-semibold text-stone-850 text-sm">Browse Catalog</p>
-            <p className="text-[11px] text-stone-400 mt-0.5">Check wholesale rates &amp; place orders</p>
+            <p className="font-semibold text-stone-850 text-xs">Browse Catalog</p>
+            <p className="text-[10px] text-stone-400 mt-0.5 leading-tight">Check wholesale rates</p>
           </div>
         </Link>
 
@@ -202,8 +225,8 @@ export default function ResellerDashboard() {
             <Palette className="w-5.5 h-5.5" />
           </div>
           <div>
-            <p className="font-semibold text-stone-850 text-sm">Visual Brand Studio</p>
-            <p className="text-[11px] text-stone-400 mt-0.5">Customize your logo, colors &amp; themes</p>
+            <p className="font-semibold text-stone-850 text-xs">Brand Studio</p>
+            <p className="text-[10px] text-stone-400 mt-0.5 leading-tight">Logo, color templates</p>
           </div>
         </Link>
 
@@ -213,8 +236,30 @@ export default function ResellerDashboard() {
             <Share2 className="w-5.5 h-5.5" />
           </div>
           <div>
-            <p className="font-semibold text-stone-850 text-sm">Get Share Link</p>
-            <p className="text-[11px] text-stone-400 mt-0.5">Create custom-markup storefront links</p>
+            <p className="font-semibold text-stone-850 text-xs">Storefront Link</p>
+            <p className="text-[10px] text-stone-400 mt-0.5 leading-tight">Create markup links</p>
+          </div>
+        </Link>
+
+        <Link href="/portal/reseller/marketing"
+          className="bg-white border border-stone-200 hover:border-amber-600 rounded-2xl p-4 flex items-center gap-3.5 transition-colors shadow-sm">
+          <div className="w-11 h-11 rounded-xl bg-orange-50 text-orange-700 flex items-center justify-center shrink-0">
+            <Tag className="w-5.5 h-5.5" />
+          </div>
+          <div>
+            <p className="font-semibold text-stone-850 text-xs">Marketing Hub</p>
+            <p className="text-[10px] text-stone-400 mt-0.5 leading-tight">Coupons &amp; reviews</p>
+          </div>
+        </Link>
+
+        <Link href="/portal/reseller/messages"
+          className="bg-white border border-stone-200 hover:border-amber-600 rounded-2xl p-4 flex items-center gap-3.5 transition-colors shadow-sm col-span-2 lg:col-span-1">
+          <div className="w-11 h-11 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+            <MessageSquare className="w-5.5 h-5.5" />
+          </div>
+          <div>
+            <p className="font-semibold text-stone-850 text-xs">Support Chat</p>
+            <p className="text-[10px] text-stone-400 mt-0.5 leading-tight">Direct chat helpline</p>
           </div>
         </Link>
       </div>

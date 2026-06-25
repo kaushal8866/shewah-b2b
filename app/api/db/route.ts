@@ -56,6 +56,14 @@ const ALLOWED_TABLES = new Set([
   'reseller_customers',
   'reseller_share_links',
   'reseller_themes',
+  'reseller_storefront_customers',
+  'reseller_storefront_otps',
+  'reseller_storefront_carts',
+  'reseller_messages',
+  'reseller_storefront_reviews',
+  'reseller_storefront_coupons',
+  'reseller_storefront_abandoned_carts',
+  'reseller_notifications',
 ])
 
 const MASTER_ONLY_TABLES = new Set([
