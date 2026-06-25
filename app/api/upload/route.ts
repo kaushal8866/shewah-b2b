@@ -51,11 +51,13 @@ async function logFailure(
 export async function POST(req: NextRequest) {
   const CLOUD_NAME =
     process.env.CLOUDINARY_CLOUD_NAME ||
-    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+    'ddnlacdta'
 
   const UPLOAD_PRESET =
     process.env.CLOUDINARY_UPLOAD_PRESET ||
-    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
+    'shewah-b2b'
 
   if (!CLOUD_NAME || !UPLOAD_PRESET) {
     const msg = 'Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET.'
