@@ -23,6 +23,8 @@ function NewMfgOrderForm() {
   const [uploadingCad, setUploadingCad] = useState(false)
   const [floatError, setFloatError] = useState<string | null>(null)
   const [overIssueModal, setOverIssueModal] = useState<{ available: number; required: number; shortfall: number } | null>(null)
+  const [fifoPreview, setFifoPreview] = useState<any | null>(null)
+  const [loadingFifo, setLoadingFifo] = useState(false)
   // Tracks fields the operator has manually edited so the customer-order autofill
   // doesn't clobber them on a second pick.
   const [touched, setTouched] = useState<Record<string, boolean>>({})
@@ -189,6 +191,44 @@ function NewMfgOrderForm() {
     setUploadingCad(false)
   }
 
+  useEffect(() => {
+    const qty = parseFloat(form.gold_weight_required)
+    if (!qty || qty <= 0) {
+      setFifoPreview(null)
+      return
+    }
+
+    let active = true
+    const fetchPreview = async () => {
+      setLoadingFifo(true)
+      try {
+        const res = await fetch('/api/purchase-lots/fifo-preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            material_type: 'gold_24k',
+            required_qty: qty,
+            gold_karat: `${form.gold_karat}K`
+          })
+        })
+        if (res.ok && active) {
+          const data = await res.json()
+          setFifoPreview(data)
+        }
+      } catch (err) {
+        console.error(err)
+      } finally {
+        if (active) setLoadingFifo(false)
+      }
+    }
+
+    const timer = setTimeout(fetchPreview, 400) // debounce
+    return () => {
+      active = false
+      clearTimeout(timer)
+    }
+  }, [form.gold_weight_required, form.gold_karat])
+
   // Calculate labour amount
   const goldWeight = parseFloat(form.gold_weight_actual || form.gold_weight_required || '0')
   const effectiveWeight = Math.max(goldWeight, parseFloat('1')) // minimum 1 gram
@@ -277,6 +317,27 @@ function NewMfgOrderForm() {
           setFloatError(j.error || 'Failed to reserve float; order was rolled back.')
         }
         return
+      }
+    }
+
+    // Trigger gold FIFO lot reservation when order is successfully created
+    if (parseFloat(form.gold_weight_required) > 0) {
+      try {
+        const executeRes = await fetch('/api/purchase-lots/fifo-execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            manufacturing_order_id: data.id,
+            material_type: 'gold_24k',
+            required_qty: parseFloat(form.gold_weight_required),
+            gold_karat: `${form.gold_karat}K`
+          })
+        })
+        if (!executeRes.ok) {
+          console.error('FIFO reservation failed on save', await executeRes.json())
+        }
+      } catch (err) {
+        console.error('FIFO reservation request error on save', err)
       }
     }
 
@@ -557,6 +618,45 @@ function NewMfgOrderForm() {
                 <input className={inp} value={form.material_notes} onChange={e => set('material_notes', e.target.value)} placeholder="e.g. Using 3g from deposited float + 0.5g from our stock" />
               </div>
             </div>
+
+            {/* FIFO Gold Cost Preview */}
+            {fifoPreview && (
+              <div className="mt-4 p-3 rounded-xl border border-stone-200 bg-stone-50/50 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-stone-700 uppercase tracking-wider block">FIFO Cost Preview</span>
+                  {fifoPreview.fulfilled ? (
+                    <span className="text-emerald-700 font-semibold bg-emerald-100 px-2 py-0.5 rounded-md text-[10px]">Fully Stocked</span>
+                  ) : (
+                    <span className="text-rose-700 font-semibold bg-rose-100 px-2 py-0.5 rounded-md text-[10px]">
+                      Shortfall: {fifoPreview.shortfall_qty}g (pure)
+                    </span>
+                  )}
+                </div>
+                
+                <div className="text-stone-500 font-medium">
+                  {fifoPreview.reservations.length > 0 ? (
+                    <div>
+                      Will draw: {fifoPreview.reservations.map((r: any) => (
+                        `${r.lot_number} (${(r.issued_qty / (KARAT_FACTORS[parseInt(form.gold_karat) || 24])).toFixed(2)}g @ ₹${Math.round(r.unit_cost * (KARAT_FACTORS[parseInt(form.gold_karat) || 24]))})`
+                      )).join(' + ')}
+                    </div>
+                  ) : (
+                    <div className="text-rose-600">No active gold lots found in stock!</div>
+                  )}
+                </div>
+
+                <div className="flex justify-between border-t border-stone-100 pt-2 font-bold text-stone-700">
+                  <span>Estimated FIFO Gold Cost:</span>
+                  <span>{formatCurrency(fifoPreview.total_cost)}</span>
+                </div>
+
+                {!fifoPreview.fulfilled && (
+                  <p className="text-[10px] text-rose-500 font-semibold leading-relaxed mt-1">
+                    ⚠️ Only {((parseFloat(form.gold_weight_required) * (KARAT_FACTORS[parseInt(form.gold_karat) || 24])) - fifoPreview.shortfall_qty).toFixed(3)}g (pure) available in lots. {fifoPreview.shortfall_qty}g (pure) not costed — please add a purchase lot first.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Labour */}

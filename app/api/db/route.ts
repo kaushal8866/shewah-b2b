@@ -42,6 +42,11 @@ const ALLOWED_TABLES = new Set([
   'partner_trade_payments',
   'gst_invoices',
   'cash_transactions',
+  'purchase_lots',
+  'lot_issuances',
+  'replenishment_obligations',
+  'replenishment_offsets',
+  'product_categories',
 ])
 
 const MASTER_ONLY_TABLES = new Set([

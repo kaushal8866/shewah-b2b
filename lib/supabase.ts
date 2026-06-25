@@ -244,6 +244,32 @@ export type Product = {
   deleted_at?: string
   created_by?: string
   updated_by?: string
+  attributes?: Record<string, any>
+}
+
+export interface AttributeField {
+  key: string
+  label: string
+  type: 'text' | 'number' | 'boolean' | 'select' | 'multiselect' | 'textarea' | 'date'
+  required: boolean
+  unit?: string
+  max_length?: number
+  min?: number
+  max?: number
+  options?: string[]
+  placeholder?: string
+  help_text?: string
+}
+
+export interface ProductCategory {
+  id: string
+  name: string
+  slug: string
+  attribute_schema: AttributeField[]
+  is_active: boolean
+  sort_order?: number
+  created_at: string
+  updated_at: string
 }
 
 export type Order = {

@@ -9,6 +9,7 @@ import { ArrowLeft, Save, Calculator, Plus, X, Upload, Trash2, ChevronDown, Chev
 import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import Link from 'next/link'
 import MetalWeightCalculator from '@/components/MetalWeightCalculator'
+import { DynamicField, validateAttributes } from '@/lib/catalogAttributes'
 
 type DiamondRow = {
   id: string
@@ -69,8 +70,12 @@ export default function CatalogProductEditPage() {
   const [metalWeights, setMetalWeights] = useState<any>({})
   const [refKarat, setRefKarat] = useState<string>('22K')
   const [refColor, setRefColor] = useState<string>('yellow')
+  const [categories, setCategories] = useState<any[]>([])
+  const [attributes, setAttributes] = useState<Record<string, any>>({})
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
+
   const [form, setForm] = useState({
-    code: '', name: '', description: '', category: 'ring',
+    code: '', name: '', description: '', category: 'Ring',
     metal_type: 'gold',
     gold_weight_22k: '',
     gross_weight: '',
@@ -85,8 +90,10 @@ export default function CatalogProductEditPage() {
         .select('rate_24k, retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
         .order('recorded_at', { ascending: false }).limit(1),
       supabase.from('products').select('*').eq('id', id).single(),
-      supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c'])
-    ]).then(([{ data: gr }, { data }, { data: sd }]: any) => {
+      supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c']),
+      supabase.from('product_categories').select('*').eq('is_active', true).order('sort_order', { ascending: true })
+    ]).then(([{ data: gr }, { data }, { data: sd }, { data: catData }]: any) => {
+      if (catData) setCategories(catData)
       const r = gr?.[0]
       if (r) {
         setGoldRate(Number(r.rate_24k) || 0)
@@ -134,7 +141,7 @@ export default function CatalogProductEditPage() {
           code: data.code || '',
           name: data.name || '',
           description: data.description || '',
-          category: data.category || 'ring',
+          category: data.category || 'Ring',
           metal_type: data.metal_type || 'gold',
           gold_weight_22k: w22 ? String(w22) : '',
           gross_weight: data.gross_weight ? String(data.gross_weight) : '',
@@ -143,6 +150,7 @@ export default function CatalogProductEditPage() {
           delivery_days: String(data.delivery_days || '14'),
           models_available: data.models_available || ['wholesale', 'design_make'],
         })
+        setAttributes(data.attributes || {})
         setLegacy({
           gross_weight: data.gross_weight != null ? Number(data.gross_weight) : null,
           making_charges: data.making_charges != null ? Number(data.making_charges) : null,
@@ -275,6 +283,13 @@ export default function CatalogProductEditPage() {
     } catch { /* silent — auto-fill is best-effort */ }
   }
   function set(k: string, v: string | string[]) { setForm(prev => ({ ...prev, [k]: v })) }
+  
+  function handleCategoryChange(catName: string) {
+    setForm(prev => ({ ...prev, category: catName }))
+    setAttributes({})
+    setValidationErrors([])
+  }
+
   function toggleModel(model: string) {
     const current = form.models_available
     set('models_available', current.includes(model) ? current.filter(m => m !== model) : [...current, model])
@@ -283,6 +298,17 @@ export default function CatalogProductEditPage() {
   async function handleSave() {
     if (!form.code || !form.name) { alert('Product code and name are required'); return }
     if (!weight22) { alert('Net weight is required'); return }
+    
+    // Validate dynamic attributes
+    const selectedCategory = categories.find(c => c.name.toLowerCase() === form.category.toLowerCase())
+    const schema = selectedCategory?.attribute_schema || []
+    const errors = validateAttributes(attributes, schema)
+    if (errors.length > 0) {
+      setValidationErrors(errors)
+      alert('Please fix the validation errors: ' + errors.join(' '));
+      return
+    }
+
     setSaving(true)
     const primary = diamonds[0]
     const karat_pricing: Record<string, any> = {}
@@ -319,9 +345,10 @@ export default function CatalogProductEditPage() {
         size_label: d.size_label || null,
       })),
       detailed_pricing: isSilver ? { karat_pricing, silver_rate_b2b_used: silverRateB2B, silver_rate_d2c_used: silverRateD2C } : { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
+      attributes,
     }
     let { error } = await supabase.from('products').update(updatePayload).eq('id', id)
-    if (error && /priced_at|column .* does not exist|metal_weights/i.test(error.message || '')) {
+    if (error && /priced_at|column .* does not exist|metal_weights|attributes/i.test(error.message || '')) {
       // Migration not yet applied — drop the new columns and retry so
       // editing keeps working until the operator runs task-72 SQL.
       delete updatePayload.priced_at_rate
@@ -329,6 +356,7 @@ export default function CatalogProductEditPage() {
       delete updatePayload.metal_weights
       delete updatePayload.ref_karat
       delete updatePayload.ref_color
+      delete updatePayload.attributes
       ;({ error } = await supabase.from('products').update(updatePayload).eq('id', id))
     }
     setSaving(false)
@@ -366,15 +394,53 @@ export default function CatalogProductEditPage() {
             <div><label className={lbl}>Product name *</label><input className={inp} value={form.name} onChange={e => set('name', e.target.value)} /></div>
             <div>
               <label className={lbl}>Category *</label>
-              <select className={inp} value={form.category} onChange={e => set('category', e.target.value)}>
-                {['Ring', 'Earring', 'Pendant', 'Bangles', 'Necklace', 'Bracelet', 'Other'].map(c => (
-                  <option key={c} value={c.toLowerCase()}>{c}</option>
-                ))}
+              <select className={inp} value={form.category} onChange={e => handleCategoryChange(e.target.value)}>
+                {categories.length > 0 ? (
+                  categories.map(c => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))
+                ) : (
+                  ['Ring', 'Necklace', 'Earring', 'Bracelet'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))
+                )}
               </select>
             </div>
             <div className="sm:col-span-2 lg:col-span-3"><label className={lbl}>Description</label><textarea className={`${inp} resize-none`} rows={2} value={form.description} onChange={e => set('description', e.target.value)} /></div>
           </div>
         </div>
+
+        {/* DYNAMIC PRODUCT ATTRIBUTES */}
+        {(() => {
+          const selectedCategory = categories.find(c => c.name.toLowerCase() === form.category.toLowerCase())
+          const schema = selectedCategory?.attribute_schema || []
+          if (schema.length === 0) return null
+          return (
+            <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
+              <h2 className="font-medium text-stone-900 mb-1">Specifications for {form.category}</h2>
+              <p className="text-xs text-stone-400 mb-4">
+                Provide the specific dimensions and specifications for this category.
+              </p>
+              {validationErrors.length > 0 && (
+                <div className="mb-4 bg-red-50 text-red-600 border border-red-200 rounded-xl p-3 text-xs space-y-1">
+                  {validationErrors.map((err, i) => (
+                    <div key={i}>{err}</div>
+                  ))}
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {schema.map((field: any) => (
+                  <DynamicField
+                    key={field.key}
+                    field={field}
+                    value={attributes[field.key]}
+                    onChange={(key, val) => setAttributes(prev => ({ ...prev, [key]: val }))}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        })()}
 
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
           <h2 className="font-medium text-stone-900 mb-1">Product photos</h2>
@@ -646,6 +712,39 @@ export default function CatalogProductEditPage() {
             </div>
           )}
         </div>
+
+        {/* READ-ONLY SPECIFICATIONS SUMMARY */}
+        {(() => {
+          const selectedCategory = categories.find(c => c.name.toLowerCase() === form.category.toLowerCase())
+          const schema = selectedCategory?.attribute_schema || []
+          const activeAttributes = Object.entries(attributes).filter(([_, val]) => val !== null && val !== undefined && val !== '')
+          if (activeAttributes.length === 0) return null
+          return (
+            <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
+              <h2 className="font-medium text-stone-900 mb-1">Specifications summary</h2>
+              <p className="text-xs text-stone-400 mb-4">Read-only overview of current product attributes.</p>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activeAttributes.map(([key, val]) => {
+                  const field = schema.find(f => f.key === key)
+                  const label = field ? field.label : key
+                  const unit = field?.unit ? ` ${field.unit}` : ''
+                  let displayVal = String(val)
+                  if (typeof val === 'boolean') {
+                    displayVal = val ? 'Yes' : 'No'
+                  } else if (Array.isArray(val)) {
+                    displayVal = val.join(', ')
+                  }
+                  return (
+                    <div key={key} className="border-b border-stone-100 pb-2">
+                      <dt className="text-xs text-stone-500 font-medium">{label}</dt>
+                      <dd className="text-sm font-semibold text-stone-850">{displayVal}{unit}</dd>
+                    </div>
+                  )
+                })}
+              </dl>
+            </div>
+          )
+        })()}
 
         {/* MODELS */}
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">

@@ -9,6 +9,7 @@ import { ArrowLeft, Save, Calculator, Plus, X, Upload, Trash2, ChevronDown, Chev
 import Link from 'next/link'
 import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import MetalWeightCalculator from '@/components/MetalWeightCalculator'
+import { DynamicField, validateAttributes } from '@/lib/catalogAttributes'
 
 type DiamondRow = {
   id: string
@@ -70,8 +71,12 @@ export default function NewProductPage() {
   const [metalWeights, setMetalWeights] = useState<any>({})
   const [refKarat, setRefKarat] = useState<string>('22K')
   const [refColor, setRefColor] = useState<string>('yellow')
+  const [categories, setCategories] = useState<any[]>([])
+  const [attributes, setAttributes] = useState<Record<string, any>>({})
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
+
   const [form, setForm] = useState({
-    code: '', name: '', description: '', category: 'ring',
+    code: '', name: '', description: '', category: 'Ring',
     metal_type: 'gold',
     gold_weight_22k: '',
     gross_weight: '',
@@ -90,8 +95,16 @@ export default function NewProductPage() {
       supabase
         .from('settings')
         .select('key, value')
-        .in('key', ['silver_rate_b2b', 'silver_rate_d2c'])
-    ]).then(([{ data: gd }, { data: sd }]) => {
+        .in('key', ['silver_rate_b2b', 'silver_rate_d2c']),
+      supabase
+        .from('product_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+    ]).then(([{ data: gd }, { data: sd }, { data: catData }]) => {
+      if (catData) {
+        setCategories(catData)
+      }
       const r = gd?.[0]
       if (r) {
         setGoldRate(Number(r.rate_24k) || 0)
@@ -230,6 +243,12 @@ export default function NewProductPage() {
 
   function set(k: string, v: string | string[]) { setForm(prev => ({ ...prev, [k]: v })) }
 
+  function handleCategoryChange(catName: string) {
+    setForm(prev => ({ ...prev, category: catName }))
+    setAttributes({})
+    setValidationErrors([])
+  }
+
   function toggleModel(model: string) {
     const current = form.models_available
     set('models_available', current.includes(model) ? current.filter(m => m !== model) : [...current, model])
@@ -238,6 +257,17 @@ export default function NewProductPage() {
   async function handleSave() {
     if (!form.code || !form.name) { alert('Product code and name are required'); return }
     if (!weight22) { alert('Net weight is required'); return }
+    
+    // Validate dynamic attributes
+    const selectedCategory = categories.find(c => c.name.toLowerCase() === form.category.toLowerCase())
+    const schema = selectedCategory?.attribute_schema || []
+    const errors = validateAttributes(attributes, schema)
+    if (errors.length > 0) {
+      setValidationErrors(errors)
+      alert('Please fix the validation errors: ' + errors.join(' '));
+      return
+    }
+
     setSaving(true)
     const primary = diamonds[0]
     const karat_pricing: Record<string, any> = {}
@@ -275,15 +305,17 @@ export default function NewProductPage() {
       })),
       detailed_pricing: isSilver ? { karat_pricing, silver_rate_b2b_used: silverRateB2B, silver_rate_d2c_used: silverRateD2C } : { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
       is_active: true,
+      attributes,
     }
     let { error } = await supabase.from('products').insert([insertPayload])
-    if (error && /priced_at|column .* does not exist|metal_weights/i.test(error.message || '')) {
+    if (error && /priced_at|column .* does not exist|metal_weights|attributes/i.test(error.message || '')) {
       // Migration not yet applied — drop the new columns and retry.
       delete insertPayload.priced_at_rate
       delete insertPayload.priced_at
       delete insertPayload.metal_weights
       delete insertPayload.ref_karat
       delete insertPayload.ref_color
+      delete insertPayload.attributes
       ;({ error } = await supabase.from('products').insert([insertPayload]))
     }
     setSaving(false)
@@ -320,10 +352,16 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className={lbl}>Category *</label>
-              <select className={inp} value={form.category} onChange={e => set('category', e.target.value)}>
-                {['Ring', 'Earring', 'Pendant', 'Bangles', 'Necklace', 'Bracelet', 'Other'].map(c => (
-                  <option key={c} value={c.toLowerCase()}>{c}</option>
-                ))}
+              <select className={inp} value={form.category} onChange={e => handleCategoryChange(e.target.value)}>
+                {categories.length > 0 ? (
+                  categories.map(c => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))
+                ) : (
+                  ['Ring', 'Necklace', 'Earring', 'Bracelet'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))
+                )}
               </select>
             </div>
             <div className="sm:col-span-2 lg:col-span-3">
@@ -332,6 +370,31 @@ export default function NewProductPage() {
             </div>
           </div>
         </div>
+
+        {/* DYNAMIC PRODUCT ATTRIBUTES */}
+        {(() => {
+          const selectedCategory = categories.find(c => c.name.toLowerCase() === form.category.toLowerCase())
+          const schema = selectedCategory?.attribute_schema || []
+          if (schema.length === 0) return null
+          return (
+            <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
+              <h2 className="font-medium text-stone-900 mb-1">Specifications for {form.category}</h2>
+              <p className="text-xs text-stone-400 mb-4">
+                Provide the specific dimensions and specifications for this category.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {schema.map((field: any) => (
+                  <DynamicField
+                    key={field.key}
+                    field={field}
+                    value={attributes[field.key]}
+                    onChange={(key, val) => setAttributes(prev => ({ ...prev, [key]: val }))}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* PHOTOS */}
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
@@ -699,6 +762,18 @@ export default function NewProductPage() {
             ))}
           </div>
         </div>
+
+        {/* VALIDATION ERRORS */}
+        {validationErrors.length > 0 && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 space-y-1">
+            <p className="font-semibold">Please correct the following errors:</p>
+            <ul className="list-disc pl-4 space-y-0.5">
+              {validationErrors.map((err, idx) => (
+                <li key={idx}>{err}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* ACTIONS */}
         <div className="flex justify-end gap-3 pt-2">

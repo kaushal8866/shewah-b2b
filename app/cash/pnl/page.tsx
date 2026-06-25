@@ -106,16 +106,22 @@ export default function PnLStatementPage() {
       ['TOTAL GROSS REVENUE', report.gross_revenue],
       [],
       ['DIRECT COGS', 'Amount (INR)'],
-      ['Formal Order COGS', report.formal_order_cogs],
+      ['Formal Order COGS (Rate-based Estimate)', report.formal_order_cogs],
+      ['Formal Order COGS (Lot-based Actual)', report.lot_based_order_cogs],
+      ['Costing Accuracy Variance', report.cogs_variance],
       ['Cash Raw Materials', report.cash_raw_material],
       ['Cash Manufacturing/Labour', report.cash_manufacturing],
       ['Cash Certification/Hallmarking', report.cash_certification],
       ['Cash Packaging & Logistics', report.cash_packaging_logistics],
       ['Karigar Material Returns (Deduction)', -report.karigar_material_returns],
-      ['TOTAL COGS', report.total_cogs],
+      ['TOTAL COGS (Lot-based)', report.total_cogs],
       [],
-      ['GROSS PROFIT', report.gross_profit],
+      ['GROSS PROFIT (Lot-based)', report.gross_profit],
       ['GROSS MARGIN (%)', `${report.gross_margin_pct}%`],
+      [],
+      ['GOLD REPLACEMENT VARIANCE', report.gold_replacement_variance],
+      ['ADJUSTED GROSS PROFIT', report.adjusted_gross_profit],
+      ['ADJUSTED GROSS MARGIN (%)', `${report.adjusted_gross_margin_pct}%`],
       [],
       ['OPERATING EXPENSES (OPEX)', 'Amount (INR)'],
     ]
@@ -335,8 +341,21 @@ export default function PnLStatementPage() {
                   <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider">Direct Costs (COGS)</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm text-stone-600">
-                      <span>Formal Order COGS</span>
+                      <span>Formal Order COGS (Estimate)</span>
                       <span className="font-medium text-stone-850">{formatCurrency(report.formal_order_cogs)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-stone-600">
+                      <span>Formal Order COGS (Lot-based Actual)</span>
+                      <span className="font-medium text-stone-850">{formatCurrency(report.lot_based_order_cogs)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-stone-600">
+                      <span>Costing Accuracy Variance</span>
+                      <span className={cn(
+                        "font-semibold",
+                        report.cogs_variance >= 0 ? "text-rose-600" : "text-emerald-600"
+                      )}>
+                        {report.cogs_variance >= 0 ? '+' : ''}{formatCurrency(report.cogs_variance)}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm text-stone-600">
                       <span>Cash Raw Materials (Gold, Diamond, Findings)</span>
@@ -361,7 +380,7 @@ export default function PnLStatementPage() {
                       </div>
                     )}
                     <div className="border-t border-stone-100 pt-2 flex justify-between text-sm font-bold text-stone-800">
-                      <span>Total COGS</span>
+                      <span>Total COGS (Lot-based)</span>
                       <span>{formatCurrency(report.total_cogs)}</span>
                     </div>
                   </div>
@@ -370,12 +389,35 @@ export default function PnLStatementPage() {
                 {/* Gross margin result */}
                 <div className="bg-stone-50 rounded-xl p-4 flex justify-between items-center border border-stone-150">
                   <div>
-                    <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Gross Profit</p>
+                    <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Gross Profit (Lot-based)</p>
                     <p className="text-lg font-bold text-stone-900 mt-0.5">{formatCurrency(report.gross_profit)}</p>
                   </div>
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
                     Margin: {report.gross_margin_pct}%
                   </span>
+                </div>
+
+                {/* Gold Replacement Variance and Adjusted Gross Profit */}
+                <div className="space-y-3 border-t border-stone-100 pt-4">
+                  <div className="flex justify-between text-sm text-stone-600">
+                    <span>Gold Replacement Variance</span>
+                    <span className={cn(
+                      "font-semibold text-sm",
+                      report.gold_replacement_variance > 0 ? "text-rose-600" : report.gold_replacement_variance < 0 ? "text-emerald-600" : "text-stone-500"
+                    )}>
+                      {report.gold_replacement_variance > 0 ? '+' : ''}{formatCurrency(report.gold_replacement_variance)}
+                      {report.gold_replacement_variance > 0 ? ' (loss)' : report.gold_replacement_variance < 0 ? ' (gain)' : ''}
+                    </span>
+                  </div>
+                  <div className="bg-[#1E3A5F]/5 rounded-xl p-4 flex justify-between items-center border border-[#1E3A5F]/15">
+                    <div>
+                      <p className="text-xs font-bold text-[#1E3A5F] uppercase tracking-wider">Adjusted Gross Profit</p>
+                      <p className="text-lg font-bold text-[#1E3A5F] mt-0.5">{formatCurrency(report.adjusted_gross_profit)}</p>
+                    </div>
+                    <span className="text-xs font-bold text-white bg-[#1E3A5F] px-2.5 py-1 rounded-full">
+                      Margin: {report.adjusted_gross_margin_pct}%
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -431,6 +473,34 @@ export default function PnLStatementPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Costing Accuracy Section */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs">
+            <h2 className="text-sm font-bold text-stone-800 uppercase tracking-wider mb-4">Costing Accuracy</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+              <div className="border border-stone-150 p-4 rounded-xl bg-stone-50/30">
+                <span className="text-stone-400 block font-medium text-xs uppercase tracking-wider">Rate-based COGS estimate</span>
+                <span className="text-lg font-bold text-stone-800 mt-1 block">{formatCurrency(report.formal_order_cogs)}</span>
+              </div>
+              <div className="border border-stone-150 p-4 rounded-xl bg-stone-50/30">
+                <span className="text-stone-400 block font-medium text-xs uppercase tracking-wider">Lot-based actual COGS</span>
+                <span className="text-lg font-bold text-stone-800 mt-1 block">{formatCurrency(report.lot_based_order_cogs)}</span>
+              </div>
+              <div className="border border-stone-150 p-4 rounded-xl bg-stone-50/30">
+                <span className="text-stone-400 block font-medium text-xs uppercase tracking-wider">Estimate Variance</span>
+                <span className={cn(
+                  "text-lg font-bold mt-1 block",
+                  report.cogs_variance >= 0 ? "text-rose-600" : "text-emerald-600"
+                )}>
+                  {report.cogs_variance >= 0 ? '+' : ''}{formatCurrency(report.cogs_variance)} 
+                  <span className="text-xs font-semibold ml-1">
+                    ({report.formal_order_cogs > 0 ? ((report.cogs_variance / report.formal_order_cogs) * 100).toFixed(1) : 0}%)
+                  </span>
+                </span>
+                <span className="text-[11px] text-stone-400 block mt-0.5">Deviation of actual lot costs from rate-based estimations</span>
               </div>
             </div>
           </div>

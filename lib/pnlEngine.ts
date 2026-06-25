@@ -17,23 +17,32 @@ export interface PnLStatement {
 
   // ─── DIRECT COSTS (COGS) ───────────────────────────
   formal_order_cogs: number           // sum(orders.total_cogs) for same orders
+  lot_based_order_cogs: number        // sum(orders.lot_based_cogs) for same orders (fallback to total_cogs if null)
+  cogs_variance: number               // lot_based_order_cogs - formal_order_cogs
   cash_raw_material: number           // gold, diamond, silver, findings purchases
   cash_manufacturing: number          // karigar labour, CAD, casting, polishing
   cash_certification: number          // IGI, BIS, etc.
   cash_packaging_logistics: number    // box, courier, insurance
   karigar_material_returns: number    // (negative COGS — deducted)
-  total_cogs: number                  // formal + all cash COGS - returns
+  total_cogs: number                  // lot_based_order_cogs + all cash COGS - returns
 
   // ─── GROSS PROFIT ──────────────────────────────────
   gross_profit: number                // gross_revenue - total_cogs
   gross_margin_pct: number            // (gross_profit / gross_revenue) × 100
+
+  // ─── GOLD REPLACEMENT VARIANCE ─────────────────────
+  gold_replacement_variance: number   // sum(replenishment_offsets.delta) for period
+
+  // ─── ADJUSTED GROSS PROFIT ─────────────────────────
+  adjusted_gross_profit: number       // gross_profit - gold_replacement_variance
+  adjusted_gross_margin_pct: number   // (adjusted_gross_profit / gross_revenue) × 100
 
   // ─── OPERATING EXPENSES (OPEX) ─────────────────────
   opex_by_group: Record<string, number>  // { office: X, staff: Y, travel: Z, ... }
   total_opex: number
 
   // ─── NET PROFIT ────────────────────────────────────
-  net_profit: number                  // gross_profit - total_opex
+  net_profit: number                  // adjusted_gross_profit - total_opex
   net_margin_pct: number              // (net_profit / gross_revenue) × 100
 
   // ─── TRANSACTION COUNTS (for audit reference) ──────
@@ -42,10 +51,10 @@ export interface PnLStatement {
 }
 
 export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
-  // 1. Fetch formal order revenue and COGS
+  // 1. Fetch formal order revenue and COGS (including lot_based_cogs)
   const { data: orderData } = await supabaseAdmin
     .from('orders')
-    .select('total_amount, total_cogs')
+    .select('total_amount, total_cogs, lot_based_cogs')
     .gte('order_date', period.from)
     .lte('order_date', period.to)
     .in('status', ['production', 'qc', 'dispatched', 'delivered'])  // exclude cancelled/brief_received
@@ -53,6 +62,13 @@ export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
 
   const formal_order_revenue = sum(orderData, 'total_amount')
   const formal_order_cogs    = sum(orderData, 'total_cogs')
+
+  // Sum lot_based_cogs, falling back to total_cogs if null (e.g. for historic uncosted orders)
+  const lot_based_order_cogs = orderData
+    ? orderData.reduce((acc, row) => acc + Number(row.lot_based_cogs ?? row.total_cogs ?? 0), 0)
+    : 0
+
+  const cogs_variance = lot_based_order_cogs - formal_order_cogs
 
   // 2. Fetch all non-voided cash transactions in period
   const { data: txns } = await supabaseAdmin
@@ -89,7 +105,8 @@ export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
     ['packaging','logistics'].includes(t.category_group)
   )
 
-  const total_cogs = formal_order_cogs
+  // Use lot_based_order_cogs instead of formal_order_cogs
+  const total_cogs = lot_based_order_cogs
     + cash_raw_material + cash_manufacturing
     + cash_certification + cash_packaging_logistics
     - karigar_material_returns  // returns reduce COGS
@@ -97,6 +114,20 @@ export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
   const gross_profit     = gross_revenue - total_cogs
   const gross_margin_pct = gross_revenue > 0
     ? parseFloat(((gross_profit / gross_revenue) * 100).toFixed(2))
+    : 0
+
+  // 4. Fetch Gold Replacement Variance (sum(replenishment_offsets.delta))
+  const { data: offsets } = await supabaseAdmin
+    .from('replenishment_offsets')
+    .select('delta')
+    .gte('offset_date', period.from)
+    .lte('offset_date', period.to)
+
+  const gold_replacement_variance = offsets?.reduce((acc, row) => acc + Number(row.delta ?? 0), 0) ?? 0
+
+  const adjusted_gross_profit = gross_profit - gold_replacement_variance
+  const adjusted_gross_margin_pct = gross_revenue > 0
+    ? parseFloat(((adjusted_gross_profit / gross_revenue) * 100).toFixed(2))
     : 0
 
   // OPEX from cash
@@ -107,7 +138,8 @@ export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
   }
   const total_opex = Object.values(opex_by_group).reduce((a, b) => a + b, 0)
 
-  const net_profit     = gross_profit - total_opex
+  // Net Profit is calculated on top of Adjusted Gross Profit
+  const net_profit     = adjusted_gross_profit - total_opex
   const net_margin_pct = gross_revenue > 0
     ? parseFloat(((net_profit / gross_revenue) * 100).toFixed(2))
     : 0
@@ -129,9 +161,12 @@ export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
   return {
     period,
     formal_order_revenue, cash_sales_income, advance_income, other_income, gross_revenue,
-    formal_order_cogs, cash_raw_material, cash_manufacturing, cash_certification,
+    formal_order_cogs, lot_based_order_cogs, cogs_variance,
+    cash_raw_material, cash_manufacturing, cash_certification,
     cash_packaging_logistics, karigar_material_returns, total_cogs,
     gross_profit, gross_margin_pct,
+    gold_replacement_variance,
+    adjusted_gross_profit, adjusted_gross_margin_pct,
     opex_by_group, total_opex,
     net_profit, net_margin_pct,
     total_cash_txns: total_cash_txns ?? 0,

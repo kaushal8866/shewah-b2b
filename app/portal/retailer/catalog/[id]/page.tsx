@@ -20,6 +20,7 @@ type Product = {
   id: string
   code: string
   name: string
+  category: string
   description?: string
   diamond_weight?: number
   diamond_shape?: string
@@ -38,6 +39,7 @@ type Product = {
   photo_urls?: string[]
   delivery_days?: number
   models_available?: string[]
+  attributes?: Record<string, any>
 }
 
 const RING_SIZES = ['5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22']
@@ -47,6 +49,7 @@ export default function RetailerProductDetail() {
   const router = useRouter()
   const id = params.id as string
   const [product, setProduct] = useState<Product | null>(null)
+  const [categorySchema, setCategorySchema] = useState<any[]>([])
   const [error, setError] = useState('')
   const [activeImg, setActiveImg] = useState(0)
   const [qty, setQty] = useState('1')
@@ -60,7 +63,10 @@ export default function RetailerProductDetail() {
       .then(r => r.json())
       .then(d => {
         if (d.error) setError(d.error)
-        else setProduct(d.product)
+        else {
+          setProduct(d.product)
+          setCategorySchema(d.category_schema || [])
+        }
       })
       .catch(e => setError(e.message))
   }, [id])
@@ -191,6 +197,38 @@ export default function RetailerProductDetail() {
               </div>
             ))}
           </div>
+
+          {/* Specifications section */}
+          {(() => {
+            const activeAttributes = Object.entries(product.attributes || {}).filter(
+              ([_, val]) => val !== null && val !== undefined && val !== ''
+            )
+            if (activeAttributes.length === 0) return null
+            return (
+              <div className="border-t border-stone-200 pt-4 mb-5">
+                <h3 className="text-xs font-semibold text-stone-900 uppercase tracking-wider mb-3">Specifications</h3>
+                <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+                  {activeAttributes.map(([key, val]) => {
+                    const field = categorySchema.find(f => f.key === key)
+                    const label = field ? field.label : key
+                    const unit = field?.unit ? ` ${field.unit}` : ''
+                    let displayVal = String(val)
+                    if (typeof val === 'boolean') {
+                      displayVal = val ? 'Yes' : 'No'
+                    } else if (Array.isArray(val)) {
+                      displayVal = val.join(', ')
+                    }
+                    return (
+                      <div key={key}>
+                        <p className="text-xs text-stone-400">{label}</p>
+                        <p className="text-stone-800 mt-0.5 font-medium">{displayVal}{unit}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
 
           <div className="bg-white rounded-xl border border-stone-200 p-5 mb-4">
             {/* Karat selector */}

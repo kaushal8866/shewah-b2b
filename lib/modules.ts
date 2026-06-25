@@ -9,6 +9,7 @@ export const MODULES = [
   { id: 'manufacturing',   label: 'Manufacturing',       href: '/manufacturing' },
   { id: 'catalog',         label: 'Catalog',             href: '/catalog' },
   { id: 'gold_rates',      label: 'Gold Rates',          href: '/gold-rates' },
+  { id: 'gold_rates',      label: 'Purchase Lots',       href: '/purchase-lots' },
   { id: 'vendors',         label: 'Vendors & Inventory', href: '/vendors' },
   { id: 'circuits',        label: 'Circuits',            href: '/circuits' },
   { id: 'analytics',       label: 'Analytics',           href: '/analytics' },

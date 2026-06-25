@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
   Factory, Store, Menu, X, LogOut, ChevronDown, ChevronRight, Coins, BookUser, MessageSquare, Boxes,
-  Heart, Inbox as InboxIcon, FileText, Wallet
+  Heart, Inbox as InboxIcon, FileText, Wallet, Layers
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -51,6 +51,7 @@ const navSections = [
       { href: '/diamonds/catalog', icon: Diamond,        label: 'Diamonds',      module: 'vendors'       },
       { href: '/diamonds/pricing', icon: Diamond,        label: 'Diamond Pricing', module: 'vendors', masterOnly: true },
       { href: '/vendors',         icon: Store,           label: 'Vendors',       module: 'vendors'       },
+      { href: '/purchase-lots',   icon: Layers,          label: 'Purchase Lots', module: 'gold_rates'    },
     ]
   },
   {

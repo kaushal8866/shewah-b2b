@@ -9,7 +9,7 @@ const LIST_COLS = `
   id, code, name, description, category,
   diamond_weight, diamond_shape, diamond_quality, diamond_color, diamond_type,
   gold_karat, gold_weight_g, metal_weights,
-  trade_price, photo_urls, delivery_days, models_available, tags
+  trade_price, photo_urls, delivery_days, models_available, tags, attributes
 `
 
 async function requireRetailer() {
