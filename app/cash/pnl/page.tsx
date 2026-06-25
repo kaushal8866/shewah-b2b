@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import {
   BarChart2, Calendar, Download, RefreshCw, AlertCircle, TrendingUp, TrendingDown, ShieldAlert
 } from 'lucide-react'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, cn } from '@/lib/utils'
 
 export default function PnLStatementPage() {
   const { data: session } = useSession()
