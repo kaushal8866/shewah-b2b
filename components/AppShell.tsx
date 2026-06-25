@@ -8,36 +8,66 @@ import { canAccess } from '@/lib/modules'
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
-  Factory, Store, Menu, X, LogOut, ChevronDown, Coins, BookUser, MessageSquare, Boxes,
+  Factory, Store, Menu, X, LogOut, ChevronDown, ChevronRight, Coins, BookUser, MessageSquare, Boxes,
   Heart, Inbox as InboxIcon, FileText, Wallet
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-const nav = [
-  { href: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard',     module: 'dashboard'     },
-  { href: '/partners',        icon: Users,           label: 'Partners',      module: 'partners'      },
-  { href: '/customers',       icon: Heart,           label: 'Customers',     module: 'customers'     },
-  { href: '/enquiries',       icon: InboxIcon,       label: 'Enquiries',     module: 'enquiries'     },
-  { href: '/quotes',          icon: FileText,        label: 'Quotes',        module: 'orders'        },
-  { href: '/orders',          icon: ShoppingBag,     label: 'Orders',        module: 'orders'        },
-  { href: '/invoices',        icon: FileText,        label: 'Invoices',      module: 'orders'        },
-  { href: '/order-change-requests', icon: MessageSquare, label: 'Change Requests', module: 'orders'  },
-  { href: '/cad-requests',    icon: Pen,             label: 'CAD Requests',  module: 'cad_requests'  },
-  { href: '/cad-partners',    icon: BookUser,        label: 'CAD Partners',  module: 'cad_partners'  },
-  { href: '/manufacturing',   icon: Factory,         label: 'Manufacturing', module: 'manufacturing' },
-  { href: '/ready-to-ship',   icon: Package,         label: 'Ready to Ship', module: 'manufacturing' },
-  { href: '/catalog',         icon: Package,         label: 'Catalog',       module: 'catalog'       },
-  { href: '/gold-rates',      icon: TrendingUp,      label: 'Gold Rates',    module: 'gold_rates'    },
-  { href: '/stock',           icon: Boxes,           label: 'Stock',         module: 'vendors'       },
-  { href: '/diamonds/catalog', icon: Diamond,        label: 'Diamonds',      module: 'vendors'       },
-  { href: '/diamonds/pricing', icon: Diamond,        label: 'Diamond Pricing', module: 'vendors', masterOnly: true },
-  { href: '/vendors',         icon: Store,           label: 'Vendors',       module: 'vendors'       },
-  { href: '/circuits',        icon: Map,             label: 'Circuits',      module: 'circuits'      },
-  { href: '/analytics',       icon: BarChart2,       label: 'Analytics',     module: 'analytics'     },
-  { href: '/profitability',   icon: Coins,           label: 'Profitability', module: 'profitability' },
-  { href: '/cash',            icon: Wallet,          label: 'Cash Book',     module: 'cash'          },
-  { href: '/cash/pnl',        icon: BarChart2,       label: 'P&L Statement', module: 'cash', masterOnly: true },
-  { href: '/settings',        icon: Settings,        label: 'Settings',      module: 'settings'      },
+const navSections = [
+  {
+    title: 'Core',
+    items: [
+      { href: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard',     module: 'dashboard'     },
+    ]
+  },
+  {
+    title: 'Sales & CRM',
+    items: [
+      { href: '/partners',        icon: Users,           label: 'Partners',      module: 'partners'      },
+      { href: '/customers',       icon: Heart,           label: 'Customers',     module: 'customers'     },
+      { href: '/enquiries',       icon: InboxIcon,       label: 'Enquiries',     module: 'enquiries'     },
+      { href: '/quotes',          icon: FileText,        label: 'Quotes',        module: 'orders'        },
+    ]
+  },
+  {
+    title: 'Fulfillment & Mfg',
+    items: [
+      { href: '/orders',          icon: ShoppingBag,     label: 'Orders',        module: 'orders'        },
+      { href: '/invoices',        icon: FileText,        label: 'Invoices',      module: 'orders'        },
+      { href: '/order-change-requests', icon: MessageSquare, label: 'Change Requests', module: 'orders'  },
+      { href: '/cad-requests',    icon: Pen,             label: 'CAD Requests',  module: 'cad_requests'  },
+      { href: '/cad-partners',    icon: BookUser,        label: 'CAD Partners',  module: 'cad_partners'  },
+      { href: '/manufacturing',   icon: Factory,         label: 'Manufacturing', module: 'manufacturing' },
+      { href: '/ready-to-ship',   icon: Package,         label: 'Ready to Ship', module: 'manufacturing' },
+      { href: '/circuits',        icon: Map,             label: 'Circuits',      module: 'circuits'      },
+    ]
+  },
+  {
+    title: 'Inventory & Rates',
+    items: [
+      { href: '/catalog',         icon: Package,         label: 'Catalog',       module: 'catalog'       },
+      { href: '/gold-rates',      icon: TrendingUp,      label: 'Gold Rates',    module: 'gold_rates'    },
+      { href: '/stock',           icon: Boxes,           label: 'Stock',         module: 'vendors'       },
+      { href: '/diamonds/catalog', icon: Diamond,        label: 'Diamonds',      module: 'vendors'       },
+      { href: '/diamonds/pricing', icon: Diamond,        label: 'Diamond Pricing', module: 'vendors', masterOnly: true },
+      { href: '/vendors',         icon: Store,           label: 'Vendors',       module: 'vendors'       },
+    ]
+  },
+  {
+    title: 'Finance & Analytics',
+    items: [
+      { href: '/analytics',       icon: BarChart2,       label: 'Analytics',     module: 'analytics'     },
+      { href: '/profitability',   icon: Coins,           label: 'Profitability', module: 'profitability' },
+      { href: '/cash',            icon: Wallet,          label: 'Cash Book',     module: 'cash'          },
+      { href: '/cash/pnl',        icon: BarChart2,       label: 'P&L Statement', module: 'cash', masterOnly: true },
+    ]
+  },
+  {
+    title: 'System',
+    items: [
+      { href: '/settings',        icon: Settings,        label: 'Settings',      module: 'settings'      },
+    ]
+  }
 ]
 
 const bottomNav = [
@@ -56,6 +86,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [pendingChangeRequests, setPendingChangeRequests] = useState<number>(0)
   const [newLeadCount, setNewLeadCount] = useState<number>(0)
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
+    'System': true // Collapse settings by default
+  })
+
+  const toggleSection = (title: string) => {
+    setCollapsedSections(prev => ({ ...prev, [title]: !prev[title] }))
+  }
 
   useEffect(() => {
     if (!session) return
@@ -119,7 +156,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return permissions.includes(module)
   }
 
-  const visibleNav = nav.filter(item => hasAccess(item.module) && (!('masterOnly' in item && item.masterOnly) || role === 'master'))
+  const visibleSections = navSections.map(sec => ({
+    title: sec.title,
+    items: sec.items.filter(item => hasAccess(item.module) && (!('masterOnly' in item && item.masterOnly) || role === 'master'))
+  })).filter(sec => sec.items.length > 0)
   const visibleBottom = bottomNav.filter(item => hasAccess(item.module))
 
   async function handleLogout() {
@@ -146,26 +186,42 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {visibleNav.map(({ href, icon: Icon, label }) => {
-            const active = pathname === href || (href !== '/' && pathname.startsWith(href))
-            const badge =
-              href === '/order-change-requests' && pendingChangeRequests > 0 ? pendingChangeRequests :
-              href === '/partners'              && newLeadCount > 0          ? newLeadCount          : 0
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {visibleSections.map(sec => {
+            const isCollapsed = collapsedSections[sec.title]
             return (
-              <Link key={href} href={href}
-                className={cn(
-                  'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
-                  active ? 'bg-white/10 text-white font-medium ring-1 ring-white/15' : 'text-white/60 hover:text-white hover:bg-white/5'
-                )}>
-                <Icon className="w-4 h-4 shrink-0" />
-                <span className="flex-1">{label}</span>
-                {badge > 0 && (
-                  <span className="text-[10px] font-semibold bg-amber-400 text-stone-900 rounded-full px-1.5 py-0.5 leading-none min-w-[18px] text-center">
-                    {badge > 99 ? '99+' : badge}
-                  </span>
-                )}
-              </Link>
+              <div key={sec.title} className="space-y-0.5">
+                <button
+                  type="button"
+                  onClick={() => toggleSection(sec.title)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold text-white/30 hover:text-white/60 uppercase tracking-wider text-left transition-colors mt-3 first:mt-0"
+                >
+                  <span>{sec.title}</span>
+                  {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
+
+                {!isCollapsed && sec.items.map(({ href, icon: Icon, label }) => {
+                  const active = pathname === href || (href !== '/' && pathname.startsWith(href))
+                  const badge =
+                    href === '/order-change-requests' && pendingChangeRequests > 0 ? pendingChangeRequests :
+                    href === '/partners'              && newLeadCount > 0          ? newLeadCount          : 0
+                  return (
+                    <Link key={href} href={href}
+                      className={cn(
+                        'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
+                        active ? 'bg-white/10 text-white font-medium ring-1 ring-white/15' : 'text-white/60 hover:text-white hover:bg-white/5'
+                      )}>
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span className="flex-1">{label}</span>
+                      {badge > 0 && (
+                        <span className="text-[10px] font-semibold bg-amber-400 text-stone-900 rounded-full px-1.5 py-0.5 leading-none min-w-[18px] text-center">
+                          {badge > 99 ? '99+' : badge}
+                        </span>
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
             )
           })}
         </nav>
@@ -218,27 +274,43 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-            {visibleNav.map(({ href, icon: Icon, label }) => {
-              const active = pathname === href || (href !== '/' && pathname.startsWith(href))
-              const badge =
-                href === '/order-change-requests' && pendingChangeRequests > 0 ? pendingChangeRequests :
-                href === '/partners'              && newLeadCount > 0          ? newLeadCount          : 0
+          <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+            {visibleSections.map(sec => {
+              const isCollapsed = collapsedSections[sec.title]
               return (
-                <Link key={href} href={href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3.5 rounded-xl text-base transition-colors',
-                    active ? 'bg-white/10 text-white font-medium ring-1 ring-white/15' : 'text-white/60'
-                  )}>
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span className="flex-1">{label}</span>
-                  {badge > 0 && (
-                    <span className="text-xs font-semibold bg-amber-400 text-stone-900 rounded-full px-2 py-0.5 leading-none min-w-[20px] text-center">
-                      {badge > 99 ? '99+' : badge}
-                    </span>
-                  )}
-                </Link>
+                <div key={sec.title} className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(sec.title)}
+                    className="w-full flex items-center justify-between px-4 py-2 text-xs font-bold text-white/30 hover:text-white/60 uppercase tracking-wider text-left transition-colors mt-3 first:mt-0"
+                  >
+                    <span>{sec.title}</span>
+                    {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {!isCollapsed && sec.items.map(({ href, icon: Icon, label }) => {
+                    const active = pathname === href || (href !== '/' && pathname.startsWith(href))
+                    const badge =
+                      href === '/order-change-requests' && pendingChangeRequests > 0 ? pendingChangeRequests :
+                      href === '/partners'              && newLeadCount > 0          ? newLeadCount          : 0
+                    return (
+                      <Link key={href} href={href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          'flex items-center gap-3 px-4 py-3.5 rounded-xl text-base transition-colors',
+                          active ? 'bg-white/10 text-white font-medium ring-1 ring-white/15' : 'text-white/60'
+                        )}>
+                        <Icon className="w-5 h-5 shrink-0" />
+                        <span className="flex-1">{label}</span>
+                        {badge > 0 && (
+                          <span className="text-xs font-semibold bg-amber-400 text-stone-900 rounded-full px-2 py-0.5 leading-none min-w-[20px] text-center">
+                            {badge > 99 ? '99+' : badge}
+                          </span>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
               )
             })}
           </nav>
