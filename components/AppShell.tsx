@@ -24,6 +24,7 @@ const navSections = [
     title: 'Sales & CRM',
     items: [
       { href: '/partners',        icon: Users,           label: 'Partners',      module: 'partners'      },
+      { href: '/resellers',       icon: Store,           label: 'Resellers',     module: 'resellers'     },
       { href: '/customers',       icon: Heart,           label: 'Customers',     module: 'customers'     },
       { href: '/enquiries',       icon: InboxIcon,       label: 'Enquiries',     module: 'enquiries'     },
       { href: '/quotes',          icon: FileText,        label: 'Quotes',        module: 'orders'        },

@@ -44,6 +44,7 @@ export const authOptions: NextAuthOptions = {
           permissions: user.permissions || [],
           manufacturingPartnerId: user.manufacturing_partner_id ?? null,
           partnerId: user.partner_id ?? null,
+          resellerId: user.reseller_id ?? null,
         }
       },
     }),
@@ -58,6 +59,7 @@ export const authOptions: NextAuthOptions = {
         token.permissions = (user as any).permissions
         token.manufacturingPartnerId = (user as any).manufacturingPartnerId ?? null
         token.partnerId = (user as any).partnerId ?? null
+        token.resellerId = (user as any).resellerId ?? null
       }
       return token
     },
@@ -70,8 +72,9 @@ export const authOptions: NextAuthOptions = {
         session.user.permissions = token.permissions
         session.user.manufacturingPartnerId = token.manufacturingPartnerId ?? null
         session.user.partnerId = token.partnerId ?? null
+        session.user.resellerId = token.resellerId ?? null
       }
-      return session
+      return session;
     },
   },
   pages: {

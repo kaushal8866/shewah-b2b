@@ -1,7 +1,7 @@
 import NextAuth, { DefaultSession } from 'next-auth'
 import { JWT } from 'next-auth/jwt'
 
-export type AppRole = 'master' | 'sub' | 'manufacturer' | 'retailer'
+export type AppRole = 'master' | 'sub' | 'manufacturer' | 'retailer' | 'reseller'
 
 declare module 'next-auth' {
   interface Session {
@@ -13,6 +13,7 @@ declare module 'next-auth' {
       permissions: string[]
       manufacturingPartnerId?: string | null
       partnerId?: string | null
+      resellerId?: string | null
     } & DefaultSession['user']
   }
 
@@ -24,6 +25,7 @@ declare module 'next-auth' {
     permissions: string[]
     manufacturingPartnerId?: string | null
     partnerId?: string | null
+    resellerId?: string | null
   }
 }
 
@@ -36,5 +38,6 @@ declare module 'next-auth/jwt' {
     permissions: string[]
     manufacturingPartnerId?: string | null
     partnerId?: string | null
+    resellerId?: string | null
   }
 }

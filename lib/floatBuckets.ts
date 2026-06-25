@@ -85,7 +85,7 @@ export async function getPartnerBuckets(partnerId: string): Promise<Bucket[]> {
     }
   }
 
-  for (const b of groups.values()) {
+  for (const b of Array.from(groups.values())) {
     // Final consumptions removed gold from custody too.
     b.in_custody -= b.used
     b.available = b.in_custody - b.reserved

@@ -73,6 +73,7 @@ export default function CatalogProductEditPage() {
   const [categories, setCategories] = useState<any[]>([])
   const [attributes, setAttributes] = useState<Record<string, any>>({})
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [floorPriceRupees, setFloorPriceRupees] = useState('')
 
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'Ring',
@@ -91,9 +92,13 @@ export default function CatalogProductEditPage() {
         .order('recorded_at', { ascending: false }).limit(1),
       supabase.from('products').select('*').eq('id', id).single(),
       supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c']),
-      supabase.from('product_categories').select('*').eq('is_active', true).order('sort_order', { ascending: true })
-    ]).then(([{ data: gr }, { data }, { data: sd }, { data: catData }]: any) => {
+      supabase.from('product_categories').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+      supabase.from('reseller_product_prices').select('floor_price_paise').eq('product_id', id).maybeSingle()
+    ]).then(([{ data: gr }, { data }, { data: sd }, { data: catData }, { data: resellerPrice }]: any) => {
       if (catData) setCategories(catData)
+      if (resellerPrice?.floor_price_paise) {
+        setFloorPriceRupees(String(Number(resellerPrice.floor_price_paise) / 100))
+      }
       const r = gr?.[0]
       if (r) {
         setGoldRate(Number(r.rate_24k) || 0)
@@ -310,6 +315,24 @@ export default function CatalogProductEditPage() {
     }
 
     setSaving(true)
+
+    // Save/upsert Reseller floor price
+    const floorPaise = Math.round(Number(floorPriceRupees) * 105)
+    // Wait, let's make sure it is exactly * 100 (in paise)
+    const floorPaiseExact = Math.round(Number(floorPriceRupees) * 100)
+    if (floorPriceRupees && floorPaiseExact > 0) {
+      const { error: floorErr } = await supabase.from('reseller_product_prices').upsert({
+        product_id: id,
+        floor_price_paise: floorPaiseExact,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'product_id' })
+      if (floorErr) {
+        console.error('Failed to save reseller floor price:', floorErr.message)
+      }
+    } else {
+      await supabase.from('reseller_product_prices').delete().eq('product_id', id)
+    }
+
     const primary = diamonds[0]
     const karat_pricing: Record<string, any> = {}
     for (const row of pricing) karat_pricing[String(row.karat)] = row
@@ -619,6 +642,27 @@ export default function CatalogProductEditPage() {
               <input type="number" inputMode="decimal" className={`${inp} inline-block w-20`} value={form.delivery_days} onChange={e => set('delivery_days', e.target.value)} />
             </div>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 border-t border-stone-100 pt-3">
+            <div>
+              <label className={lbl}>Reseller Floor Price (₹)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-2 text-stone-400 text-sm font-semibold">₹</span>
+                <input
+                  type="number"
+                  className={`${inp} pl-7 font-bold text-amber-700`}
+                  value={floorPriceRupees}
+                  onChange={e => setFloorPriceRupees(e.target.value)}
+                  placeholder="Enter floor price for reseller network..."
+                />
+              </div>
+              <p className="text-[10px] text-stone-400 mt-1">
+                The minimum price this reseller pays Shewah (suggested: between COGS and Trade).
+                {default22 && ` COGS (22k): ₹${Math.round(default22.cogs).toLocaleString('en-IN')} | Trade (22k): ₹${Math.round(default22.trade).toLocaleString('en-IN')}`}
+              </p>
+            </div>
+          </div>
+
           {!isSilver && goldRate === 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 mb-3">
               No gold rate. <Link href="/gold-rates" className="underline">Set today's rate &amp; retail labour</Link> to see prices.

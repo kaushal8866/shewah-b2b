@@ -47,6 +47,15 @@ const ALLOWED_TABLES = new Set([
   'replenishment_obligations',
   'replenishment_offsets',
   'product_categories',
+  'resellers',
+  'reseller_invitations',
+  'reseller_product_prices',
+  'reseller_orders',
+  'reseller_sample_ledger',
+  'reseller_payments',
+  'reseller_customers',
+  'reseller_share_links',
+  'reseller_themes',
 ])
 
 const MASTER_ONLY_TABLES = new Set([

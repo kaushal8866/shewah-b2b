@@ -78,9 +78,6 @@ const config: Config = {
         'outline-variant': '#cfc4c5',
         secondary: '#5f5e5e',
       },
-      boxShadow: {
-        'ambient': '0 20px 40px rgba(0,0,0, 0.04)',
-      },
       fontFamily: {
         sans:    ['Inter',   'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],

@@ -180,6 +180,7 @@ export type AppUser = {
   avatar_url?: string
   is_active: boolean
   created_at: string
+  reseller_id?: string
 }
 
 
@@ -769,6 +770,183 @@ export type MaterialLedger = {
   reference_id?: string
   notes?: string
   created_by?: string
+}
+
+export interface Reseller {
+  id: string
+  user_id?: string
+  reseller_code: string
+  store_name: string
+  owner_name: string
+  phone: string
+  email?: string
+  city: string
+  address: string
+  bank_name?: string
+  account_number?: string
+  ifsc_code?: string
+  upi_id?: string
+  kyc_document_type?: string
+  kyc_document_number?: string
+  kyc_document_url?: string
+  profile_photo_url?: string
+  status: 'invited' | 'onboarding' | 'active' | 'suspended'
+  invited_by?: string
+  approved_by?: string
+  credit_limit_paise: number
+  default_markup_percent: number
+  performance_tier: 'bronze' | 'silver' | 'gold' | 'platinum'
+  lifetime_sales_paise: number
+  outstanding_balance_paise: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ResellerInvitation {
+  id: string
+  invitation_code: string
+  recipient_name: string
+  recipient_phone: string
+  recipient_email?: string
+  personal_message?: string
+  expiry_date: string
+  status: 'pending' | 'accepted' | 'expired' | 'revoked'
+  created_by?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ResellerProductPrice {
+  id: string
+  product_id: string
+  floor_price_paise: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ResellerOrder {
+  id: string
+  order_number: string
+  reseller_id: string
+  product_id: string
+  quantity: number
+  ring_size?: string
+  custom_attributes: Record<string, any>
+  customer_selling_price_paise: number
+  reseller_cost_paise: number
+  reseller_earnings_paise: number
+  payment_status: 'pending' | 'paid' | 'partially_paid'
+  shipping_name: string
+  shipping_phone: string
+  shipping_address: string
+  status: 'payment_pending' | 'brief_received' | 'cad_in_progress' | 'cad_sent' | 'design_approved' | 'production' | 'qc' | 'dispatched' | 'delivered' | 'cancelled'
+  payment_deadline: string
+  created_at: string
+  updated_at: string
+  resellers?: { store_name: string; owner_name: string; phone: string }
+  products?: { code: string; name: string }
+}
+
+export interface ResellerSample {
+  id: string
+  reseller_id: string
+  product_id: string
+  sample_type: 'credit' | 'deposit'
+  sample_value_paise: number
+  deposit_amount_paise?: number
+  deposit_status?: 'pending_proof' | 'confirmed' | 'refunded' | 'forfeited'
+  issue_date?: string
+  return_due_date: string
+  status: 'requested' | 'approved' | 'issued' | 'returned' | 'lost' | 'sold' | 'rejected'
+  notes?: string
+  created_at: string
+  updated_at: string
+  products?: { code: string; name: string }
+}
+
+export interface ResellerPayment {
+  id: string
+  reseller_id: string
+  amount_paise: number
+  payment_method: string
+  transaction_reference?: string
+  proof_screenshot_url?: string
+  payment_type: 'order_payment' | 'sample_deposit' | 'outstanding_clear'
+  linked_order_id?: string
+  linked_sample_id?: string
+  status: 'pending' | 'confirmed' | 'rejected'
+  confirmed_by?: string
+  confirmed_at?: string
+  created_at: string
+  updated_at: string
+  resellers?: { store_name: string; owner_name: string }
+  reseller_orders?: { order_number: string }
+  reseller_sample_ledger?: { notes: string }
+}
+
+export interface ResellerCustomer {
+  id: string
+  reseller_id: string
+  name: string
+  phone: string
+  email?: string
+  first_order_date?: string
+  last_order_date?: string
+  total_orders: number
+  total_value_paise: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ShareLink {
+  id: string
+  reseller_id: string
+  link_token: string
+  link_name: string
+  markup_percent: number
+  scope: 'full' | 'curated'
+  curated_product_ids?: string[]
+  is_active: boolean
+  click_count: number
+  enquiry_count: number
+  order_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ResellerTheme {
+  id: string
+  reseller_id: string
+  store_name: string
+  logo_url?: string
+  favicon_url?: string
+  colors: {
+    primary: string
+    secondary: string
+    background: string
+    surface: string
+    text: string
+    borders: string
+    accent: string
+  }
+  typography: {
+    heading: string
+    body: string
+    scale: 'small' | 'medium' | 'large'
+  }
+  buttons: {
+    shape: 'rounded-none' | 'rounded-md' | 'rounded-xl' | 'rounded-full'
+    style: 'fill' | 'outline'
+    hover: 'darken' | 'lighten' | 'none'
+    shadow: 'none' | 'sm' | 'md' | 'lg'
+  }
+  layout: {
+    density: 'compact' | 'comfortable' | 'spacious'
+    spacing: 'small' | 'medium' | 'large'
+  }
+  is_active: boolean
+  created_at: string
+  updated_at: string
 }
 
 
