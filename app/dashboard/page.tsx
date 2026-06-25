@@ -8,6 +8,7 @@ import {
   Clock, CheckCircle2, AlertCircle, Package
 } from 'lucide-react'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 
 type Stats = {
   totalPartners: number
@@ -32,6 +33,10 @@ type RecentOrder = {
 }
 
 export default function Dashboard() {
+  const { data: session } = useSession()
+  const role = session?.user?.role || 'sub'
+  const isMaster = role === 'master'
+
   const [stats, setStats] = useState<Stats>({
     totalPartners: 0, activePartners: 0, hotLeads: 0,
     totalOrders: 0, pendingOrders: 0,
@@ -40,6 +45,7 @@ export default function Dashboard() {
   })
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([])
   const [loading, setLoading] = useState(true)
+  const [cashSummary, setCashSummary] = useState<{ cashIn: number; cashOut: number; netProfit: number } | null>(null)
 
   useEffect(() => {
     async function loadDashboard() {
@@ -95,6 +101,28 @@ export default function Dashboard() {
     loadDashboard()
   }, [])
 
+  useEffect(() => {
+    if (role !== 'master') return
+    async function loadCashSummary() {
+      try {
+        const res = await fetch('/api/cash/pnl')
+        if (res.ok) {
+          const data = await res.json()
+          const cashIn = (data.cash_sales_income || 0) + (data.advance_income || 0) + (data.other_income || 0)
+          const cashOut = (data.cash_raw_material || 0) + (data.cash_manufacturing || 0) + (data.cash_certification || 0) + (data.cash_packaging_logistics || 0) + (data.total_opex || 0)
+          setCashSummary({
+            cashIn,
+            cashOut,
+            netProfit: data.net_profit || 0
+          })
+        }
+      } catch (err) {
+        console.error('Error fetching cash summary', err)
+      }
+    }
+    loadCashSummary()
+  }, [session, role])
+
   const metrics = [
     { label: 'Active Partners', value: stats.activePartners, sub: `${stats.totalPartners} total`, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Hot Leads', value: stats.hotLeads, sub: 'Need follow-up', icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-50' },
@@ -103,6 +131,15 @@ export default function Dashboard() {
     { label: 'Total Earned', value: formatCurrency(stats.totalRevenue), sub: 'Delivered orders', icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
     { label: 'CAD Queue', value: stats.activeCadRequests, sub: 'Pending + in-progress', icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50' },
   ]
+
+  const displayMetrics = [...metrics]
+  if (isMaster && cashSummary) {
+    displayMetrics.push(
+      { label: 'Cash In (MTD)', value: formatCurrency(cashSummary.cashIn), sub: 'Incl. Advances', icon: IndianRupee, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Cash Out (MTD)', value: formatCurrency(cashSummary.cashOut), sub: 'COGS + OPEX', icon: IndianRupee, color: 'text-rose-600', bg: 'bg-rose-50' },
+      { label: 'Net Profit (MTD)', value: formatCurrency(cashSummary.netProfit), sub: 'Unified P&L', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50' }
+    )
+  }
 
   const pipelineStages = [
     { status: 'brief_received', label: 'Brief' },
@@ -136,7 +173,7 @@ export default function Dashboard() {
 
       {/* Metrics grid */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-5 lg:mb-7">
-        {metrics.map((m) => (
+        {displayMetrics.map((m) => (
           <div key={m.label} className="bg-white rounded-xl border border-stone-200 p-5">
             <div className="flex items-start justify-between mb-3">
               <p className="text-sm text-stone-500">{m.label}</p>

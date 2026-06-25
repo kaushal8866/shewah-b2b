@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
   Factory, Store, Menu, X, LogOut, ChevronDown, Coins, BookUser, MessageSquare, Boxes,
-  Heart, Inbox as InboxIcon, FileText
+  Heart, Inbox as InboxIcon, FileText, Wallet
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -35,6 +35,8 @@ const nav = [
   { href: '/circuits',        icon: Map,             label: 'Circuits',      module: 'circuits'      },
   { href: '/analytics',       icon: BarChart2,       label: 'Analytics',     module: 'analytics'     },
   { href: '/profitability',   icon: Coins,           label: 'Profitability', module: 'profitability' },
+  { href: '/cash',            icon: Wallet,          label: 'Cash Book',     module: 'cash'          },
+  { href: '/cash/pnl',        icon: BarChart2,       label: 'P&L Statement', module: 'cash', masterOnly: true },
   { href: '/settings',        icon: Settings,        label: 'Settings',      module: 'settings'      },
 ]
 

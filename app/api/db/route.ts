@@ -41,6 +41,7 @@ const ALLOWED_TABLES = new Set([
   'partner_diamond_trades',
   'partner_trade_payments',
   'gst_invoices',
+  'cash_transactions',
 ])
 
 const MASTER_ONLY_TABLES = new Set([

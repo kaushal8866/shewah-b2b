@@ -13,6 +13,7 @@ export const MODULES = [
   { id: 'circuits',        label: 'Circuits',            href: '/circuits' },
   { id: 'analytics',       label: 'Analytics',           href: '/analytics' },
   { id: 'profitability',   label: 'Profitability',       href: '/profitability' },
+  { id: 'cash',            label: 'Cash Book',           href: '/cash' },
 ] as const
 
 export type ModuleId = typeof MODULES[number]['id']
@@ -23,6 +24,7 @@ export function canAccess(
   href: string
 ): boolean {
   if (role === 'master') return true
+  if (href === '/cash/pnl' || href.startsWith('/cash/pnl')) return false
   const mod = MODULES.find(m =>
     m.href === href || (m.href !== '/' && href.startsWith(m.href))
   )
