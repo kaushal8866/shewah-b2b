@@ -73,7 +73,9 @@ export default function CatalogProductEditPage() {
   const [categories, setCategories] = useState<any[]>([])
   const [attributes, setAttributes] = useState<Record<string, any>>({})
   const [validationErrors, setValidationErrors] = useState<string[]>([])
-  const [floorPriceRupees, setFloorPriceRupees] = useState('')
+  const [floorMarkupPercent, setFloorMarkupPercent] = useState('10')
+  const [savedFloorPricePaise, setSavedFloorPricePaise] = useState<number | null>(null)
+  const [hasLoadedSavedPrice, setHasLoadedSavedPrice] = useState(false)
 
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'Ring',
@@ -97,7 +99,7 @@ export default function CatalogProductEditPage() {
     ]).then(([{ data: gr }, { data }, { data: sd }, { data: catData }, { data: resellerPrice }]: any) => {
       if (catData) setCategories(catData)
       if (resellerPrice?.floor_price_paise) {
-        setFloorPriceRupees(String(Number(resellerPrice.floor_price_paise) / 100))
+        setSavedFloorPricePaise(Number(resellerPrice.floor_price_paise))
       }
       const r = gr?.[0]
       if (r) {
@@ -225,6 +227,15 @@ export default function CatalogProductEditPage() {
   const yourMargin = tradePrice - cogs22
   const jewelerMargin = mrp - tradePrice
 
+  useEffect(() => {
+    if (!hasLoadedSavedPrice && savedFloorPricePaise !== null && cogs22 > 0) {
+      const savedFloor = savedFloorPricePaise / 100
+      const markup = ((savedFloor / cogs22) - 1) * 100
+      setFloorMarkupPercent(String(Math.round(markup * 100) / 100))
+      setHasLoadedSavedPrice(true)
+    }
+  }, [savedFloorPricePaise, cogs22, hasLoadedSavedPrice])
+
   async function handleImageUpload(files: FileList | null) {
     if (!files) return
     setUploading(true)
@@ -316,11 +327,11 @@ export default function CatalogProductEditPage() {
 
     setSaving(true)
 
-    // Save/upsert Reseller floor price
-    const floorPaise = Math.round(Number(floorPriceRupees) * 105)
-    // Wait, let's make sure it is exactly * 100 (in paise)
-    const floorPaiseExact = Math.round(Number(floorPriceRupees) * 100)
-    if (floorPriceRupees && floorPaiseExact > 0) {
+    // Save/upsert Reseller floor price using markup percentage over cogs
+    const markupVal = parseFloat(floorMarkupPercent)
+    if (!isNaN(markupVal) && markupVal >= 0) {
+      const calculatedFloorRupees = cogs22 * (1 + markupVal / 100)
+      const floorPaiseExact = Math.round(calculatedFloorRupees * 100)
       const { error: floorErr } = await supabase.from('reseller_product_prices').upsert({
         product_id: id,
         floor_price_paise: floorPaiseExact,
@@ -645,20 +656,21 @@ export default function CatalogProductEditPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 border-t border-stone-100 pt-3">
             <div>
-              <label className={lbl}>Reseller Floor Price (₹)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-2 text-stone-400 text-sm font-semibold">₹</span>
+              <label className={lbl}>Reseller Floor Markup (%)</label>
+              <div className="relative font-mono">
                 <input
                   type="number"
-                  className={`${inp} pl-7 font-bold text-amber-700`}
-                  value={floorPriceRupees}
-                  onChange={e => setFloorPriceRupees(e.target.value)}
-                  placeholder="Enter floor price for reseller network..."
+                  step="0.01"
+                  className={`${inp} pr-7 font-bold text-amber-700`}
+                  value={floorMarkupPercent}
+                  onChange={e => setFloorMarkupPercent(e.target.value)}
+                  placeholder="Enter floor markup percentage..."
                 />
+                <span className="absolute right-3 top-2.5 text-stone-400 text-sm font-semibold">%</span>
               </div>
               <p className="text-[10px] text-stone-400 mt-1">
-                The minimum price this reseller pays Shewah (suggested: between COGS and Trade).
-                {default22 && ` COGS (22k): ₹${Math.round(default22.cogs).toLocaleString('en-IN')} | Trade (22k): ₹${Math.round(default22.trade).toLocaleString('en-IN')}`}
+                Calculated Reseller Floor Price: <span className="font-bold text-stone-700">₹{Math.round(cogs22 * (1 + (parseFloat(floorMarkupPercent) || 0) / 100)).toLocaleString('en-IN')}</span>
+                {cogs22 > 0 && ` (COGS: ₹${Math.round(cogs22).toLocaleString('en-IN')} | Trade: ₹${Math.round(tradePrice).toLocaleString('en-IN')})`}
               </p>
             </div>
           </div>
