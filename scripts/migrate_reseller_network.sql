@@ -169,12 +169,20 @@ ALTER TABLE app_users DROP CONSTRAINT IF EXISTS app_users_role_check;
 ALTER TABLE app_users ADD CONSTRAINT app_users_role_check CHECK (role IN ('master', 'sub', 'manufacturer', 'retailer', 'reseller'));
 
 -- 11. Add constraints on resellers table pointing back to app_users
+ALTER TABLE resellers DROP CONSTRAINT IF EXISTS resellers_user_id_fkey;
 ALTER TABLE resellers ADD CONSTRAINT resellers_user_id_fkey FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE SET NULL;
+
+ALTER TABLE resellers DROP CONSTRAINT IF EXISTS resellers_invited_by_fkey;
 ALTER TABLE resellers ADD CONSTRAINT resellers_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES app_users(id) ON DELETE SET NULL;
+
+ALTER TABLE resellers DROP CONSTRAINT IF EXISTS resellers_approved_by_fkey;
 ALTER TABLE resellers ADD CONSTRAINT resellers_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES app_users(id) ON DELETE SET NULL;
 
 -- 12. Add constraints on other tables referencing app_users
+ALTER TABLE reseller_invitations DROP CONSTRAINT IF EXISTS reseller_invitations_created_by_fkey;
 ALTER TABLE reseller_invitations ADD CONSTRAINT reseller_invitations_created_by_fkey FOREIGN KEY (created_by) REFERENCES app_users(id) ON DELETE SET NULL;
+
+ALTER TABLE reseller_payments DROP CONSTRAINT IF EXISTS reseller_payments_confirmed_by_fkey;
 ALTER TABLE reseller_payments ADD CONSTRAINT reseller_payments_confirmed_by_fkey FOREIGN KEY (confirmed_by) REFERENCES app_users(id) ON DELETE SET NULL;
 
 -- 13. Enable Row Level Security (RLS) on all new tables
