@@ -46,6 +46,7 @@ const navSections = [
     title: 'Inventory & Rates',
     items: [
       { href: '/catalog',         icon: Package,         label: 'Catalog',       module: 'catalog'       },
+      { href: '/catalog/categories', icon: Layers,       label: 'Categories',    module: 'catalog'       },
       { href: '/gold-rates',      icon: TrendingUp,      label: 'Gold Rates',    module: 'gold_rates'    },
       { href: '/stock',           icon: Boxes,           label: 'Stock',         module: 'vendors'       },
       { href: '/diamonds/catalog', icon: Diamond,        label: 'Diamonds',      module: 'vendors'       },

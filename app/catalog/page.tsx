@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase, Product, computeOrderCogs, recomputeCatalogPrices } from '@/lib/supabase'
-import { Plus, Search, Package, Edit2, Eye, EyeOff, Library, Heart, Trash2, Copy, Check, Globe, Lock, ChevronRight, Terminal, RefreshCw, Download } from 'lucide-react'
+import { Plus, Search, Package, Edit2, Eye, EyeOff, Library, Heart, Trash2, Copy, Check, Globe, Lock, ChevronRight, Terminal, RefreshCw, Download, Settings } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 
@@ -63,10 +63,17 @@ function CatalogContent() {
           ))}
         </div>
         {activeTab === 'products' && (
-          <Link href="/catalog/new"
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors shrink-0">
-            <Plus className="w-4 h-4" /><span className="hidden sm:inline">Add product</span><span className="sm:hidden">Add</span>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/catalog/categories"
+              className="flex items-center gap-2 border border-stone-200 text-stone-650 px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-stone-50 transition-colors shrink-0">
+              <Settings className="w-4 h-4 text-stone-500" />
+              <span>Categories</span>
+            </Link>
+            <Link href="/catalog/new"
+              className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors shrink-0">
+              <Plus className="w-4 h-4" /><span className="hidden sm:inline">Add product</span><span className="sm:hidden">Add</span>
+            </Link>
+          </div>
         )}
         {activeTab === 'collections' && (
           <Link href="/catalog/collections/new"
