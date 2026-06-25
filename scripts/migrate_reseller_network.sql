@@ -164,6 +164,10 @@ CREATE TABLE IF NOT EXISTS reseller_themes (
 -- 10. Alter app_users to link to resellers
 ALTER TABLE app_users ADD COLUMN IF NOT EXISTS reseller_id UUID REFERENCES resellers(id) ON DELETE SET NULL;
 
+-- Update role constraint on app_users to allow 'reseller'
+ALTER TABLE app_users DROP CONSTRAINT IF EXISTS app_users_role_check;
+ALTER TABLE app_users ADD CONSTRAINT app_users_role_check CHECK (role IN ('master', 'sub', 'manufacturer', 'retailer', 'reseller'));
+
 -- 11. Add constraints on resellers table pointing back to app_users
 ALTER TABLE resellers ADD CONSTRAINT resellers_user_id_fkey FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE SET NULL;
 ALTER TABLE resellers ADD CONSTRAINT resellers_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES app_users(id) ON DELETE SET NULL;
