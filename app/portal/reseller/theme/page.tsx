@@ -1799,6 +1799,249 @@ export default function ResellerThemeEditor() {
                 </div>
               )}
 
+              {/* Video Showcase Editor */}
+              {selectedSection?.type === 'video' && (
+                <div className="space-y-3.5 text-xxs font-semibold text-stone-700">
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Video MP4 URL</label>
+                    <input
+                      type="text"
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none font-bold"
+                      value={selectedSection.settings.videoUrl || ''}
+                      placeholder="https://assets.mixkit.co/..."
+                      onChange={e => {
+                        const val = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, videoUrl: val } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-stone-150">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="video-autoplay"
+                        checked={selectedSection.settings.autoplay !== false}
+                        onChange={e => {
+                          const val = e.target.checked
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, autoplay: val } } : s
+                            )
+                          }))
+                        }}
+                      />
+                      <label htmlFor="video-autoplay" className="font-bold text-stone-600 uppercase tracking-wider cursor-pointer">Autoplay Video</label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="video-loop"
+                        checked={selectedSection.settings.loop !== false}
+                        onChange={e => {
+                          const val = e.target.checked
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, loop: val } } : s
+                            )
+                          }))
+                        }}
+                      />
+                      <label htmlFor="video-loop" className="font-bold text-stone-600 uppercase tracking-wider cursor-pointer">Loop Continuously</label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="video-muted"
+                        checked={selectedSection.settings.muted !== false}
+                        onChange={e => {
+                          const val = e.target.checked
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, muted: val } } : s
+                            )
+                          }))
+                        }}
+                      />
+                      <label htmlFor="video-muted" className="font-bold text-stone-600 uppercase tracking-wider cursor-pointer">Muted (Required for Autoplay)</label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Testimonials Editor */}
+              {selectedSection?.type === 'testimonials' && (
+                <div className="space-y-3.5 text-xxs font-semibold text-stone-700">
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Section Title</label>
+                    <input
+                      type="text"
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none font-bold"
+                      value={selectedSection.settings.title || 'CUSTOMER TESTIMONIALS'}
+                      onChange={e => {
+                        const val = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, title: val } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Background Color</label>
+                    <input
+                      type="color"
+                      className="w-full h-8 rounded-lg cursor-pointer border border-stone-200"
+                      value={selectedSection.settings.bgColor || '#FFFFFF'}
+                      onChange={e => {
+                        const col = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, bgColor: col } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-3.5 border-t border-stone-150 pt-3">
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Reviews List</label>
+                    {(selectedSection.settings.reviews || []).map((rev: any, idx: number) => (
+                      <div key={idx} className="border border-stone-200 rounded-xl p-3 bg-stone-50 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-stone-600 text-[10px] uppercase">Review {idx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTheme((prev: any) => ({
+                                ...prev,
+                                sections: prev.sections.map((s: SectionBlock) => {
+                                  if (s.id === selectedSectionId) {
+                                    const reviews = (s.settings.reviews || []).filter((_: any, i: number) => i !== idx)
+                                    return { ...s, settings: { ...s.settings, reviews } }
+                                  }
+                                  return s
+                                })
+                              }))
+                            }}
+                            className="text-red-500 hover:text-red-700 font-bold uppercase text-[9px]"
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div>
+                          <label className="block text-stone-400 font-semibold mb-0.5">Author Name</label>
+                          <input
+                            type="text"
+                            className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none font-bold"
+                            value={rev.author}
+                            onChange={e => {
+                              const val = e.target.value
+                              setTheme((prev: any) => ({
+                                ...prev,
+                                sections: prev.sections.map((s: SectionBlock) => {
+                                  if (s.id === selectedSectionId) {
+                                    const reviews = [...(s.settings.reviews || [])]
+                                    reviews[idx] = { ...reviews[idx], author: val }
+                                    return { ...s, settings: { ...s.settings, reviews } }
+                                  }
+                                  return s
+                                })
+                              }))
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-stone-400 font-semibold mb-0.5">Rating (1-5 Stars)</label>
+                          <select
+                            className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                            value={rev.rating || 5}
+                            onChange={e => {
+                              const val = parseInt(e.target.value) || 5
+                              setTheme((prev: any) => ({
+                                ...prev,
+                                sections: prev.sections.map((s: SectionBlock) => {
+                                  if (s.id === selectedSectionId) {
+                                    const reviews = [...(s.settings.reviews || [])]
+                                    reviews[idx] = { ...reviews[idx], rating: val }
+                                    return { ...s, settings: { ...s.settings, reviews } }
+                                  }
+                                  return s
+                                })
+                              }))
+                            }}
+                          >
+                            <option value={5}>5 Stars</option>
+                            <option value={4}>4 Stars</option>
+                            <option value={3}>3 Stars</option>
+                            <option value={2}>2 Stars</option>
+                            <option value={1}>1 Star</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-stone-400 font-semibold mb-0.5">Review Content</label>
+                          <textarea
+                            rows={3}
+                            className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                            value={rev.text}
+                            onChange={e => {
+                              const val = e.target.value
+                              setTheme((prev: any) => ({
+                                ...prev,
+                                sections: prev.sections.map((s: SectionBlock) => {
+                                  if (s.id === selectedSectionId) {
+                                    const reviews = [...(s.settings.reviews || [])]
+                                    reviews[idx] = { ...reviews[idx], text: val }
+                                    return { ...s, settings: { ...s.settings, reviews } }
+                                  }
+                                  return s
+                                })
+                              }))
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => {
+                            if (s.id === selectedSectionId) {
+                              const reviews = [...(s.settings.reviews || []), { author: 'New Reviewer', rating: 5, text: 'Amazing service and product quality!' }]
+                              return { ...s, settings: { ...s.settings, reviews } }
+                            }
+                            return s
+                          })
+                        }))
+                      }}
+                      className="w-full bg-white hover:bg-stone-50 text-stone-900 border border-stone-200 font-bold uppercase py-2 text-xxs rounded-xl transition-colors"
+                    >
+                      + Add New Review
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-stone-400 space-y-2">
