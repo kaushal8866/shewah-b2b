@@ -26,12 +26,16 @@ export async function GET(req: Request, { params }: { params: { token: string } 
   // 2. Fetch associated reseller profile
   const { data: reseller, error: resellerErr } = await supabaseAdmin
     .from('resellers')
-    .select('id, store_name, owner_name, phone, email')
+    .select('id, store_name, owner_name, phone, email, status')
     .eq('id', shareLink.reseller_id)
     .single()
 
   if (resellerErr || !reseller) {
     return NextResponse.json({ error: 'Reseller profile not found.' }, { status: 404 })
+  }
+
+  if (reseller.status !== 'active') {
+    return NextResponse.json({ error: 'Storefront is inactive or pending activation.' }, { status: 403 })
   }
 
   // 3. Fetch associated theme config
@@ -232,9 +236,13 @@ export async function POST(req: Request, { params }: { params: { token: string }
   // Fetch reseller info
   const { data: reseller } = await supabaseAdmin
     .from('resellers')
-    .select('phone, owner_name')
+    .select('phone, owner_name, status')
     .eq('id', shareLink.reseller_id)
     .single()
+
+  if (!reseller || reseller.status !== 'active') {
+    return NextResponse.json({ error: 'Storefront is inactive or pending activation.' }, { status: 403 })
+  }
 
   let resolvedProductName = 'Jewelry Piece'
   if (product_id) {

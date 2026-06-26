@@ -30,8 +30,8 @@ export async function getResellerSession(): Promise<{ reseller: Reseller | null;
     return { reseller: null, error: 'Reseller profile not found' }
   }
 
-  if (reseller.status === 'suspended') {
-    return { reseller: null, error: 'Account suspended' }
+  if (reseller.status !== 'active') {
+    return { reseller: null, error: `Unauthorized: Reseller status is ${reseller.status}` }
   }
 
   return { reseller: reseller as Reseller, error: null }

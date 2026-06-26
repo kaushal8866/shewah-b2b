@@ -41,6 +41,17 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     return NextResponse.json({ error: 'Storefront not found or inactive' }, { status: 404 })
   }
 
+  // Verify reseller status is active
+  const { data: reseller } = await supabaseAdmin
+    .from('resellers')
+    .select('status')
+    .eq('id', shareLink.reseller_id)
+    .single()
+
+  if (!reseller || reseller.status !== 'active') {
+    return NextResponse.json({ error: 'Storefront is inactive or pending activation.' }, { status: 403 })
+  }
+
   const resellerId = shareLink.reseller_id
   const markupPercent = Number(shareLink.markup_percent) || 0
 

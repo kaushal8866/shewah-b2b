@@ -24,6 +24,17 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
     return NextResponse.json({ error: 'Storefront not found' }, { status: 404 })
   }
 
+  // Verify reseller status is active
+  const { data: reseller } = await supabaseAdmin
+    .from('resellers')
+    .select('status')
+    .eq('id', shareLink.reseller_id)
+    .single()
+
+  if (!reseller || reseller.status !== 'active') {
+    return NextResponse.json({ error: 'Storefront is inactive or pending activation.' }, { status: 403 })
+  }
+
   // 2. Fetch product specs
   const { data: product } = await supabaseAdmin
     .from('products')
@@ -41,6 +52,7 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
     .select('rate_24k, retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
     .order('recorded_at', { ascending: false })
     .limit(1)
+  const latest = g?.[0]
   if (!latest) {
     return NextResponse.json({ error: 'No gold rate is set yet — admin must record one.' }, { status: 503 })
   }

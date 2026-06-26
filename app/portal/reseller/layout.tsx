@@ -24,23 +24,45 @@ import {
 import { cn } from '@/lib/utils'
 
 export default function ResellerPortalLayout({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
   const pathname = usePathname()
   const [storeName, setStoreName] = useState('Reseller Store')
   const [loadingTheme, setLoadingTheme] = useState(true)
+  const [resellerStatus, setResellerStatus] = useState<string | null>(null)
 
   const displayName = session?.user?.displayName || session?.user?.username || 'Reseller'
   const initials = displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
   useEffect(() => {
-    if (session?.user?.resellerId) {
-      fetchResellerTheme()
+    if (session) {
+      if (session.user?.resellerId) {
+        fetchResellerTheme()
+      } else {
+        setLoadingTheme(false)
+      }
+    } else if (sessionStatus !== 'loading') {
+      setLoadingTheme(false)
     }
-  }, [session])
+  }, [session, sessionStatus])
 
   async function fetchResellerTheme() {
     try {
-      const { data, error } = await supabase
+      // 1. Fetch reseller status and store_name fallback
+      const { data: res } = await supabase
+        .from('resellers')
+        .select('store_name, status')
+        .eq('id', session?.user?.resellerId)
+        .maybeSingle()
+
+      if (res) {
+        setResellerStatus(res.status || 'onboarding')
+        if (res.store_name) {
+          setStoreName(res.store_name)
+        }
+      }
+
+      // 2. Fetch associated theme config
+      const { data } = await supabase
         .from('reseller_themes')
         .select('store_name')
         .eq('reseller_id', session?.user?.resellerId)
@@ -48,16 +70,6 @@ export default function ResellerPortalLayout({ children }: { children: React.Rea
 
       if (data?.store_name) {
         setStoreName(data.store_name)
-      } else {
-        // Fallback to resellers profile
-        const { data: res } = await supabase
-          .from('resellers')
-          .select('store_name')
-          .eq('id', session?.user?.resellerId)
-          .maybeSingle()
-        if (res?.store_name) {
-          setStoreName(res.store_name)
-        }
       }
     } catch {
       // ignore
@@ -84,6 +96,85 @@ export default function ResellerPortalLayout({ children }: { children: React.Rea
 
   function isActive(t: { href: string; exact?: boolean }) {
     return t.exact ? pathname === t.href : pathname.startsWith(t.href)
+  }
+
+  // 1. Loading state
+  if (sessionStatus === 'loading' || (session && loadingTheme)) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-stone-300 border-t-stone-950 animate-spin" />
+          <p className="text-[10px] uppercase tracking-widest font-bold text-stone-500">Loading Portal...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 2. Intercept non-active resellers
+  if (session && resellerStatus && resellerStatus !== 'active') {
+    const isSuspended = resellerStatus === 'suspended'
+    return (
+      <div className="min-h-screen bg-stone-50 flex flex-col justify-between p-6 md:p-12 font-sans selection:bg-stone-900 selection:text-white">
+        {/* Top Header/Brand Bar */}
+        <header className="flex items-center justify-between border-b-2 border-stone-900 pb-4 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-stone-900 flex items-center justify-center">
+              <Store className="w-3.5 h-3.5 text-white" />
+            </div>
+            <span className="font-extrabold tracking-widest text-[10px] uppercase text-stone-900">Reseller Portal</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 text-stone-500 hover:text-stone-900 text-xs font-bold uppercase tracking-wider transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
+        </header>
+
+        {/* Center Alert Box */}
+        <main className="my-auto max-w-lg mx-auto w-full border-2 border-stone-900 bg-white p-8 md:p-10 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col items-start">
+          <div className="mb-6 flex items-center justify-center w-12 h-12 bg-stone-100 border-2 border-stone-900 text-stone-900">
+            {isSuspended ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Layers className="w-6 h-6" />
+            )}
+          </div>
+          
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-stone-900 uppercase mb-4 font-mono">
+            {isSuspended ? 'Account Suspended' : 'Activation Pending'}
+          </h1>
+          
+          <p className="text-sm text-stone-600 leading-relaxed mb-8">
+            {isSuspended 
+              ? 'Your reseller account has been suspended by the platform administrator. If you believe this is an error or need to resolve any outstanding issues, please contact your account manager.'
+              : 'Your reseller profile is currently pending review. To protect the white-label storefront ecosystem, access is restricted until your application has been verified and set to active by the administrator.'
+            }
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <button
+              onClick={handleLogout}
+              className="flex-1 text-center bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold uppercase tracking-wider py-3.5 px-6 border-2 border-stone-900 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-none"
+            >
+              Log Out of Account
+            </button>
+            <a 
+              href="mailto:support@shewah.com" 
+              className="flex-1 text-center bg-white hover:bg-stone-50 text-stone-900 text-xs font-bold uppercase tracking-wider py-3.5 px-6 border-2 border-stone-900 transition-colors"
+            >
+              Contact Support
+            </a>
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="text-center text-[9px] text-stone-400 font-bold uppercase tracking-wider border-t border-stone-200 pt-4 shrink-0">
+          Unbranded White-Label Portal &copy; {new Date().getFullYear()}
+        </footer>
+      </div>
+    )
   }
 
   return (
