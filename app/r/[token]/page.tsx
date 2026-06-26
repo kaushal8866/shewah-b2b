@@ -758,7 +758,7 @@ export default function PublicStorefront() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={theme.logo_url} alt="" className="h-7 max-w-[130px] object-contain" />
               ) : (
-                <span className="font-bold text-base tracking-widest uppercase brand-font" style={{ color: c.primary }}>
+                 <span className="font-bold text-base tracking-widest uppercase brand-font" style={{ color: headerSection.settings.textColor || c.text }}>
                   {theme?.store_name || reseller.store_name}
                 </span>
               )}
@@ -767,7 +767,7 @@ export default function PublicStorefront() {
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex gap-6 text-[10px] font-bold uppercase tracking-widest">
               {(headerSection.settings.navLinks || []).map((link: any, i: number) => (
-                <a key={i} href={link.target} className="hover:opacity-70 transition-opacity">{link.label}</a>
+                <a key={i} href={link.target} className="hover:opacity-70 transition-opacity" style={{ color: headerSection.settings.textColor || c.text }}>{link.label}</a>
               ))}
             </div>
 
@@ -775,10 +775,10 @@ export default function PublicStorefront() {
             <div className="flex items-center gap-2.5">
               <button
                 onClick={() => setShowCartDrawer(true)}
-                className="p-2 border rounded-xl hover:bg-stone-50/50 text-stone-700 relative"
-                style={{ borderColor: c.borders }}
+                className="p-2 border rounded-xl hover:opacity-80 relative"
+                style={{ borderColor: headerSection.settings.textColor ? `${headerSection.settings.textColor}30` : c.borders, color: headerSection.settings.textColor || c.text }}
               >
-                <ShoppingCart className="w-4 h-4" style={{ color: c.primary }} />
+                <ShoppingCart className="w-4 h-4" />
                 {cart.length > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white font-bold text-[8px] rounded-full w-4 h-4 flex items-center justify-center">
                     {cart.reduce((sum, i) => sum + i.quantity, 0)}
@@ -790,13 +790,13 @@ export default function PublicStorefront() {
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setActiveTab(activeTab === 'catalog' ? 'profile' : 'catalog')}
-                    className="p-2 border rounded-xl text-stone-750 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider"
-                    style={{ borderColor: c.borders, backgroundColor: activeTab === 'profile' ? c.surface : 'transparent' }}
+                    className="p-2 border rounded-xl flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider"
+                    style={{ borderColor: headerSection.settings.textColor ? `${headerSection.settings.textColor}30` : c.borders, backgroundColor: activeTab === 'profile' ? c.surface : 'transparent', color: headerSection.settings.textColor || c.text }}
                   >
                     <User className="w-4 h-4" />
                     <span className="hidden sm:inline">{customer.name.split(' ')[0]}</span>
                   </button>
-                  <button onClick={handleLogout} className="p-2 text-stone-400 hover:text-stone-700 text-xxs font-bold uppercase tracking-wider">
+                  <button onClick={handleLogout} className="p-2 hover:opacity-80 text-xxs font-bold uppercase tracking-wider" style={{ color: headerSection.settings.textColor || c.text }}>
                     Out
                   </button>
                 </div>
@@ -806,8 +806,8 @@ export default function PublicStorefront() {
                     setAuthStep(1)
                     setShowAuthModal(true)
                   }}
-                  className="p-2 border rounded-xl text-stone-700 hover:bg-stone-50/40 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider"
-                  style={{ borderColor: c.borders }}
+                  className="p-2 border rounded-xl hover:opacity-85 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider"
+                  style={{ borderColor: headerSection.settings.textColor ? `${headerSection.settings.textColor}30` : c.borders, color: headerSection.settings.textColor || c.text }}
                 >
                   <User className="w-4 h-4" />
                   <span className="hidden sm:inline">Sign In</span>
@@ -940,7 +940,7 @@ export default function PublicStorefront() {
                   return (
                     <section key={section.id} className="px-6 py-12 max-w-6xl mx-auto space-y-6">
                       {section.settings.title && (
-                        <h3 className="text-xs font-bold text-center uppercase tracking-[0.25em]" style={{ color: c.primary }}>
+                        <h3 className="text-xs font-bold text-center uppercase tracking-[0.25em]" style={{ color: c.text }}>
                           {section.settings.title}
                         </h3>
                       )}
@@ -981,7 +981,7 @@ export default function PublicStorefront() {
                     <section key={section.id} id="shop" className="px-6 py-12 max-w-6xl mx-auto space-y-8 scroll-mt-20">
                       <div className="text-center space-y-2">
                         {section.settings.title && (
-                          <h2 className="text-sm font-bold uppercase tracking-[0.25em]" style={{ color: c.primary }}>
+                          <h2 className="text-sm font-bold uppercase tracking-[0.25em]" style={{ color: c.text }}>
                             {section.settings.title}
                           </h2>
                         )}
@@ -991,11 +991,11 @@ export default function PublicStorefront() {
                       {/* Filter Search controls inside product section */}
                       <div className="space-y-4">
                         <div className="relative max-w-md mx-auto">
-                          <Search className="absolute left-3.5 top-3 w-4 h-4 opacity-40" />
+                          <Search className="absolute left-3.5 top-3 w-4 h-4 opacity-40" style={{ color: c.text }} />
                           <input
                             type="text"
-                            className="w-full pl-10 pr-4 py-2.5 text-xxs border rounded-xl focus:outline-none focus:ring-1 transition-all bg-white"
-                            style={{ borderColor: c.borders, color: c.text }}
+                            className="w-full pl-10 pr-4 py-2.5 text-xxs border rounded-xl focus:outline-none focus:ring-1 transition-all"
+                            style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                             placeholder="Search catalog jewelry..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
@@ -1009,12 +1009,11 @@ export default function PublicStorefront() {
                               <button
                                 key={cat}
                                 onClick={() => setCategoryFilter(cat)}
-                                className={`px-4.5 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.15em] transition-all shrink-0 snap-start border ${
-                                  active ? 'text-white' : 'bg-stone-50 border-stone-200 text-stone-500 hover:bg-stone-100'
-                                }`}
+                                className="px-4.5 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.15em] transition-all shrink-0 snap-start border hover:opacity-85"
                                 style={{
-                                  backgroundColor: active ? c.primary : c.background,
-                                  borderColor: active ? c.primary : c.borders
+                                  backgroundColor: active ? c.primary : c.surface,
+                                  borderColor: active ? c.primary : c.borders,
+                                  color: active ? '#FFFFFF' : c.text
                                 }}
                               >
                                 {cat === 'all' ? 'All Collections' : cat}
@@ -1096,7 +1095,7 @@ export default function PublicStorefront() {
                                       )}
                                     </div>
                                     {section.settings.showQuickView && (
-                                      <button className="text-[8px] font-extrabold uppercase tracking-widest border border-stone-300 py-1.5 px-3 rounded-lg hover:bg-stone-50 transition-colors">
+                                      <button className="text-[8px] font-extrabold uppercase tracking-widest border py-1.5 px-3 rounded-lg hover:opacity-80 transition-opacity" style={{ borderColor: c.borders, color: c.text }}>
                                         Configure
                                       </button>
                                     )}
@@ -1116,11 +1115,11 @@ export default function PublicStorefront() {
                     <section key={section.id} className="py-16 px-6" style={{ backgroundColor: ed.bgColor || c.surface }}>
                       <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 items-center">
                         {ed.imagePosition === 'left' && ed.image && (
-                          <div className="w-full md:w-1/2 aspect-[4/3] md:aspect-square bg-stone-200 rounded-2xl overflow-hidden shrink-0 border" style={{ borderColor: c.borders, backgroundImage: `url(${ed.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+                          <div className="w-full md:w-1/2 aspect-[4/3] md:aspect-square rounded-2xl overflow-hidden shrink-0 border" style={{ borderColor: c.borders, backgroundImage: `url(${ed.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
                         )}
                         <div className="flex-1 space-y-4 text-center md:text-left flex flex-col items-center md:items-start justify-center">
                           {ed.title && (
-                            <h3 className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: c.primary }}>
+                            <h3 className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: ed.textColor || c.text }}>
                               {ed.title}
                             </h3>
                           )}
@@ -1133,8 +1132,8 @@ export default function PublicStorefront() {
                             <div className="pt-2">
                               <a
                                 href={ed.ctaLink || '#shop'}
-                                className="inline-block text-xxs font-bold border-b-2 border-stone-900 pb-1 uppercase tracking-[0.2em]"
-                                style={{ borderColor: c.primary, color: c.primary }}
+                                className="inline-block text-xxs font-bold border-b-2 pb-1 uppercase tracking-[0.2em]"
+                                style={{ borderColor: c.primary, color: ed.textColor || c.primary }}
                               >
                                 {ed.ctaText}
                               </a>
@@ -1168,20 +1167,20 @@ export default function PublicStorefront() {
                   return (
                     <section key={section.id} className="py-16 px-6 text-center space-y-8" style={{ backgroundColor: section.settings.bgColor || c.background }}>
                       {section.settings.title && (
-                        <h3 className="text-xxs font-bold tracking-[0.3em] uppercase text-stone-400">
+                        <h3 className="text-xxs font-bold tracking-[0.3em] uppercase opacity-65" style={{ color: c.text }}>
                           {section.settings.title}
                         </h3>
                       )}
                       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
                         {(section.settings.reviews || []).map((rev: any, i: number) => (
-                          <div key={i} className="p-6 bg-white rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm" style={{ borderColor: c.borders }}>
+                          <div key={i} className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm" style={{ backgroundColor: c.surface, color: c.text, borderColor: c.borders }}>
                             <div className="flex justify-center text-amber-500 gap-0.5">
                               {Array.from({ length: rev.rating || 5 }).map((_, j) => (
                                 <Star key={j} className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                               ))}
                             </div>
                             <p className="text-xs leading-relaxed italic opacity-85">"{rev.text}"</p>
-                            <span className="text-[10px] font-bold text-stone-500 block uppercase tracking-wider">— {rev.author}</span>
+                            <span className="text-[10px] font-bold block uppercase tracking-wider opacity-65" style={{ color: c.text }}>— {rev.author}</span>
                           </div>
                         ))}
                       </div>
@@ -1198,8 +1197,8 @@ export default function PublicStorefront() {
                           <input
                             type="email"
                             placeholder={section.settings.placeholder}
-                            className="flex-1 px-4 py-2 border rounded-xl text-xs bg-white focus:outline-none"
-                            style={{ borderColor: c.borders }}
+                            className="flex-1 px-4 py-2 border rounded-xl text-xs focus:outline-none"
+                            style={{ borderColor: c.borders, color: c.text, backgroundColor: c.background }}
                           />
                           <button
                             type="button"
@@ -1221,26 +1220,26 @@ export default function PublicStorefront() {
           /* Customer Profile Portal */
           <div className="max-w-4xl w-full mx-auto px-6 py-8 space-y-8 flex-1">
             <div className="space-y-1">
-              <h2 className="text-2xl font-bold font-serif text-[#1E3A5F]" style={{ color: c.primary }}>Customer Portal</h2>
-              <p className="text-stone-400 text-xs font-light">Manage your past orders and personal profile details.</p>
+              <h2 className="text-2xl font-bold font-serif" style={{ color: c.text }}>Customer Portal</h2>
+              <p className="text-stone-400 text-xs font-light opacity-80">Manage your past orders and personal profile details.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Left panel: Info */}
               <div className="space-y-6">
-                <div className="bg-white p-5 border rounded-2xl shadow-sm space-y-4" style={{ borderColor: c.borders }}>
+                <div className="p-5 border rounded-2xl shadow-sm space-y-4" style={{ backgroundColor: c.surface, color: c.text, borderColor: c.borders }}>
                   <h3 className="font-bold text-xs uppercase tracking-wider opacity-60">Profile details</h3>
                   <div className="space-y-2 text-xs">
-                    <p className="font-semibold text-stone-850">{customer.name}</p>
-                    <p className="text-stone-500">{customer.phone}</p>
-                    {customer.email && <p className="text-stone-500">{customer.email}</p>}
+                    <p className="font-semibold" style={{ color: c.text }}>{customer.name}</p>
+                    <p className="opacity-75">{customer.phone}</p>
+                    {customer.email && <p className="opacity-75">{customer.email}</p>}
                   </div>
                 </div>
               </div>
 
               {/* Right panel: Order history */}
               <div className="md:col-span-2 space-y-6">
-                <div className="bg-white p-6 border rounded-2xl shadow-sm space-y-4" style={{ borderColor: c.borders }}>
+                <div className="p-6 border rounded-2xl shadow-sm space-y-4" style={{ backgroundColor: c.surface, color: c.text, borderColor: c.borders }}>
                   <h3 className="font-bold text-xs uppercase tracking-wider opacity-60">Order History</h3>
                   
                   {loadingProfile ? (
@@ -1248,13 +1247,13 @@ export default function PublicStorefront() {
                   ) : profileOrders.length === 0 ? (
                     <p className="text-stone-400 text-xs italic py-8 text-center">You haven't placed any orders on this store yet.</p>
                   ) : (
-                    <div className="space-y-4 divide-y divide-stone-100">
+                    <div className="space-y-4 divide-y divide-stone-100" style={{ borderColor: c.borders }}>
                       {profileOrders.map((o: any) => (
                         <div key={o.id} className="pt-4 first:pt-0 space-y-3">
                           <div className="flex justify-between items-start">
                             <div>
-                              <span className="font-mono text-xs font-bold text-stone-900">{o.order_number}</span>
-                              <span className="block text-[10px] text-stone-400 mt-0.5">Ordered {new Date(o.created_at).toLocaleDateString('en-IN')}</span>
+                              <span className="font-mono text-xs font-bold" style={{ color: c.text }}>{o.order_number}</span>
+                              <span className="block text-[10px] opacity-60 mt-0.5" style={{ color: c.text }}>Ordered {new Date(o.created_at).toLocaleDateString('en-IN')}</span>
                             </div>
                             <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                               o.status === 'delivered' ? 'bg-green-50 text-green-700 border border-green-200' :
@@ -1332,34 +1331,36 @@ export default function PublicStorefront() {
       {/* OTP Authentication Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="w-full sm:max-w-sm bg-white rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col p-6 space-y-6">
+          <div className="w-full sm:max-w-sm rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col p-6 space-y-6 border" style={{ backgroundColor: c.background, color: c.text, borderColor: c.borders }}>
             <div className="flex justify-between items-center">
-              <h3 className="text-base font-bold font-serif text-[#1E3A5F]" style={{ color: c.primary }}>Storefront Login</h3>
-              <button onClick={() => setShowAuthModal(false)} className="p-1 border rounded-lg text-stone-400">
+              <h3 className="text-base font-bold font-serif" style={{ color: c.text }}>Storefront Login</h3>
+              <button onClick={() => setShowAuthModal(false)} className="p-1 border rounded-lg hover:opacity-85" style={{ borderColor: c.borders, color: c.text }}>
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {authStep === 1 ? (
               <form onSubmit={handleSendOtp} className="space-y-4">
-                <p className="text-stone-500 text-xs font-light leading-relaxed">
+                <p className="text-xs font-light leading-relaxed opacity-75" style={{ color: c.text }}>
                   Enter your mobile number to sign in or sign up. We will log OTP code to console in simulated environment.
                 </p>
                 <div>
-                  <label className="block text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">Full Name (New Users)</label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider mb-1 opacity-60" style={{ color: c.text }}>Full Name (New Users)</label>
                   <input
                     type="text"
-                    className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+                    className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                     placeholder="e.g. Priya Sharma"
                     value={authName}
                     onChange={e => setAuthName(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">WhatsApp Phone Number *</label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider mb-1 opacity-60" style={{ color: c.text }}>WhatsApp Phone Number *</label>
                   <input
                     type="tel"
-                    className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+                    className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                     placeholder="e.g. +91 98765 43210"
                     value={authPhone}
                     onChange={e => setAuthPhone(e.target.value)}
@@ -1377,15 +1378,16 @@ export default function PublicStorefront() {
               </form>
             ) : (
               <form onSubmit={handleVerifyOtp} className="space-y-4">
-                <p className="text-stone-500 text-xs font-light leading-relaxed">
+                <p className="text-xs font-light leading-relaxed opacity-75" style={{ color: c.text }}>
                   Verification OTP code sent to {authPhone}. Input code below.
                 </p>
                 <div>
-                  <label className="block text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">6-Digit Verification Code</label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider mb-1 opacity-60" style={{ color: c.text }}>6-Digit Verification Code</label>
                   <input
                     type="text"
                     maxLength={6}
-                    className="w-full border rounded-xl px-3 py-2.5 text-xs text-center font-mono font-bold tracking-[0.5em] outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+                    className="w-full border rounded-xl px-3 py-2.5 text-xs text-center font-mono font-bold tracking-[0.5em] outline-none focus:ring-1 focus:ring-amber-500"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                     placeholder="123456"
                     value={authCode}
                     onChange={e => setAuthCode(e.target.value)}
@@ -1417,11 +1419,11 @@ export default function PublicStorefront() {
       {/* Persistent Shopping Cart Drawer */}
       {showCartDrawer && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-end p-0">
-          <div className="w-full sm:max-w-md h-full bg-white shadow-2xl flex flex-col p-6 justify-between">
+          <div className="w-full sm:max-w-md h-full shadow-2xl flex flex-col p-6 justify-between border-l" style={{ backgroundColor: c.background, color: c.text, borderColor: c.borders }}>
             <div className="space-y-6 flex-1 flex flex-col overflow-hidden">
               <div className="flex justify-between items-center shrink-0">
-                <h3 className="text-base font-bold font-serif text-[#1E3A5F]" style={{ color: c.primary }}>Shopping Basket</h3>
-                <button onClick={() => setShowCartDrawer(false)} className="p-1 border rounded-lg text-stone-400">
+                <h3 className="text-base font-bold font-serif" style={{ color: c.text }}>Shopping Basket</h3>
+                <button onClick={() => setShowCartDrawer(false)} className="p-1 border rounded-lg" style={{ borderColor: c.borders, color: c.text }}>
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -1432,28 +1434,28 @@ export default function PublicStorefront() {
                   <p className="text-xs font-semibold uppercase tracking-wider">Your cart is empty</p>
                 </div>
               ) : (
-                <div className="space-y-4 divide-y divide-stone-100 overflow-y-auto flex-1 pr-1 scrollbar-none">
+                <div className="space-y-4 divide-y divide-stone-100 overflow-y-auto flex-1 pr-1 scrollbar-none" style={{ borderColor: c.borders }}>
                   {cart.map((item, idx) => (
                     <div key={`${item.id}-${idx}`} className="pt-4 first:pt-0 flex gap-3.5 items-start">
                       {item.photo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.photo_url} className="w-12 h-15 object-cover rounded border" alt="" />
+                        <img src={item.photo_url} className="w-12 h-15 object-cover rounded border" style={{ borderColor: c.borders }} alt="" />
                       ) : (
-                        <div className="w-12 h-15 rounded bg-stone-50 border flex items-center justify-center text-stone-300 shrink-0">
-                          <Package className="w-5 h-5" />
+                        <div className="w-12 h-15 rounded flex items-center justify-center shrink-0 border" style={{ backgroundColor: c.surface, borderColor: c.borders, color: c.text }}>
+                          <Package className="w-5 h-5 opacity-40" />
                         </div>
                       )}
                       <div className="flex-1 text-xs space-y-1">
-                        <h4 className="font-semibold text-stone-800 line-clamp-1">{item.name}</h4>
-                        <p className="text-stone-400 font-mono text-[9px] uppercase tracking-wider">Karat: {item.custom_attributes?.karat || '18K'} {item.ring_size && `· Size: ${item.ring_size}`}</p>
+                        <h4 className="font-semibold line-clamp-1" style={{ color: c.text }}>{item.name}</h4>
+                        <p className="font-mono text-[9px] uppercase tracking-wider opacity-60" style={{ color: c.text }}>Karat: {item.custom_attributes?.karat || '18K'} {item.ring_size && `· Size: ${item.ring_size}`}</p>
                         {item.custom_attributes?.custom_notes && (
-                          <p className="text-stone-500 text-[10px] bg-stone-50 p-1.5 rounded border border-stone-100 mt-1 italic leading-relaxed">"{item.custom_attributes.custom_notes}"</p>
+                          <p className="text-[10px] p-1.5 rounded border mt-1 italic leading-relaxed opacity-85" style={{ backgroundColor: c.surface, borderColor: c.borders, color: c.text }}>"{item.custom_attributes.custom_notes}"</p>
                         )}
                         <div className="flex items-center justify-between pt-1">
-                          <div className="flex items-center border rounded-lg bg-stone-50">
-                            <button onClick={() => updateCartQty(idx, -1)} className="p-1 hover:bg-stone-150 text-stone-500"><Minus className="w-3 h-3" /></button>
-                            <span className="px-2 text-xxs font-bold">{item.quantity}</span>
-                            <button onClick={() => updateCartQty(idx, 1)} className="p-1 hover:bg-stone-150 text-stone-500"><Plus className="w-3 h-3" /></button>
+                          <div className="flex items-center border rounded-lg" style={{ backgroundColor: c.surface, borderColor: c.borders }}>
+                            <button onClick={() => updateCartQty(idx, -1)} className="p-1 hover:opacity-75" style={{ color: c.text }}><Minus className="w-3 h-3" /></button>
+                            <span className="px-2 text-xxs font-bold" style={{ color: c.text }}>{item.quantity}</span>
+                            <button onClick={() => updateCartQty(idx, 1)} className="p-1 hover:opacity-75" style={{ color: c.text }}><Plus className="w-3 h-3" /></button>
                           </div>
                           <button onClick={() => removeFromCart(idx)} className="p-1 hover:bg-red-50 text-red-500 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
@@ -1470,7 +1472,7 @@ export default function PublicStorefront() {
             {cart.length > 0 && (
               <div className="pt-4 border-t space-y-4 shrink-0" style={{ borderColor: c.borders }}>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center text-xxs font-bold text-stone-500">
+                  <div className="flex justify-between items-center text-xxs font-bold opacity-60" style={{ color: c.text }}>
                     <span>Basket Subtotal</span>
                     <span>₹{cartSubtotal.toLocaleString('en-IN')}</span>
                   </div>
@@ -1480,7 +1482,7 @@ export default function PublicStorefront() {
                       <span>- ₹{discountAmount.toLocaleString('en-IN')}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center text-xs font-bold border-t pt-2" style={{ borderColor: c.borders }}>
+                  <div className="flex justify-between items-center text-xs font-bold border-t pt-2" style={{ borderColor: c.borders, color: c.text }}>
                     <span>Total Amount</span>
                     <span className="text-sm font-black" style={{ color: c.primary }}>₹{cartTotal.toLocaleString('en-IN')}</span>
                   </div>
@@ -1522,13 +1524,13 @@ export default function PublicStorefront() {
       {/* Checkout Wizard Modal */}
       {showCheckoutModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="w-full sm:max-w-md bg-white rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col p-6 space-y-6 max-h-[90vh] overflow-y-auto scrollbar-none">
+          <div className="w-full sm:max-w-md rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col p-6 space-y-6 max-h-[90vh] overflow-y-auto scrollbar-none border" style={{ backgroundColor: c.background, color: c.text, borderColor: c.borders }}>
             <div className="flex justify-between items-center shrink-0">
-              <h3 className="text-base font-bold font-serif text-[#1E3A5F]" style={{ color: c.primary }}>
+              <h3 className="text-base font-bold font-serif" style={{ color: c.text }}>
                 Checkout {checkoutStep < 3 && `(Step ${checkoutStep} of 2)`}
               </h3>
               {checkoutStep < 3 && (
-                <button onClick={() => setShowCheckoutModal(false)} className="p-1 border rounded-lg text-stone-400">
+                <button onClick={() => setShowCheckoutModal(false)} className="p-1 border rounded-lg" style={{ borderColor: c.borders, color: c.text }}>
                   <X className="w-4 h-4" />
                 </button>
               )}
@@ -1538,10 +1540,11 @@ export default function PublicStorefront() {
               <form onSubmit={(e) => { e.preventDefault(); setCheckoutStep(2) }} className="space-y-4">
                 <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Shipping & Delivery Details</h4>
                 <div>
-                  <label className="block text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">Consignee Full Name *</label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider mb-1 opacity-60" style={{ color: c.text }}>Consignee Full Name *</label>
                   <input
                     type="text"
-                    className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+                    className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                     placeholder="Ramesh Kumar"
                     value={shippingName}
                     onChange={e => setShippingName(e.target.value)}
@@ -1549,10 +1552,11 @@ export default function PublicStorefront() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">WhatsApp Phone Number *</label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider mb-1 opacity-60" style={{ color: c.text }}>WhatsApp Phone Number *</label>
                   <input
                     type="tel"
-                    className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+                    className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                     placeholder="+91 98765 43210"
                     value={shippingPhone}
                     onChange={e => setShippingPhone(e.target.value)}
@@ -1560,9 +1564,10 @@ export default function PublicStorefront() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">Delivery Address *</label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider mb-1 opacity-60" style={{ color: c.text }}>Delivery Address *</label>
                   <textarea
-                    className="w-full border rounded-xl px-3 py-2.5 text-xs h-20 resize-none outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+                    className="w-full border rounded-xl px-3 py-2.5 text-xs h-20 resize-none outline-none focus:ring-1 focus:ring-amber-500"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                     placeholder="Street, Landmark, City, State, Pincode"
                     value={shippingAddress}
                     onChange={e => setShippingAddress(e.target.value)}
@@ -1570,10 +1575,11 @@ export default function PublicStorefront() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">Special Delivery Notes</label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider mb-1 opacity-60" style={{ color: c.text }}>Special Delivery Notes</label>
                   <input
                     type="text"
-                    className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+                    className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                     placeholder="Deliver between 2 PM to 5 PM"
                     value={shippingNotes}
                     onChange={e => setShippingNotes(e.target.value)}
@@ -1593,14 +1599,14 @@ export default function PublicStorefront() {
               <form onSubmit={handleCheckoutSubmit} className="space-y-6">
                 <div className="space-y-3">
                   <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Payment Protocol</h4>
-                  <div className="p-4 bg-stone-50 border rounded-2xl space-y-3" style={{ backgroundColor: c.surface, borderColor: c.borders }}>
-                    <p className="text-[11px] leading-relaxed text-stone-600 font-light">
-                      Please transfer the checkout total directly to <strong>{reseller.owner_name}</strong> via UPI or Cash. Your order enters production once payment is authenticated by our desk.
+                  <div className="p-4 border rounded-2xl space-y-3" style={{ backgroundColor: c.surface, borderColor: c.borders }}>
+                    <p className="text-[11px] leading-relaxed font-light opacity-80" style={{ color: c.text }}>
+                      Please transfer the checkout total directly to <strong>{reseller.owner_name}</strong> via UPI or Cash. Your order enters production once payment is authenticated by our boutique desk.
                     </p>
                     <div className="space-y-1.5 text-xs font-semibold">
-                      <p className="text-[#1E3A5F]" style={{ color: c.primary }}>Store UPI: {reseller.upi_id || 'TBD'}</p>
+                      <p style={{ color: c.primary }}>Store UPI: {reseller.upi_id || 'TBD'}</p>
                       {reseller.bank_name && (
-                        <p className="text-stone-500">
+                        <p className="opacity-80" style={{ color: c.text }}>
                           Bank: {reseller.bank_name} <br/>
                           A/C: {reseller.account_number} <br/>
                           IFSC: {reseller.ifsc_code}
@@ -1608,7 +1614,7 @@ export default function PublicStorefront() {
                       )}
                     </div>
                   </div>
-                  <div className="flex justify-between items-center text-xs font-bold pt-3 border-t">
+                  <div className="flex justify-between items-center text-xs font-bold pt-3 border-t" style={{ borderColor: c.borders, color: c.text }}>
                     <span className="opacity-60">Due Amount</span>
                     <span className="text-sm font-black" style={{ color: c.primary }}>₹{cartTotal.toLocaleString('en-IN')}</span>
                   </div>
@@ -1639,16 +1645,16 @@ export default function PublicStorefront() {
                   <CheckCircle className="w-7 h-7" />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-base font-bold font-serif text-stone-900">Order Successfully Placed</h4>
-                  <p className="text-[10px] text-stone-400">Your order will be verified shortly by our boutique desk.</p>
+                  <h4 className="text-base font-bold font-serif" style={{ color: c.text }}>Order Successfully Placed</h4>
+                  <p className="text-[10px] opacity-60" style={{ color: c.text }}>Your order will be verified shortly by our boutique desk.</p>
                 </div>
 
-                <div className="bg-stone-50 p-4 rounded-2xl border text-left text-xs font-mono space-y-1" style={{ backgroundColor: c.surface, borderColor: c.borders }}>
-                  <p className="font-semibold text-stone-500 uppercase tracking-wider text-[9px] mb-2 font-sans">Placed Orders</p>
+                <div className="p-4 rounded-2xl border text-left text-xs font-mono space-y-1" style={{ backgroundColor: c.surface, borderColor: c.borders, color: c.text }}>
+                  <p className="font-semibold uppercase tracking-wider text-[9px] mb-2 font-sans opacity-65">Placed Orders</p>
                   {confirmedOrders.map((o: any) => (
-                    <div key={o.id} className="flex justify-between font-bold">
+                    <div key={o.id} className="flex justify-between font-bold" style={{ color: c.text }}>
                       <span>Order Ref:</span>
-                      <span className="text-[#1E3A5F]" style={{ color: c.primary }}>{o.order_number}</span>
+                      <span style={{ color: c.primary }}>{o.order_number}</span>
                     </div>
                   ))}
                 </div>
@@ -1686,7 +1692,7 @@ export default function PublicStorefront() {
       {/* Selected Product detail drawer */}
       {selectedProduct && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="w-full sm:max-w-xl h-[85vh] sm:h-auto sm:max-h-[90vh] bg-white rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between">
+          <div className="w-full sm:max-w-xl h-[85vh] sm:h-auto sm:max-h-[90vh] rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between border" style={{ backgroundColor: c.background, color: c.text, borderColor: c.borders }}>
             <div className="w-12 h-1 bg-stone-300 rounded-full mx-auto my-3.5 sm:hidden shrink-0" />
 
             <div className="px-6 py-4 border-b flex items-center justify-between shrink-0" style={{ borderColor: c.borders }}>
@@ -1696,15 +1702,15 @@ export default function PublicStorefront() {
               </div>
               <button
                 onClick={() => setSelectedProduct(null)}
-                className="p-1.5 border rounded-xl hover:bg-stone-50 text-stone-500 transition-colors"
-                style={{ borderColor: c.borders }}
+                className="p-1.5 border rounded-xl hover:opacity-85 transition-opacity"
+                style={{ borderColor: c.borders, color: c.text }}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-6 scrollbar-none flex-1">
-              <div className="aspect-[4/5] bg-stone-50 rounded-2xl overflow-hidden flex items-center justify-center border" style={{ borderColor: c.borders }}>
+              <div className="aspect-[4/5] rounded-2xl overflow-hidden flex items-center justify-center border" style={{ backgroundColor: c.surface, borderColor: c.borders }}>
                 {selectedProduct.photo_urls?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={selectedProduct.photo_urls[0]} alt="" className="w-full h-full object-cover" />
@@ -1726,19 +1732,20 @@ export default function PublicStorefront() {
                 
                 {/* Gold Karat Selection */}
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">Select Gold Karat</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60" style={{ color: c.text }}>Select Gold Karat</label>
                   <div className="flex gap-2">
                     {[14, 18, 22].map(k => (
                       <button
                         key={k}
                         type="button"
                         onClick={() => setSelectedKarat(k)}
-                        className={`flex-1 py-2 text-xs font-bold border rounded-xl transition-all ${
-                          selectedKarat === k ? 'text-white' : 'bg-white text-stone-600'
+                        className={`flex-1 py-2 text-xs font-bold border rounded-xl transition-all hover:opacity-85 ${
+                          selectedKarat === k ? 'text-white' : ''
                         }`}
                         style={{
-                          backgroundColor: selectedKarat === k ? c.primary : undefined,
-                          borderColor: selectedKarat === k ? c.primary : c.borders
+                          backgroundColor: selectedKarat === k ? c.primary : c.surface,
+                          borderColor: selectedKarat === k ? c.primary : c.borders,
+                          color: selectedKarat === k ? '#FFFFFF' : c.text
                         }}
                       >
                         {k}K Gold
@@ -1750,13 +1757,13 @@ export default function PublicStorefront() {
                 {/* Size Selection */}
                 {selectedProduct.category?.toLowerCase() !== 'necklace' && selectedProduct.category?.toLowerCase() !== 'pendant' && (
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">Select Ring Size (India)</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60" style={{ color: c.text }}>Select Ring Size (India)</label>
                     <div className="relative">
                       <select
                         value={selectedSize}
                         onChange={e => setSelectedSize(e.target.value)}
-                        className="w-full bg-white border rounded-xl px-3 py-2.5 text-xs outline-none appearance-none cursor-pointer"
-                        style={{ borderColor: c.borders }}
+                        className="w-full border rounded-xl px-3 py-2.5 text-xs outline-none appearance-none cursor-pointer"
+                        style={{ borderColor: c.borders, color: c.text, backgroundColor: c.background }}
                       >
                         {Array.from({ length: 20 }, (_, i) => String(i + 6)).map(s => (
                           <option key={s} value={s}>Size {s}</option>
@@ -1769,10 +1776,10 @@ export default function PublicStorefront() {
 
                 {/* Custom briefs design upload */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">Custom Design Brief / notes</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60" style={{ color: c.text }}>Custom Design Brief / notes</label>
                   <textarea
-                    className="w-full bg-white border rounded-xl px-3 py-2 text-xs h-16 resize-none outline-none"
-                    style={{ borderColor: c.borders }}
+                    className="w-full border rounded-xl px-3 py-2 text-xs h-16 resize-none outline-none"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.background }}
                     placeholder="Specify special notes, customizations or engraving..."
                     value={customNotes}
                     onChange={e => setCustomNotes(e.target.value)}
@@ -1780,7 +1787,7 @@ export default function PublicStorefront() {
                   
                   {/* Reference Image Upload */}
                   <div className="space-y-2">
-                    <label className="inline-flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-stone-500 uppercase hover:text-stone-700">
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer text-[10px] font-bold uppercase hover:opacity-100 opacity-70" style={{ color: c.text }}>
                       <Camera className="w-3.5 h-3.5" />
                       <span>Attach design photos ({briefImages.length})</span>
                       <input
@@ -1821,7 +1828,7 @@ export default function PublicStorefront() {
                     {Object.entries(selectedProduct.attributes).map(([k, v]) => (
                       <div key={k} className="border-b pb-1.5" style={{ borderColor: c.borders }}>
                         <dt className="opacity-45 text-[9px] uppercase tracking-wider">{k.replace(/_/g, ' ')}</dt>
-                        <dd className="font-bold text-stone-900 mt-1">{String(v)}</dd>
+                        <dd className="font-bold mt-1" style={{ color: c.text }}>{String(v)}</dd>
                       </div>
                     ))}
                   </dl>
@@ -1858,8 +1865,8 @@ export default function PublicStorefront() {
                       <textarea
                         required
                         rows={2}
-                        className="w-full p-2 border rounded-xl text-xs bg-white focus:outline-none"
-                        style={{ borderColor: c.borders }}
+                        className="w-full p-2 border rounded-xl text-xs focus:outline-none"
+                        style={{ borderColor: c.borders, color: c.text, backgroundColor: c.background }}
                         placeholder="Write your honest review here..."
                         value={newReviewText}
                         onChange={e => setNewReviewText(e.target.value)}
@@ -1878,13 +1885,13 @@ export default function PublicStorefront() {
                 {loadingReviews ? (
                   <p className="text-center py-4 text-xxs font-bold text-stone-400">Loading reviews...</p>
                 ) : reviews.length === 0 ? (
-                  <p className="text-center py-4 text-xxs italic text-stone-400 font-light">No reviews posted yet.</p>
+                  <p className="text-center py-4 text-xxs italic opacity-50 font-light" style={{ color: c.text }}>No reviews posted yet.</p>
                 ) : (
-                  <div className="space-y-3.5 divide-y divide-stone-100">
+                  <div className="space-y-3.5 divide-y" style={{ borderColor: c.borders }}>
                     {reviews.map((r, i) => (
                       <div key={i} className="pt-3.5 first:pt-0 space-y-1 text-xs">
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-stone-800">{r.reseller_storefront_customers?.name || 'Verified Buyer'}</span>
+                          <span className="font-bold" style={{ color: c.text }}>{r.reseller_storefront_customers?.name || 'Verified Buyer'}</span>
                           <div className="flex gap-0.5">
                             {Array.from({ length: r.rating }).map((_, idx) => (
                               <Star key={idx} className="w-3 h-3 fill-amber-500 text-amber-500" />
@@ -1899,7 +1906,7 @@ export default function PublicStorefront() {
               </div>
             </div>
 
-            <div className="p-6 border-t flex items-center justify-between gap-4 shrink-0 bg-stone-50/50" style={{ borderColor: c.borders }}>
+            <div className="p-6 border-t flex items-center justify-between gap-4 shrink-0" style={{ borderColor: c.borders, backgroundColor: c.surface }}>
               <div className="flex flex-col">
                 <span className="text-[8px] font-bold opacity-45 uppercase tracking-wider">Estimated Price</span>
                 <span className="text-lg font-black tracking-tight" style={{ color: c.primary }}>
@@ -1928,10 +1935,10 @@ export default function PublicStorefront() {
       {/* Callback Request Modal */}
       {showCallbackModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="w-full sm:max-w-sm bg-white rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col p-6 space-y-5">
+          <div className="w-full sm:max-w-sm rounded-t-[2.5rem] sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col p-6 space-y-5 border" style={{ backgroundColor: c.background, color: c.text, borderColor: c.borders }}>
             <div className="flex justify-between items-center">
-              <h3 className="text-base font-bold font-serif text-[#1E3A5F]" style={{ color: c.primary }}>Bespoke Callback</h3>
-              <button onClick={() => setShowCallbackModal(false)} className="p-1 border rounded-lg text-stone-400">
+              <h3 className="text-base font-bold font-serif" style={{ color: c.text }}>Bespoke Callback</h3>
+              <button onClick={() => setShowCallbackModal(false)} className="p-1 border rounded-lg" style={{ borderColor: c.borders, color: c.text }}>
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -1941,19 +1948,20 @@ export default function PublicStorefront() {
                 <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center border border-green-200 mx-auto">
                   <CheckCircle className="w-6 h-6" />
                 </div>
-                <h4 className="text-xs font-bold text-stone-900">Request Logged</h4>
-                <p className="text-[10px] text-stone-400 max-w-[200px] mx-auto">Our boutique specialist will contact you on WhatsApp shortly.</p>
+                <h4 className="text-xs font-bold" style={{ color: c.text }}>Request Logged</h4>
+                <p className="text-[10px] opacity-60 max-w-[200px] mx-auto" style={{ color: c.text }}>Our boutique specialist will contact you on WhatsApp shortly.</p>
               </div>
             ) : (
               <form onSubmit={handleCallbackSubmit} className="space-y-4">
-                <p className="text-stone-500 text-xs font-light leading-relaxed">
+                <p className="text-xs font-light leading-relaxed opacity-75" style={{ color: c.text }}>
                   Submit your details and request a personalized design callback.
                 </p>
                 <div>
-                  <label className="block text-[9px] font-bold text-stone-400 uppercase mb-1">Your Name *</label>
+                  <label className="block text-[9px] font-bold uppercase mb-1 opacity-60" style={{ color: c.text }}>Your Name *</label>
                   <input
                     type="text"
-                    className="w-full border rounded-xl px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+                    className="w-full border rounded-xl px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-amber-500"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                     placeholder="e.g. Shalini Roy"
                     value={callbackName}
                     onChange={e => setCallbackName(e.target.value)}
@@ -1961,10 +1969,11 @@ export default function PublicStorefront() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-bold text-stone-400 uppercase mb-1">WhatsApp Mobile *</label>
+                  <label className="block text-[9px] font-bold uppercase mb-1 opacity-60" style={{ color: c.text }}>WhatsApp Mobile *</label>
                   <input
                     type="tel"
-                    className="w-full border rounded-xl px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+                    className="w-full border rounded-xl px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-amber-500"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                     placeholder="e.g. +91 99999 88888"
                     value={callbackPhone}
                     onChange={e => setCallbackPhone(e.target.value)}
@@ -1972,10 +1981,11 @@ export default function PublicStorefront() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-bold text-stone-400 uppercase mb-1">Inquiry details / specifications</label>
+                  <label className="block text-[9px] font-bold uppercase mb-1 opacity-60" style={{ color: c.text }}>Inquiry details / specifications</label>
                   <textarea
                     rows={2}
-                    className="w-full border rounded-xl p-2 text-xs outline-none focus:ring-1 focus:ring-amber-500 bg-white resize-none"
+                    className="w-full border rounded-xl p-2 text-xs outline-none focus:ring-1 focus:ring-amber-500 resize-none"
+                    style={{ borderColor: c.borders, color: c.text, backgroundColor: c.surface }}
                     placeholder="Specify metal changes, budgets or karat options..."
                     value={callbackMsg}
                     onChange={e => setCallbackMsg(e.target.value)}
