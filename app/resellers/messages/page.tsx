@@ -87,6 +87,12 @@ export default function AdminResellerMessagesPage() {
   useEffect(() => {
     if (selectedResellerId) {
       loadMessages()
+
+      const interval = setInterval(() => {
+        loadMessages()
+      }, 4000)
+
+      return () => clearInterval(interval)
     }
   }, [selectedResellerId, activeType, selectedOrderId, selectedSampleId])
 

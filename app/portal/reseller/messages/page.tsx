@@ -67,6 +67,12 @@ export default function ResellerMessagesPage() {
 
   useEffect(() => {
     loadMessages()
+
+    const interval = setInterval(() => {
+      loadMessages(true)
+    }, 4000)
+
+    return () => clearInterval(interval)
   }, [activeType, selectedOrderId, selectedSampleId])
 
   useEffect(() => {
@@ -74,8 +80,8 @@ export default function ResellerMessagesPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  async function loadMessages() {
-    setLoadingMessages(true)
+  async function loadMessages(isPoll = false) {
+    if (!isPoll) setLoadingMessages(true)
     try {
       let url = `/api/portal/reseller/messages?thread_type=${activeType}`
       if (activeType === 'order' && selectedOrderId) {
@@ -90,7 +96,7 @@ export default function ResellerMessagesPage() {
         setMessages(data.messages || [])
       }
     } catch {}
-    setLoadingMessages(false)
+    if (!isPoll) setLoadingMessages(false)
   }
 
   async function handleFileUpload(files: FileList | null) {
