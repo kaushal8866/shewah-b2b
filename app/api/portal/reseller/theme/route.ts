@@ -97,20 +97,11 @@ export async function POST(req: Request) {
     const errorMsg = upsertErr.message || ''
     // Check if the error is due to missing "sections" column
     if (errorMsg.includes('sections') || upsertErr.code === '42703') {
-      const { sections: _, ...fallbackPayload } = themePayload
-      const { data: fallbackData, error: fallbackErr } = await supabaseAdmin
-        .from('reseller_themes')
-        .upsert(fallbackPayload, { onConflict: 'reseller_id' })
-        .select('*')
-        .maybeSingle()
-
-      if (fallbackErr) {
-        return NextResponse.json({ error: safeDbError(fallbackErr, 'reseller.theme.save', 'Could not save branding configuration.') }, { status: 500 })
-      }
-      theme = fallbackData
-    } else {
-      return NextResponse.json({ error: safeDbError(upsertErr, 'reseller.theme.save', 'Could not save branding configuration.') }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Database migration pending: The "sections" column is missing from the "reseller_themes" table. Please ask your administrator to execute the SQL migration script located at "scripts/migrate_reseller_theme_sections.sql" in the Supabase SQL editor.'
+      }, { status: 400 })
     }
+    return NextResponse.json({ error: safeDbError(upsertErr, 'reseller.theme.save', 'Could not save branding configuration.') }, { status: 500 })
   } else {
     theme = upsertData
   }

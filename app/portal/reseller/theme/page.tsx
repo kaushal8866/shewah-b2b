@@ -201,6 +201,38 @@ export default function ResellerThemeEditor() {
     }
   }
 
+  function setNestedPath(obj: any, path: string, value: any): any {
+    const keys = path.split('.')
+    let current = obj
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i]
+      const nextKey = keys[i + 1]
+      const isNextKeyIndex = !isNaN(Number(nextKey))
+      
+      if (isNextKeyIndex) {
+        if (!Array.isArray(current[key])) {
+          current[key] = []
+        }
+      } else {
+        if (typeof current[key] !== 'object' || current[key] === null) {
+          current[key] = {}
+        }
+      }
+      
+      if (Array.isArray(current[key])) {
+        current[key] = [...current[key]]
+      } else {
+        current[key] = { ...current[key] }
+      }
+      
+      current = current[key]
+    }
+    
+    const lastKey = keys[keys.length - 1]
+    current[lastKey] = value
+    return obj
+  }
+
   async function handleSectionImageUpload(sectionId: string, path: string, files: FileList | null) {
     if (!files || files.length === 0) return
     setUploadingImage(sectionId + '-' + path)
@@ -211,14 +243,7 @@ export default function ResellerThemeEditor() {
         const secIndex = sectionsCopy.findIndex(s => s.id === sectionId)
         if (secIndex > -1) {
           const sec = { ...sectionsCopy[secIndex] }
-          const settings = { ...sec.settings }
-          
-          if (path.includes('.')) {
-            const [parent, child] = path.split('.')
-            settings[parent] = { ...settings[parent], [child]: url }
-          } else {
-            settings[path] = url
-          }
+          const settings = setNestedPath({ ...sec.settings }, path, url)
           
           sec.settings = settings
           sectionsCopy[secIndex] = sec
