@@ -1552,6 +1552,253 @@ export default function ResellerThemeEditor() {
                 </div>
               )}
 
+              {/* Trust Bar Editor */}
+              {selectedSection?.type === 'trust_bar' && (
+                <div className="space-y-3.5 text-xxs font-semibold text-stone-700">
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Background Color</label>
+                    <input
+                      type="color"
+                      className="w-full h-8 rounded-lg cursor-pointer border border-stone-200"
+                      value={selectedSection.settings.bgColor || '#FBF7F0'}
+                      onChange={e => {
+                        const col = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, bgColor: col } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Text Color</label>
+                    <input
+                      type="color"
+                      className="w-full h-8 rounded-lg cursor-pointer border border-stone-200"
+                      value={selectedSection.settings.textColor || '#1C1917'}
+                      onChange={e => {
+                        const col = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, textColor: col } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Scroll Speed</label>
+                    <select
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none"
+                      value={selectedSection.settings.speed || 'normal'}
+                      onChange={e => {
+                        const val = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, speed: val } } : s
+                          )
+                        }))
+                      }}
+                    >
+                      <option value="slow">Slow</option>
+                      <option value="normal">Normal</option>
+                      <option value="fast">Fast</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Trust Signals Text (Up to 3)</label>
+                    {(selectedSection.settings.items || []).map((item: string, idx: number) => (
+                      <div key={idx} className="flex gap-2">
+                        <input
+                          type="text"
+                          className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none font-bold"
+                          value={item}
+                          onChange={e => {
+                            const val = e.target.value
+                            setTheme((prev: any) => ({
+                              ...prev,
+                              sections: prev.sections.map((s: SectionBlock) => {
+                                if (s.id === selectedSectionId) {
+                                  const items = [...(s.settings.items || [])]
+                                  items[idx] = val
+                                  return { ...s, settings: { ...s.settings, items } }
+                                }
+                                return s
+                              })
+                            }))
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Category Grid Editor */}
+              {selectedSection?.type === 'category_grid' && (
+                <div className="space-y-3.5 text-xxs font-semibold text-stone-700">
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Section Title</label>
+                    <input
+                      type="text"
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none font-bold"
+                      value={selectedSection.settings.title || 'SHOP BY CATEGORY'}
+                      onChange={e => {
+                        const val = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, title: val } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-3.5 border-t border-stone-150 pt-3">
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Categories List</label>
+                    {(selectedSection.settings.items || []).map((cat: any, idx: number) => (
+                      <div key={idx} className="border border-stone-200 rounded-xl p-3 bg-stone-50 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-stone-600 text-[10px] uppercase">Category {idx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTheme((prev: any) => ({
+                                ...prev,
+                                sections: prev.sections.map((s: SectionBlock) => {
+                                  if (s.id === selectedSectionId) {
+                                    const items = (s.settings.items || []).filter((_: any, i: number) => i !== idx)
+                                    return { ...s, settings: { ...s.settings, items } }
+                                  }
+                                  return s
+                                })
+                              }))
+                            }}
+                            className="text-red-500 hover:text-red-700 font-bold uppercase text-[9px]"
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div>
+                          <label className="block text-stone-400 font-semibold mb-0.5">Category Name</label>
+                          <input
+                            type="text"
+                            className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none font-bold"
+                            value={cat.name}
+                            onChange={e => {
+                              const val = e.target.value
+                              setTheme((prev: any) => ({
+                                ...prev,
+                                sections: prev.sections.map((s: SectionBlock) => {
+                                  if (s.id === selectedSectionId) {
+                                    const items = [...(s.settings.items || [])]
+                                    items[idx] = { ...items[idx], name: val }
+                                    return { ...s, settings: { ...s.settings, items } }
+                                  }
+                                  return s
+                                })
+                              }))
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-stone-400 font-semibold mb-0.5">Target Category ID/Slug</label>
+                          <select
+                            className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                            value={cat.category}
+                            onChange={e => {
+                              const val = e.target.value
+                              setTheme((prev: any) => ({
+                                ...prev,
+                                sections: prev.sections.map((s: SectionBlock) => {
+                                  if (s.id === selectedSectionId) {
+                                    const items = [...(s.settings.items || [])]
+                                    items[idx] = { ...items[idx], category: val }
+                                    return { ...s, settings: { ...s.settings, items } }
+                                  }
+                                  return s
+                                })
+                              }))
+                            }}
+                          >
+                            <option value="ring">Rings</option>
+                            <option value="necklace">Necklaces</option>
+                            <option value="earring">Earrings</option>
+                            <option value="bracelet">Bracelets</option>
+                            <option value="all">All Products</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-stone-400 font-semibold mb-0.5">Image URL</label>
+                          <div className="flex gap-2">
+                            <label className="flex items-center gap-1 border border-stone-250 bg-white hover:bg-stone-50 text-stone-600 text-[10px] font-bold py-1 px-2 rounded-lg cursor-pointer shrink-0 shadow-xxs">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={e => handleSectionImageUpload(selectedSection.id, `items.${idx}.image`, e.target.files)}
+                                disabled={uploadingImage === `${selectedSection.id}-items.${idx}.image`}
+                              />
+                              <Camera className="w-3.5 h-3.5" />
+                              {uploadingImage === `${selectedSection.id}-items.${idx}.image` ? '...' : 'Upload'}
+                            </label>
+                            <input
+                              type="text"
+                              className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                              value={cat.image || ''}
+                              onChange={e => {
+                                const val = e.target.value
+                                setTheme((prev: any) => ({
+                                  ...prev,
+                                  sections: prev.sections.map((s: SectionBlock) => {
+                                    if (s.id === selectedSectionId) {
+                                      const items = [...(s.settings.items || [])]
+                                      items[idx] = { ...items[idx], image: val }
+                                      return { ...s, settings: { ...s.settings, items } }
+                                    }
+                                    return s
+                                  })
+                                }))
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => {
+                            if (s.id === selectedSectionId) {
+                              const items = [...(s.settings.items || []), { name: 'New Collection', image: '', category: 'all' }]
+                              return { ...s, settings: { ...s.settings, items } }
+                            }
+                            return s
+                          })
+                        }))
+                      }}
+                      className="w-full bg-white hover:bg-stone-50 text-stone-900 border border-stone-200 font-bold uppercase py-2 text-xxs rounded-xl transition-colors"
+                    >
+                      + Add New Category Card
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-stone-400 space-y-2">
