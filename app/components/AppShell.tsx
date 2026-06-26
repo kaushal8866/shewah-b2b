@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
-  Factory, Store, Menu, X, LogOut
+  Factory, Store, Menu, X, LogOut, Sliders
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
@@ -22,6 +22,7 @@ const nav = [
   { href: '/vendors',         icon: Store,           label: 'Vendors'       },
   { href: '/circuits',        icon: Map,             label: 'Circuits'      },
   { href: '/analytics',       icon: BarChart2,       label: 'Analytics'     },
+  { href: '/configurator',    icon: Sliders,         label: 'Configurator'  },
   { href: '/settings',        icon: Settings,        label: 'Settings'      },
 ]
 

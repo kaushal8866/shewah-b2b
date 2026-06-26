@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
+import { DEFAULT_HOMEPAGE_SECTIONS, SectionBlock } from '@/lib/defaultSections'
 import {
   Palette,
   Save,
@@ -9,125 +10,231 @@ import {
   RefreshCw,
   Camera,
   Smartphone,
+  Laptop,
   Eye,
+  EyeOff,
   Type,
   Layout,
   MousePointer,
-  CheckCircle
+  CheckCircle,
+  ArrowUp,
+  ArrowDown,
+  Trash2,
+  Copy,
+  Plus,
+  ChevronRight,
+  ChevronDown,
+  ExternalLink,
+  Info
 } from 'lucide-react'
 
-const DEFAULT_THEME = {
-  store_name: 'My Jewelry Store',
-  logo_url: '',
-  favicon_url: '',
-  colors: {
-    primary: '#1E3A5F',
-    secondary: '#C9A86A',
-    background: '#FFFFFF',
-    surface: '#F5F5F5',
-    text: '#1C1917',
-    borders: '#E7E5E4',
-    accent: '#F59E0B'
-  },
-  typography: {
-    heading: 'Inter',
-    body: 'Inter',
-    scale: 'medium'
-  },
-  buttons: {
-    shape: 'rounded-xl',
-    style: 'fill',
-    hover: 'darken',
-    shadow: 'sm'
-  },
-  layout: {
-    density: 'comfortable',
-    spacing: 'medium'
-  }
-}
-
-const COLOR_PRESETS = [
+const CURATED_PRESETS = [
   {
-    name: 'Royal Sapphire & Gold',
-    primary: '#1E3A5F',
-    secondary: '#C9A86A',
-    background: '#FFFFFF',
-    surface: '#F8F9FA',
-    text: '#1A1A1A',
-    borders: '#E9ECEF',
-    accent: '#D4AF37'
-  },
-  {
-    name: 'Emerald Luxury',
-    primary: '#0F2C24',
-    secondary: '#D4AF37',
-    background: '#FFFFFF',
-    surface: '#F4F7F6',
-    text: '#1C2E2A',
-    borders: '#E2EBE9',
-    accent: '#C5A880'
+    name: 'Palmonas Minimal',
+    colors: {
+      primary: '#1C1917',
+      secondary: '#C9A86A',
+      background: '#FBF7F0',
+      surface: '#FFFFFF',
+      text: '#2A241B',
+      borders: '#E8DFC9',
+      accent: '#A88A4F'
+    },
+    typography: {
+      heading: 'Plus Jakarta Sans',
+      body: 'Plus Jakarta Sans',
+      scale: 'medium'
+    },
+    buttons: {
+      shape: 'rounded-none', // sharp
+      style: 'fill',
+      hover: 'darken',
+      shadow: 'none'
+    },
+    layout: {
+      density: 'comfortable',
+      spacing: 'medium'
+    }
   },
   {
     name: 'Midnight Onyx (Dark)',
-    primary: '#1A1A1A',
-    secondary: '#E5E5E5',
-    background: '#121212',
-    surface: '#1E1E1E',
-    text: '#F5F5F5',
-    borders: '#2A2A2A',
-    accent: '#F59E0B'
+    colors: {
+      primary: '#D4AF37',
+      secondary: '#FFFFFF',
+      background: '#121212',
+      surface: '#1E1E1E',
+      text: '#F5F5F5',
+      borders: '#2A2A2A',
+      accent: '#D4AF37'
+    },
+    typography: {
+      heading: 'Plus Jakarta Sans',
+      body: 'Plus Jakarta Sans',
+      scale: 'medium'
+    },
+    buttons: {
+      shape: 'rounded-xl',
+      style: 'outline',
+      hover: 'darken',
+      shadow: 'sm'
+    },
+    layout: {
+      density: 'compact',
+      spacing: 'medium'
+    }
   },
   {
-    name: 'Rose Gold Romance',
-    primary: '#8C6262',
-    secondary: '#E5A9A9',
-    background: '#FFF5F5',
-    surface: '#FFF0F0',
-    text: '#3D2F2F',
-    borders: '#F5D3D3',
-    accent: '#B87333'
+    name: 'Bold Modern',
+    colors: {
+      primary: '#111827',
+      secondary: '#10B981',
+      background: '#FFFFFF',
+      surface: '#F3F4F6',
+      text: '#111827',
+      borders: '#E5E7EB',
+      accent: '#F59E0B'
+    },
+    typography: {
+      heading: 'Inter',
+      body: 'Inter',
+      scale: 'medium'
+    },
+    buttons: {
+      shape: 'rounded-full', // pill
+      style: 'fill',
+      hover: 'darken',
+      shadow: 'md'
+    },
+    layout: {
+      density: 'spacious',
+      spacing: 'medium'
+    }
   }
+]
+
+const SECTION_LIBRARY = [
+  { type: 'announcement', label: 'Announcement Bar', defaultSettings: { text: 'Free shipping on orders above ₹2000 | Ships in 24 hours', bgColor: '#1E3A5F', textColor: '#FFFFFF', fontSize: '11px', letterSpacing: 'wider', animation: 'marquee', isDismissible: false } },
+  { type: 'hero', label: 'Hero Banner', defaultSettings: { autoplay: true, slides: [{ image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1600', title: 'NEW LOOKS', subtitle: 'EXQUISITE QUALITY', ctaText: 'SHOP THE COLLECTION', ctaLink: '#shop', align: 'center', valign: 'center', overlayColor: '#000000', overlayOpacity: 40 }] } },
+  { type: 'trust_bar', label: 'Trust signals Bar', defaultSettings: { bgColor: '#FBF7F0', textColor: '#1C1917', speed: 'normal', items: ['8L+ Happy Customers', 'Gifts For Her @ 50% OFF', 'Ships in 24 hours'] } },
+  { type: 'category_grid', label: 'Category Grid', defaultSettings: { title: 'SHOP BY CATEGORY', columns: 4, items: [{ name: 'Rings', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=600', category: 'ring' }, { name: 'Necklaces', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600', category: 'necklace' }] } },
+  { type: 'product_grid', label: 'Product Grid', defaultSettings: { title: 'PALMONAS TOP STYLES', columnsDesktop: 4, columnsMobile: 2, showOriginalPrice: true, showDiscountBadge: true, showQuickView: true, showWishlist: true, cardStyle: 'minimal' } },
+  { type: 'editorial', label: 'Editorial text & Image', defaultSettings: { title: 'OUR STORY', description: 'Crafted with premium materials and designed to feel comfortable for everyday wear.', image: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?q=80&w=800', imagePosition: 'right', bgColor: '#FBF7F0', textColor: '#1C1917', ctaText: 'Explore Narrative', ctaLink: '#about' } },
+  { type: 'video', label: 'Video Showcase', defaultSettings: { videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-jewelry-in-a-gift-box-41589-large.mp4', autoplay: true, loop: true, muted: true } },
+  { type: 'testimonials', label: 'Customer Reviews', defaultSettings: { title: 'CUSTOMER TESTIMONIALS', bgColor: '#FFFFFF', reviews: [{ author: 'Karan S.', rating: 5, text: 'The best gold plating quality I have seen in demi-fine jewelry.' }] } },
+  { type: 'newsletter', label: 'Newsletter Signup', defaultSettings: { title: 'NEWSLETTER', description: 'Be the first to hear about new launches.', bgColor: '#FBF7F0', textColor: '#1C1917', buttonBg: '#1E3A5F', buttonText: '#FFFFFF', placeholder: 'Enter your email' } }
 ]
 
 export default function ResellerThemeEditor() {
   const [theme, setTheme] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [uploadingLogo, setUploadingLogo] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null)
+
+  // Editor Panels State
+  const [activeControlTab, setActiveControlTab] = useState<'sections' | 'globals' | 'presets'>('sections')
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
+  const [deviceViewport, setDeviceViewport] = useState<'desktop' | 'mobile'>('mobile')
+  const [showAddSectionMenu, setShowAddSectionMenu] = useState(false)
 
   useEffect(() => {
     fetch('/api/portal/reseller/theme')
       .then(r => r.json())
       .then(data => {
         if (data.theme) {
-          setTheme(data.theme)
+          const loadedTheme = data.theme
+          if (!loadedTheme.sections || !Array.isArray(loadedTheme.sections) || loadedTheme.sections.length === 0) {
+            loadedTheme.sections = JSON.parse(JSON.stringify(DEFAULT_HOMEPAGE_SECTIONS))
+          }
+          setTheme(loadedTheme)
         } else {
-          setTheme(DEFAULT_THEME)
+          setTheme({
+            store_name: 'My Luxury Shop',
+            logo_url: '',
+            favicon_url: '',
+            colors: { ...CURATED_PRESETS[0].colors },
+            typography: { ...CURATED_PRESETS[0].typography },
+            buttons: { ...CURATED_PRESETS[0].buttons },
+            layout: { ...CURATED_PRESETS[0].layout },
+            sections: JSON.parse(JSON.stringify(DEFAULT_HOMEPAGE_SECTIONS))
+          })
         }
       })
-      .catch(() => setTheme(DEFAULT_THEME))
+      .catch(() => {
+        setTheme({
+          store_name: 'My Luxury Shop',
+          logo_url: '',
+          favicon_url: '',
+          colors: { ...CURATED_PRESETS[0].colors },
+          typography: { ...CURATED_PRESETS[0].typography },
+          buttons: { ...CURATED_PRESETS[0].buttons },
+          layout: { ...CURATED_PRESETS[0].layout },
+          sections: JSON.parse(JSON.stringify(DEFAULT_HOMEPAGE_SECTIONS))
+        })
+      })
       .finally(() => setLoading(false))
   }, [])
 
   async function handleLogoUpload(files: FileList | null) {
     if (!files || files.length === 0) return
-    setUploadingLogo(true)
+    setUploadingImage('logo')
     try {
       const url = await uploadToCloudinary(files[0])
       setTheme((prev: any) => ({ ...prev, logo_url: url }))
     } catch (err: any) {
       alert('Upload failed: ' + err.message)
     } finally {
-      setUploadingLogo(false)
+      setUploadingImage(null)
     }
   }
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleFaviconUpload(files: FileList | null) {
+    if (!files || files.length === 0) return
+    setUploadingImage('favicon')
+    try {
+      const url = await uploadToCloudinary(files[0])
+      setTheme((prev: any) => ({ ...prev, favicon_url: url }))
+    } catch (err: any) {
+      alert('Upload failed: ' + err.message)
+    } finally {
+      setUploadingImage(null)
+    }
+  }
+
+  async function handleSectionImageUpload(sectionId: string, path: string, files: FileList | null) {
+    if (!files || files.length === 0) return
+    setUploadingImage(sectionId + '-' + path)
+    try {
+      const url = await uploadToCloudinary(files[0])
+      setTheme((prev: any) => {
+        const sectionsCopy = [...prev.sections]
+        const secIndex = sectionsCopy.findIndex(s => s.id === sectionId)
+        if (secIndex > -1) {
+          const sec = { ...sectionsCopy[secIndex] }
+          const settings = { ...sec.settings }
+          
+          if (path.includes('.')) {
+            const [parent, child] = path.split('.')
+            settings[parent] = { ...settings[parent], [child]: url }
+          } else {
+            settings[path] = url
+          }
+          
+          sec.settings = settings
+          sectionsCopy[secIndex] = sec
+        }
+        return { ...prev, sections: sectionsCopy }
+      })
+    } catch (err: any) {
+      alert('Upload failed: ' + err.message)
+    } finally {
+      setUploadingImage(null)
+    }
+  }
+
+  async function handleSave() {
     setSaving(true)
     setSuccess(false)
-
     try {
       const res = await fetch('/api/portal/reseller/theme', {
         method: 'POST',
@@ -148,425 +255,1315 @@ export default function ResellerThemeEditor() {
     }
   }
 
-  function applyPreset(preset: typeof COLOR_PRESETS[0]) {
+  function applyPreset(preset: typeof CURATED_PRESETS[0]) {
     setTheme((prev: any) => ({
       ...prev,
-      colors: {
-        primary: preset.primary,
-        secondary: preset.secondary,
-        background: preset.background,
-        surface: preset.surface,
-        text: preset.text,
-        borders: preset.borders,
-        accent: preset.accent
-      }
+      colors: { ...preset.colors },
+      typography: { ...preset.typography },
+      buttons: { ...preset.buttons },
+      layout: { ...preset.layout }
     }))
   }
 
-  if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading Brand Studio...</div>
-  if (!theme) return <div className="p-4 lg:p-7 text-stone-450 text-sm">Branding configuration not available.</div>
+  // Section Ordering & Operations
+  function moveSection(index: number, direction: 'up' | 'down') {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= theme.sections.length) return
+    
+    setTheme((prev: any) => {
+      const list = [...prev.sections]
+      const temp = list[index]
+      list[index] = list[targetIndex]
+      list[targetIndex] = temp
+      return { ...prev, sections: list }
+    })
+  }
 
-  const lbl = 'block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1'
-  const inp = 'w-full border border-stone-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 bg-white font-semibold text-stone-850 shadow-sm'
+  function toggleSectionVisibility(id: string) {
+    setTheme((prev: any) => ({
+      ...prev,
+      sections: prev.sections.map((s: SectionBlock) => 
+        s.id === id ? { ...s, visible: !s.visible } : s
+      )
+    }))
+  }
+
+  function deleteSection(id: string) {
+    if (selectedSectionId === id) setSelectedSectionId(null)
+    setTheme((prev: any) => ({
+      ...prev,
+      sections: prev.sections.filter((s: SectionBlock) => s.id !== id)
+    }))
+  }
+
+  function duplicateSection(id: string) {
+    setTheme((prev: any) => {
+      const targetSec = prev.sections.find((s: SectionBlock) => s.id === id)
+      if (!targetSec) return prev
+      
+      const newSec: SectionBlock = {
+        ...targetSec,
+        id: `${targetSec.type}-${Date.now()}`,
+        settings: JSON.parse(JSON.stringify(targetSec.settings))
+      }
+      
+      const targetIdx = prev.sections.findIndex((s: SectionBlock) => s.id === id)
+      const list = [...prev.sections]
+      list.splice(targetIdx + 1, 0, newSec)
+      return { ...prev, sections: list }
+    })
+  }
+
+  function addSection(type: string) {
+    const libItem = SECTION_LIBRARY.find(item => item.type === type)
+    if (!libItem) return
+    
+    const newSec: SectionBlock = {
+      id: `${type}-${Date.now()}`,
+      type,
+      visible: true,
+      settings: JSON.parse(JSON.stringify(libItem.defaultSettings))
+    }
+    
+    setTheme((prev: any) => ({
+      ...prev,
+      sections: [...prev.sections, newSec]
+    }))
+    
+    setSelectedSectionId(newSec.id)
+    setShowAddSectionMenu(false)
+  }
+
+  if (loading) {
+    return <div className="p-10 text-center text-stone-400 font-semibold animate-pulse text-sm">Initializing Brand Studio...</div>
+  }
+
+  const selectedSection = theme.sections.find((s: SectionBlock) => s.id === selectedSectionId)
+
+  // Layout Tailwind Helpers
+  const borderRad = theme.buttons.shape === 'rounded-none' ? 'rounded-none' :
+                    theme.buttons.shape === 'rounded-md' ? 'rounded-md' :
+                    theme.buttons.shape === 'rounded-xl' ? 'rounded-xl' : 'rounded-full'
 
   return (
-    <div className="p-4 lg:p-7 max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
-          <Palette className="w-5.5 h-5.5 text-amber-600" />
-          White-Label Brand Studio
-        </h1>
-        <p className="text-xs text-stone-500 mt-0.5">
-          Design your custom customer-facing storefront. Choose colors, fonts, logo, and styles.
-        </p>
+    <div className="h-[calc(100vh-64px)] flex flex-col bg-stone-50 border-t border-stone-200">
+      {/* Brand Studio Banner Action Header */}
+      <div className="bg-white border-b border-stone-200 px-6 py-3 flex items-center justify-between shrink-0 shadow-sm z-10">
+        <div>
+          <h1 className="text-base font-bold text-stone-900 flex items-center gap-2">
+            <Palette className="w-5 h-5 text-amber-600" />
+            Brand Studio &amp; Storefront Editor
+          </h1>
+          <p className="text-xxs text-stone-500 font-medium mt-0.5">
+            Construct your White-Label storefront using customized editorial layout sections.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {success && (
+            <span className="text-xxs font-bold text-green-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 flex items-center gap-1.5 transition-all">
+              <CheckCircle className="w-4 h-4 text-green-600" /> Theme published live!
+            </span>
+          )}
+          
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-amber-650 hover:bg-amber-700 disabled:opacity-50 text-white font-bold text-xxs tracking-wider uppercase py-2 px-5 rounded-xl shadow-sm transition-colors flex items-center gap-2"
+          >
+            <Save className="w-3.5 h-3.5" />
+            {saving ? 'Saving...' : 'Publish Live'}
+          </button>
+        </div>
       </div>
 
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl text-xs font-bold flex items-center gap-2">
-          <CheckCircle className="w-5 h-5 text-green-600" />
-          <span>Branding theme saved successfully! Storefront links will reflect these changes immediately.</span>
-        </div>
-      )}
-
-      {/* Editor Layout split */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Side: Editor Config Forms */}
-        <form onSubmit={handleSave} className="lg:col-span-7 space-y-6">
-          {/* Preset Palettes */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-            <h3 className="font-bold text-stone-900 text-sm flex items-center gap-1">
-              <Palette className="w-4 h-4 text-stone-400" /> Curated Theme Presets
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {COLOR_PRESETS.map((preset, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => applyPreset(preset)}
-                  className="border border-stone-200 hover:border-amber-500 p-2.5 rounded-xl text-left bg-stone-50 transition-colors flex items-center justify-between gap-2"
-                >
-                  <span className="text-[11px] font-bold text-stone-800 truncate">{preset.name}</span>
-                  <div className="flex gap-0.5 shrink-0">
-                    <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: preset.primary }}></div>
-                    <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: preset.secondary }}></div>
-                    <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: preset.surface }}></div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Store Name & Logo */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-4">
-            <h3 className="font-bold text-stone-900 text-sm pb-1 border-b border-stone-100 flex items-center gap-1.5">
-              Identity details
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={lbl}>Storefront Display Name *</label>
-                <input
-                  type="text"
-                  className={inp}
-                  value={theme.store_name}
-                  onChange={e => setTheme((p: any) => ({ ...p, store_name: e.target.value }))}
-                  required
-                />
-              </div>
-              <div>
-                <label className={lbl}>Logo URL / Upload</label>
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1 border border-stone-250 bg-white hover:bg-stone-50 text-stone-600 text-xs font-bold py-2 px-3.5 rounded-xl cursor-pointer shrink-0">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={e => handleLogoUpload(e.target.files)}
-                      disabled={uploadingLogo}
-                    />
-                    <Camera className="w-3.5 h-3.5 text-stone-500" /> Upload Logo
-                  </label>
-                  <input
-                    type="text"
-                    className={inp}
-                    value={theme.logo_url || ''}
-                    placeholder="Or enter direct image URL..."
-                    onChange={e => setTheme((p: any) => ({ ...p, logo_url: e.target.value }))}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Custom Colors Wheels */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-4">
-            <h3 className="font-bold text-stone-900 text-sm pb-1 border-b border-stone-100 flex items-center gap-1.5">
-              Custom color palette
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div>
-                <label className={lbl}>Primary Brand</label>
-                <div className="flex gap-1.5 items-center">
-                  <input
-                    type="color"
-                    className="w-8 h-8 rounded-lg cursor-pointer border border-stone-200 shrink-0"
-                    value={theme.colors.primary}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, primary: e.target.value } }))}
-                  />
-                  <input
-                    type="text"
-                    className="w-full border border-stone-200 rounded-lg p-1 text-[10px] uppercase font-mono font-bold text-center"
-                    value={theme.colors.primary}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, primary: e.target.value } }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className={lbl}>Secondary / Trim</label>
-                <div className="flex gap-1.5 items-center">
-                  <input
-                    type="color"
-                    className="w-8 h-8 rounded-lg cursor-pointer border border-stone-200 shrink-0"
-                    value={theme.colors.secondary}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, secondary: e.target.value } }))}
-                  />
-                  <input
-                    type="text"
-                    className="w-full border border-stone-200 rounded-lg p-1 text-[10px] uppercase font-mono font-bold text-center"
-                    value={theme.colors.secondary}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, secondary: e.target.value } }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className={lbl}>Background</label>
-                <div className="flex gap-1.5 items-center">
-                  <input
-                    type="color"
-                    className="w-8 h-8 rounded-lg cursor-pointer border border-stone-200 shrink-0"
-                    value={theme.colors.background}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, background: e.target.value } }))}
-                  />
-                  <input
-                    type="text"
-                    className="w-full border border-stone-200 rounded-lg p-1 text-[10px] uppercase font-mono font-bold text-center"
-                    value={theme.colors.background}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, background: e.target.value } }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className={lbl}>Surface Cards</label>
-                <div className="flex gap-1.5 items-center">
-                  <input
-                    type="color"
-                    className="w-8 h-8 rounded-lg cursor-pointer border border-stone-200 shrink-0"
-                    value={theme.colors.surface}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, surface: e.target.value } }))}
-                  />
-                  <input
-                    type="text"
-                    className="w-full border border-stone-200 rounded-lg p-1 text-[10px] uppercase font-mono font-bold text-center"
-                    value={theme.colors.surface}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, surface: e.target.value } }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className={lbl}>Text Color</label>
-                <div className="flex gap-1.5 items-center">
-                  <input
-                    type="color"
-                    className="w-8 h-8 rounded-lg cursor-pointer border border-stone-200 shrink-0"
-                    value={theme.colors.text}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, text: e.target.value } }))}
-                  />
-                  <input
-                    type="text"
-                    className="w-full border border-stone-200 rounded-lg p-1 text-[10px] uppercase font-mono font-bold text-center"
-                    value={theme.colors.text}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, text: e.target.value } }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className={lbl}>Borders &amp; Lines</label>
-                <div className="flex gap-1.5 items-center">
-                  <input
-                    type="color"
-                    className="w-8 h-8 rounded-lg cursor-pointer border border-stone-200 shrink-0"
-                    value={theme.colors.borders}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, borders: e.target.value } }))}
-                  />
-                  <input
-                    type="text"
-                    className="w-full border border-stone-200 rounded-lg p-1 text-[10px] uppercase font-mono font-bold text-center"
-                    value={theme.colors.borders}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, borders: e.target.value } }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className={lbl}>Accent Highlight</label>
-                <div className="flex gap-1.5 items-center">
-                  <input
-                    type="color"
-                    className="w-8 h-8 rounded-lg cursor-pointer border border-stone-200 shrink-0"
-                    value={theme.colors.accent}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, accent: e.target.value } }))}
-                  />
-                  <input
-                    type="text"
-                    className="w-full border border-stone-200 rounded-lg p-1 text-[10px] uppercase font-mono font-bold text-center"
-                    value={theme.colors.accent}
-                    onChange={e => setTheme((p: any) => ({ ...p, colors: { ...p.colors, accent: e.target.value } }))}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Typography & Design Details */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-4">
-            <h3 className="font-bold text-stone-900 text-sm pb-1 border-b border-stone-100 flex items-center gap-1.5">
-              Typography &amp; Components Styling
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className={lbl}>Heading Font</label>
-                <select
-                  className={inp}
-                  value={theme.typography.heading}
-                  onChange={e => setTheme((p: any) => ({ ...p, typography: { ...p.typography, heading: e.target.value } }))}
-                >
-                  <option value="Inter">Inter (Sans-serif)</option>
-                  <option value="Playfair Display">Playfair Display (Serif)</option>
-                  <option value="Outfit">Outfit (Geometric)</option>
-                  <option value="Lora">Lora (Elegant Serif)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={lbl}>Button Shape</label>
-                <select
-                  className={inp}
-                  value={theme.buttons.shape}
-                  onChange={e => setTheme((p: any) => ({ ...p, buttons: { ...p.buttons, shape: e.target.value } }))}
-                >
-                  <option value="rounded-none">Square / Sharp</option>
-                  <option value="rounded-md">Subtle Rounded</option>
-                  <option value="rounded-xl">Comfortable Rounded</option>
-                  <option value="rounded-full">Pill / Oval</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={lbl}>Button Shadow</label>
-                <select
-                  className={inp}
-                  value={theme.buttons.shadow}
-                  onChange={e => setTheme((p: any) => ({ ...p, buttons: { ...p.buttons, shadow: e.target.value } }))}
-                >
-                  <option value="none">None</option>
-                  <option value="sm">Small</option>
-                  <option value="md">Medium</option>
-                  <option value="lg">Large</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Actions */}
-          <div className="flex justify-end gap-3 pt-2">
+      {/* Editor Workplace Pane Split: 3 Panels */}
+      <div className="flex-1 flex overflow-hidden">
+        
+        {/* PANEL 1: LEFT PANEL (Global presets & Reorderable Layout Sections) */}
+        <div className="w-[320px] bg-white border-r border-stone-200 flex flex-col shrink-0">
+          
+          {/* Sub Navigation tabs */}
+          <div className="grid grid-cols-3 border-b border-stone-150 text-xxs font-bold uppercase tracking-wider text-center shrink-0">
             <button
-              type="submit"
-              disabled={saving}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-xl shadow-sm text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
+              onClick={() => { setActiveControlTab('sections'); setSelectedSectionId(null) }}
+              className={`py-3.5 ${activeControlTab === 'sections' ? 'text-amber-600 border-b-2 border-amber-600 bg-stone-50/50' : 'text-stone-500 hover:text-stone-850'}`}
             >
-              <Save className="w-4 h-4" /> {saving ? 'Saving Theme...' : 'Apply Branding Palette'}
+              Layout
+            </button>
+            <button
+              onClick={() => { setActiveControlTab('globals'); setSelectedSectionId(null) }}
+              className={`py-3.5 ${activeControlTab === 'globals' ? 'text-amber-600 border-b-2 border-amber-600 bg-stone-50/50' : 'text-stone-500 hover:text-stone-850'}`}
+            >
+              Styles
+            </button>
+            <button
+              onClick={() => { setActiveControlTab('presets'); setSelectedSectionId(null) }}
+              className={`py-3.5 ${activeControlTab === 'presets' ? 'text-amber-600 border-b-2 border-amber-600 bg-stone-50/50' : 'text-stone-500 hover:text-stone-850'}`}
+            >
+              Presets
             </button>
           </div>
-        </form>
 
-        {/* Right Side: Smartphone Mock Preview */}
-        <div className="lg:col-span-5 flex flex-col items-center">
-          <div className="sticky top-6 flex flex-col items-center space-y-3 w-full">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-stone-500 uppercase tracking-wider">
-              <Smartphone className="w-4 h-4" /> Live Mobile Mockup Preview
-            </div>
-
-            {/* Smartphone Case container */}
-            <div className="relative border-[8px] border-stone-800 w-[290px] h-[550px] rounded-[36px] overflow-hidden bg-stone-100 shadow-2xl flex flex-col shrink-0">
-              {/* Camera Notch notch */}
-              <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-28 h-4 bg-stone-800 rounded-full z-50"></div>
-
-              {/* Simulated Screen inside phone */}
-              <div
-                className="flex-1 flex flex-col overflow-y-auto pt-8 pb-3 px-3.5 space-y-4"
-                style={{
-                  backgroundColor: theme.colors.background,
-                  color: theme.colors.text,
-                  fontFamily: theme.typography.body
-                }}
-              >
-                {/* Store Header in preview */}
-                <div
-                  className="flex items-center justify-between pb-2"
-                  style={{ borderColor: theme.colors.borders, borderBottomWidth: '1px' }}
-                >
-                  <div className="flex items-center gap-1.5">
-                    {theme.logo_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={theme.logo_url} alt="" className="h-5 object-contain" />
-                    ) : (
-                      <Palette className="w-4 h-4" style={{ color: theme.colors.accent }} />
-                    )}
-                    <span
-                      className="text-xs font-black tracking-tight"
-                      style={{
-                        color: theme.colors.primary,
-                        fontFamily: theme.typography.heading
-                      }}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {activeControlTab === 'sections' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-1">
+                  <h3 className="text-[11px] font-bold text-stone-500 uppercase tracking-widest">Storefront Layout</h3>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowAddSectionMenu(!showAddSectionMenu)}
+                      className="text-xxs font-extrabold bg-stone-900 hover:bg-stone-800 text-white rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 shadow-sm"
                     >
-                      {theme.store_name}
-                    </span>
+                      <Plus className="w-3.5 h-3.5" /> Section
+                    </button>
+                    
+                    {showAddSectionMenu && (
+                      <div className="absolute left-0 mt-2 w-48 bg-white border border-stone-200 rounded-xl shadow-xl z-50 py-1.5 text-xxs font-semibold text-stone-700">
+                        <div className="px-3 py-1 text-[10px] text-stone-400 font-bold uppercase tracking-wider border-b border-stone-100 mb-1">
+                          Select Section
+                        </div>
+                        {SECTION_LIBRARY.map(lib => (
+                          <button
+                            key={lib.type}
+                            onClick={() => addSection(lib.type)}
+                            className="w-full text-left px-3 py-2 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+                          >
+                            {lib.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <Smartphone className="w-3.5 h-3.5 opacity-40" />
                 </div>
 
-                {/* Cover Banner Card */}
-                <div
-                  className="rounded-2xl p-4 text-center space-y-1.5"
-                  style={{
-                    backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.borders,
-                    borderWidth: '1px'
-                  }}
-                >
-                  <h4
-                    className="text-xs font-black tracking-tight uppercase"
-                    style={{
-                      color: theme.colors.primary,
-                      fontFamily: theme.typography.heading
-                    }}
-                  >
-                    Exquisite Jewelry Collections
-                  </h4>
-                  <p className="text-[9px] opacity-75 font-medium leading-relaxed">
-                    Personalized markup designs. Fast direct dropshipping with full package brand erasure.
-                  </p>
-                </div>
-
-                {/* Showcase Jewelry Card */}
-                <div
-                  className="rounded-2xl overflow-hidden"
-                  style={{
-                    backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.borders,
-                    borderWidth: '1px'
-                  }}
-                >
-                  {/* cover img */}
-                  <div className="bg-stone-150 h-28 flex items-center justify-center relative">
-                    <Palette className="w-8 h-8 opacity-25" />
-                    <span className="absolute bottom-1.5 right-1.5 text-[9px] bg-stone-900/80 text-white px-1.5 py-0.5 rounded font-mono">18K Gold</span>
-                  </div>
-                  {/* card details */}
-                  <div className="p-3 space-y-2">
-                    <div>
-                      <span className="text-[8px] font-bold opacity-60 font-mono">SKU-BRAC102</span>
-                      <h5 className="text-[11px] font-bold line-clamp-1 mt-0.5">Diamond Halo Bracelet</h5>
-                    </div>
-                    {/* price & CTA */}
-                    <div className="flex justify-between items-center pt-1.5 border-t" style={{ borderColor: theme.colors.borders }}>
-                      <span className="text-xs font-black" style={{ color: theme.colors.primary }}>₹45,999</span>
-                      <button
-                        type="button"
-                        className={`text-[9px] font-black px-2.5 py-1.5 transition-all text-white flex items-center gap-0.5 ${theme.buttons.shape} ${
-                          theme.buttons.shadow === 'sm' ? 'shadow-sm' :
-                          theme.buttons.shadow === 'md' ? 'shadow' :
-                          theme.buttons.shadow === 'lg' ? 'shadow-md' : ''
-                        }`}
-                        style={{ backgroundColor: theme.colors.primary }}
+                <div className="space-y-1.5">
+                  {theme.sections.map((section: SectionBlock, idx: number) => {
+                    const isSelected = selectedSectionId === section.id
+                    const displayLabel = SECTION_LIBRARY.find(l => l.type === section.type)?.label || section.type
+                    return (
+                      <div
+                        key={section.id}
+                        onClick={() => setSelectedSectionId(section.id)}
+                        className={`group border rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'bg-amber-50/50 border-amber-400 shadow-sm' 
+                            : 'bg-white border-stone-200 hover:bg-stone-50/80'
+                        } ${!section.visible ? 'opacity-55' : ''}`}
                       >
-                        Enquire
-                      </button>
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${section.visible ? 'bg-amber-500' : 'bg-stone-300'}`}></div>
+                          <span className="text-xxs font-bold text-stone-800 truncate tracking-wide uppercase">
+                            {displayLabel}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            title="Move Up"
+                            onClick={(e) => { e.stopPropagation(); moveSection(idx, 'up') }}
+                            disabled={idx === 0}
+                            className="p-1 hover:bg-stone-200 text-stone-500 rounded disabled:opacity-30"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            title="Move Down"
+                            onClick={(e) => { e.stopPropagation(); moveSection(idx, 'down') }}
+                            disabled={idx === theme.sections.length - 1}
+                            className="p-1 hover:bg-stone-200 text-stone-500 rounded disabled:opacity-30"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                          <button
+                            title="Toggle Visibility"
+                            onClick={(e) => { e.stopPropagation(); toggleSectionVisibility(section.id) }}
+                            className="p-1 hover:bg-stone-200 text-stone-500 rounded"
+                          >
+                            {section.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                          </button>
+                          <button
+                            title="Duplicate"
+                            onClick={(e) => { e.stopPropagation(); duplicateSection(section.id) }}
+                            className="p-1 hover:bg-stone-200 text-stone-500 rounded"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                          <button
+                            title="Delete"
+                            onClick={(e) => { e.stopPropagation(); deleteSection(section.id) }}
+                            className="p-1 hover:bg-red-50 text-red-500 rounded"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {activeControlTab === 'globals' && (
+              <div className="space-y-4">
+                {/* Identity Settings */}
+                <div className="space-y-3 bg-stone-50 border border-stone-200 p-3.5 rounded-xl">
+                  <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-wider pb-1.5 border-b border-stone-200 flex items-center gap-1.5">
+                    Store Identity
+                  </h4>
+                  <div className="space-y-2.5">
+                    <div>
+                      <label className="block text-[9px] font-bold text-stone-500 uppercase mb-1">Storefront Name *</label>
+                      <input
+                        type="text"
+                        className="w-full border border-stone-200 rounded-lg p-2 text-xxs font-semibold bg-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        value={theme.store_name}
+                        onChange={e => setTheme((p: any) => ({ ...p, store_name: e.target.value }))}
+                      />
                     </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-stone-500 uppercase mb-1">Store Logo</label>
+                      <div className="flex gap-2">
+                        <label className="flex items-center gap-1 border border-stone-250 bg-white hover:bg-stone-50 text-stone-600 text-[10px] font-bold py-1.5 px-2.5 rounded-lg cursor-pointer shrink-0 shadow-xxs">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => handleLogoUpload(e.target.files)}
+                            disabled={uploadingImage === 'logo'}
+                          />
+                          <Camera className="w-3 h-3 text-stone-500" />
+                          {uploadingImage === 'logo' ? 'Uploading...' : 'Upload'}
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full border border-stone-200 rounded-lg p-1.5 text-xxs bg-white focus:outline-none"
+                          value={theme.logo_url || ''}
+                          placeholder="Or logo URL..."
+                          onChange={e => setTheme((p: any) => ({ ...p, logo_url: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-stone-500 uppercase mb-1">Store Favicon</label>
+                      <div className="flex gap-2">
+                        <label className="flex items-center gap-1 border border-stone-250 bg-white hover:bg-stone-50 text-stone-600 text-[10px] font-bold py-1.5 px-2.5 rounded-lg cursor-pointer shrink-0 shadow-xxs">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => handleFaviconUpload(e.target.files)}
+                            disabled={uploadingImage === 'favicon'}
+                          />
+                          <Camera className="w-3 h-3 text-stone-500" />
+                          {uploadingImage === 'favicon' ? 'Uploading...' : 'Upload'}
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full border border-stone-200 rounded-lg p-1.5 text-xxs bg-white focus:outline-none"
+                          value={theme.favicon_url || ''}
+                          placeholder="Or favicon URL..."
+                          onChange={e => setTheme((p: any) => ({ ...p, favicon_url: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Styling Details */}
+                <div className="space-y-3 bg-stone-50 border border-stone-200 p-3.5 rounded-xl text-xxs font-semibold">
+                  <h4 className="text-[10px] font-bold text-stone-500 uppercase tracking-wider pb-1.5 border-b border-stone-200 flex items-center gap-1.5">
+                    Typography &amp; Buttons
+                  </h4>
+                  
+                  <div>
+                    <label className="block text-[9px] font-bold text-stone-500 uppercase mb-1">Heading Font Family</label>
+                    <select
+                      className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                      value={theme.typography.heading}
+                      onChange={e => setTheme((p: any) => ({ ...p, typography: { ...p.typography, heading: e.target.value } }))}
+                    >
+                      <option value="Plus Jakarta Sans">Plus Jakarta Sans (Luxury Sans)</option>
+                      <option value="Inter">Inter (Clean Sans)</option>
+                      <option value="Playfair Display">Playfair Display (Serif)</option>
+                      <option value="Lora">Lora (Elegant Serif)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] font-bold text-stone-500 uppercase mb-1">Button Corner Shape</label>
+                    <select
+                      className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                      value={theme.buttons.shape}
+                      onChange={e => setTheme((p: any) => ({ ...p, buttons: { ...p.buttons, shape: e.target.value } }))}
+                    >
+                      <option value="rounded-none">Square / Sharp</option>
+                      <option value="rounded-md">Subtle Rounded (4px)</option>
+                      <option value="rounded-xl">Comfortable Rounded (12px)</option>
+                      <option value="rounded-full">Pill / Oval</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] font-bold text-stone-500 uppercase mb-1">Button Fill Style</label>
+                    <select
+                      className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                      value={theme.buttons.style}
+                      onChange={e => setTheme((p: any) => ({ ...p, buttons: { ...p.buttons, style: e.target.value } }))}
+                    >
+                      <option value="fill">Solid Fill</option>
+                      <option value="outline">Outline / Bordered</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] font-bold text-stone-500 uppercase mb-1">Button Shadow</label>
+                    <select
+                      className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                      value={theme.buttons.shadow}
+                      onChange={e => setTheme((p: any) => ({ ...p, buttons: { ...p.buttons, shadow: e.target.value } }))}
+                    >
+                      <option value="none">None</option>
+                      <option value="sm">Subtle Shadow</option>
+                      <option value="md">Pronounced Shadow</option>
+                    </select>
                   </div>
                 </div>
               </div>
-            </div>
-            <p className="text-[10px] text-stone-400 max-w-[200px] text-center font-medium leading-relaxed">
-              This preview updates instantly as you tweak color wheels and typography selections.
-            </p>
+            )}
+
+            {activeControlTab === 'presets' && (
+              <div className="space-y-3">
+                <div className="text-xxs font-bold text-stone-400 uppercase tracking-widest pb-1 border-b">Theme Presets</div>
+                <div className="grid grid-cols-1 gap-2.5 pt-1">
+                  {CURATED_PRESETS.map((preset, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => applyPreset(preset)}
+                      className="border border-stone-200 hover:border-amber-500 p-3 rounded-xl text-left bg-stone-50 hover:bg-amber-50/10 transition-colors flex items-center justify-between gap-3 shadow-xxs"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-xxs font-bold text-stone-850">{preset.name}</span>
+                        <span className="text-[9px] text-stone-400 mt-0.5">{preset.typography.heading} · {preset.buttons.shape === 'rounded-none' ? 'Sharp' : 'Rounded'}</span>
+                      </div>
+                      <div className="flex gap-0.5 shrink-0 bg-white p-1 rounded-lg border border-stone-150">
+                        <div className="w-3.5 h-3.5 rounded-full border border-stone-100" style={{ backgroundColor: preset.colors.background }}></div>
+                        <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: preset.colors.primary }}></div>
+                        <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: preset.colors.secondary }}></div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* PANEL 2: CENTER PANEL (Storefront live interactive view canvas) */}
+        <div className="flex-1 flex flex-col items-center bg-stone-100 border-r border-stone-200 overflow-hidden relative">
+          
+          {/* Top Bar Switcher Viewport toggle */}
+          <div className="w-full bg-white border-b border-stone-200 py-2.5 px-4 flex items-center justify-between shrink-0 shadow-xxs">
+            <div className="text-xxs font-extrabold text-stone-400 uppercase tracking-wider">Storefront Live Preview</div>
+            
+            <div className="flex items-center gap-1.5 border border-stone-200 rounded-lg p-0.5 bg-stone-50">
+              <button
+                onClick={() => setDeviceViewport('mobile')}
+                className={`p-1.5 rounded-md flex items-center gap-1 text-xxs font-bold transition-all ${
+                  deviceViewport === 'mobile' 
+                    ? 'bg-white text-stone-900 shadow-sm' 
+                    : 'text-stone-400 hover:text-stone-600'
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" /> Mobile
+              </button>
+              <button
+                onClick={() => setDeviceViewport('desktop')}
+                className={`p-1.5 rounded-md flex items-center gap-1 text-xxs font-bold transition-all ${
+                  deviceViewport === 'desktop' 
+                    ? 'bg-white text-stone-900 shadow-sm' 
+                    : 'text-stone-400 hover:text-stone-600'
+                }`}
+              >
+                <Laptop className="w-3.5 h-3.5" /> Desktop
+              </button>
+            </div>
+            
+            <div className="w-20"></div> {/* Spacer for symmetry */}
+          </div>
+
+          {/* Interactive Screen container */}
+          <div className="flex-1 w-full overflow-y-auto p-6 flex justify-center items-start">
+            <div
+              className={`transition-all bg-white shadow-2xl relative border border-stone-200 flex flex-col ${
+                deviceViewport === 'mobile' 
+                  ? 'w-[360px] min-h-[640px] rounded-[32px] border-[10px] border-stone-900 overflow-hidden' 
+                  : 'w-full max-w-4xl min-h-[500px] rounded-lg overflow-hidden'
+              }`}
+              style={{
+                backgroundColor: theme.colors.background,
+                color: theme.colors.text,
+                fontFamily: theme.typography.body
+              }}
+            >
+              {/* Dynamic Theme Styles Injection */}
+              <style>{`
+                .preview-btn-primary {
+                  background-color: ${theme.colors.primary};
+                  color: ${theme.colors.background};
+                  border: 1px solid ${theme.colors.primary};
+                }
+                .preview-btn-primary:hover {
+                  opacity: 0.9;
+                }
+                .preview-btn-secondary {
+                  border: 1px solid ${theme.colors.primary};
+                  color: ${theme.colors.primary};
+                  background-color: transparent;
+                }
+                .preview-btn-accent {
+                  background-color: ${theme.colors.accent};
+                  color: #FFFFFF;
+                }
+              `}</style>
+
+              {/* Camera Notch for Mobile */}
+              {deviceViewport === 'mobile' && (
+                <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-28 h-4 bg-stone-900 rounded-full z-50"></div>
+              )}
+
+              {/* Simulated Screen Inner Container */}
+              <div className={`flex-1 flex flex-col ${deviceViewport === 'mobile' ? 'pt-7' : ''}`}>
+                {theme.sections.map((section: SectionBlock) => {
+                  if (!section.visible) return null
+                  const isSelected = selectedSectionId === section.id
+                  const wrapperClass = `relative cursor-pointer transition-all border ${
+                    isSelected ? 'border-amber-400 bg-amber-500/5 ring-2 ring-amber-400 z-10' : 'border-transparent hover:border-stone-300'
+                  }`
+
+                  switch (section.type) {
+                    case 'announcement':
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={wrapperClass}
+                          style={{ backgroundColor: section.settings.bgColor || theme.colors.primary, color: section.settings.textColor || '#FFFFFF' }}
+                        >
+                          <div className="text-center py-2 px-4 text-xxs font-bold uppercase tracking-wider overflow-hidden truncate">
+                            {section.settings.text}
+                          </div>
+                        </div>
+                      )
+
+                    case 'header':
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={wrapperClass}
+                          style={{ backgroundColor: section.settings.bgColor || '#FFFFFF', color: section.settings.textColor || theme.colors.text }}
+                        >
+                          <div className={`flex items-center justify-between px-4 py-3 border-b`} style={{ borderColor: theme.colors.borders }}>
+                            <div className={`flex items-center gap-1.5 w-full ${section.settings.logoPosition === 'center' ? 'justify-center' : section.settings.logoPosition === 'right' ? 'justify-end' : 'justify-start'}`}>
+                              {theme.logo_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={theme.logo_url} alt="" className="h-4 object-contain" />
+                              ) : (
+                                <span className="text-xs font-black tracking-widest uppercase" style={{ color: theme.colors.primary }}>
+                                  {theme.store_name}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {deviceViewport === 'desktop' && (
+                            <div className="flex justify-center gap-5 py-2 text-xxs font-bold uppercase tracking-widest border-b" style={{ borderColor: theme.colors.borders }}>
+                              {(section.settings.navLinks || []).map((link: any, i: number) => (
+                                <span key={i} className="hover:text-stone-500">{link.label}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+
+                    case 'hero':
+                      const slide = section.settings.slides?.[0] || {}
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={`${wrapperClass} relative h-48 bg-stone-200 overflow-hidden flex items-center justify-center`}
+                          style={{
+                            backgroundImage: `url(${slide.image})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                          }}
+                        >
+                          {/* Slide overlay */}
+                          <div 
+                            className="absolute inset-0" 
+                            style={{ 
+                              backgroundColor: slide.overlayColor || '#000000', 
+                              opacity: (slide.overlayOpacity || 30) / 100 
+                            }}
+                          ></div>
+                          
+                          <div className="relative text-center text-white px-4 space-y-1">
+                            <span className="text-[8px] font-bold tracking-widest uppercase block opacity-85">
+                              {slide.subtitle || 'LIMITED TIME OFFER'}
+                            </span>
+                            <h2 className="text-lg font-black tracking-tight" style={{ fontFamily: theme.typography.heading }}>
+                              {slide.title || 'FLAT ₹999'}
+                            </h2>
+                            {slide.ctaText && (
+                              <span className="inline-block text-[9px] font-bold border-b border-white pb-0.5 pt-1 uppercase tracking-widest hover:opacity-85">
+                                {slide.ctaText}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+
+                    case 'trust_bar':
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={wrapperClass}
+                          style={{ backgroundColor: section.settings.bgColor || theme.colors.surface, color: section.settings.textColor || theme.colors.text }}
+                        >
+                          <div className="flex justify-around items-center py-2 px-3 text-[8px] font-bold uppercase tracking-widest overflow-hidden border-b" style={{ borderColor: theme.colors.borders }}>
+                            {(section.settings.items || []).slice(0, deviceViewport === 'mobile' ? 2 : 4).map((item: string, i: number) => (
+                              <span key={i} className="flex items-center gap-1.5">
+                                <CheckCircle className="w-2.5 h-2.5 text-stone-400" />
+                                {item}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )
+
+                    case 'category_grid':
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={`${wrapperClass} p-4 space-y-3`}
+                        >
+                          <h3 className="text-[10px] font-bold text-center uppercase tracking-widest" style={{ color: theme.colors.primary }}>
+                            {section.settings.title || 'SHOP BY CATEGORY'}
+                          </h3>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {(section.settings.items || []).map((cat: any, i: number) => (
+                              <div key={i} className="aspect-square bg-stone-100 relative rounded-lg overflow-hidden flex flex-col justify-end p-2 border" style={{ borderColor: theme.colors.borders }}>
+                                <div className="absolute inset-0" style={{ backgroundImage: `url(${cat.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <span className="relative text-[9px] font-bold text-white uppercase tracking-wider text-center block">{cat.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+
+                    case 'product_grid':
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={`${wrapperClass} p-4 space-y-4`}
+                        >
+                          <h3 className="text-[10px] font-bold text-center uppercase tracking-widest" style={{ color: theme.colors.primary }}>
+                            {section.settings.title || 'PALMONAS TOP STYLES'}
+                          </h3>
+                          <div className={`grid ${deviceViewport === 'mobile' ? 'grid-cols-2' : 'grid-cols-4'} gap-3`}>
+                            {/* Product Card 1 */}
+                            <div className={`flex flex-col bg-white overflow-hidden rounded-xl border border-stone-150`}>
+                              <div className="aspect-square bg-stone-50 flex items-center justify-center relative">
+                                <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-xxs">
+                                  <span className="text-stone-400">♥</span>
+                                </div>
+                                <span className="text-[9px] text-stone-300">Product Photo</span>
+                              </div>
+                              <div className="p-2 space-y-1">
+                                <h4 className="text-[10px] font-bold text-stone-850 truncate">Rose Tulip Necklace</h4>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-black text-stone-900">₹1,999</span>
+                                  {section.settings.showOriginalPrice && (
+                                    <span className="text-[9px] line-through text-stone-400">₹3,999</span>
+                                  )}
+                                  {section.settings.showDiscountBadge && (
+                                    <span className="text-[8px] text-emerald-600 font-bold">(50% OFF)</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Product Card 2 */}
+                            <div className={`flex flex-col bg-white overflow-hidden rounded-xl border border-stone-150`}>
+                              <div className="aspect-square bg-stone-50 flex items-center justify-center relative">
+                                <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-xxs">
+                                  <span className="text-stone-400">♥</span>
+                                </div>
+                                <span className="text-[9px] text-stone-300">Product Photo</span>
+                              </div>
+                              <div className="p-2 space-y-1">
+                                <h4 className="text-[10px] font-bold text-stone-850 truncate">Classic Solitaire Ring</h4>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-black text-stone-900">₹2,499</span>
+                                  {section.settings.showOriginalPrice && (
+                                    <span className="text-[9px] line-through text-stone-400">₹4,999</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+
+                    case 'editorial':
+                      const ed = section.settings
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={`${wrapperClass} p-4`}
+                          style={{ backgroundColor: ed.bgColor || theme.colors.surface }}
+                        >
+                          <div className={`flex ${deviceViewport === 'desktop' ? 'flex-row' : 'flex-col'} gap-4 items-center`}>
+                            {ed.imagePosition === 'left' && (
+                              <div className="w-full sm:w-1/2 aspect-video sm:aspect-square bg-stone-200 rounded-lg overflow-hidden shrink-0" style={{ backgroundImage: `url(${ed.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+                            )}
+                            <div className="space-y-1.5 text-center sm:text-left flex-1">
+                              <h3 className="text-[11px] font-bold tracking-widest uppercase" style={{ color: theme.colors.primary }}>{ed.title}</h3>
+                              <p className="text-[9px] leading-relaxed opacity-80" style={{ color: ed.textColor || theme.colors.text }}>{ed.description}</p>
+                              {ed.ctaText && (
+                                <button type="button" className={`preview-btn-secondary text-[8px] font-bold tracking-wider uppercase px-3 py-1.5 ${borderRad}`}>
+                                  {ed.ctaText}
+                                </button>
+                              )}
+                            </div>
+                            {ed.imagePosition === 'right' && (
+                              <div className="w-full sm:w-1/2 aspect-video sm:aspect-square bg-stone-200 rounded-lg overflow-hidden shrink-0" style={{ backgroundImage: `url(${ed.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+                            )}
+                          </div>
+                        </div>
+                      )
+
+                    case 'video':
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={`${wrapperClass} h-36 bg-stone-900 flex items-center justify-center text-white`}
+                        >
+                          <span className="text-[9px] font-bold uppercase tracking-widest opacity-60">Simulated Video Showcase</span>
+                        </div>
+                      )
+
+                    case 'testimonials':
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={`${wrapperClass} p-4 space-y-3 text-center`}
+                          style={{ backgroundColor: section.settings.bgColor || '#FFFFFF' }}
+                        >
+                          <h3 className="text-[9px] font-extrabold tracking-widest uppercase text-stone-500">{section.settings.title || 'TESTIMONIALS'}</h3>
+                          <div className="space-y-2">
+                            {(section.settings.reviews || []).slice(0, 1).map((rev: any, i: number) => (
+                              <div key={i} className="space-y-1">
+                                <p className="text-[10px] italic opacity-85">"{rev.text}"</p>
+                                <span className="text-[9px] font-bold block text-amber-600">— {rev.author}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+
+                    case 'newsletter':
+                      const news = section.settings
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={`${wrapperClass} p-4 text-center space-y-2.5`}
+                          style={{ backgroundColor: news.bgColor || theme.colors.surface, color: news.textColor || theme.colors.text }}
+                        >
+                          <div className="space-y-0.5">
+                            <h3 className="text-[11px] font-bold uppercase tracking-widest">{news.title}</h3>
+                            <p className="text-[9px] opacity-75">{news.description}</p>
+                          </div>
+                          <div className="flex gap-1.5 max-w-xs mx-auto">
+                            <input type="text" placeholder={news.placeholder} className="border border-stone-200 p-1.5 rounded-lg text-xxs flex-1 bg-white focus:outline-none" disabled />
+                            <button type="button" className={`preview-btn-primary text-[8px] font-bold tracking-wider uppercase px-3 py-1.5 ${borderRad}`}>Join</button>
+                          </div>
+                        </div>
+                      )
+
+                    case 'footer':
+                      return (
+                        <div
+                          key={section.id}
+                          onClick={() => setSelectedSectionId(section.id)}
+                          className={`${wrapperClass} p-4 space-y-4 text-xxs`}
+                          style={{ backgroundColor: section.settings.bgColor || '#1C1917', color: section.settings.textColor || '#FFFFFF' }}
+                        >
+                          <div className="grid grid-cols-3 gap-3 border-b pb-4 opacity-80" style={{ borderColor: theme.colors.borders }}>
+                            {(section.settings.columns || []).map((col: any, i: number) => (
+                              <div key={i} className="space-y-1.5">
+                                <h4 className="font-bold uppercase tracking-wider">{col.title}</h4>
+                                <ul className="space-y-1 opacity-75 text-[10px]">
+                                  {(col.links || []).map((l: any, j: number) => (
+                                    <li key={j}>{l.label}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="text-[9px] opacity-60 text-center">
+                            {section.settings.copyright.replace('{store_name}', theme.store_name).replace('{year}', new Date().getFullYear())}
+                          </div>
+                        </div>
+                      )
+
+                    default:
+                      return null
+                  }
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* PANEL 3: RIGHT PANEL (Contextual editor controls panel) */}
+        <div className="w-[340px] bg-white border-l border-stone-200 flex flex-col shrink-0 overflow-y-auto p-4 space-y-4">
+          {selectedSectionId ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Section Settings</span>
+                  <h3 className="text-xs font-black text-stone-900 tracking-wide uppercase mt-0.5">
+                    {SECTION_LIBRARY.find(l => l.type === selectedSection?.type)?.label || selectedSection?.type}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedSectionId(null)}
+                  className="text-stone-400 hover:text-stone-600 text-xxs font-bold bg-stone-100 px-2 py-1 rounded-lg"
+                >
+                  Close
+                </button>
+              </div>
+
+              {/* Announcement Editor */}
+              {selectedSection?.type === 'announcement' && (
+                <div className="space-y-3.5 text-xxs font-semibold text-stone-700">
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Message Text</label>
+                    <textarea
+                      rows={2}
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none"
+                      value={selectedSection.settings.text}
+                      onChange={e => {
+                        const textVal = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, text: textVal } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Bg Color</label>
+                      <input
+                        type="color"
+                        className="w-full h-8 rounded-lg cursor-pointer border border-stone-200"
+                        value={selectedSection.settings.bgColor}
+                        onChange={e => {
+                          const col = e.target.value
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, bgColor: col } } : s
+                            )
+                          }))
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Text Color</label>
+                      <input
+                        type="color"
+                        className="w-full h-8 rounded-lg cursor-pointer border border-stone-200"
+                        value={selectedSection.settings.textColor}
+                        onChange={e => {
+                          const col = e.target.value
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, textColor: col } } : s
+                            )
+                          }))
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Header Editor */}
+              {selectedSection?.type === 'header' && (
+                <div className="space-y-3.5 text-xxs font-semibold text-stone-700">
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Logo Placement</label>
+                    <select
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none"
+                      value={selectedSection.settings.logoPosition}
+                      onChange={e => {
+                        const val = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, logoPosition: val } } : s
+                          )
+                        }))
+                      }}
+                    >
+                      <option value="left">Left Align</option>
+                      <option value="center">Center Align</option>
+                      <option value="right">Right Align</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="header-sticky"
+                      checked={selectedSection.settings.sticky}
+                      onChange={e => {
+                        const checked = e.target.checked
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, sticky: checked } } : s
+                          )
+                        }))
+                      }}
+                    />
+                    <label htmlFor="header-sticky" className="font-bold text-stone-600 uppercase tracking-wider cursor-pointer">Sticky Header on Scroll</label>
+                  </div>
+                </div>
+              )}
+
+              {/* Hero Banner Editor */}
+              {selectedSection?.type === 'hero' && (
+                <div className="space-y-4 text-xxs font-semibold text-stone-700">
+                  <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-3">
+                    <div className="text-[10px] font-extrabold text-stone-400 uppercase tracking-wider">Slide Configuration</div>
+                    
+                    <div>
+                      <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Hero Image (1600x600 recommended)</label>
+                      <div className="flex gap-2">
+                        <label className="flex items-center gap-1 border border-stone-250 bg-white hover:bg-stone-50 text-stone-600 text-[10px] font-bold py-1.5 px-2.5 rounded-lg cursor-pointer shrink-0 shadow-xxs">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => handleSectionImageUpload(selectedSection.id, 'slides.0.image', e.target.files)}
+                            disabled={uploadingImage === `${selectedSection.id}-slides.0.image`}
+                          />
+                          <Camera className="w-3.5 h-3.5" />
+                          {uploadingImage === `${selectedSection.id}-slides.0.image` ? 'Uploading...' : 'Upload'}
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                          value={selectedSection.settings.slides?.[0]?.image || ''}
+                          placeholder="Image URL..."
+                          onChange={e => {
+                            const url = e.target.value
+                            setTheme((prev: any) => {
+                              const list = [...prev.sections]
+                              const secIdx = list.findIndex(s => s.id === selectedSectionId)
+                              if (secIdx > -1) {
+                                const slides = [...list[secIdx].settings.slides]
+                                slides[0] = { ...slides[0], image: url }
+                                list[secIdx].settings = { ...list[secIdx].settings, slides }
+                              }
+                              return { ...prev, sections: list }
+                            })
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Main Heading (Bold numeral/offer)</label>
+                      <input
+                        type="text"
+                        className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none font-bold"
+                        value={selectedSection.settings.slides?.[0]?.title || ''}
+                        onChange={e => {
+                          const val = e.target.value
+                          setTheme((prev: any) => {
+                            const list = [...prev.sections]
+                            const secIdx = list.findIndex(s => s.id === selectedSectionId)
+                            if (secIdx > -1) {
+                              const slides = [...list[secIdx].settings.slides]
+                              slides[0] = { ...slides[0], title: val }
+                              list[secIdx].settings = { ...list[secIdx].settings, slides }
+                            }
+                            return { ...prev, sections: list }
+                          })
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Sub-heading (Promo caps label)</label>
+                      <input
+                        type="text"
+                        className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none font-bold"
+                        value={selectedSection.settings.slides?.[0]?.subtitle || ''}
+                        onChange={e => {
+                          const val = e.target.value
+                          setTheme((prev: any) => {
+                            const list = [...prev.sections]
+                            const secIdx = list.findIndex(s => s.id === selectedSectionId)
+                            if (secIdx > -1) {
+                              const slides = [...list[secIdx].settings.slides]
+                              slides[0] = { ...slides[0], subtitle: val }
+                              list[secIdx].settings = { ...list[secIdx].settings, slides }
+                            }
+                            return { ...prev, sections: list }
+                          })
+                        }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">CTA Label</label>
+                        <input
+                          type="text"
+                          className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none font-bold"
+                          value={selectedSection.settings.slides?.[0]?.ctaText || ''}
+                          onChange={e => {
+                            const val = e.target.value
+                            setTheme((prev: any) => {
+                              const list = [...prev.sections]
+                              const secIdx = list.findIndex(s => s.id === selectedSectionId)
+                              if (secIdx > -1) {
+                                const slides = [...list[secIdx].settings.slides]
+                                slides[0] = { ...slides[0], ctaText: val }
+                                list[secIdx].settings = { ...list[secIdx].settings, slides }
+                              }
+                              return { ...prev, sections: list }
+                            })
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Overlay Opacity %</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                          value={selectedSection.settings.slides?.[0]?.overlayOpacity || 30}
+                          onChange={e => {
+                            const val = parseInt(e.target.value) || 0
+                            setTheme((prev: any) => {
+                              const list = [...prev.sections]
+                              const secIdx = list.findIndex(s => s.id === selectedSectionId)
+                              if (secIdx > -1) {
+                                const slides = [...list[secIdx].settings.slides]
+                                slides[0] = { ...slides[0], overlayOpacity: val }
+                                list[secIdx].settings = { ...list[secIdx].settings, slides }
+                              }
+                              return { ...prev, sections: list }
+                            })
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Product Grid Editor */}
+              {selectedSection?.type === 'product_grid' && (
+                <div className="space-y-3.5 text-xxs font-semibold text-stone-700">
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Section Title</label>
+                    <input
+                      type="text"
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none font-bold"
+                      value={selectedSection.settings.title}
+                      onChange={e => {
+                        const titleVal = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, title: titleVal } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Desktop Columns</label>
+                      <select
+                        className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none"
+                        value={selectedSection.settings.columnsDesktop}
+                        onChange={e => {
+                          const val = parseInt(e.target.value)
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, columnsDesktop: val } } : s
+                            )
+                          }))
+                        }}
+                      >
+                        <option value={3}>3 Columns</option>
+                        <option value={4}>4 Columns</option>
+                        <option value={5}>5 Columns</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Mobile Columns</label>
+                      <select
+                        className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none"
+                        value={selectedSection.settings.columnsMobile}
+                        onChange={e => {
+                          const val = parseInt(e.target.value)
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, columnsMobile: val } } : s
+                            )
+                          }))
+                        }}
+                      >
+                        <option value={1}>1 Column</option>
+                        <option value={2}>2 Columns</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-1 border-t border-stone-150">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="grid-show-orig"
+                        checked={selectedSection.settings.showOriginalPrice}
+                        onChange={e => {
+                          const val = e.target.checked
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, showOriginalPrice: val } } : s
+                            )
+                          }))
+                        }}
+                      />
+                      <label htmlFor="grid-show-orig" className="font-bold text-stone-600 uppercase tracking-wider cursor-pointer">Show Original Price (Struckthrough)</label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="grid-show-badge"
+                        checked={selectedSection.settings.showDiscountBadge}
+                        onChange={e => {
+                          const val = e.target.checked
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, showDiscountBadge: val } } : s
+                            )
+                          }))
+                        }}
+                      />
+                      <label htmlFor="grid-show-badge" className="font-bold text-stone-600 uppercase tracking-wider cursor-pointer">Show Discount Percent Badge</label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Editorial Block Editor */}
+              {selectedSection?.type === 'editorial' && (
+                <div className="space-y-3.5 text-xxs font-semibold text-stone-700">
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Title</label>
+                    <input
+                      type="text"
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none font-bold"
+                      value={selectedSection.settings.title}
+                      onChange={e => {
+                        const titleVal = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, title: titleVal } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Narrative Description</label>
+                    <textarea
+                      rows={4}
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none"
+                      value={selectedSection.settings.description}
+                      onChange={e => {
+                        const val = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, description: val } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Editorial Image</label>
+                    <div className="flex gap-2">
+                      <label className="flex items-center gap-1 border border-stone-250 bg-white hover:bg-stone-50 text-stone-600 text-[10px] font-bold py-1.5 px-2.5 rounded-lg cursor-pointer shrink-0 shadow-xxs">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => handleSectionImageUpload(selectedSection.id, 'image', e.target.files)}
+                          disabled={uploadingImage === `${selectedSection.id}-image`}
+                        />
+                        <Camera className="w-3.5 h-3.5" />
+                        {uploadingImage === `${selectedSection.id}-image` ? 'Uploading...' : 'Upload'}
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xxs focus:outline-none"
+                        value={selectedSection.settings.image || ''}
+                        placeholder="Image URL..."
+                        onChange={e => {
+                          const url = e.target.value
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, image: url } } : s
+                            )
+                          }))
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Image Placement</label>
+                      <select
+                        className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none"
+                        value={selectedSection.settings.imagePosition}
+                        onChange={e => {
+                          const val = e.target.value
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, imagePosition: val } } : s
+                            )
+                          }))
+                        }}
+                      >
+                        <option value="left">Left Column</option>
+                        <option value="right">Right Column</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Background Color</label>
+                      <input
+                        type="color"
+                        className="w-full h-8 rounded-lg cursor-pointer border border-stone-200"
+                        value={selectedSection.settings.bgColor}
+                        onChange={e => {
+                          const col = e.target.value
+                          setTheme((prev: any) => ({
+                            ...prev,
+                            sections: prev.sections.map((s: SectionBlock) => 
+                              s.id === selectedSectionId ? { ...s, settings: { ...s.settings, bgColor: col } } : s
+                            )
+                          }))
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Newsletter Editor */}
+              {selectedSection?.type === 'newsletter' && (
+                <div className="space-y-3.5 text-xxs font-semibold text-stone-700">
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Title</label>
+                    <input
+                      type="text"
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none font-bold"
+                      value={selectedSection.settings.title}
+                      onChange={e => {
+                        const val = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, title: val } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Description</label>
+                    <textarea
+                      rows={2}
+                      className="w-full border border-stone-200 rounded-lg p-2 bg-stone-50 text-xxs focus:outline-none"
+                      value={selectedSection.settings.description}
+                      onChange={e => {
+                        const val = e.target.value
+                        setTheme((prev: any) => ({
+                          ...prev,
+                          sections: prev.sections.map((s: SectionBlock) => 
+                            s.id === selectedSectionId ? { ...s, settings: { ...s.settings, description: val } } : s
+                          )
+                        }))
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-center p-6 text-stone-400 space-y-2">
+              <MousePointer className="w-8 h-8 opacity-40 text-stone-500" />
+              <div className="text-xxs font-bold uppercase tracking-wider">No Selection Selected</div>
+              <p className="text-[10px] leading-relaxed max-w-[200px]">
+                Click on any section block in the layout list or live preview canvas to customize its settings here.
+              </p>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   )

@@ -43,14 +43,15 @@ export async function POST(req: Request) {
     colors,
     typography,
     buttons,
-    layout
+    layout,
+    sections
   } = body
 
   if (!store_name) {
     return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
   }
 
-  const themePayload = {
+  const themePayload: any = {
     reseller_id: reseller.id,
     store_name,
     logo_url: logo_url || null,
@@ -79,19 +80,39 @@ export async function POST(req: Request) {
       density: 'comfortable',
       spacing: 'medium'
     },
+    sections: sections || [],
     is_active: true,
     updated_at: new Date().toISOString()
   }
 
   // Upsert theme config
-  const { data: theme, error: upsertErr } = await supabaseAdmin
+  let theme: any = null
+  let { data: upsertData, error: upsertErr } = await supabaseAdmin
     .from('reseller_themes')
     .upsert(themePayload, { onConflict: 'reseller_id' })
     .select('*')
-    .single()
+    .maybeSingle()
 
   if (upsertErr) {
-    return NextResponse.json({ error: safeDbError(upsertErr, 'reseller.theme.save', 'Could not save branding configuration.') }, { status: 500 })
+    const errorMsg = upsertErr.message || ''
+    // Check if the error is due to missing "sections" column
+    if (errorMsg.includes('sections') || upsertErr.code === '42703') {
+      const { sections: _, ...fallbackPayload } = themePayload
+      const { data: fallbackData, error: fallbackErr } = await supabaseAdmin
+        .from('reseller_themes')
+        .upsert(fallbackPayload, { onConflict: 'reseller_id' })
+        .select('*')
+        .maybeSingle()
+
+      if (fallbackErr) {
+        return NextResponse.json({ error: safeDbError(fallbackErr, 'reseller.theme.save', 'Could not save branding configuration.') }, { status: 500 })
+      }
+      theme = fallbackData
+    } else {
+      return NextResponse.json({ error: safeDbError(upsertErr, 'reseller.theme.save', 'Could not save branding configuration.') }, { status: 500 })
+    }
+  } else {
+    theme = upsertData
   }
 
   // Also update reseller's profile store name if changed

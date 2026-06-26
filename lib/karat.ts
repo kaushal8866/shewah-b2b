@@ -9,6 +9,8 @@ export const KARAT_FACTORS: Record<number, number> = {
   14: 0.60,
   10: 0.42,
   9: 0.38,
+  925: 0.925,
+  950: 0.95,
 }
 
 export const SELLABLE_KARATS = [22, 18, 14, 10, 9] as const
@@ -133,10 +135,12 @@ export function normalizeGoldMaterialType(mt: string): {
 export type MetalColor = 'yellow' | 'white' | 'rose'
 export type SilverGrade = '925' | '999'
 export type GoldKarat = '24K' | '22K' | '18K' | '14K' | '10K' | '9K'
+export type PlatinumGrade = '950'
 export type MetalKey = 
   | `${GoldKarat}_${MetalColor}`
   | `silver_925_default`
   | `silver_999_default`
+  | `platinum_950_default`
 
 export type MetalWeights = Partial<Record<MetalKey, number>>
 
@@ -184,6 +188,9 @@ export const DENSITY_FACTORS: Record<string, Record<string, number>> = {
   },
   'silver_999': {
     default: 10.49,
+  },
+  'platinum_950': {
+    default: 20.1,
   },
 }
 

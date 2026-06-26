@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { safeDbError } from '@/lib/sanitizeDbError'
 import { notifyResellerEvent } from '@/lib/resellerNotify'
+import { computeKaratPricing } from '@/lib/karat'
+import { DEFAULT_HOMEPAGE_SECTIONS } from '@/lib/defaultSections'
 
 export async function GET(req: Request, { params }: { params: { token: string } }) {
   const token = params.token
@@ -76,33 +78,111 @@ export async function GET(req: Request, { params }: { params: { token: string } 
     .eq('id', shareLink.id)
     .then(() => {}) // fire-and-forget
 
-  // 6. Format products applying markup & STRIPPING wholesale rates
+  // 6. Fetch latest gold rate + retail labour per karat from gold_rates table
+  const { data: g } = await supabaseAdmin
+    .from('gold_rates')
+    .select('rate_24k, retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
+    .order('recorded_at', { ascending: false })
+    .limit(1)
+  const latest: any = g?.[0]
+  const goldRate = Number(latest?.rate_24k) || 7200
+  const retailLabour: Record<number, number> = {
+    22: Number(latest?.retail_labour_22k) || 450,
+    18: Number(latest?.retail_labour_18k) || 450,
+    14: Number(latest?.retail_labour_14k) || 450,
+    10: Number(latest?.retail_labour_10k) || 450,
+    9:  Number(latest?.retail_labour_9k)  || 450,
+  }
+
+  // 7. Format products applying markup & STRIPPING wholesale rates
   const markupMultiplier = 1 + Number(shareLink.markup_percent) / 100
   const formattedProducts = (prices || [])
     .filter((row: any) => row.product && row.product.is_active)
     .map((row: any) => {
-      const costRupees = Number(row.floor_price_paise) / 100
+      const p = row.product
+      let costRupees = Number(row.floor_price_paise) / 100
+
+      // If gold product and ref_karat is not 22, adjust base floor price proportionally
+      if (p.metal_type === 'gold' && p.ref_karat) {
+        const refKaratNum = parseInt(p.ref_karat) || 18
+        if (refKaratNum !== 22) {
+          const pricingList = computeKaratPricing({
+            netGoldWeight: p.gold_weight_g || 0,
+            rate24k: goldRate,
+            retailLabour,
+            diamondCost: p.diamond_cost || 0,
+            makingCharges: p.making_charges || 0,
+            igiCost: p.igi_cert_cost || 0,
+            metalWeights: p.metal_weights || undefined
+          })
+
+          const basePricing22 = pricingList.find(x => x.karat === 22)
+          const targetPricing = pricingList.find(x => x.karat === refKaratNum)
+
+          if (basePricing22 && targetPricing && basePricing22.cogs > 0) {
+            const ratio = costRupees / basePricing22.cogs
+            costRupees = targetPricing.cogs * ratio
+          }
+        }
+      }
+
       const customerPriceRupees = Math.round(costRupees * markupMultiplier)
 
       return {
-        id: row.product.id,
-        code: row.product.code,
-        name: row.product.name,
-        description: row.product.description,
-        category: row.product.category,
-        metal_type: row.product.metal_type,
-        photo_urls: row.product.photo_urls || [],
-        ref_karat: row.product.ref_karat,
-        ref_color: row.product.ref_color,
-        attributes: row.product.attributes || {},
+        id: p.id,
+        code: p.code,
+        name: p.name,
+        description: p.description,
+        category: p.category,
+        metal_type: p.metal_type,
+        photo_urls: p.photo_urls || [],
+        ref_karat: p.ref_karat,
+        ref_color: p.ref_color,
+        attributes: p.attributes || {},
         // ONLY expose the marked up retail price to the public customer!
         selling_price_rupees: customerPriceRupees
       }
     })
 
+  let finalTheme = theme
+  if (!finalTheme) {
+    finalTheme = {
+      store_name: reseller.store_name,
+      logo_url: null,
+      favicon_url: null,
+      colors: {
+        primary: '#1E3A5F',
+        secondary: '#C9A86A',
+        background: '#FFFFFF',
+        surface: '#F5F5F5',
+        text: '#1C1917',
+        borders: '#E7E5E4',
+        accent: '#F59E0B'
+      },
+      typography: {
+        heading: 'Inter',
+        body: 'Inter',
+        scale: 'medium'
+      },
+      buttons: {
+        shape: 'rounded-xl',
+        style: 'fill',
+        hover: 'darken',
+        shadow: 'sm'
+      },
+      layout: {
+        density: 'comfortable',
+        spacing: 'medium'
+      },
+      sections: DEFAULT_HOMEPAGE_SECTIONS
+    }
+  } else if (!finalTheme.sections || !Array.isArray(finalTheme.sections) || finalTheme.sections.length === 0) {
+    finalTheme.sections = DEFAULT_HOMEPAGE_SECTIONS
+  }
+
   return NextResponse.json({
     reseller,
-    theme: theme || null,
+    theme: finalTheme,
     products: formattedProducts
   })
 }
