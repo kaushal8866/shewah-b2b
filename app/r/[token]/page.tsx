@@ -765,13 +765,11 @@ export default function PublicStorefront() {
             </div>
 
             {/* Desktop Navigation Links */}
-            {deviceViewport === 'desktop' && (
-              <div className="hidden md:flex gap-6 text-[10px] font-bold uppercase tracking-widest">
-                {(headerSection.settings.navLinks || []).map((link: any, i: number) => (
-                  <a key={i} href={link.target} className="hover:opacity-70 transition-opacity">{link.label}</a>
-                ))}
-              </div>
-            )}
+            <div className="hidden md:flex gap-6 text-[10px] font-bold uppercase tracking-widest">
+              {(headerSection.settings.navLinks || []).map((link: any, i: number) => (
+                <a key={i} href={link.target} className="hover:opacity-70 transition-opacity">{link.label}</a>
+              ))}
+            </div>
 
             {/* Actions */}
             <div className="flex items-center gap-2.5">
