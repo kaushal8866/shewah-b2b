@@ -806,7 +806,7 @@ export default function ResellerThemeEditor() {
                           </div>
                           {deviceViewport === 'desktop' && (
                             <div className="flex justify-center gap-5 py-2 text-xxs font-bold uppercase tracking-widest border-b" style={{ borderColor: theme.colors.borders }}>
-                              {(section.settings.navLinks || []).map((link: any, i: number) => (
+                              {(Array.isArray(section.settings.navLinks) ? section.settings.navLinks : []).map((link: any, i: number) => (
                                 <span key={i} className="hover:text-stone-500">{link.label}</span>
                               ))}
                             </div>
@@ -815,7 +815,7 @@ export default function ResellerThemeEditor() {
                       )
 
                     case 'hero':
-                      const slide = section.settings.slides?.[0] || {}
+                      const slide = (Array.isArray(section.settings.slides) ? section.settings.slides : [])[0] || {}
                       return (
                         <div
                           key={section.id}
@@ -861,7 +861,7 @@ export default function ResellerThemeEditor() {
                           style={{ backgroundColor: section.settings.bgColor || theme.colors.surface, color: section.settings.textColor || theme.colors.text }}
                         >
                           <div className="flex justify-around items-center py-2 px-3 text-[8px] font-bold uppercase tracking-widest overflow-hidden border-b" style={{ borderColor: theme.colors.borders }}>
-                            {(section.settings.items || []).slice(0, deviceViewport === 'mobile' ? 2 : 4).map((item: string, i: number) => (
+                            {(Array.isArray(section.settings.items) ? section.settings.items : []).slice(0, deviceViewport === 'mobile' ? 2 : 4).map((item: string, i: number) => (
                               <span key={i} className="flex items-center gap-1.5">
                                 <CheckCircle className="w-2.5 h-2.5 text-stone-400" />
                                 {item}
@@ -882,7 +882,7 @@ export default function ResellerThemeEditor() {
                             {section.settings.title || 'SHOP BY CATEGORY'}
                           </h3>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {(section.settings.items || []).map((cat: any, i: number) => (
+                            {(Array.isArray(section.settings.items) ? section.settings.items : []).map((cat: any, i: number) => (
                               <div key={i} className="aspect-square bg-stone-100 relative rounded-lg overflow-hidden flex flex-col justify-end p-2 border" style={{ borderColor: theme.colors.borders }}>
                                 <div className="absolute inset-0" style={{ backgroundImage: `url(${cat.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
@@ -998,7 +998,7 @@ export default function ResellerThemeEditor() {
                         >
                           <h3 className="text-[9px] font-extrabold tracking-widest uppercase text-stone-500">{section.settings.title || 'TESTIMONIALS'}</h3>
                           <div className="space-y-2">
-                            {(section.settings.reviews || []).slice(0, 1).map((rev: any, i: number) => (
+                            {(Array.isArray(section.settings.reviews) ? section.settings.reviews : []).slice(0, 1).map((rev: any, i: number) => (
                               <div key={i} className="space-y-1">
                                 <p className="text-[10px] italic opacity-85">"{rev.text}"</p>
                                 <span className="text-[9px] font-bold block text-amber-600">— {rev.author}</span>
@@ -1037,11 +1037,11 @@ export default function ResellerThemeEditor() {
                           style={{ backgroundColor: section.settings.bgColor || '#1C1917', color: section.settings.textColor || '#FFFFFF' }}
                         >
                           <div className="grid grid-cols-3 gap-3 border-b pb-4 opacity-80" style={{ borderColor: theme.colors.borders }}>
-                            {(section.settings.columns || []).map((col: any, i: number) => (
+                            {(Array.isArray(section.settings.columns) ? section.settings.columns : []).map((col: any, i: number) => (
                               <div key={i} className="space-y-1.5">
                                 <h4 className="font-bold uppercase tracking-wider">{col.title}</h4>
                                 <ul className="space-y-1 opacity-75 text-[10px]">
-                                  {(col.links || []).map((l: any, j: number) => (
+                                  {(Array.isArray(col.links) ? col.links : []).map((l: any, j: number) => (
                                     <li key={j}>{l.label}</li>
                                   ))}
                                 </ul>
@@ -1049,7 +1049,7 @@ export default function ResellerThemeEditor() {
                             ))}
                           </div>
                           <div className="text-[9px] opacity-60 text-center">
-                            {section.settings.copyright.replace('{store_name}', theme.store_name).replace('{year}', new Date().getFullYear())}
+                            {(section.settings.copyright || 'Copyright © {year} {store_name}').replace('{store_name}', theme.store_name).replace('{year}', new Date().getFullYear())}
                           </div>
                         </div>
                       )
@@ -1217,7 +1217,7 @@ export default function ResellerThemeEditor() {
                               const list = [...prev.sections]
                               const secIdx = list.findIndex(s => s.id === selectedSectionId)
                               if (secIdx > -1) {
-                                const slides = [...list[secIdx].settings.slides]
+                                const slides = Array.isArray(list[secIdx].settings.slides) ? [...list[secIdx].settings.slides] : []
                                 slides[0] = { ...slides[0], image: url }
                                 list[secIdx].settings = { ...list[secIdx].settings, slides }
                               }
@@ -1240,7 +1240,7 @@ export default function ResellerThemeEditor() {
                             const list = [...prev.sections]
                             const secIdx = list.findIndex(s => s.id === selectedSectionId)
                             if (secIdx > -1) {
-                              const slides = [...list[secIdx].settings.slides]
+                              const slides = Array.isArray(list[secIdx].settings.slides) ? [...list[secIdx].settings.slides] : []
                               slides[0] = { ...slides[0], title: val }
                               list[secIdx].settings = { ...list[secIdx].settings, slides }
                             }
@@ -1262,7 +1262,7 @@ export default function ResellerThemeEditor() {
                             const list = [...prev.sections]
                             const secIdx = list.findIndex(s => s.id === selectedSectionId)
                             if (secIdx > -1) {
-                              const slides = [...list[secIdx].settings.slides]
+                              const slides = Array.isArray(list[secIdx].settings.slides) ? [...list[secIdx].settings.slides] : []
                               slides[0] = { ...slides[0], subtitle: val }
                               list[secIdx].settings = { ...list[secIdx].settings, slides }
                             }
@@ -1285,7 +1285,7 @@ export default function ResellerThemeEditor() {
                               const list = [...prev.sections]
                               const secIdx = list.findIndex(s => s.id === selectedSectionId)
                               if (secIdx > -1) {
-                                const slides = [...list[secIdx].settings.slides]
+                                const slides = Array.isArray(list[secIdx].settings.slides) ? [...list[secIdx].settings.slides] : []
                                 slides[0] = { ...slides[0], ctaText: val }
                                 list[secIdx].settings = { ...list[secIdx].settings, slides }
                               }
@@ -1308,7 +1308,7 @@ export default function ResellerThemeEditor() {
                               const list = [...prev.sections]
                               const secIdx = list.findIndex(s => s.id === selectedSectionId)
                               if (secIdx > -1) {
-                                const slides = [...list[secIdx].settings.slides]
+                                const slides = Array.isArray(list[secIdx].settings.slides) ? [...list[secIdx].settings.slides] : []
                                 slides[0] = { ...slides[0], overlayOpacity: val }
                                 list[secIdx].settings = { ...list[secIdx].settings, slides }
                               }
@@ -1639,7 +1639,7 @@ export default function ResellerThemeEditor() {
 
                   <div className="space-y-2">
                     <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Trust Signals Text (Up to 3)</label>
-                    {(selectedSection.settings.items || []).map((item: string, idx: number) => (
+                    {(Array.isArray(selectedSection.settings.items) ? selectedSection.settings.items : []).map((item: string, idx: number) => (
                       <div key={idx} className="flex gap-2">
                         <input
                           type="text"
@@ -1651,7 +1651,7 @@ export default function ResellerThemeEditor() {
                               ...prev,
                               sections: prev.sections.map((s: SectionBlock) => {
                                 if (s.id === selectedSectionId) {
-                                  const items = [...(s.settings.items || [])]
+                                  const items = Array.isArray(s.settings.items) ? [...s.settings.items] : []
                                   items[idx] = val
                                   return { ...s, settings: { ...s.settings, items } }
                                 }
@@ -1689,7 +1689,7 @@ export default function ResellerThemeEditor() {
 
                   <div className="space-y-3.5 border-t border-stone-150 pt-3">
                     <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Categories List</label>
-                    {(selectedSection.settings.items || []).map((cat: any, idx: number) => (
+                    {(Array.isArray(selectedSection.settings.items) ? selectedSection.settings.items : []).map((cat: any, idx: number) => (
                       <div key={idx} className="border border-stone-200 rounded-xl p-3 bg-stone-50 space-y-2">
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-stone-600 text-[10px] uppercase">Category {idx + 1}</span>
@@ -1700,7 +1700,7 @@ export default function ResellerThemeEditor() {
                                 ...prev,
                                 sections: prev.sections.map((s: SectionBlock) => {
                                   if (s.id === selectedSectionId) {
-                                    const items = (s.settings.items || []).filter((_: any, i: number) => i !== idx)
+                                    const items = (Array.isArray(s.settings.items) ? s.settings.items : []).filter((_: any, i: number) => i !== idx)
                                     return { ...s, settings: { ...s.settings, items } }
                                   }
                                   return s
@@ -1725,7 +1725,7 @@ export default function ResellerThemeEditor() {
                                 ...prev,
                                 sections: prev.sections.map((s: SectionBlock) => {
                                   if (s.id === selectedSectionId) {
-                                    const items = [...(s.settings.items || [])]
+                                    const items = Array.isArray(s.settings.items) ? [...s.settings.items] : []
                                     items[idx] = { ...items[idx], name: val }
                                     return { ...s, settings: { ...s.settings, items } }
                                   }
@@ -1747,7 +1747,7 @@ export default function ResellerThemeEditor() {
                                 ...prev,
                                 sections: prev.sections.map((s: SectionBlock) => {
                                   if (s.id === selectedSectionId) {
-                                    const items = [...(s.settings.items || [])]
+                                    const items = Array.isArray(s.settings.items) ? [...s.settings.items] : []
                                     items[idx] = { ...items[idx], category: val }
                                     return { ...s, settings: { ...s.settings, items } }
                                   }
@@ -1788,7 +1788,7 @@ export default function ResellerThemeEditor() {
                                   ...prev,
                                   sections: prev.sections.map((s: SectionBlock) => {
                                     if (s.id === selectedSectionId) {
-                                      const items = [...(s.settings.items || [])]
+                                      const items = Array.isArray(s.settings.items) ? [...s.settings.items] : []
                                       items[idx] = { ...items[idx], image: val }
                                       return { ...s, settings: { ...s.settings, items } }
                                     }
@@ -1809,7 +1809,7 @@ export default function ResellerThemeEditor() {
                           ...prev,
                           sections: prev.sections.map((s: SectionBlock) => {
                             if (s.id === selectedSectionId) {
-                              const items = [...(s.settings.items || []), { name: 'New Collection', image: '', category: 'all' }]
+                              const items = [...(Array.isArray(s.settings.items) ? s.settings.items : []), { name: 'New Collection', image: '', category: 'all' }]
                               return { ...s, settings: { ...s.settings, items } }
                             }
                             return s
@@ -1945,7 +1945,7 @@ export default function ResellerThemeEditor() {
 
                   <div className="space-y-3.5 border-t border-stone-150 pt-3">
                     <label className="block font-bold text-stone-500 uppercase tracking-wider mb-1">Reviews List</label>
-                    {(selectedSection.settings.reviews || []).map((rev: any, idx: number) => (
+                    {(Array.isArray(selectedSection.settings.reviews) ? selectedSection.settings.reviews : []).map((rev: any, idx: number) => (
                       <div key={idx} className="border border-stone-200 rounded-xl p-3 bg-stone-50 space-y-2">
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-stone-600 text-[10px] uppercase">Review {idx + 1}</span>
@@ -1956,7 +1956,7 @@ export default function ResellerThemeEditor() {
                                 ...prev,
                                 sections: prev.sections.map((s: SectionBlock) => {
                                   if (s.id === selectedSectionId) {
-                                    const reviews = (s.settings.reviews || []).filter((_: any, i: number) => i !== idx)
+                                    const reviews = (Array.isArray(s.settings.reviews) ? s.settings.reviews : []).filter((_: any, i: number) => i !== idx)
                                     return { ...s, settings: { ...s.settings, reviews } }
                                   }
                                   return s
@@ -1981,7 +1981,7 @@ export default function ResellerThemeEditor() {
                                 ...prev,
                                 sections: prev.sections.map((s: SectionBlock) => {
                                   if (s.id === selectedSectionId) {
-                                    const reviews = [...(s.settings.reviews || [])]
+                                    const reviews = Array.isArray(s.settings.reviews) ? [...s.settings.reviews] : []
                                     reviews[idx] = { ...reviews[idx], author: val }
                                     return { ...s, settings: { ...s.settings, reviews } }
                                   }
@@ -2003,7 +2003,7 @@ export default function ResellerThemeEditor() {
                                 ...prev,
                                 sections: prev.sections.map((s: SectionBlock) => {
                                   if (s.id === selectedSectionId) {
-                                    const reviews = [...(s.settings.reviews || [])]
+                                    const reviews = Array.isArray(s.settings.reviews) ? [...s.settings.reviews] : []
                                     reviews[idx] = { ...reviews[idx], rating: val }
                                     return { ...s, settings: { ...s.settings, reviews } }
                                   }
@@ -2032,7 +2032,7 @@ export default function ResellerThemeEditor() {
                                 ...prev,
                                 sections: prev.sections.map((s: SectionBlock) => {
                                   if (s.id === selectedSectionId) {
-                                    const reviews = [...(s.settings.reviews || [])]
+                                    const reviews = Array.isArray(s.settings.reviews) ? [...s.settings.reviews] : []
                                     reviews[idx] = { ...reviews[idx], text: val }
                                     return { ...s, settings: { ...s.settings, reviews } }
                                   }
@@ -2052,7 +2052,7 @@ export default function ResellerThemeEditor() {
                           ...prev,
                           sections: prev.sections.map((s: SectionBlock) => {
                             if (s.id === selectedSectionId) {
-                              const reviews = [...(s.settings.reviews || []), { author: 'New Reviewer', rating: 5, text: 'Amazing service and product quality!' }]
+                              const reviews = [...(Array.isArray(s.settings.reviews) ? s.settings.reviews : []), { author: 'New Reviewer', rating: 5, text: 'Amazing service and product quality!' }]
                               return { ...s, settings: { ...s.settings, reviews } }
                             }
                             return s

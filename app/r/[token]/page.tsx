@@ -766,7 +766,7 @@ export default function PublicStorefront() {
 
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex gap-6 text-[10px] font-bold uppercase tracking-widest">
-              {(headerSection.settings.navLinks || []).map((link: any, i: number) => (
+              {(Array.isArray(headerSection?.settings?.navLinks) ? headerSection.settings.navLinks : []).map((link: any, i: number) => (
                 <a key={i} href={link.target} className="hover:opacity-70 transition-opacity" style={{ color: headerSection.settings.textColor || c.text }}>{link.label}</a>
               ))}
             </div>
@@ -859,14 +859,14 @@ export default function PublicStorefront() {
       <main className="flex-1">
         {activeTab === 'catalog' ? (
           <div className="space-y-4">
-            {theme?.sections?.map((section: any) => {
+            {(Array.isArray(theme?.sections) ? theme.sections : []).map((section: any) => {
               if (!section.visible) return null
               // Skip shell components
               if (section.type === 'announcement' || section.type === 'header' || section.type === 'footer') return null
 
               switch (section.type) {
                 case 'hero':
-                  const heroSlide = section.settings.slides?.[0] || {}
+                  const heroSlide = (Array.isArray(section.settings.slides) ? section.settings.slides : [])[0] || {}
                   return (
                     <section
                       key={section.id}
@@ -918,17 +918,17 @@ export default function PublicStorefront() {
                       {section.settings.animation === 'marquee' ? (
                         <div className="relative flex overflow-x-hidden">
                           <div className="animate-marquee whitespace-nowrap flex gap-12 text-[10px] font-bold uppercase tracking-[0.2em]">
-                            {(section.settings.items || []).map((item: string, i: number) => (
+                            {(Array.isArray(section.settings.items) ? section.settings.items : []).map((item: string, i: number) => (
                               <span key={i} className="mx-4">{item}</span>
                             ))}
-                            {(section.settings.items || []).map((item: string, i: number) => (
+                            {(Array.isArray(section.settings.items) ? section.settings.items : []).map((item: string, i: number) => (
                               <span key={`dup-${i}`} className="mx-4">{item}</span>
                             ))}
                           </div>
                         </div>
                       ) : (
                         <div className="flex flex-wrap justify-center gap-6 md:gap-12 px-6 text-[10px] font-bold uppercase tracking-[0.2em] text-center">
-                          {(section.settings.items || []).map((item: string, i: number) => (
+                          {(Array.isArray(section.settings.items) ? section.settings.items : []).map((item: string, i: number) => (
                             <span key={i}>{item}</span>
                           ))}
                         </div>
@@ -945,7 +945,7 @@ export default function PublicStorefront() {
                         </h3>
                       )}
                       <div className={`grid grid-cols-2 sm:grid-cols-${section.settings.columns || 4} gap-4`}>
-                        {(section.settings.items || []).map((item: any, i: number) => (
+                        {(Array.isArray(section.settings.items) ? section.settings.items : []).map((item: any, i: number) => (
                           <div
                             key={i}
                             onClick={() => {
@@ -1172,7 +1172,7 @@ export default function PublicStorefront() {
                         </h3>
                       )}
                       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {(section.settings.reviews || []).map((rev: any, i: number) => (
+                        {(Array.isArray(section.settings.reviews) ? section.settings.reviews : []).map((rev: any, i: number) => (
                           <div key={i} className="p-6 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm" style={{ backgroundColor: c.surface, color: c.text, borderColor: c.borders }}>
                             <div className="flex justify-center text-amber-500 gap-0.5">
                               {Array.from({ length: rev.rating || 5 }).map((_, j) => (
@@ -1297,11 +1297,11 @@ export default function PublicStorefront() {
           style={{ borderColor: c.borders, backgroundColor: footerSection.settings.bgColor || c.surface, color: footerSection.settings.textColor || c.text }}
         >
           <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-left">
-            {(footerSection.settings.columns || []).map((col: any, i: number) => (
+            {(Array.isArray(footerSection.settings.columns) ? footerSection.settings.columns : []).map((col: any, i: number) => (
               <div key={i} className="space-y-3">
                 <h4 className="font-bold uppercase tracking-wider opacity-90">{col.title}</h4>
                 <ul className="space-y-1.5 opacity-75">
-                  {(col.links || []).map((l: any, j: number) => (
+                  {(Array.isArray(col.links) ? col.links : []).map((l: any, j: number) => (
                     <li key={j}>
                       <a href={l.target} className="hover:underline">{l.label}</a>
                     </li>
@@ -1318,7 +1318,7 @@ export default function PublicStorefront() {
           </div>
           <div className="w-full h-[1px] bg-stone-200/20 my-6" />
           <p className="opacity-40 text-[9px] tracking-wider uppercase">
-            {footerSection.settings.copyright
+            {(footerSection.settings.copyright || 'Copyright © {year} {store_name}')
               .replace('{store_name}', theme?.store_name || reseller.store_name)
               .replace('{year}', new Date().getFullYear())}
           </p>
