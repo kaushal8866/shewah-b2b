@@ -267,6 +267,7 @@ function QuoteBuilderForm() {
             pieces: parseInt(d.pieces, 10) || 0,
             rate_per_pc: parseFloat(d.rate_per_pc) || 0,
             igi_charge: parseFloat(d.igi_charge) || 0,
+            weight: parseFloat(d.weight) || 0,
           }))
         }))
       }

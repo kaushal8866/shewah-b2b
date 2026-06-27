@@ -140,31 +140,44 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     const orderedKarat = parseInt(String(custom_attributes?.karat || product.ref_karat || '18').replace(/[^\d]/g, '')) || 18
     const targetPricing = pricingList.find(p => p.karat === orderedKarat)
     
-    let finalFloorCost = targetPricing ? targetPricing.cogs : (baseFloorPaise / 100)
+    let ratio = 1
+    let finalFloorCost = targetPricing ? targetPricing.trade : (baseFloorPaise / 100)
 
     // Adjust by ratio based on custom floor price
     if (baseFloorPaise > 0) {
       const savedFloorRupees = baseFloorPaise / 100
-      let baseCatalogCogs = 0
+      let baseCatalogTrade = 0
       if (product.metal_type === 'silver') {
-        baseCatalogCogs = Number(product.trade_price) / 1.28
+        baseCatalogTrade = Number(product.trade_price)
       } else {
         const basePricing = pricingList.find(p => p.karat === 22)
-        baseCatalogCogs = basePricing ? basePricing.cogs : (Number(product.trade_price) / 1.28)
+        baseCatalogTrade = basePricing ? basePricing.trade : Number(product.trade_price)
       }
 
-      if (baseCatalogCogs > 0 && targetPricing) {
-        const ratio = savedFloorRupees / baseCatalogCogs
-        finalFloorCost = targetPricing.cogs * ratio
+      if (baseCatalogTrade > 0 && targetPricing) {
+        ratio = savedFloorRupees / baseCatalogTrade
+        finalFloorCost = targetPricing.trade * ratio
       }
+    } else {
+      ratio = 1
     }
 
     const qty = Number(quantity) || 1
     const totalCostPaise = Math.round(finalFloorCost * 100) * qty
 
-    // Calculate customer marked-up price before discount
+    // Calculate customer marked-up price before discount (markup applies only to diamonds)
     const markupMultiplier = 1 + markupPercent / 100
-    const rawCustomerPricePaise = Math.round(totalCostPaise * markupMultiplier)
+    const goldCost = targetPricing ? targetPricing.goldCost : 0
+    const labourCost = targetPricing ? targetPricing.labourCost : 0
+    const otherCost = (Number(product.making_charges) || 0) + (Number(product.igi_cert_cost) || 0)
+
+    const customerPricePerPieceRupees = Math.round(
+      (goldCost * ratio) + 
+      ((labourCost + otherCost) * ratio) + 
+      ((Number(product.diamond_cost) || 0) * 1.28 * ratio * markupMultiplier)
+    )
+
+    const rawCustomerPricePaise = customerPricePerPieceRupees * 100 * qty
 
     // Apply coupon discount if active
     let itemPricePaise = rawCustomerPricePaise

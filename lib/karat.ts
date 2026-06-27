@@ -94,21 +94,26 @@ export function computeKaratPricing(inp: KaratPriceInputs): KaratPrice[] {
   const mrpM = inp.mrpMult ?? 1.40
   const color = inp.color || 'yellow'
   return SELLABLE_KARATS.map(k => {
-    let w = 0
     let gross = 0
-    if (inp.metalWeights) {
+    if (inp.metalWeights && Object.keys(inp.metalWeights).length > 0) {
       gross = getMetalWeight(inp.metalWeights, `${k}K`, color)
-      w = pureGoldMass(gross, `${k}K`)
-    } else {
-      w = r4((inp.netGoldWeight || 0) * KARAT_FACTORS[k])
-      gross = r4(w / KARAT_FACTORS[k])
     }
+    if (gross <= 0) {
+      gross = convertKaratWeight(inp.netGoldWeight || 0, '22K', color, `${k}K`, color) || inp.netGoldWeight || 0
+    }
+    const w = pureGoldMass(gross, `${k}K`)
+
     const goldCost = Math.round(w * (inp.rate24k || 0))
     const labourPerG = inp.retailLabour[k] || 0
     const labourCost = Math.round(labourPerG * Math.max(gross, 1))
     const cogs = goldCost + labourCost + (inp.diamondCost || 0) + (inp.makingCharges || 0) + (inp.igiCost || 0)
-    const trade = Math.round(cogs * margin)
-    const mrp = Math.round(trade * mrpM)
+    
+    // Trade: metal cost, labour cost, making charges and igi cert charges are transparent. Only diamond cost is marked up.
+    const trade = Math.round(goldCost + labourCost + ((inp.diamondCost || 0) * margin) + (inp.makingCharges || 0) + (inp.igiCost || 0))
+    
+    // MRP: MRP Markup applies only to the B2B marked up diamond price.
+    const mrp = Math.round(goldCost + labourCost + ((inp.diamondCost || 0) * margin * mrpM) + (inp.makingCharges || 0) + (inp.igiCost || 0))
+    
     return { karat: k, weight: gross, goldCost, labourCost, cogs, trade, mrp }
   })
 }

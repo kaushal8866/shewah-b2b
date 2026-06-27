@@ -90,36 +90,35 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
     return NextResponse.json({ error: 'Unsupported gold karat selection' }, { status: 400 })
   }
 
-  let finalFloorCost = targetPricing.cogs
+  let finalFloorCost = targetPricing.trade
 
   // If reseller has custom floor price, adjust by ratio
   let ratio = 1
   if (resellerPrice && resellerPrice.floor_price_paise) {
     const savedFloorRupees = Number(resellerPrice.floor_price_paise) / 100
     
-    // Find base catalog COGS (typically 22K for gold, or silver COGS)
-    let baseCatalogCogs = 0
+    // Find base catalog trade price (typically 22K for gold, or silver trade price)
+    let baseCatalogTrade = 0
     if (product.metal_type === 'silver') {
-      baseCatalogCogs = Number(product.trade_price) / 1.28
+      baseCatalogTrade = Number(product.trade_price)
     } else {
-      // Look up 22K cogs from live calculated grid (so the ratio matches the same gold rate basis)
+      // Look up 22K trade from live calculated grid (so the ratio matches the same gold rate basis)
       const basePricing = pricingList.find(p => p.karat === 22)
-      baseCatalogCogs = basePricing ? basePricing.cogs : (Number(product.trade_price) / 1.28)
+      baseCatalogTrade = basePricing ? basePricing.trade : Number(product.trade_price)
     }
 
-    if (baseCatalogCogs > 0) {
-      ratio = savedFloorRupees / baseCatalogCogs
-      finalFloorCost = targetPricing.cogs * ratio
+    if (baseCatalogTrade > 0) {
+      ratio = savedFloorRupees / baseCatalogTrade
+      finalFloorCost = targetPricing.trade * ratio
     }
   }
 
-  // Apply reseller retail markup
+  // Apply reseller retail markup ONLY to the diamond value (since gold and labour are transparent in the market)
   const markupMultiplier = 1 + Number(shareLink.markup_percent) / 100
-  const customerPriceRupees = Math.round(finalFloorCost * markupMultiplier)
 
-  const gold_value = Math.round(targetPricing.goldCost * ratio * markupMultiplier)
-  const diamond_value = Math.round((product.diamond_cost || 0) * ratio * markupMultiplier)
-  const making_charges = Math.round((targetPricing.labourCost + (product.making_charges || 0) + (product.igi_cert_cost || 0)) * ratio * markupMultiplier)
+  const gold_value = Math.round(targetPricing.goldCost * ratio)
+  const diamond_value = Math.round((product.diamond_cost || 0) * 1.28 * ratio * markupMultiplier)
+  const making_charges = Math.round((targetPricing.labourCost + (product.making_charges || 0) + (product.igi_cert_cost || 0)) * ratio)
   
   const subtotal = gold_value + diamond_value + making_charges
   const gst = Math.round(subtotal * 0.03)

@@ -87,10 +87,10 @@ export function computeQuoteItem(
 
   const diamonds = Array.isArray(input.diamonds) ? input.diamonds : []
   const diamondCostPerPc = diamonds.reduce((sum, d) => {
-    const pcs = Math.max(Number(d.pieces) || 0, 0)
+    const wt = Math.max(Number((d as any).weight || (d as any).approx_carats) || 0, 0)
     const rate = Math.max(Number(d.rate_per_pc) || 0, 0)
     const igi = Math.max(Number(d.igi_charge) || 0, 0)
-    return sum + (pcs * rate) + igi
+    return sum + (wt * rate) + igi
   }, 0)
 
   const makingCharges = Math.max(Number(input.making_charges) || 0, 0)
@@ -98,7 +98,7 @@ export function computeQuoteItem(
   const otherCharges = Math.max(Number(input.other_charges) || 0, 0)
 
   const unitCogs = goldCostPerPc + labourCostPerPc + diamondCostPerPc + makingCharges + hallmarking + otherCharges
-  const unitTrade = Math.round(unitCogs * (1 + marginPct / 100))
+  const unitTrade = goldCostPerPc + labourCostPerPc + Math.round(diamondCostPerPc * (1 + marginPct / 100)) + makingCharges + hallmarking + otherCharges
 
   return {
     net_24kt_weight_g: net24ktWeight,
@@ -107,7 +107,7 @@ export function computeQuoteItem(
     unit_cogs: unitCogs,
     unit_trade: unitTrade,
     line_cogs: unitCogs * quantity,
-    line_trade: unitTrade,
+    line_trade: unitTrade * quantity,
     line_total: unitTrade * quantity,
   }
 }

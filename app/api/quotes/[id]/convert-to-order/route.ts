@@ -75,9 +75,9 @@ export async function POST(
 
     // Calculate sum of diamond costs
     const stoneCost = itemDiamonds.reduce((sum: number, d: any) => {
-      const pcs = Number(d.pieces) || 0
+      const wt = Number(d.approx_carats != null ? d.approx_carats : d.weight) || 0
       const rate = Number(d.rate_per_pc != null ? d.rate_per_pc : d.cost) || 0
-      return sum + (pcs * rate)
+      return sum + (wt * rate)
     }, 0)
 
     return {

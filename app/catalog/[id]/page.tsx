@@ -192,17 +192,15 @@ export default function CatalogProductEditPage() {
     ? (getMetalWeight(metalWeights, refKarat, 'default') || 0)
     : (getMetalWeight(metalWeights, '22K', refColor) || 0)
 
-  const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1), 0)
+  const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseFloat(d.weight) || 0), 0)
   const makingCharges = legacy.making_charges ?? 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
 
   const silverB2BCost = weight22 * silverRateB2B
-  const silverD2CCost = weight22 * silverRateD2C
   const silverB2B_cogs = silverB2BCost + totalDiamondCost + makingCharges + igiCost
-  const silverD2C_cogs = silverD2CCost + totalDiamondCost + makingCharges + igiCost
 
-  const silverTrade = Math.round(silverB2B_cogs * 1.28)
-  const silverMrp = Math.round(silverTrade * 1.40)
+  const silverTrade = Math.round(silverB2BCost + (totalDiamondCost * 1.28) + makingCharges + igiCost)
+  const silverMrp = Math.round(silverB2BCost + (totalDiamondCost * 1.28 * 1.40) + makingCharges + igiCost)
 
   const pricing = isSilver ? [
     {
@@ -379,7 +377,7 @@ export default function CatalogProductEditPage() {
       models_available: form.models_available, photo_urls: photoUrls,
       diamond_weight: parseFloat(primary.weight) || null, diamond_shape: primary.shape,
       diamond_quality: primary.quality, diamond_color: primary.color,
-      diamond_type: primary.type, diamond_cost: parseFloat(primary.cost) || null,
+      diamond_type: primary.type, diamond_cost: totalDiamondCost || null,
       diamond_specs: diamonds.map(d => ({
         role: d.role, shape: d.shape, weight: parseFloat(d.weight) || 0,
         quality: d.quality, color: d.color, type: d.type,
