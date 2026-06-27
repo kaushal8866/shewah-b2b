@@ -7,6 +7,7 @@ import Link from 'next/link'
 import {
   ArrowLeft, Diamond, Plus, Trash2, AlertTriangle, Percent, Loader2, Check, X, Wand2,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 type Bucket = { id: string; label: string; sort_order: number; active: boolean }
 type Shape  = { id: string; name: string; sort_order: number; active: boolean }
@@ -38,6 +39,7 @@ export default function ConfiguratorStonePricesPage() {
     if (!isMaster) { router.replace('/') }
   }, [status, session, isMaster, router])
 
+  const [stoneType, setStoneType] = useState<'lgd' | 'natural'>('lgd')
   const [shapes, setShapes] = useState<Shape[]>([])
   const [sizes, setSizes] = useState<Size[]>([])
   const [qualities, setQualities] = useState<Bucket[]>([])
@@ -72,7 +74,7 @@ export default function ConfiguratorStonePricesPage() {
         fetch('/api/diamonds/sizes').then(r => r.json()),
         fetch('/api/diamonds/quality-buckets').then(r => r.json()),
         fetch('/api/diamonds/color-buckets').then(r => r.json()),
-        fetch('/api/configurator/stone-prices').then(r => r.json()),
+        fetch(`/api/configurator/stone-prices?type=${stoneType}`).then(r => r.json()),
       ])
       setShapes((s.shapes || []).filter((x: Shape) => x.active))
       setSizes((z.sizes || []).filter((x: Size) => x.active))
@@ -88,7 +90,7 @@ export default function ConfiguratorStonePricesPage() {
       setError(e.message || 'Failed to load')
     } finally { setLoading(false) }
   }
-  useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [])
+  useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [stoneType])
 
   async function addBucket(kind: 'quality' | 'color', label: string) {
     const trimmed = label.trim()
@@ -110,7 +112,7 @@ export default function ConfiguratorStonePricesPage() {
   }
 
   async function saveCell(shapeId: string, sizeId: string, qbId: string, cbId: string, raw: string) {
-    const key = k(shapeId, sizeId, qbId, cbId)
+    const key = k(shapeId, sizeId, qbId, cbId, stoneType)
     const value = raw.trim() === '' ? 0 : Number(raw)
     if (!Number.isFinite(value) || value < 0) {
       setSavingKey(prev => ({ ...prev, [key]: 'error' }))
@@ -123,7 +125,7 @@ export default function ConfiguratorStonePricesPage() {
       body: JSON.stringify({
         shape_id: shapeId, size_id: sizeId,
         quality_bucket_id: qbId, color_bucket_id: cbId,
-        type: 'lgd',
+        type: stoneType,
         price_per_piece: value,
       }),
     })
@@ -160,7 +162,7 @@ export default function ConfiguratorStonePricesPage() {
       body: JSON.stringify({
         quality_bucket_id: fillQuality,
         color_bucket_id: fillColor,
-        type: 'lgd',
+        type: stoneType,
         rate_per_carat: rate,
         shape_id: fillShape || undefined,
         overwrite: fillOverwrite,
@@ -187,7 +189,7 @@ export default function ConfiguratorStonePricesPage() {
     setBulkBusy(true); setBulkMsg('')
     const r = await fetch('/api/configurator/stone-prices/bulk-adjust', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ percent: p, type: 'lgd' }),
+      body: JSON.stringify({ percent: p, type: stoneType }),
     })
     setBulkBusy(false)
     const j = await r.json().catch(() => ({}))
@@ -208,26 +210,52 @@ export default function ConfiguratorStonePricesPage() {
 
   return (
     <div className="p-4 lg:p-7 space-y-5">
-      <div className="flex items-center gap-3">
-        <Link href="/diamonds/catalog" className="text-stone-400 hover:text-stone-600">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-xl lg:text-2xl font-semibold text-stone-900 flex items-center gap-2">
-            <Diamond className="w-5 h-5 text-[#1E3A5F]" />
-            Configurator Stone Prices <span className="text-xs px-2 py-0.5 bg-[#1E3A5F]/10 text-[#1E3A5F] rounded-full font-medium">LGD</span>
-          </h1>
-          <p className="text-stone-500 text-sm mt-0.5">
-            Unified price per piece for configurator elements and inventory costs. Edits save automatically.
-          </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <Link href="/diamonds/catalog" className="text-stone-400 hover:text-stone-600">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <h1 className="text-xl lg:text-2xl font-semibold text-stone-900 flex items-center gap-2">
+              <Diamond className="w-5 h-5 text-[#1E3A5F]" />
+              Configurator Stone Prices
+            </h1>
+            <p className="text-stone-500 text-sm mt-0.5">
+              Unified price per piece for configurator elements and inventory costs. Edits save automatically.
+            </p>
+          </div>
         </div>
-        <button
-          onClick={() => { setFillOpen(true); setFillMsg('') }}
-          className="px-3 py-2 rounded-lg bg-white border border-stone-200 hover:border-[#1E3A5F] text-stone-700 text-sm font-medium inline-flex items-center gap-1.5 shrink-0"
-          title="Auto-fill blank cells from a single ₹/ct rate"
-        >
-          <Wand2 className="w-3.5 h-3.5 text-[#1E3A5F]" /> Bulk fill blanks
-        </button>
+
+        <div className="flex items-center gap-3 self-end md:self-auto">
+          <div className="flex bg-stone-100 rounded-lg p-0.5 border border-stone-200">
+            <button
+              onClick={() => setStoneType('lgd')}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+                stoneType === 'lgd' ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+              )}
+            >
+              Lab-Grown (LGD)
+            </button>
+            <button
+              onClick={() => setStoneType('natural')}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+                stoneType === 'natural' ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+              )}
+            >
+              Natural Diamond
+            </button>
+          </div>
+
+          <button
+            onClick={() => { setFillOpen(true); setFillMsg('') }}
+            className="px-3 py-2 rounded-lg bg-white border border-stone-200 hover:border-[#1E3A5F] text-stone-700 text-sm font-medium inline-flex items-center gap-1.5 shrink-0"
+            title="Auto-fill blank cells from a single ₹/ct rate"
+          >
+            <Wand2 className="w-3.5 h-3.5 text-[#1E3A5F]" /> Bulk fill blanks
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -327,7 +355,7 @@ export default function ConfiguratorStonePricesPage() {
                         )}
                       </td>
                       {colHeaders.map(h => {
-                        const ck = k(shape.id, size.id, h.qb.id, h.cb.id)
+                        const ck = k(shape.id, size.id, h.qb.id, h.cb.id, stoneType)
                         const cell = cellsByKey[ck]
                         const editing = ck in edits
                         const value = editing ? edits[ck] : (cell ? String(cell.price_per_piece) : '')
