@@ -141,7 +141,15 @@ export default function RetailerCustomOrderPage() {
           const qMatch = matrix.find((m: any) => m.quality_label.toLowerCase().includes(row.quality.toLowerCase().slice(0, 2)))
           const cMatch = qMatch && matrix.find((m: any) => m.quality_label === qMatch.quality_label && m.color_label.toLowerCase().includes(row.color.toLowerCase().slice(0, 1)))
           const pick = cMatch?.price ?? qMatch?.price ?? matrix[0]?.price ?? history?.cost
-          if (pick) next.cost = String(pick)
+          if (pick != null) {
+            if (pick === history?.cost) {
+              next.cost = String(pick)
+            } else {
+              const sz = sizes.find(s => s.id === row.size_id)
+              const wt = sz?.approx_carats || 0
+              next.cost = String(wt * pick)
+            }
+          }
         }
         return next
       }))
@@ -388,19 +396,24 @@ export default function RetailerCustomOrderPage() {
                     </div>
                     {((d.matrix && d.matrix.length > 0) || d.history) && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
-                        {(d.matrix || []).map((m, i) => {
-                          const active = parseFloat(d.cost) === m.price
-                          return (
-                            <button key={i} type="button"
-                              onClick={() => updateDiamond(d.id, { cost: String(m.price) })}
-                              className={'text-[11px] px-2 py-0.5 rounded border ' +
-                                (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
-                                        : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}>
-                              <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
-                              ₹{m.price.toLocaleString('en-IN')}
-                            </button>
-                          )
-                        })}
+                         {(d.matrix || []).map((m, i) => {
+                           const sz = sizes.find(s => s.id === d.size_id)
+                           const wt = sz?.approx_carats || 0
+                           const pcCost = Math.round(wt * m.price)
+                           const active = Math.abs((parseFloat(d.cost) || 0) - pcCost) < 0.01
+                           return (
+                             <button key={i} type="button"
+                               onClick={() => updateDiamond(d.id, { cost: String(pcCost) })}
+                               className={'text-[11px] px-2 py-0.5 rounded border ' +
+                                 (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
+                                         : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}
+                               title={`Matrix · ${m.quality_label} · ${m.color_label} · Rate: ₹${m.price.toLocaleString('en-IN')}/ct`}>
+                               <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
+                               ₹{pcCost.toLocaleString('en-IN')}
+                               <span className="text-[10px] text-stone-400 ml-1">({m.price.toLocaleString('en-IN')}/ct)</span>
+                             </button>
+                           )
+                         })}
                         {d.history && (
                           <button type="button"
                             onClick={() => updateDiamond(d.id, { cost: String(d.history!.cost) })}

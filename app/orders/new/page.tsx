@@ -270,7 +270,16 @@ function NewOrderForm() {
         const cMatch = qMatch && matrix.find((m: any) =>
           m.quality_label === qMatch.quality_label && m.color_label.toLowerCase().includes((row.color || '').toLowerCase().slice(0, 1)))
         const pick = cMatch?.price ?? qMatch?.price ?? matrix[0]?.price ?? history?.cost
-        return pick ? { ...row, cost: String(pick) } : row
+        let costVal = ''
+        if (pick != null) {
+          if (pick === history?.cost) {
+            costVal = String(pick)
+          } else {
+            const wt = parseFloat(row.weight) || 0
+            costVal = String(wt * pick)
+          }
+        }
+        return costVal ? { ...row, cost: costVal } : row
       }))
     } catch { /* silent — auto-fill is best-effort */ }
   }
@@ -777,19 +786,22 @@ function NewOrderForm() {
                       <p className="text-[11px] font-medium text-stone-500 mb-1.5">Cost suggestions — click to use</p>
                       <div className="flex flex-wrap gap-1.5">
                         {sug.matrix.map((m, i) => {
-                          const active = parseFloat(d.cost) === m.price
+                          const wt = parseFloat(d.weight) || 0
+                          const pcCost = Math.round(wt * m.price)
+                          const active = Math.abs((parseFloat(d.cost) || 0) - pcCost) < 0.01
                           return (
                             <button
                               key={`m-${i}`}
                               type="button"
-                              onClick={() => updateDiamond(d.id, 'cost', String(m.price))}
+                              onClick={() => updateDiamond(d.id, 'cost', String(pcCost))}
                               className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
                                 (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
                                         : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}
-                              title={`Matrix · ${m.quality_label} · ${m.color_label}`}
+                              title={`Matrix · ${m.quality_label} · ${m.color_label} · Rate: ₹${m.price.toLocaleString('en-IN')}/ct`}
                             >
                               <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
-                              ₹{m.price.toLocaleString('en-IN')}
+                              ₹{pcCost.toLocaleString('en-IN')}
+                              <span className="text-[10px] text-stone-400 ml-1">({m.price.toLocaleString('en-IN')}/ct)</span>
                             </button>
                           )
                         })}
