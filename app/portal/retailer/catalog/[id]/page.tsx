@@ -77,14 +77,19 @@ export default function RetailerProductDetail() {
 
   const diamondRows = useMemo(() => {
     if (!product || !Array.isArray(product.diamond_specs)) return []
-    return product.diamond_specs.map(d => ({
-      shape: d.shape || '',
-      type: d.type || 'natural',
-      quality: d.quality || '',
-      color: d.color || '',
-      weight: Number(d.weight) || 0,
-      cost: Number(d.cost) || 0
-    })).filter(d => d.weight > 0)
+    return product.diamond_specs.map(d => {
+      const pieces = Number(d.pieces) || 1
+      const wtPerPc = Number(d.weight) || 0
+      return {
+        shape: d.shape || '',
+        type: d.type || 'natural',
+        quality: d.quality || '',
+        color: d.color || '',
+        pieces,
+        weight: wtPerPc * pieces,
+        cost: Number(d.cost) || 0
+      }
+    }).filter(d => d.weight > 0)
   }, [product])
 
   const totalDiamondWeight = useMemo(() => {
@@ -222,7 +227,7 @@ export default function RetailerProductDetail() {
 
           <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-5 text-sm">
             {[
-              ['Diamond', product.diamond_weight ? `${product.diamond_weight}ct ${product.diamond_shape || ''}` : '—'],
+              ['Diamond', totalDiamondWeight ? `${totalDiamondWeight.toFixed(3)}ct ${product.diamond_shape || ''}` : '—'],
               ['Quality', product.diamond_quality ? `${product.diamond_quality}/${product.diamond_color || ''}` : '—'],
               ['Type', product.diamond_type === 'natural' ? 'Natural diamond' : 'Lab-grown (LGD)'],
               ['Delivery', `${product.delivery_days || 14} days`],

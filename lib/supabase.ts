@@ -651,7 +651,7 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
     let diamondCost = 0
     if (Array.isArray((p as any).diamond_specs) && (p as any).diamond_specs.length > 0) {
       diamondCost = ((p as any).diamond_specs as any[]).reduce(
-        (s, d) => s + (Number(d?.cost) || 0) * (Number(d?.weight != null ? d.weight : d?.pieces) || 0), 0
+        (s, d) => s + (Number(d?.cost) || 0) * (Number(d?.pieces) || 1) * (Number(d?.weight) || 0), 0
       )
     } else {
       diamondCost = Number(p.diamond_cost) || 0

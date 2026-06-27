@@ -130,7 +130,7 @@ export default function NewProductPage() {
     ? (getMetalWeight(metalWeights, refKarat, 'default') || 0)
     : (getMetalWeight(metalWeights, '22K', refColor) || 0)
 
-  const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseFloat(d.weight) || 0), 0)
+  const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseFloat(d.weight) || 0) * (parseFloat(d.pieces) || 1), 0)
   const makingCharges = parseFloat(form.making_charges) || 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
 
