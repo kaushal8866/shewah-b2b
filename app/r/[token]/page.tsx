@@ -1097,11 +1097,11 @@ export default function PublicStorefront() {
                                   <div className="flex justify-between items-center pt-2.5 border-t" style={{ borderColor: c.borders }}>
                                     <div className="flex items-baseline gap-1.5">
                                       <span className="text-xs font-black tracking-tight" style={{ color: c.primary }}>
-                                        ₹{p.selling_price_rupees.toLocaleString('en-IN')}
+                                        ₹{(p.selling_price_rupees || 0).toLocaleString('en-IN')}
                                       </span>
                                       {section.settings.showOriginalPrice && (
                                         <span className="text-[9px] line-through text-stone-400">
-                                          ₹{Math.round(p.selling_price_rupees * 1.5).toLocaleString('en-IN')}
+                                          ₹{Math.round((p.selling_price_rupees || 0) * 1.5).toLocaleString('en-IN')}
                                         </span>
                                       )}
                                     </div>
@@ -1288,7 +1288,7 @@ export default function PublicStorefront() {
                               <p className="font-semibold text-stone-850">{o.products?.name}</p>
                               <p className="text-stone-400 mt-0.5">Karat: {o.custom_attributes?.karat || '18K'} · Qty: {o.quantity}</p>
                             </div>
-                            <p className="font-bold text-stone-855 text-xs">₹{(o.customer_selling_price_paise / 100).toLocaleString('en-IN')}</p>
+                            <p className="font-bold text-stone-855 text-xs">₹{((o.customer_selling_price_paise || 0) / 100).toLocaleString('en-IN')}</p>
                           </div>
                         </div>
                       ))}
@@ -1472,7 +1472,7 @@ export default function PublicStorefront() {
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-xs font-black" style={{ color: c.primary }}>₹{(item.selling_price * item.quantity).toLocaleString('en-IN')}</span>
+                        <span className="text-xs font-black" style={{ color: c.primary }}>₹{((item.selling_price || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                   ))}
@@ -1485,17 +1485,17 @@ export default function PublicStorefront() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-xxs font-bold opacity-60" style={{ color: c.text }}>
                     <span>Basket Subtotal</span>
-                    <span>₹{cartSubtotal.toLocaleString('en-IN')}</span>
+                    <span>₹{(cartSubtotal || 0).toLocaleString('en-IN')}</span>
                   </div>
                   {appliedDiscount && (
                     <div className="flex justify-between items-center text-xxs font-bold text-green-700 bg-green-50 px-2 py-1 rounded">
                       <span>Discount ({appliedDiscount.code})</span>
-                      <span>- ₹{discountAmount.toLocaleString('en-IN')}</span>
+                      <span>- ₹{(discountAmount || 0).toLocaleString('en-IN')}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center text-xs font-bold border-t pt-2" style={{ borderColor: c.borders, color: c.text }}>
                     <span>Total Amount</span>
-                    <span className="text-sm font-black" style={{ color: c.primary }}>₹{cartTotal.toLocaleString('en-IN')}</span>
+                    <span className="text-sm font-black" style={{ color: c.primary }}>₹{(cartTotal || 0).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
@@ -1627,7 +1627,7 @@ export default function PublicStorefront() {
                   </div>
                   <div className="flex justify-between items-center text-xs font-bold pt-3 border-t" style={{ borderColor: c.borders, color: c.text }}>
                     <span className="opacity-60">Due Amount</span>
-                    <span className="text-sm font-black" style={{ color: c.primary }}>₹{cartTotal.toLocaleString('en-IN')}</span>
+                    <span className="text-sm font-black" style={{ color: c.primary }}>₹{(cartTotal || 0).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
