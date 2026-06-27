@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, Diamond, Plus, Trash2, AlertTriangle, Percent, Loader2, Check, X, Wand2,
+  ChevronLeft, ChevronRight, RotateCcw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 
 type Bucket = { id: string; label: string; sort_order: number; active: boolean }
 type Shape  = { id: string; name: string; sort_order: number; active: boolean }
@@ -39,6 +41,23 @@ function getSieveSize(label: string): string {
   return 'Sieve Large'
 }
 
+const DEFAULT_PAIRS = [
+  { qb: "VVS", cb: "EF" },
+  { qb: "VS", cb: "EF" },
+  { qb: "VVS", cb: "FG" },
+  { qb: "VS", cb: "FG" },
+  { qb: "VVS", cb: "GH" },
+  { qb: "VS", cb: "GH" },
+  { qb: "VS", cb: "HI" },
+  { qb: "VS", cb: "IJ" },
+  { qb: "SI", cb: "GH" },
+  { qb: "SI", cb: "HI" },
+  { qb: "SI", cb: "IJ" },
+  { qb: "SI", cb: "JK" },
+  { qb: "I1", cb: "HI" },
+  { qb: "I1", cb: "IJ" }
+]
+
 export default function ConfiguratorStonePricesPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
@@ -61,6 +80,11 @@ export default function ConfiguratorStonePricesPage() {
   const [error, setError] = useState('')
   const [savingKey, setSavingKey] = useState<Record<string, 'saving' | 'saved' | 'error'>>({})
   const [edits, setEdits] = useState<Record<string, string>>({})
+
+  // Columns Configuration
+  const [customPairs, setCustomPairs] = useState<{ qb: string; cb: string }[]>([])
+  const [newColQuality, setNewColQuality] = useState('')
+  const [newColColor, setNewColColor] = useState('')
 
   // Bulk-percent adjuster
   const [bulkPct, setBulkPct] = useState('')
@@ -97,6 +121,23 @@ export default function ConfiguratorStonePricesPage() {
       }
       setCellsByKey(map)
       setMigrationPending(!!(q.migration_pending || c.migration_pending || m.migration_pending))
+
+      // Load custom columns config from Settings DB with LocalStorage fallback
+      let loadedPairs = DEFAULT_PAIRS
+      try {
+        const { data: dbSetting } = await supabase.from('settings').select('value').eq('key', 'diamond_pricing_columns').maybeSingle()
+        if (dbSetting?.value) {
+          loadedPairs = JSON.parse(dbSetting.value)
+        } else {
+          const local = localStorage.getItem('diamond_pricing_columns')
+          if (local) loadedPairs = JSON.parse(local)
+        }
+      } catch (err) {
+        console.error('Failed to fetch columns config', err)
+        const local = localStorage.getItem('diamond_pricing_columns')
+        if (local) loadedPairs = JSON.parse(local)
+      }
+      setCustomPairs(loadedPairs)
     } catch (e: any) {
       setError(e.message || 'Failed to load')
     } finally { setLoading(false) }
@@ -210,10 +251,72 @@ export default function ConfiguratorStonePricesPage() {
     load()
   }
 
-  const colHeaders = useMemo(
-    () => qualities.flatMap(q => colors.map(c => ({ key: `${q.id}|${c.id}`, qb: q, cb: c }))),
-    [qualities, colors],
-  )
+  async function saveColumnsConfig(updated: { qb: string; cb: string }[]) {
+    setCustomPairs(updated)
+    localStorage.setItem('diamond_pricing_columns', JSON.stringify(updated))
+    try {
+      await supabase.from('settings').upsert({
+        key: 'diamond_pricing_columns',
+        value: JSON.stringify(updated)
+      })
+    } catch (err) {
+      console.error('Failed to save settings to DB', err)
+    }
+  }
+
+  function moveColumn(index: number, direction: 'left' | 'right') {
+    const nextIdx = direction === 'left' ? index - 1 : index + 1
+    if (nextIdx < 0 || nextIdx >= customPairs.length) return
+    const updated = [...customPairs]
+    const temp = updated[index]
+    updated[index] = updated[nextIdx]
+    updated[nextIdx] = temp
+    saveColumnsConfig(updated)
+  }
+
+  function deleteColumn(index: number) {
+    const updated = customPairs.filter((_, i) => i !== index)
+    saveColumnsConfig(updated)
+  }
+
+  function addColumnPair() {
+    if (!newColQuality || !newColColor) return
+    const exists = customPairs.some(
+      p => p.qb.toLowerCase() === newColQuality.toLowerCase() && 
+           p.cb.toLowerCase() === newColColor.toLowerCase()
+    )
+    if (exists) {
+      alert('This column configuration already exists.')
+      return
+    }
+    const updated = [...customPairs, { qb: newColQuality, cb: newColColor }]
+    saveColumnsConfig(updated)
+    setNewColQuality('')
+    setNewColColor('')
+  }
+
+  function resetColumnsToDefault() {
+    if (confirm('Reset to the standard rate card column sequence? Any custom pairs will be replaced.')) {
+      saveColumnsConfig(DEFAULT_PAIRS)
+    }
+  }
+
+  const colHeaders = useMemo(() => {
+    const list: { key: string; qb: Bucket; cb: Bucket; label: string }[] = []
+    for (const pair of customPairs) {
+      const qObj = qualities.find(q => q.label.toLowerCase() === pair.qb.toLowerCase())
+      const cObj = colors.find(c => c.label.toLowerCase() === pair.cb.toLowerCase())
+      if (qObj && cObj) {
+        list.push({
+          key: `${qObj.id}|${cObj.id}`,
+          qb: qObj,
+          cb: cObj,
+          label: `${pair.qb} ${pair.cb}`
+        })
+      }
+    }
+    return list
+  }, [customPairs, qualities, colors])
 
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
 
@@ -326,6 +429,102 @@ export default function ConfiguratorStonePricesPage() {
             </button>
           </div>
           {bulkMsg && <p className="text-xs text-stone-600 mt-2">{bulkMsg}</p>}
+        </div>
+      </div>
+
+      {/* Table Columns Setup */}
+      <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-4 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-semibold text-stone-900 flex items-center gap-1.5">
+              <Plus className="w-4 h-4 text-[#1E3A5F]" />
+              Spreadsheet Columns Sequence Manager
+            </h3>
+            <p className="text-xs text-stone-500 mt-0.5">Define which Quality × Color pairs appear as table columns and in what order.</p>
+          </div>
+          <button
+            onClick={resetColumnsToDefault}
+            className="px-3 py-1.5 rounded-lg border border-stone-200 hover:border-red-300 text-stone-700 hover:text-red-650 text-xs font-semibold inline-flex items-center gap-1.5 bg-white transition-colors"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Reset to Default Sequence
+          </button>
+        </div>
+
+        {/* Existing columns drag-style reordering tags */}
+        <div className="flex flex-wrap gap-2 items-center bg-stone-50 p-3 rounded-lg border border-stone-150 min-h-[46px]">
+          {customPairs.length === 0 ? (
+            <span className="text-xs text-stone-400">No columns defined. Add pairs below to configure columns.</span>
+          ) : (
+            customPairs.map((pair, index) => (
+              <div
+                key={`${pair.qb}-${pair.cb}-${index}`}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-white border border-stone-200 text-stone-800 text-xs font-medium shadow-xs"
+              >
+                <span>{pair.qb} {pair.cb}</span>
+                <div className="flex items-center border-l border-stone-200 pl-1.5 ml-1 gap-1">
+                  <button
+                    disabled={index === 0}
+                    onClick={() => moveColumn(index, 'left')}
+                    title="Move Left"
+                    className="text-stone-400 hover:text-stone-700 disabled:opacity-30 disabled:hover:text-stone-400"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    disabled={index === customPairs.length - 1}
+                    onClick={() => moveColumn(index, 'right')}
+                    title="Move Right"
+                    className="text-stone-400 hover:text-stone-700 disabled:opacity-30 disabled:hover:text-stone-400"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => deleteColumn(index)}
+                    title="Delete Column"
+                    className="text-stone-400 hover:text-red-650 transition-colors ml-0.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Add new column pair builder */}
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-stone-600">Select Quality:</span>
+            <select
+              value={newColQuality}
+              onChange={e => setNewColQuality(e.target.value)}
+              className="border border-stone-200 rounded-lg px-3 py-1.5 text-xs focus:border-[#1E3A5F] focus:outline-none bg-white font-medium text-stone-800 w-40"
+            >
+              <option value="">Choose Quality…</option>
+              {qualities.map(q => <option key={q.id} value={q.label}>{q.label}</option>)}
+            </select>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-stone-600">Select Color:</span>
+            <select
+              value={newColColor}
+              onChange={e => setNewColColor(e.target.value)}
+              className="border border-stone-200 rounded-lg px-3 py-1.5 text-xs focus:border-[#1E3A5F] focus:outline-none bg-white font-medium text-stone-800 w-40"
+            >
+              <option value="">Choose Color…</option>
+              {colors.map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
+            </select>
+          </div>
+
+          <button
+            onClick={addColumnPair}
+            disabled={!newColQuality || !newColColor}
+            className="px-3.5 py-1.5 rounded-lg bg-[#1E3A5F] hover:bg-[#152a47] text-white text-xs font-semibold disabled:opacity-50 inline-flex items-center gap-1.5 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Column Pair
+          </button>
         </div>
       </div>
 
