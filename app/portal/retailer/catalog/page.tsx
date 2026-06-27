@@ -95,8 +95,8 @@ export default function RetailerCatalog() {
                   <>
                     <p className="text-[10px] text-stone-400 mt-1">Starts from</p>
                     <p className="text-sm font-semibold text-[#1E3A5F]">
-                      ₹{Number(p.starts_from.trade).toLocaleString('en-IN')}
-                      <span className="text-[10px] text-stone-400 ml-1">({p.starts_from.karat}kt)</span>
+                      ₹{(Number(p.starts_from?.trade) || 0).toLocaleString('en-IN')}
+                      <span className="text-[10px] text-stone-400 ml-1">({p.starts_from?.karat}kt)</span>
                     </p>
                   </>
                 ) : (

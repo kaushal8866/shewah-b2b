@@ -149,7 +149,7 @@ export default function RetailerProductDetail() {
   if (!product) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
 
   const photos = product.photo_urls && product.photo_urls.length > 0 ? product.photo_urls : []
-  const unitPrice = selectedRow?.trade ?? Number(product.trade_price) ?? 0
+  const unitPrice = selectedRow?.trade || Number(product.trade_price) || 0
   const total = unitPrice * (parseInt(qty) || 1)
   const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
@@ -272,11 +272,11 @@ export default function RetailerProductDetail() {
                   Trade price (per piece{selectedRow ? `, ${selectedRow.karat}kt` : ''})
                 </p>
                 <p className="text-2xl font-semibold text-stone-900">
-                  {unitPrice ? `₹${unitPrice.toLocaleString('en-IN')}` : '—'}
+                  {unitPrice ? `₹${(unitPrice || 0).toLocaleString('en-IN')}` : '—'}
                 </p>
                 {selectedRow && (
                   <p className="text-[11px] text-stone-400 mt-0.5">
-                    Gross weight {selectedRow.weight.toFixed(3)}g · MRP ₹{selectedRow.mrp.toLocaleString('en-IN')}
+                    Gross weight {selectedRow.weight?.toFixed(3) || '0.000'}g · MRP ₹{(selectedRow.mrp || 0).toLocaleString('en-IN')}
                   </p>
                 )}
               </div>
@@ -291,8 +291,8 @@ export default function RetailerProductDetail() {
                   </summary>
                   <div className="mt-3 space-y-2 text-xs text-stone-600 bg-stone-50 p-3 rounded-lg border border-stone-150">
                     <div className="flex justify-between">
-                      <span>Gold Metal Value ({selectedRow.weight.toFixed(3)}g)</span>
-                      <span className="font-medium">₹{selectedRow.goldCost.toLocaleString('en-IN')}</span>
+                      <span>Gold Metal Value ({selectedRow.weight?.toFixed(3) || '0.000'}g)</span>
+                      <span className="font-medium">₹{(selectedRow.goldCost || 0).toLocaleString('en-IN')}</span>
                     </div>
                     {product.diamond_weight ? (
                       <div className="flex justify-between">
@@ -302,16 +302,16 @@ export default function RetailerProductDetail() {
                     ) : null}
                     <div className="flex justify-between">
                       <span>Making & Cert Charges</span>
-                      <span className="font-medium">₹{(selectedRow.labourCost + (product.making_charges || 0) + (product.igi_cert_cost || 0)).toLocaleString('en-IN')}</span>
+                      <span className="font-medium">₹{((selectedRow.labourCost || 0) + (product.making_charges || 0) + (product.igi_cert_cost || 0)).toLocaleString('en-IN')}</span>
                     </div>
                     <div className="border-t border-stone-200 my-1"></div>
                     <div className="flex justify-between font-bold text-stone-800">
                       <span>Total B2B Trade Price</span>
-                      <span>₹{selectedRow.trade.toLocaleString('en-IN')}</span>
+                      <span>₹{(selectedRow.trade || 0).toLocaleString('en-IN')}</span>
                     </div>
                     <div className="flex justify-between text-[11px] text-stone-400">
                       <span>Jeweler Suggested MRP (incl markup)</span>
-                      <span>₹{selectedRow.mrp.toLocaleString('en-IN')}</span>
+                      <span>₹{(selectedRow.mrp || 0).toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 </details>
@@ -340,7 +340,7 @@ export default function RetailerProductDetail() {
 
             <div className="flex items-center justify-between mb-4 px-3 py-2 bg-stone-50 rounded-lg">
               <span className="text-sm text-stone-500">Order total</span>
-              <span className="text-lg font-semibold text-stone-900">₹{total.toLocaleString('en-IN')}</span>
+              <span className="text-lg font-semibold text-stone-900">₹{(total || 0).toLocaleString('en-IN')}</span>
             </div>
 
             {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
