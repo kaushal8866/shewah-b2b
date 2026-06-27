@@ -109,6 +109,36 @@ export default function RetailerProductDetail() {
     return Math.round((Number(product?.diamond_cost) || 0) * 1.28)
   }, [diamondRows, product])
 
+  const categoryOption = useMemo(() => {
+    const cat = (product?.category || '').toLowerCase()
+    if (cat === 'ring') {
+      return {
+        label: 'Ring size',
+        placeholder: 'Select size...',
+        options: RING_SIZES
+      }
+    } else if (cat === 'necklace') {
+      return {
+        label: 'Chain length',
+        placeholder: 'Select length...',
+        options: ['14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"']
+      }
+    } else if (cat === 'earring') {
+      return {
+        label: 'Earring back',
+        placeholder: 'Select type...',
+        options: ['Push Back', 'Screw Back', 'Lever Back', 'Hinge', 'Hook']
+      }
+    } else if (cat === 'bracelet') {
+      return {
+        label: 'Wrist size',
+        placeholder: 'Select size...',
+        options: ['6"', '6.5"', '7"', '7.5"', '8"', '8.5"', '9"']
+      }
+    }
+    return null
+  }, [product])
+
   // Per-karat options that actually have a priced row in the cache.
   // Legacy fallback: pre-migration products that haven't been re-priced yet
   // still need to be orderable, so synthesize a single row from the canonical
@@ -371,18 +401,20 @@ export default function RetailerProductDetail() {
             )}
 
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <div>
+              <div className={categoryOption ? "" : "col-span-2"}>
                 <label className={lbl}>Quantity</label>
                 <input type="number" inputMode="numeric" min="1" className={inp}
                   value={qty} onChange={e => setQty(e.target.value)} />
               </div>
-              <div>
-                <label className={lbl}>Ring size</label>
-                <select className={inp} value={size} onChange={e => setSize(e.target.value)}>
-                  <option value="">Select size...</option>
-                  {RING_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+              {categoryOption && (
+                <div>
+                  <label className={lbl}>{categoryOption.label}</label>
+                  <select className={inp} value={size} onChange={e => setSize(e.target.value)}>
+                    <option value="">{categoryOption.placeholder}</option>
+                    {categoryOption.options.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="mb-4">
               <label className={lbl}>Notes (optional)</label>
