@@ -80,6 +80,8 @@ export default function RetailerProductDetail() {
     return product.diamond_specs.map(d => {
       const pieces = Number(d.pieces) || 1
       const wtPerPc = Number(d.weight) || 0
+      const costPerPc = Number(d.cost) || 0
+      const ratePerCarat = wtPerPc > 0 ? (costPerPc / wtPerPc) : 0
       return {
         shape: d.shape || '',
         type: d.type || 'natural',
@@ -87,7 +89,8 @@ export default function RetailerProductDetail() {
         color: d.color || '',
         pieces,
         weight: wtPerPc * pieces,
-        cost: Number(d.cost) || 0
+        cost: costPerPc,
+        ratePerCarat
       }
     }).filter(d => d.weight > 0)
   }, [product])
@@ -101,7 +104,7 @@ export default function RetailerProductDetail() {
 
   const totalDiamondValue = useMemo(() => {
     if (diamondRows.length > 0) {
-      return Math.round(diamondRows.reduce((sum, d) => sum + (d.weight * d.cost * 1.28), 0))
+      return Math.round(diamondRows.reduce((sum, d) => sum + (d.pieces * d.cost * 1.28), 0))
     }
     return Math.round((Number(product?.diamond_cost) || 0) * 1.28)
   }, [diamondRows, product])
@@ -337,9 +340,9 @@ export default function RetailerProductDetail() {
                     {diamondRows.map((d, idx) => (
                       <div key={idx} className="flex justify-between text-[11px] text-stone-500 pl-3">
                         <span className="capitalize">
-                          ↳ {d.shape} {d.type === 'natural' ? 'Nat' : 'LGD'} {d.quality}-{d.color} ({d.weight.toFixed(3)} ct @ ₹{Math.round(d.cost * 1.28).toLocaleString('en-IN')}/ct)
+                          ↳ {d.shape} {d.type === 'natural' ? 'Nat' : 'LGD'} {d.quality}-{d.color} ({d.weight.toFixed(3)} ct @ ₹{Math.round(d.ratePerCarat * 1.28).toLocaleString('en-IN')}/ct)
                         </span>
-                        <span>₹{Math.round(d.weight * d.cost * 1.28).toLocaleString('en-IN')}</span>
+                        <span>₹{Math.round(d.pieces * d.cost * 1.28).toLocaleString('en-IN')}</span>
                       </div>
                     ))}
                     {(!diamondRows || diamondRows.length === 0) && product.diamond_weight ? (
