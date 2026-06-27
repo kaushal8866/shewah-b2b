@@ -1841,7 +1841,7 @@ export default function PublicStorefront() {
               </div>
 
               {/* ORRA-Style Price Breakup Accordion */}
-              {priceBreakup && (
+              {priceBreakup && typeof priceBreakup.gold_value === 'number' && (
                 <div className="p-4 border rounded-2xl space-y-2 bg-stone-50" style={{ borderColor: c.borders }}>
                   <details className="group">
                     <summary className="flex items-center justify-between font-bold text-[10px] uppercase tracking-wider opacity-60 cursor-pointer list-none select-none hover:opacity-100 transition-opacity">
@@ -1851,30 +1851,30 @@ export default function PublicStorefront() {
                     <div className="mt-3 space-y-2 text-xs opacity-85">
                       <div className="flex justify-between">
                         <span>Gold Metal Value</span>
-                        <span className="font-semibold" style={{ color: c.text }}>₹{priceBreakup.gold_value.toLocaleString('en-IN')}</span>
+                        <span className="font-semibold" style={{ color: c.text }}>₹{priceBreakup.gold_value?.toLocaleString('en-IN') ?? '—'}</span>
                       </div>
                       {selectedProduct.diamond_weight ? (
                         <div className="flex justify-between">
                           <span>Diamond Value ({selectedProduct.diamond_weight} ct)</span>
-                          <span className="font-semibold" style={{ color: c.text }}>₹{priceBreakup.diamond_value.toLocaleString('en-IN')}</span>
+                          <span className="font-semibold" style={{ color: c.text }}>₹{priceBreakup.diamond_value?.toLocaleString('en-IN') ?? '—'}</span>
                         </div>
                       ) : null}
-                      {priceBreakup.making_charges > 0 && (
+                      {(priceBreakup.making_charges || 0) > 0 && (
                         <div className="flex justify-between">
                           <span>Making Charges & Tax</span>
-                          <span className="font-semibold" style={{ color: c.text }}>₹{priceBreakup.making_charges.toLocaleString('en-IN')}</span>
+                          <span className="font-semibold" style={{ color: c.text }}>₹{priceBreakup.making_charges?.toLocaleString('en-IN') ?? '—'}</span>
                         </div>
                       )}
-                      {priceBreakup.gst > 0 && (
+                      {(priceBreakup.gst || 0) > 0 && (
                         <div className="flex justify-between opacity-60">
                           <span>GST (3%)</span>
-                          <span style={{ color: c.text }}>₹{priceBreakup.gst.toLocaleString('en-IN')}</span>
+                          <span style={{ color: c.text }}>₹{priceBreakup.gst?.toLocaleString('en-IN') ?? '—'}</span>
                         </div>
                       )}
                       <div className="border-t border-stone-200 my-1"></div>
                       <div className="flex justify-between font-black text-xs" style={{ color: c.primary }}>
                         <span>Total Price (incl. GST)</span>
-                        <span>₹{priceBreakup.total.toLocaleString('en-IN')}</span>
+                        <span>₹{priceBreakup.total?.toLocaleString('en-IN') ?? '—'}</span>
                       </div>
                     </div>
                   </details>
@@ -2002,7 +2002,7 @@ export default function PublicStorefront() {
               <div className="flex flex-col">
                 <span className="text-[8px] font-bold opacity-45 uppercase tracking-wider">Estimated Price</span>
                 <span className="text-lg font-black tracking-tight" style={{ color: c.primary }}>
-                  ₹{(estimatedPrice || selectedProduct.selling_price_rupees).toLocaleString('en-IN')}
+                  ₹{(estimatedPrice || selectedProduct?.selling_price_rupees || 0).toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="flex gap-2">
