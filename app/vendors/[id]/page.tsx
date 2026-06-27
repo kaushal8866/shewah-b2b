@@ -21,6 +21,12 @@ export default function VendorDetailPage() {
 
   useEffect(() => { load() }, [id])
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('edit=true')) {
+      setEditing(true)
+    }
+  }, [])
+
   async function load() {
     setLoading(true)
     const [{ data: v }, { data: inv }] = await Promise.all([
