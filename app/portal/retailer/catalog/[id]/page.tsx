@@ -40,6 +40,10 @@ type Product = {
   delivery_days?: number
   models_available?: string[]
   attributes?: Record<string, any>
+  making_charges?: number
+  igi_cert_cost?: number
+  diamond_cost?: number
+  diamond_specs?: any[]
 }
 
 const RING_SIZES = ['5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22']
@@ -70,6 +74,32 @@ export default function RetailerProductDetail() {
       })
       .catch(e => setError(e.message))
   }, [id])
+
+  const diamondRows = useMemo(() => {
+    if (!product || !Array.isArray(product.diamond_specs)) return []
+    return product.diamond_specs.map(d => ({
+      shape: d.shape || '',
+      type: d.type || 'natural',
+      quality: d.quality || '',
+      color: d.color || '',
+      weight: Number(d.weight) || 0,
+      cost: Number(d.cost) || 0
+    })).filter(d => d.weight > 0)
+  }, [product])
+
+  const totalDiamondWeight = useMemo(() => {
+    if (diamondRows.length > 0) {
+      return diamondRows.reduce((sum, d) => sum + d.weight, 0)
+    }
+    return Number(product?.diamond_weight) || 0
+  }, [diamondRows, product])
+
+  const totalDiamondValue = useMemo(() => {
+    if (diamondRows.length > 0) {
+      return Math.round(diamondRows.reduce((sum, d) => sum + (d.weight * d.cost * 1.28), 0))
+    }
+    return Math.round((Number(product?.diamond_cost) || 0) * 1.28)
+  }, [diamondRows, product])
 
   // Per-karat options that actually have a priced row in the cache.
   // Legacy fallback: pre-migration products that haven't been re-priced yet
@@ -294,13 +324,27 @@ export default function RetailerProductDetail() {
                       <span>Gold Metal Value ({selectedRow.weight?.toFixed(3) || '0.000'}g)</span>
                       <span className="font-medium">₹{(selectedRow.goldCost || 0).toLocaleString('en-IN')}</span>
                     </div>
-                    {product.diamond_weight ? (
-                      <div className="flex justify-between">
-                        <span>Diamond Value ({product.diamond_weight} ct)</span>
-                        <span className="font-medium">₹{(product.diamond_cost || 0).toLocaleString('en-IN')}</span>
+
+                    <div className="flex justify-between font-semibold text-stone-700 pt-1 border-t border-stone-100 mt-1">
+                      <span>Diamond Value ({totalDiamondWeight.toFixed(3)} ct)</span>
+                      <span className="font-semibold">₹{totalDiamondValue.toLocaleString('en-IN')}</span>
+                    </div>
+                    {diamondRows.map((d, idx) => (
+                      <div key={idx} className="flex justify-between text-[11px] text-stone-500 pl-3">
+                        <span className="capitalize">
+                          ↳ {d.shape} {d.type === 'natural' ? 'Nat' : 'LGD'} {d.quality}-{d.color} ({d.weight.toFixed(3)} ct @ ₹{Math.round(d.cost * 1.28).toLocaleString('en-IN')}/ct)
+                        </span>
+                        <span>₹{Math.round(d.weight * d.cost * 1.28).toLocaleString('en-IN')}</span>
+                      </div>
+                    ))}
+                    {(!diamondRows || diamondRows.length === 0) && product.diamond_weight ? (
+                      <div className="flex justify-between text-[11px] text-stone-500 pl-3">
+                        <span>↳ Default Diamond ({product.diamond_weight} ct)</span>
+                        <span>₹{Math.round((product.diamond_cost || 0) * 1.28).toLocaleString('en-IN')}</span>
                       </div>
                     ) : null}
-                    <div className="flex justify-between">
+
+                    <div className="flex justify-between pt-1 border-t border-stone-100 mt-1">
                       <span>Making & Cert Charges</span>
                       <span className="font-medium">₹{((selectedRow.labourCost || 0) + (product.making_charges || 0) + (product.igi_cert_cost || 0)).toLocaleString('en-IN')}</span>
                     </div>

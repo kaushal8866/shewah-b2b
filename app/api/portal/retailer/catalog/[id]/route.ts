@@ -9,7 +9,8 @@ const DETAIL_COLS = `
   gold_karat, gold_weight_g, metal_weights,
   gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k,
   karat_pricing,
-  trade_price, photo_urls, delivery_days, models_available, tags, attributes
+  trade_price, photo_urls, delivery_days, models_available, tags, attributes,
+  making_charges, igi_cert_cost, diamond_cost, diamond_specs
 `
 
 export async function GET(_: Request, ctx: { params: { id: string } }) {
@@ -43,17 +44,23 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
     }
   }
 
-  // Strip internal cost components from karat_pricing before sending to the
-  // retailer. Only karat / weight / trade / mrp are part of the public contract.
+  // Include the cost components needed for the transparent Orra-style price breakup
   type FullPricingRow = { karat: number; weight: number; trade: number; mrp: number; goldCost?: number; labourCost?: number; cogs?: number }
-  type PublicPricingRow = { karat: number; weight: number; trade: number; mrp: number }
+  type PublicPricingRow = { karat: number; weight: number; trade: number; mrp: number; goldCost?: number; labourCost?: number }
   const raw = (data as { karat_pricing?: Record<string, FullPricingRow> | null }).karat_pricing
   let publicPricing: Record<string, PublicPricingRow> | null = null
   if (raw && typeof raw === 'object') {
     publicPricing = {}
     for (const [k, row] of Object.entries(raw)) {
       if (!row) continue
-      publicPricing[k] = { karat: row.karat, weight: row.weight, trade: row.trade, mrp: row.mrp }
+      publicPricing[k] = { 
+        karat: row.karat, 
+        weight: row.weight, 
+        trade: row.trade, 
+        mrp: row.mrp,
+        goldCost: row.goldCost,
+        labourCost: row.labourCost
+      }
     }
   }
   return NextResponse.json({
