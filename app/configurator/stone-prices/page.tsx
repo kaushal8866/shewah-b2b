@@ -217,38 +217,11 @@ export default function ConfiguratorStonePricesPage() {
 
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
 
-  const sizesWithSieve = useMemo(() => {
-    const sorted = [...sizes].sort((a, b) => a.sort_order - b.sort_order)
-    const result: Record<string, { size: Size; sieve: string; rowSpan: number }[]> = {}
-    
-    for (const shape of shapes) {
-      const shapeSizes = sorted.filter(z => z.shape_id === shape.id)
-      const list: { size: Size; sieve: string; rowSpan: number }[] = []
-      let currentSieve = ''
-      let firstIndexInGroup = -1
-      
-      for (let i = 0; i < shapeSizes.length; i++) {
-        const sz = shapeSizes[i]
-        const sieve = getSieveSize(sz.label)
-        
-        if (sieve !== currentSieve) {
-          if (firstIndexInGroup !== -1) {
-            list[firstIndexInGroup].rowSpan = i - firstIndexInGroup
-          }
-          currentSieve = sieve
-          firstIndexInGroup = i
-          list.push({ size: sz, sieve, rowSpan: 1 })
-        } else {
-          list.push({ size: sz, sieve, rowSpan: 0 })
-        }
-      }
-      if (firstIndexInGroup !== -1) {
-        list[firstIndexInGroup].rowSpan = shapeSizes.length - firstIndexInGroup
-      }
-      result[shape.id] = list
-    }
-    return result
-  }, [sizes, shapes])
+  const [filterSize, setFilterSize] = useState('')
+  const [filterMinWeight, setFilterMinWeight] = useState('')
+  const [filterMaxWeight, setFilterMaxWeight] = useState('')
+  const [sortBy, setSortBy] = useState<'size' | 'weight'>('size')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   if (status === 'loading' || !session || !isMaster) {
     return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading…</div>
@@ -356,6 +329,57 @@ export default function ConfiguratorStonePricesPage() {
         </div>
       </div>
 
+      {/* Sheet Filters & Sorting */}
+      <div className="bg-white border border-stone-200 rounded-xl p-4 flex flex-wrap items-center gap-4 text-sm shadow-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-stone-700">Filter Size:</span>
+          <input
+            type="text"
+            placeholder="Search size (e.g. 1.5mm)..."
+            value={filterSize}
+            onChange={e => setFilterSize(e.target.value)}
+            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-[#1E3A5F] focus:outline-none w-48 bg-stone-50/50 hover:bg-stone-50 focus:bg-white transition-colors"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-stone-700">Carat Weight:</span>
+          <input
+            type="number"
+            step="0.001"
+            placeholder="Min ct"
+            value={filterMinWeight}
+            onChange={e => setFilterMinWeight(e.target.value)}
+            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-[#1E3A5F] focus:outline-none w-24 bg-stone-50/50 hover:bg-stone-50 focus:bg-white transition-colors"
+          />
+          <span className="text-stone-400">—</span>
+          <input
+            type="number"
+            step="0.001"
+            placeholder="Max ct"
+            value={filterMaxWeight}
+            onChange={e => setFilterMaxWeight(e.target.value)}
+            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-[#1E3A5F] focus:outline-none w-24 bg-stone-50/50 hover:bg-stone-50 focus:bg-white transition-colors"
+          />
+        </div>
+        <div className="flex items-center gap-2 md:ml-auto">
+          <span className="font-bold text-stone-700">Sort By:</span>
+          <select
+            value={`${sortBy}-${sortOrder}`}
+            onChange={e => {
+              const [field, order] = e.target.value.split('-')
+              setSortBy(field as 'size' | 'weight')
+              setSortOrder(order as 'asc' | 'desc')
+            }}
+            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-[#1E3A5F] focus:outline-none bg-white font-medium text-stone-850"
+          >
+            <option value="size-asc">Size: Ascending</option>
+            <option value="size-desc">Size: Descending</option>
+            <option value="weight-asc">Weight: Ascending</option>
+            <option value="weight-desc">Weight: Descending</option>
+          </select>
+        </div>
+      </div>
+
       {/* Per-shape matrices */}
       {loading && <p className="text-sm text-stone-400">Loading matrix…</p>}
       {!loading && qualities.length === 0 && (
@@ -369,20 +393,57 @@ export default function ConfiguratorStonePricesPage() {
         </div>
       )}
       {!loading && qualities.length > 0 && colors.length > 0 && shapes.map(shape => {
-        const sizesForShape = sizes.filter(z => z.shape_id === shape.id)
-        if (sizesForShape.length === 0) return null
+        let filteredSizes = sizes.filter(z => z.shape_id === shape.id)
+        
+        // 1. Text Filter (Size mm label)
+        if (filterSize.trim()) {
+          const q = filterSize.toLowerCase().trim()
+          filteredSizes = filteredSizes.filter(z => z.label.toLowerCase().includes(q))
+        }
+        
+        // 2. Carat range filter
+        if (filterMinWeight) {
+          const min = parseFloat(filterMinWeight)
+          if (!isNaN(min)) {
+            filteredSizes = filteredSizes.filter(z => z.approx_carats != null && z.approx_carats >= min)
+          }
+        }
+        if (filterMaxWeight) {
+          const max = parseFloat(filterMaxWeight)
+          if (!isNaN(max)) {
+            filteredSizes = filteredSizes.filter(z => z.approx_carats != null && z.approx_carats <= max)
+          }
+        }
+        
+        // 3. Sorting
+        filteredSizes.sort((a, b) => {
+          if (sortBy === 'weight') {
+            const wa = a.approx_carats ?? 0
+            const wb = b.approx_carats ?? 0
+            return sortOrder === 'asc' ? wa - wb : wb - wa
+          } else {
+            const na = parseFloat(a.label) || 0
+            const nb = parseFloat(b.label) || 0
+            if (na !== nb) {
+              return sortOrder === 'asc' ? na - nb : nb - na
+            }
+            return sortOrder === 'asc' ? a.sort_order - b.sort_order : b.sort_order - a.sort_order
+          }
+        })
+
+        if (filteredSizes.length === 0) return null
+        
         return (
           <div key={shape.id} className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm">
             <div className="px-4 py-3 bg-stone-50 border-b border-stone-200 flex items-center gap-2">
               <Diamond className="w-4 h-4 text-[#1E3A5F]" />
               <h2 className="font-semibold text-stone-900">{shape.name}</h2>
-              <span className="text-xs text-stone-400">{sizesForShape.length} size{sizesForShape.length === 1 ? '' : 's'}</span>
+              <span className="text-xs text-stone-400">{filteredSizes.length} size{filteredSizes.length === 1 ? '' : 's'}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse border border-stone-300 text-sm">
                 <thead>
                   <tr className="bg-stone-100 border-b border-stone-300 text-xs text-stone-700 font-semibold uppercase tracking-wider">
-                    <th className="border border-stone-300 text-center px-3 py-2 bg-stone-100/80 sticky left-0 z-20 min-w-[7.5rem]">Sieve Size</th>
                     <th className="border border-stone-300 text-center px-3 py-2 bg-stone-100/80">Size (mm)</th>
                     <th className="border border-stone-300 text-right px-3 py-2 bg-stone-100/80">Weight per pc CT</th>
                     {colHeaders.map(h => (
@@ -393,17 +454,9 @@ export default function ConfiguratorStonePricesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(sizesWithSieve[shape.id] || []).map(({ size, sieve, rowSpan }) => {
+                  {filteredSizes.map(size => {
                     return (
                       <tr key={size.id} className="hover:bg-stone-50/50 transition-colors">
-                        {rowSpan > 0 && (
-                          <td
-                            rowSpan={rowSpan}
-                            className="border border-stone-300 px-3 py-2 text-center font-bold text-stone-850 bg-stone-50 text-xs align-middle sticky left-0 z-10"
-                          >
-                            {sieve}
-                          </td>
-                        )}
                         <td className="border border-stone-300 px-3 py-2 text-center text-stone-700 font-medium whitespace-nowrap bg-white">
                           {size.label}
                         </td>
