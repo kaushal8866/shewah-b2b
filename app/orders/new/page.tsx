@@ -208,28 +208,7 @@ function NewOrderForm() {
     setForm(prev => prev.stone_cost === String(totalDiamondCost) ? prev : { ...prev, stone_cost: String(totalDiamondCost) })
   }, [totalDiamondCost, stoneTouched])
 
-  // Automatically adjust estimated weight when product, karat, or color changes
-  useEffect(() => {
-    if (!form.product_id) return
-    const product = products.find(p => p.id === form.product_id)
-    if (!product || !product.metal_weights || Object.keys(product.metal_weights).length === 0) return
 
-    const isSil = product.metal_type === 'silver'
-    if (isSil) {
-      const k = product.ref_karat || 'silver_925'
-      const w = getMetalWeight(product.metal_weights, k, 'default')
-      if (w > 0) {
-        setForm(prev => ({ ...prev, gold_weight_estimated: String(w) }))
-      }
-    } else {
-      const currentK = form.gold_karat === 'silver' ? '22K' : `${form.gold_karat}K`
-      const currentC = form.gold_color || 'yellow'
-      const w = getMetalWeight(product.metal_weights, currentK, currentC)
-      if (w > 0) {
-        setForm(prev => ({ ...prev, gold_weight_estimated: String(w) }))
-      }
-    }
-  }, [form.product_id, form.gold_karat, form.gold_color, products])
 
   function addDiamondRow() { setDiamonds(prev => [...prev, newDiamondRow()]) }
   function removeDiamondRow(id: string) {
@@ -422,26 +401,47 @@ function NewOrderForm() {
     })
   }, [weightCalcMethod, cadVolumes, diamonds, form.gold_karat, metalTone])
 
-  // Size scaling logic under manual mode
+  // Combined karat/color lookup and ring size scaling logic under manual mode
   useEffect(() => {
     if (weightCalcMethod !== 'manual') return
     if (form.type !== 'catalog' || !form.product_id) return
 
     const product = products.find(p => p.id === form.product_id)
-    if (!product || !product.gold_weight_g) return
+    if (!product) return
 
-    const baseWeight = product.gold_weight_g
-    const category = product.category || ''
-
-    if (!form.ring_size) {
-      setForm(prev => prev.gold_weight_estimated === String(baseWeight) ? prev : { ...prev, gold_weight_estimated: String(baseWeight) })
-      return
+    // 1. Resolve karat and color base weight from metal_weights map
+    let baseWeight = Number(product.gold_weight_g) || 0
+    const isSil = product.metal_type === 'silver'
+    if (product.metal_weights && Object.keys(product.metal_weights).length > 0) {
+      if (isSil) {
+        const k = product.ref_karat || 'silver_925'
+        const w = getMetalWeight(product.metal_weights, k, 'default')
+        if (w > 0) baseWeight = w
+      } else {
+        const currentK = form.gold_karat === 'silver' ? '22K' : `${form.gold_karat}K`
+        const currentC = form.gold_color || 'yellow'
+        const w = getMetalWeight(product.metal_weights, currentK, currentC)
+        if (w > 0) baseWeight = w
+      }
     }
 
-    const scaled = scaleWeightBySize(baseWeight, '', form.ring_size, category)
-    const scaledStr = scaled > 0 ? scaled.toFixed(4) : String(baseWeight)
-    setForm(prev => prev.gold_weight_estimated === scaledStr ? prev : { ...prev, gold_weight_estimated: scaledStr })
-  }, [form.ring_size, form.product_id, weightCalcMethod, form.type, products])
+    // 2. Scale by ring size if set
+    let finalWeight = baseWeight
+    if (form.ring_size) {
+      finalWeight = scaleWeightBySize(baseWeight, '', form.ring_size, product.category || '')
+    }
+
+    const weightStr = finalWeight > 0 ? finalWeight.toFixed(4) : ''
+    setForm(prev => prev.gold_weight_estimated === weightStr ? prev : { ...prev, gold_weight_estimated: weightStr })
+  }, [
+    form.product_id,
+    form.gold_karat,
+    form.gold_color,
+    form.ring_size,
+    weightCalcMethod,
+    form.type,
+    products
+  ])
 
   // Estimated COGS preview
   const isSilverOrder = String(form.gold_karat).toLowerCase() === 'silver'

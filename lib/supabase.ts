@@ -665,6 +665,7 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
       makingCharges: Number(p.making_charges) || 0,
       igiCost: Number(p.igi_cert_cost) || 0,
       metalWeights: (p as any).metal_weights || undefined,
+      color: (p as any).ref_color || undefined
     })
 
     // Stash full breakdown as jsonb for the retailer portal to read directly.

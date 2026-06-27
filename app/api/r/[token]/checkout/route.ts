@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getStorefrontCustomer } from '@/lib/storefrontAuth'
 import { safeDbError } from '@/lib/sanitizeDbError'
+import { computeKaratPricing } from '@/lib/karat'
 
 export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
   const token = params.token
@@ -103,6 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     const { data: floorPriceRow } = await supabaseAdmin
       .from('reseller_product_prices')
       .select('floor_price_paise')
+      .eq('reseller_id', resellerId)
       .eq('product_id', productId)
       .maybeSingle()
 
@@ -111,10 +113,54 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     }
 
     const baseFloorPaise = Number(floorPriceRow.floor_price_paise)
-    const qty = Number(quantity) || 1
 
-    // Lock dynamic floor price
-    const totalCostPaise = baseFloorPaise * qty
+    // Fetch product specs
+    const { data: product } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .maybeSingle()
+
+    if (!product) {
+      return NextResponse.json({ error: `Product ID ${productId} not found` }, { status: 404 })
+    }
+
+    // Calculate live raw COGS for all karats
+    const pricingList = computeKaratPricing({
+      netGoldWeight: product.gold_weight_g || 0,
+      rate24k: goldRate,
+      retailLabour,
+      diamondCost: product.diamond_cost || 0,
+      makingCharges: product.making_charges || 0,
+      igiCost: product.igi_cert_cost || 0,
+      metalWeights: product.metal_weights || undefined,
+      color: product.ref_color || undefined
+    })
+
+    const orderedKarat = parseInt(String(custom_attributes?.karat || product.ref_karat || '18').replace(/[^\d]/g, '')) || 18
+    const targetPricing = pricingList.find(p => p.karat === orderedKarat)
+    
+    let finalFloorCost = targetPricing ? targetPricing.cogs : (baseFloorPaise / 100)
+
+    // Adjust by ratio based on custom floor price
+    if (baseFloorPaise > 0) {
+      const savedFloorRupees = baseFloorPaise / 100
+      let baseCatalogCogs = 0
+      if (product.metal_type === 'silver') {
+        baseCatalogCogs = Number(product.trade_price) / 1.28
+      } else {
+        const basePricing = pricingList.find(p => p.karat === 22)
+        baseCatalogCogs = basePricing ? basePricing.cogs : (Number(product.trade_price) / 1.28)
+      }
+
+      if (baseCatalogCogs > 0 && targetPricing) {
+        const ratio = savedFloorRupees / baseCatalogCogs
+        finalFloorCost = targetPricing.cogs * ratio
+      }
+    }
+
+    const qty = Number(quantity) || 1
+    const totalCostPaise = Math.round(finalFloorCost * 100) * qty
 
     // Calculate customer marked-up price before discount
     const markupMultiplier = 1 + markupPercent / 100

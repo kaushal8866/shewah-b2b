@@ -6,6 +6,7 @@ import { supabase, Product, computeOrderCogs, recomputeCatalogPrices } from '@/l
 import { Plus, Search, Package, Edit2, Eye, EyeOff, Library, Heart, Trash2, Copy, Check, Globe, Lock, ChevronRight, Terminal, RefreshCw, Download, Settings } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
+import { getMetalWeight } from '@/lib/karat'
 
 type Collection = {
   id: string
@@ -120,8 +121,11 @@ function ProductsTab() {
 
   function estimateForProduct(p: Product) {
     if (!goldRate || !p.gold_weight_g || !p.gold_karat || !p.trade_price) return null
+    const kKey = p.ref_karat || (p.gold_karat ? `${p.gold_karat}K` : '22K')
+    const cKey = p.ref_color || 'yellow'
+    const actualWeight = getMetalWeight((p as any).metal_weights || {}, kKey, cKey) || p.gold_weight_g || 0
     const { total_cogs, margin } = computeOrderCogs({
-      gold_weight_actual: p.gold_weight_g,
+      gold_weight_actual: actualWeight,
       gold_rate_at_order: goldRate,
       gold_karat: p.gold_karat,
       making_charges: p.making_charges || 0,
@@ -451,7 +455,7 @@ function CollectionsTab() {
   async function loadMargins() {
     try {
       const [{ data: links, error: linksErr }, { data: g, error: gErr }] = await Promise.all([
-        supabase.from('design_collection_products').select('collection_id, products(gold_karat, gold_weight_g, making_charges, diamond_cost, trade_price)'),
+        supabase.from('design_collection_products').select('collection_id, products(gold_karat, gold_weight_g, making_charges, diamond_cost, trade_price, metal_weights, ref_karat, ref_color)'),
         supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
       ])
       if (linksErr) { console.warn('loadMargins links error', linksErr.message); return }
@@ -459,14 +463,17 @@ function CollectionsTab() {
       const goldRate = g?.[0]?.rate_24k as number | undefined
       setHasGoldRate(!!goldRate)
       if (!goldRate || !links) return
-      type LinkProduct = { gold_karat?: number; gold_weight_g?: number; making_charges?: number; diamond_cost?: number; trade_price?: number }
+      type LinkProduct = { gold_karat?: number; gold_weight_g?: number; making_charges?: number; diamond_cost?: number; trade_price?: number; metal_weights?: any; ref_karat?: string; ref_color?: string }
       type LinkRow = { collection_id: string; products: LinkProduct | LinkProduct[] | null }
       const buckets = new Map<string, number[]>()
       ;(links as unknown as LinkRow[]).forEach(l => {
         const p = Array.isArray(l.products) ? l.products[0] : l.products
         if (!p || !p.gold_weight_g || !p.gold_karat || !p.trade_price) return
+        const kKey = p.ref_karat || (p.gold_karat ? `${p.gold_karat}K` : '22K')
+        const cKey = p.ref_color || 'yellow'
+        const actualWeight = getMetalWeight(p.metal_weights || {}, kKey, cKey) || p.gold_weight_g || 0
         const { margin } = computeOrderCogs({
-          gold_weight_actual: p.gold_weight_g,
+          gold_weight_actual: actualWeight,
           gold_rate_at_order: goldRate,
           gold_karat: p.gold_karat,
           making_charges: p.making_charges || 0,
