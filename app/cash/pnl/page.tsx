@@ -101,6 +101,7 @@ export default function PnLStatementPage() {
       [],
       ['REVENUE', 'Amount (INR)'],
       ['Formal Order Completed Revenue', report.formal_order_revenue],
+      ['Reseller Storefront Revenue', report.reseller_order_revenue],
       ['Cash Sales Income', report.cash_sales_income],
       ['Other Income', report.other_income],
       ['TOTAL GROSS REVENUE', report.gross_revenue],
@@ -320,6 +321,10 @@ export default function PnLStatementPage() {
                     <div className="flex justify-between text-sm text-stone-600">
                       <span>Formal Completed Revenue</span>
                       <span className="font-medium text-stone-850">{formatCurrency(report.formal_order_revenue)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-stone-600">
+                      <span>Reseller Storefront Revenue</span>
+                      <span className="font-medium text-stone-850">{formatCurrency(report.reseller_order_revenue)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-stone-600">
                       <span>Cash Book Sales Income</span>

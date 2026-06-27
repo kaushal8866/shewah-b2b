@@ -5,14 +5,6 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 // POST — fill (or overwrite) every (shape, size) cell for a given
 // (color, quality, type) combo using `approx_carats × rate_per_carat`.
-// Master only.
-//   Body: {
-//     color_bucket_id, quality_bucket_id,
-//     type?: 'lgd'|'natural',
-//     rate_per_carat,
-//     shape_id?: string,     // optional — restrict to one shape; default = all
-//     overwrite?: boolean,   // optional — replace existing prices too
-//   }
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -32,13 +24,10 @@ export async function POST(req: Request) {
   if (!Number.isFinite(rate) || rate <= 0) {
     return NextResponse.json({ error: 'rate_per_carat must be a positive number' }, { status: 400 })
   }
-  // Soft cap so a fat-fingered ₹/ct doesn't seed an absurd price book.
   if (rate > 10_000_000) {
     return NextResponse.json({ error: 'rate_per_carat looks too high (max 1,00,00,000 ₹/ct)' }, { status: 400 })
   }
 
-  // 1. Load every active size with a known approx_carats — that's all we can
-  //    derive a price for. Sizes without approx_carats are skipped and reported.
   let sizesQuery = supabaseAdmin
     .from('diamond_sizes')
     .select('id, shape_id, label, approx_carats, active')
@@ -54,16 +43,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ inserted: 0, updated: 0, skipped_existing: 0, skipped_no_carats })
   }
 
-  // 2. Find which of those (shape, size) cells already have a price for this
-  //    (quality, color, type) so we know whether to skip or overwrite them.
   const { data: existing, error: existErr } = await supabaseAdmin
-    .from('diamond_price_matrix')
+    .from('cfg_stone_prices')
     .select('id, shape_id, size_id')
     .eq('quality_bucket_id', quality_bucket_id)
     .eq('color_bucket_id', color_bucket_id)
     .eq('type', type)
   if (existErr && (existErr as any).code === '42P01') {
-    return NextResponse.json({ error: 'Diamond price matrix migration is pending — run scripts/migrate_task82_diamond_price_matrix.sql in Supabase.', migration_pending: true }, { status: 503 })
+    return NextResponse.json({ error: 'Stone prices migration is pending — run scripts/migrate_merge_stone_prices.sql in Supabase.', migration_pending: true }, { status: 503 })
   }
   if (existErr) return NextResponse.json({ error: existErr.message }, { status: 500 })
 
@@ -75,7 +62,6 @@ export async function POST(req: Request) {
 
   const priceFor = (carats: number) => Math.max(1, Math.round(carats * rate))
 
-  // Split into rows to insert vs update (only when overwrite is on).
   const toInsert: any[] = []
   const toUpdate: { id: string; price: number }[] = []
   for (const s of usable) {
@@ -83,7 +69,6 @@ export async function POST(req: Request) {
     const existsId = existingByKey.get(key)
     if (existsId) {
       if (overwrite) toUpdate.push({ id: existsId, price: priceFor(Number(s.approx_carats)) })
-      // else: skip — leave hand-tuned price alone
     } else {
       toInsert.push({
         shape_id: s.shape_id,
@@ -106,16 +91,15 @@ export async function POST(req: Request) {
 
   if (toInsert.length > 0) {
     const { error: insErr } = await supabaseAdmin
-      .from('diamond_price_matrix')
+      .from('cfg_stone_prices')
       .insert(toInsert)
     if (insErr) return NextResponse.json({ error: insErr.message }, { status: 400 })
   }
 
-  // Updates are one row at a time — small batches in practice (≤ a few hundred).
   let updated = 0
   for (const u of toUpdate) {
     const { error: updErr } = await supabaseAdmin
-      .from('diamond_price_matrix')
+      .from('cfg_stone_prices')
       .update({ price_per_piece: u.price, updated_by, updated_at })
       .eq('id', u.id)
     if (updErr) return NextResponse.json({ error: updErr.message, inserted: toInsert.length, updated }, { status: 400 })

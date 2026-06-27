@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   let q = supabaseAdmin
     .from('purchase_lots')
-    .select('*', { count: 'exact' })
+    .select('*, vendors(name)', { count: 'exact' })
 
   if (material_type) q = q.eq('material_type', material_type)
   if (status) q = q.eq('status', status)
@@ -89,11 +89,26 @@ export async function POST(req: NextRequest) {
     invoice_reference,
     notes,
     linked_stock_movement_id,
-    linked_cash_txn_id
+    linked_cash_txn_id,
+    vendor_id
   } = body
 
-  if (!material_type || total_qty == null || unit_cost == null) {
-    return NextResponse.json({ error: 'Missing required fields: material_type, total_qty, unit_cost' }, { status: 400 })
+  if (!material_type || total_qty == null || unit_cost == null || !vendor_id) {
+    return NextResponse.json({ error: 'Missing required fields: material_type, total_qty, unit_cost, vendor_id' }, { status: 400 })
+  }
+
+  // Confirm vendor exists and is not inactive
+  const { data: vendor, error: vendorError } = await supabaseAdmin
+    .from('vendors')
+    .select('id, status')
+    .eq('id', vendor_id)
+    .maybeSingle()
+
+  if (vendorError || !vendor) {
+    return NextResponse.json({ error: 'Vendor not found' }, { status: 400 })
+  }
+  if (vendor.status === 'inactive') {
+    return NextResponse.json({ error: 'Cannot create purchase lot for an inactive vendor' }, { status: 400 })
   }
 
   // Derive unit type
@@ -127,6 +142,60 @@ export async function POST(req: NextRequest) {
 
   const created_by = (session.user as any).id
 
+  // Find shape_id and size_id if applicable
+  let dbShapeId = null
+  let dbSizeId = null
+  if (['diamond_lgd', 'diamond_natural'].includes(material_type) && diamond_shape) {
+    const { data: shapeObj } = await supabaseAdmin
+      .from('diamond_shapes')
+      .select('id')
+      .ilike('name', diamond_shape)
+      .maybeSingle()
+    if (shapeObj) {
+      dbShapeId = shapeObj.id
+      if (diamond_size_carat) {
+        const { data: sizeObj } = await supabaseAdmin
+          .from('diamond_sizes')
+          .select('id')
+          .eq('shape_id', dbShapeId)
+          .eq('label', diamond_size_band)
+          .maybeSingle()
+        if (sizeObj) {
+          dbSizeId = sizeObj.id
+        }
+      }
+    }
+  }
+
+  // Create dual-write stock movement if not provided
+  let linked_sm_id = linked_stock_movement_id || null
+  if (!linked_sm_id) {
+    const smUnit = unit_type === 'piece' ? 'pieces' : unit_type === 'gram' ? 'grams' : 'carats'
+    const { data: sm, error: smErr } = await supabaseAdmin
+      .from('stock_movements')
+      .insert({
+        material_type,
+        movement_type: 'purchase',
+        quantity: final_qty,
+        vendor_id,
+        manufacturing_partner_id: null,
+        notes: notes || null,
+        created_by,
+        unit: smUnit,
+        item_label: invoice_reference || supplier_name || null,
+        pieces: diamond_piece_count ? parseInt(diamond_piece_count) : null,
+        diamond_shape_id: dbShapeId,
+        diamond_size_id: dbSizeId,
+      })
+      .select('id')
+      .single()
+
+    if (smErr || !sm) {
+      return NextResponse.json({ error: smErr?.message || 'Failed to create matching stock movement' }, { status: 500 })
+    }
+    linked_sm_id = sm.id
+  }
+
   // Create lot
   const { data: lot, error: lotError } = await supabaseAdmin
     .from('purchase_lots')
@@ -153,8 +222,9 @@ export async function POST(req: NextRequest) {
       supplier_name,
       invoice_reference,
       notes,
-      linked_stock_movement_id: linked_stock_movement_id || null,
+      linked_stock_movement_id: linked_sm_id,
       linked_cash_txn_id: linked_cash_txn_id || null,
+      vendor_id,
       status: 'active',
       created_by
     })

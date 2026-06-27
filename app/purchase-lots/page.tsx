@@ -25,6 +25,7 @@ export default function PurchaseLotsPage() {
 
   // Recent Cash Transactions for linking
   const [cashTxns, setCashTxns] = useState<any[]>([])
+  const [vendors, setVendors] = useState<any[]>([])
 
   // --- Add Lot Form State ---
   const [form, setForm] = useState({
@@ -47,7 +48,8 @@ export default function PurchaseLotsPage() {
     supplier_name: '',
     invoice_reference: '',
     notes: '',
-    linked_cash_txn_id: ''
+    linked_cash_txn_id: '',
+    vendor_id: ''
   })
 
   // --- Replenishment Offset Modal State ---
@@ -83,7 +85,7 @@ export default function PurchaseLotsPage() {
     fetchRate()
   }, [])
 
-  // Fetch recent cash transactions to populate linking dropdown
+  // Fetch recent cash transactions and active vendors to populate linking dropdowns
   useEffect(() => {
     async function fetchCash() {
       const { data } = await supabase
@@ -94,7 +96,16 @@ export default function PurchaseLotsPage() {
         .limit(30)
       if (data) setCashTxns(data)
     }
+    async function fetchVendors() {
+      const { data } = await supabase
+        .from('vendors')
+        .select('id, name, category, status')
+        .eq('status', 'active')
+        .order('name')
+      if (data) setVendors(data || [])
+    }
     fetchCash()
+    fetchVendors()
   }, [activeTab])
 
   // Calculate Unit Cost / Total Paid automatically in Form
@@ -173,8 +184,8 @@ export default function PurchaseLotsPage() {
     setErrorMsg('')
     setSuccessMsg('')
 
-    if (!form.total_qty || !form.unit_cost) {
-      setErrorMsg('Please input quantity and unit cost.')
+    if (!form.total_qty || !form.unit_cost || !form.vendor_id) {
+      setErrorMsg('Please input quantity, unit cost, and select a vendor.')
       setLoading(false)
       return
     }
@@ -218,14 +229,13 @@ export default function PurchaseLotsPage() {
         body: JSON.stringify({ confirmed: true })
       })
       const payload = await res.json()
-      if (!res.ok) throw new Error(payload.error || 'Failed to complete offset')
+      if (!res.ok) throw new Error(payload.error || 'Failed to execute offsets')
       
-      setSuccessMsg(`Lot created and replenishment offset executed! Realized Variance: ${formatCurrency(payload.total_delta)}`)
+      setSuccessMsg(`Lot created and ${payload.offsets_executed} offsets executed successfully! Total delta: ${formatCurrency(payload.total_delta)}`)
       setShowOffsetModal(false)
       resetForm()
     } catch (err: any) {
-      setErrorMsg(`Lot saved, but offset execution failed: ${err.message}`)
-      setShowOffsetModal(false)
+      setErrorMsg(err.message)
     } finally {
       setConfirmingOffset(false)
     }
@@ -240,7 +250,8 @@ export default function PurchaseLotsPage() {
       notes: '',
       linked_cash_txn_id: '',
       supplier_name: '',
-      invoice_reference: ''
+      invoice_reference: '',
+      vendor_id: ''
     }))
   }
 
@@ -676,7 +687,23 @@ export default function PurchaseLotsPage() {
           {/* COMMON METADATA & SOURCE */}
           <div className="border-t border-stone-100 pt-6 space-y-4">
             <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider">Purchase Source & References</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
+              <div>
+                <label className="block text-xs font-semibold text-stone-500 mb-1">Vendor <span className="text-red-500">*</span></label>
+                <select
+                  value={form.vendor_id}
+                  onChange={e => setForm(f => ({ ...f, vendor_id: e.target.value }))}
+                  required
+                  className="w-full border border-stone-250 rounded-lg px-3 py-2 text-sm outline-none bg-white font-medium"
+                >
+                  <option value="">-- Select Vendor --</option>
+                  {vendors.map(v => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} ({Array.isArray(v.category) ? v.category.join(', ') : (v.category || 'general')})
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-xs font-semibold text-stone-500 mb-1">Supplier Name</label>
                 <input
@@ -823,7 +850,7 @@ export default function PurchaseLotsPage() {
                               <td className="p-4 font-bold text-[#1E3A5F]">{l.lot_number}</td>
                               <td className="p-4 font-semibold"><span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md text-[10px]">{l.gold_karat}</span></td>
                               <td className="p-4">{formatDate(l.purchase_date)}</td>
-                              <td className="p-4 font-medium">{l.supplier_name || 'N/A'}</td>
+                              <td className="p-4 font-medium">{l.vendors?.name || l.supplier_name || 'N/A'}</td>
                               <td className="p-4 text-right font-semibold">
                                 {Number(l.remaining_qty).toFixed(4)}g <span className="text-stone-400">/ {grossQty.toFixed(2)}g</span>
                               </td>
@@ -866,7 +893,7 @@ export default function PurchaseLotsPage() {
                             <td className="p-4 font-bold text-stone-850">{l.lot_number}</td>
                             <td className="p-4 font-semibold"><span className="bg-stone-200 text-stone-800 px-2 py-0.5 rounded-md text-[10px]">{l.material_type === 'silver_925' ? '925 Sterling' : '999 Fine'}</span></td>
                             <td className="p-4">{formatDate(l.purchase_date)}</td>
-                            <td className="p-4 font-medium">{l.supplier_name || 'N/A'}</td>
+                            <td className="p-4 font-medium">{l.vendors?.name || l.supplier_name || 'N/A'}</td>
                             <td className="p-4 text-right font-semibold">{Number(l.remaining_qty).toFixed(4)}g</td>
                             <td className="p-4 text-right font-medium">{formatCurrency(l.unit_cost)}</td>
                             <td className="p-4 text-right font-bold">{formatCurrency(Number(l.remaining_qty) * Number(l.unit_cost))}</td>

@@ -10,6 +10,7 @@ export interface PnLStatement {
 
   // ─── REVENUE ───────────────────────────────────────
   formal_order_revenue: number        // sum(orders.total_amount) for completed/dispatched/delivered
+  reseller_order_revenue: number      // sum(reseller_orders.reseller_cost_paise / 100) for confirmed/dispatched/delivered
   cash_sales_income: number           // cash_transactions income where is_cogs = false and group = 'sales'
   advance_income: number              // advances received (tracked separately — not real revenue yet)
   other_income: number                // commissions, recoveries, etc.
@@ -70,6 +71,22 @@ export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
 
   const cogs_variance = lot_based_order_cogs - formal_order_cogs
 
+  // Fetch reseller order revenue (sum of reseller_cost_paise / 100 where status is confirmed/dispatched/delivered)
+  const { data: resellerOrderData } = await supabaseAdmin
+    .from('reseller_orders')
+    .select('reseller_cost_paise')
+    .gte('created_at', period.from + 'T00:00:00Z')
+    .lte('created_at', period.to + 'T23:59:59Z')
+    .in('status', [
+      'confirmed', 'dispatched', 'delivered', 'payment_pending', 'brief_received',
+      'cad_in_progress', 'cad_sent', 'design_approved', 'production', 'qc'
+    ])
+    .not('reseller_cost_paise', 'is', null)
+
+  const reseller_order_revenue = resellerOrderData
+    ? resellerOrderData.reduce((acc, row) => acc + (Number(row.reseller_cost_paise ?? 0) / 100), 0)
+    : 0
+
   // 2. Fetch all non-voided cash transactions in period
   const { data: txns } = await supabaseAdmin
     .from('cash_transactions')
@@ -94,7 +111,7 @@ export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
       'order_advance','balance_collection'].includes(t.category) && !t.is_cogs
   )
 
-  const gross_revenue = formal_order_revenue + cash_sales_income + other_income
+  const gross_revenue = formal_order_revenue + reseller_order_revenue + cash_sales_income + other_income
 
   // COGS from cash
   const cogsExpenses = expenses.filter(t => t.is_cogs)
@@ -160,7 +177,7 @@ export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
 
   return {
     period,
-    formal_order_revenue, cash_sales_income, advance_income, other_income, gross_revenue,
+    formal_order_revenue, reseller_order_revenue, cash_sales_income, advance_income, other_income, gross_revenue,
     formal_order_cogs, lot_based_order_cogs, cogs_variance,
     cash_raw_material, cash_manufacturing, cash_certification,
     cash_packaging_logistics, karigar_material_returns, total_cogs,

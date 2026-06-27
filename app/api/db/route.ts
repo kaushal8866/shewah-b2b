@@ -48,6 +48,7 @@ const ALLOWED_TABLES = new Set([
   'replenishment_offsets',
   'product_categories',
   'resellers',
+  'cfg_stone_prices',
   'reseller_invitations',
   'reseller_product_prices',
   'reseller_orders',

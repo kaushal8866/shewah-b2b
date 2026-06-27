@@ -491,7 +491,7 @@ function QuoteBuilderForm() {
       const cBucket = colorBuckets.find(cb => cb.label.toLowerCase() === d.color_id.toLowerCase())
       if (!qBucket || !cBucket) return
 
-      const res = await fetch(`/api/diamonds/pricing-matrix?shape_id=${d.shape_id}&size_id=${d.size_id}&type=${d.type}`)
+      const res = await fetch(`/api/configurator/stone-prices?shape_id=${d.shape_id}&size_id=${d.size_id}&type=${d.type}`)
       if (!res.ok) return
       const { cells } = await res.json()
       if (!cells) return

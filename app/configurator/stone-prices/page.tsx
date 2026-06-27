@@ -27,11 +27,11 @@ type Cell   = {
 const k = (shapeId: string, sizeId: string, qbId: string, cbId: string, type = 'lgd') =>
   `${shapeId}|${sizeId}|${qbId}|${cbId}|${type}`
 
-export default function DiamondPricingPage() {
+export default function ConfiguratorStonePricesPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const isMaster = session?.user?.role === 'master'
-  // Master-only — server APIs already enforce, this is the UX gate.
+
   useEffect(() => {
     if (status === 'loading') return
     if (!session) { router.replace('/login'); return }
@@ -46,9 +46,7 @@ export default function DiamondPricingPage() {
   const [migrationPending, setMigrationPending] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  // savingKey -> 'saving' | 'saved' | 'error' so each cell can show its own status briefly.
   const [savingKey, setSavingKey] = useState<Record<string, 'saving' | 'saved' | 'error'>>({})
-  // Pending edits (string values being typed). Flushed to the API on blur.
   const [edits, setEdits] = useState<Record<string, string>>({})
 
   // Bulk-percent adjuster
@@ -74,7 +72,7 @@ export default function DiamondPricingPage() {
         fetch('/api/diamonds/sizes').then(r => r.json()),
         fetch('/api/diamonds/quality-buckets').then(r => r.json()),
         fetch('/api/diamonds/color-buckets').then(r => r.json()),
-        fetch('/api/diamonds/pricing-matrix').then(r => r.json()),
+        fetch('/api/configurator/stone-prices').then(r => r.json()),
       ])
       setShapes((s.shapes || []).filter((x: Shape) => x.active))
       setSizes((z.sizes || []).filter((x: Size) => x.active))
@@ -108,7 +106,6 @@ export default function DiamondPricingPage() {
     const url = kind === 'quality' ? `/api/diamonds/quality-buckets/${id}` : `/api/diamonds/color-buckets/${id}`
     const r = await fetch(url, { method: 'DELETE' })
     if (!r.ok) { const j = await r.json().catch(() => ({})); setError(j.error || 'Failed to delete'); return }
-    // Reload — cascading delete may have removed cells.
     load()
   }
 
@@ -120,7 +117,7 @@ export default function DiamondPricingPage() {
       return
     }
     setSavingKey(prev => ({ ...prev, [key]: 'saving' }))
-    const r = await fetch('/api/diamonds/pricing-matrix', {
+    const r = await fetch('/api/configurator/stone-prices', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -143,7 +140,6 @@ export default function DiamondPricingPage() {
     })
     setEdits(prev => { const n = { ...prev }; delete n[key]; return n })
     setSavingKey(prev => ({ ...prev, [key]: 'saved' }))
-    // Auto-clear "saved" badge after a moment.
     setTimeout(() => setSavingKey(prev => {
       if (prev[key] !== 'saved') return prev
       const n = { ...prev }; delete n[key]; return n
@@ -159,7 +155,7 @@ export default function DiamondPricingPage() {
       if (!confirm(`Overwrite existing prices for ${scope} in this quality × color combo? Hand-tuned values will be replaced.`)) return
     }
     setFillBusy(true); setFillMsg('')
-    const r = await fetch('/api/diamonds/pricing-matrix/bulk-fill', {
+    const r = await fetch('/api/configurator/stone-prices/bulk-fill', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         quality_bucket_id: fillQuality,
@@ -189,7 +185,7 @@ export default function DiamondPricingPage() {
     if (Math.abs(p) > 50) { setBulkMsg('Use ±50% or less per adjustment.'); return }
     if (!confirm(`Apply ${p > 0 ? '+' : ''}${p}% to every diamond price? This rewrites the whole matrix.`)) return
     setBulkBusy(true); setBulkMsg('')
-    const r = await fetch('/api/diamonds/pricing-matrix/bulk-adjust', {
+    const r = await fetch('/api/configurator/stone-prices/bulk-adjust', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ percent: p, type: 'lgd' }),
     })
@@ -201,7 +197,6 @@ export default function DiamondPricingPage() {
     load()
   }
 
-  // Memo of column headers (quality × color) so we render each shape table the same way.
   const colHeaders = useMemo(
     () => qualities.flatMap(q => colors.map(c => ({ key: `${q.id}|${c.id}`, qb: q, cb: c }))),
     [qualities, colors],
@@ -220,10 +215,10 @@ export default function DiamondPricingPage() {
         <div className="flex-1">
           <h1 className="text-xl lg:text-2xl font-semibold text-stone-900 flex items-center gap-2">
             <Diamond className="w-5 h-5 text-[#1E3A5F]" />
-            Diamond price matrix <span className="text-xs px-2 py-0.5 bg-[#1E3A5F]/10 text-[#1E3A5F] rounded-full font-medium">LGD</span>
+            Configurator Stone Prices <span className="text-xs px-2 py-0.5 bg-[#1E3A5F]/10 text-[#1E3A5F] rounded-full font-medium">LGD</span>
           </h1>
           <p className="text-stone-500 text-sm mt-0.5">
-            One price per piece for each shape × size × quality × color. Edits save automatically. Used everywhere a diamond cost is suggested.
+            Unified price per piece for configurator elements and inventory costs. Edits save automatically.
           </p>
         </div>
         <button
@@ -245,7 +240,7 @@ export default function DiamondPricingPage() {
 
       {migrationPending && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-          <strong>Database migration not applied yet.</strong> Run <code className="px-1 py-0.5 bg-amber-100 rounded">scripts/migrate_task82_diamond_price_matrix.sql</code> in the Supabase SQL Editor, then reload this page.
+          <strong>Database migration not applied yet.</strong> Run <code className="px-1 py-0.5 bg-amber-100 rounded">scripts/migrate_merge_stone_prices.sql</code> in the Supabase SQL Editor, then reload this page.
         </div>
       )}
 

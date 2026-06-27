@@ -4,8 +4,6 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 // GET — list every matrix cell. Optional filters: ?shape_id=&size_id=&type=
-// Authenticated read so the catalog form and the retailer comparison quote
-// can show suggested prices.
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -15,7 +13,7 @@ export async function GET(req: Request) {
   const type    = searchParams.get('type')
 
   let q = supabaseAdmin
-    .from('diamond_price_matrix')
+    .from('cfg_stone_prices')
     .select('id, shape_id, size_id, quality_bucket_id, color_bucket_id, type, price_per_piece, updated_by, updated_at')
   if (shapeId) q = q.eq('shape_id', shapeId)
   if (sizeId)  q = q.eq('size_id', sizeId)
@@ -30,7 +28,6 @@ export async function GET(req: Request) {
 }
 
 // PUT — upsert one cell. Body: {shape_id,size_id,quality_bucket_id,color_bucket_id,type?,price_per_piece}
-// Sending price_per_piece <= 0 deletes the cell instead (clears the price).
 export async function PUT(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -51,11 +48,9 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: 'price_per_piece must be a non-negative number' }, { status: 400 })
   }
 
-  // 0 (or empty) clears the cell so the team can blank rates they no longer
-  // want suggesting.
   if (price === 0) {
     const { error } = await supabaseAdmin
-      .from('diamond_price_matrix')
+      .from('cfg_stone_prices')
       .delete()
       .eq('shape_id', shape_id)
       .eq('size_id', size_id)
@@ -63,7 +58,7 @@ export async function PUT(req: Request) {
       .eq('color_bucket_id', color_bucket_id)
       .eq('type', type)
     if (error && (error as any).code === '42P01') {
-      return NextResponse.json({ error: 'Diamond price matrix migration is pending — run scripts/migrate_task82_diamond_price_matrix.sql in Supabase.', migration_pending: true }, { status: 503 })
+      return NextResponse.json({ error: 'Stone prices migration is pending — run scripts/migrate_merge_stone_prices.sql in Supabase.', migration_pending: true }, { status: 503 })
     }
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     return NextResponse.json({ cleared: true })
@@ -71,7 +66,7 @@ export async function PUT(req: Request) {
 
   const updated_by = session.user?.username || session.user?.id || null
   const { data, error } = await supabaseAdmin
-    .from('diamond_price_matrix')
+    .from('cfg_stone_prices')
     .upsert(
       [{
         shape_id, size_id, quality_bucket_id, color_bucket_id, type,
@@ -84,7 +79,7 @@ export async function PUT(req: Request) {
     .select('*')
     .single()
   if (error && (error as any).code === '42P01') {
-    return NextResponse.json({ error: 'Diamond price matrix migration is pending — run scripts/migrate_task82_diamond_price_matrix.sql in Supabase.', migration_pending: true }, { status: 503 })
+    return NextResponse.json({ error: 'Stone prices migration is pending — run scripts/migrate_merge_stone_prices.sql in Supabase.', migration_pending: true }, { status: 503 })
   }
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ cell: data })

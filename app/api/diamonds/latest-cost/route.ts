@@ -43,7 +43,7 @@ export async function GET(req: Request) {
   }> = []
   try {
     let mq = supabaseAdmin
-      .from('diamond_price_matrix')
+      .from('cfg_stone_prices')
       .select('id, type, price_per_piece, quality_bucket_id, color_bucket_id, quality:diamond_quality_buckets(label,sort_order), color:diamond_color_buckets(label,sort_order)')
       .eq('shape_id', shape_id)
       .eq('size_id', size_id)

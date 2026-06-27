@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS purchase_lots (
   -- SOURCE / AUDIT
   supplier_name         TEXT,
   invoice_reference     TEXT,
+  vendor_id             UUID NOT NULL REFERENCES vendors(id),
   linked_stock_movement_id  UUID REFERENCES stock_movements(id) ON DELETE SET NULL,
   linked_cash_txn_id    UUID REFERENCES cash_transactions(id) ON DELETE SET NULL,
   notes                 TEXT,

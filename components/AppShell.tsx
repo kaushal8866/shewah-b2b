@@ -51,7 +51,7 @@ const navSections = [
       { href: '/gold-rates',      icon: TrendingUp,      label: 'Gold Rates',    module: 'gold_rates'    },
       { href: '/stock',           icon: Boxes,           label: 'Stock',         module: 'vendors'       },
       { href: '/diamonds/catalog', icon: Diamond,        label: 'Diamonds',      module: 'vendors'       },
-      { href: '/diamonds/pricing', icon: Diamond,        label: 'Diamond Pricing', module: 'vendors', masterOnly: true },
+      { href: '/configurator/stone-prices', icon: Diamond,        label: 'Stone Prices', module: 'vendors', masterOnly: true },
       { href: '/vendors',         icon: Store,           label: 'Vendors',       module: 'vendors'       },
       { href: '/purchase-lots',   icon: Layers,          label: 'Purchase Lots', module: 'gold_rates'    },
     ]
