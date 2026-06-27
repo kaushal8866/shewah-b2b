@@ -100,11 +100,17 @@ export default function RetailerProductDetail() {
     [karatRows, selectedKarat]
   )
 
-  // Default to 22kt the first time pricing data lands.
+  // Default to reference karat the first time pricing data lands.
   useEffect(() => {
-    if (karatRows.length === 0) return
-    if (karatRows.find(r => r.karat === 22)) setSelectedKarat(22)
-    else setSelectedKarat(karatRows[0].karat)
+    if (karatRows.length === 0 || !product) return
+    const refK = product.ref_karat ? parseInt(product.ref_karat.replace(/[^\d]/g, '')) : null
+    if (refK && karatRows.find(r => r.karat === refK)) {
+      setSelectedKarat(refK)
+    } else if (karatRows.find(r => r.karat === 22)) {
+      setSelectedKarat(22)
+    } else {
+      setSelectedKarat(karatRows[0].karat)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id, karatRows.length])
 
@@ -275,6 +281,42 @@ export default function RetailerProductDetail() {
                 )}
               </div>
             </div>
+
+            {selectedRow && (
+              <div className="border-t border-stone-100 pt-4">
+                <details className="group">
+                  <summary className="flex items-center justify-between font-semibold text-xs text-stone-600 cursor-pointer list-none select-none hover:text-stone-900 transition-colors">
+                    <span>VIEW PRICE BREAKUP</span>
+                    <span className="text-[10px] text-stone-400 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <div className="mt-3 space-y-2 text-xs text-stone-600 bg-stone-50 p-3 rounded-lg border border-stone-150">
+                    <div className="flex justify-between">
+                      <span>Gold Metal Value ({selectedRow.weight.toFixed(3)}g)</span>
+                      <span className="font-medium">₹{selectedRow.goldCost.toLocaleString('en-IN')}</span>
+                    </div>
+                    {product.diamond_weight ? (
+                      <div className="flex justify-between">
+                        <span>Diamond Value ({product.diamond_weight} ct)</span>
+                        <span className="font-medium">₹{(product.diamond_cost || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    ) : null}
+                    <div className="flex justify-between">
+                      <span>Making & Cert Charges</span>
+                      <span className="font-medium">₹{(selectedRow.labourCost + (product.making_charges || 0) + (product.igi_cert_cost || 0)).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="border-t border-stone-200 my-1"></div>
+                    <div className="flex justify-between font-bold text-stone-800">
+                      <span>Total B2B Trade Price</span>
+                      <span>₹{selectedRow.trade.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-stone-400">
+                      <span>Jeweler Suggested MRP (incl markup)</span>
+                      <span>₹{selectedRow.mrp.toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>

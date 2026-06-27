@@ -53,17 +53,7 @@ export function pure24kt(grossWeight: number, karat: number): number {
  * gold cost differs honestly across karats because lower-purity karats bill
  * less 24kt-equivalent gold for the same finished piece.
  */
-export type KaratPriceInputs = {
-  netGoldWeight: number                    // single net-gold input (g)
-  rate24k: number                          // ₹/g of 24kt
-  retailLabour: Record<number, number>     // ₹/g per karat
-  diamondCost: number                      // ₹
-  makingCharges: number                    // ₹
-  igiCost: number                          // ₹
-  marginMult?: number                      // default 1.28
-  mrpMult?: number                         // default 1.40
-  metalWeights?: MetalWeights
-}
+
 
 export type KaratPrice = {
   karat: number
@@ -86,14 +76,28 @@ export function pureMassByKarat(netGoldWeight: number): Record<number, number> {
   return out
 }
 
+export type KaratPriceInputs = {
+  netGoldWeight: number                    // single net-gold input (g)
+  rate24k: number                          // ₹/g of 24kt
+  retailLabour: Record<number, number>     // ₹/g per karat
+  diamondCost: number                      // ₹
+  makingCharges: number                    // ₹
+  igiCost: number                          // ₹
+  marginMult?: number                      // default 1.28
+  mrpMult?: number                         // default 1.40
+  metalWeights?: MetalWeights
+  color?: string                           // Reference alloy color
+}
+
 export function computeKaratPricing(inp: KaratPriceInputs): KaratPrice[] {
   const margin = inp.marginMult ?? 1.28
   const mrpM = inp.mrpMult ?? 1.40
+  const color = inp.color || 'yellow'
   return SELLABLE_KARATS.map(k => {
     let w = 0
     let gross = 0
     if (inp.metalWeights) {
-      gross = getMetalWeight(inp.metalWeights, `${k}K`, 'yellow')
+      gross = getMetalWeight(inp.metalWeights, `${k}K`, color)
       w = pureGoldMass(gross, `${k}K`)
     } else {
       w = r4((inp.netGoldWeight || 0) * KARAT_FACTORS[k])
@@ -105,7 +109,7 @@ export function computeKaratPricing(inp: KaratPriceInputs): KaratPrice[] {
     const cogs = goldCost + labourCost + (inp.diamondCost || 0) + (inp.makingCharges || 0) + (inp.igiCost || 0)
     const trade = Math.round(cogs * margin)
     const mrp = Math.round(trade * mrpM)
-    return { karat: k, weight: w, goldCost, labourCost, cogs, trade, mrp }
+    return { karat: k, weight: gross, goldCost, labourCost, cogs, trade, mrp }
   })
 }
 

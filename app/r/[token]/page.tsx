@@ -50,6 +50,14 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+function getMetalWeightLocal(weights: any, karat: string, color: string): number {
+  if (!weights) return 0
+  const col = (color || 'yellow').toLowerCase()
+  const metalColor = col.includes('rose') ? 'rose' : col.includes('white') ? 'white' : 'yellow'
+  const key = `${karat}_${metalColor}`
+  return weights[key] ?? 0
+}
+
 export default function PublicStorefront() {
   const { token } = useParams() as { token: string }
 
@@ -102,6 +110,7 @@ export default function PublicStorefront() {
   const [briefImages, setBriefImages] = useState<string[]>([])
   const [uploadingImage, setUploadingImage] = useState(false)
   const [estimatedPrice, setEstimatedPrice] = useState<number>(0)
+  const [priceBreakup, setPriceBreakup] = useState<any>(null)
 
   // Product Reviews
   const [reviews, setReviews] = useState<any[]>([])
@@ -315,6 +324,7 @@ export default function PublicStorefront() {
       const data = await res.json()
       if (data.selling_price_rupees) {
         setEstimatedPrice(data.selling_price_rupees)
+        setPriceBreakup(data.breakup || null)
       }
     } catch {}
   }
@@ -1041,6 +1051,7 @@ export default function PublicStorefront() {
                                   setSelectedKarat(p.ref_karat ? (parseInt(p.ref_karat) || 18) : 18)
                                   setSelectedSize('14')
                                   setEstimatedPrice(p.selling_price_rupees)
+                                  setPriceBreakup(null)
                                 }}
                                 className={`group bg-white overflow-hidden cursor-pointer flex flex-col justify-between transition-all duration-300 ${
                                   section.settings.cardStyle === 'bordered' ? 'border rounded-2xl p-2' :
@@ -1734,23 +1745,32 @@ export default function PublicStorefront() {
                 <div className="space-y-1.5">
                   <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60" style={{ color: c.text }}>Select Gold Karat</label>
                   <div className="flex gap-2">
-                    {[14, 18, 22].map(k => (
-                      <button
-                        key={k}
-                        type="button"
-                        onClick={() => setSelectedKarat(k)}
-                        className={`flex-1 py-2 text-xs font-bold border rounded-xl transition-all hover:opacity-85 ${
-                          selectedKarat === k ? 'text-white' : ''
-                        }`}
-                        style={{
-                          backgroundColor: selectedKarat === k ? c.primary : c.surface,
-                          borderColor: selectedKarat === k ? c.primary : c.borders,
-                          color: selectedKarat === k ? '#FFFFFF' : c.text
-                        }}
-                      >
-                        {k}K Gold
-                      </button>
-                    ))}
+                    {[14, 18, 22].map(k => {
+                      const active = selectedKarat === k
+                      const wt = getMetalWeightLocal(selectedProduct.metal_weights, `${k}K`, selectedProduct.ref_color)
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setSelectedKarat(k)}
+                          className={`flex-1 py-1.5 text-center border rounded-xl transition-all hover:opacity-85 ${
+                            active ? 'text-white font-bold' : ''
+                          }`}
+                          style={{
+                            backgroundColor: active ? c.primary : c.surface,
+                            borderColor: active ? c.primary : c.borders,
+                            color: active ? '#FFFFFF' : c.text
+                          }}
+                        >
+                          <p className="text-xs font-bold">{k}kt</p>
+                          {wt > 0 && (
+                            <p className={`text-[9px] font-medium mt-0.5 ${active ? 'text-white/80' : 'text-stone-400'}`}>
+                              {wt.toFixed(2)}g
+                            </p>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -1820,20 +1840,92 @@ export default function PublicStorefront() {
                 </div>
               </div>
 
-              {/* Specifications */}
-              {selectedProduct.attributes && Object.keys(selectedProduct.attributes).length > 0 && (
-                <div className="space-y-3 pt-4 border-t" style={{ borderColor: c.borders }}>
-                  <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">Specifications</p>
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                    {Object.entries(selectedProduct.attributes).map(([k, v]) => (
-                      <div key={k} className="border-b pb-1.5" style={{ borderColor: c.borders }}>
-                        <dt className="opacity-45 text-[9px] uppercase tracking-wider">{k.replace(/_/g, ' ')}</dt>
-                        <dd className="font-bold mt-1" style={{ color: c.text }}>{String(v)}</dd>
+              {/* ORRA-Style Price Breakup Accordion */}
+              {priceBreakup && (
+                <div className="p-4 border rounded-2xl space-y-2 bg-stone-50" style={{ borderColor: c.borders }}>
+                  <details className="group">
+                    <summary className="flex items-center justify-between font-bold text-[10px] uppercase tracking-wider opacity-60 cursor-pointer list-none select-none hover:opacity-100 transition-opacity">
+                      <span>Price Breakup Details</span>
+                      <span className="text-[9px] group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <div className="mt-3 space-y-2 text-xs opacity-85">
+                      <div className="flex justify-between">
+                        <span>Gold Metal Value</span>
+                        <span className="font-semibold" style={{ color: c.text }}>₹{priceBreakup.gold_value.toLocaleString('en-IN')}</span>
                       </div>
-                    ))}
-                  </dl>
+                      {selectedProduct.diamond_weight ? (
+                        <div className="flex justify-between">
+                          <span>Diamond Value ({selectedProduct.diamond_weight} ct)</span>
+                          <span className="font-semibold" style={{ color: c.text }}>₹{priceBreakup.diamond_value.toLocaleString('en-IN')}</span>
+                        </div>
+                      ) : null}
+                      {priceBreakup.making_charges > 0 && (
+                        <div className="flex justify-between">
+                          <span>Making Charges & Tax</span>
+                          <span className="font-semibold" style={{ color: c.text }}>₹{priceBreakup.making_charges.toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
+                      {priceBreakup.gst > 0 && (
+                        <div className="flex justify-between opacity-60">
+                          <span>GST (3%)</span>
+                          <span style={{ color: c.text }}>₹{priceBreakup.gst.toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
+                      <div className="border-t border-stone-200 my-1"></div>
+                      <div className="flex justify-between font-black text-xs" style={{ color: c.primary }}>
+                        <span>Total Price (incl. GST)</span>
+                        <span>₹{priceBreakup.total.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                  </details>
                 </div>
               )}
+
+              {/* Specifications */}
+              {(() => {
+                const activeWeight = getMetalWeightLocal(selectedProduct.metal_weights, `${selectedKarat}K`, selectedProduct.ref_color) || Number(selectedProduct.gold_weight_g) || 0
+                return (
+                  <div className="space-y-3 pt-4 border-t" style={{ borderColor: c.borders }}>
+                    <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">Specifications</p>
+                    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                      <div className="border-b pb-1.5" style={{ borderColor: c.borders }}>
+                        <dt className="opacity-45 text-[9px] uppercase tracking-wider">Metal</dt>
+                        <dd className="font-bold mt-1" style={{ color: c.text }}>
+                          {selectedKarat}kt {selectedProduct.ref_color || 'Yellow Gold'}
+                        </dd>
+                      </div>
+                      {activeWeight > 0 && (
+                        <div className="border-b pb-1.5" style={{ borderColor: c.borders }}>
+                          <dt className="opacity-45 text-[9px] uppercase tracking-wider">Gross Weight</dt>
+                          <dd className="font-bold mt-1" style={{ color: c.text }}>{activeWeight.toFixed(3)}g</dd>
+                        </div>
+                      )}
+                      {selectedProduct.diamond_weight && (
+                        <div className="border-b pb-1.5" style={{ borderColor: c.borders }}>
+                          <dt className="opacity-45 text-[9px] uppercase tracking-wider">Diamond Weight</dt>
+                          <dd className="font-bold mt-1" style={{ color: c.text }}>
+                            {selectedProduct.diamond_weight}ct {selectedProduct.diamond_shape || ''}
+                          </dd>
+                        </div>
+                      )}
+                      {selectedProduct.diamond_quality && (
+                        <div className="border-b pb-1.5" style={{ borderColor: c.borders }}>
+                          <dt className="opacity-45 text-[9px] uppercase tracking-wider">Diamond Quality/Color</dt>
+                          <dd className="font-bold mt-1" style={{ color: c.text }}>
+                            {selectedProduct.diamond_quality}/{selectedProduct.diamond_color || ''}
+                          </dd>
+                        </div>
+                      )}
+                      {Object.entries(selectedProduct.attributes || {}).map(([k, v]) => (
+                        <div key={k} className="border-b pb-1.5" style={{ borderColor: c.borders }}>
+                          <dt className="opacity-45 text-[9px] uppercase tracking-wider">{k.replace(/_/g, ' ')}</dt>
+                          <dd className="font-bold mt-1" style={{ color: c.text }}>{String(v)}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                )
+              })()}
 
               {/* Product Reviews */}
               <div className="space-y-4 pt-4 border-t" style={{ borderColor: c.borders }}>

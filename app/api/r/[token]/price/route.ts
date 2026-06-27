@@ -81,7 +81,8 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
     diamondCost: product.diamond_cost || 0,
     makingCharges: product.making_charges || 0,
     igiCost: product.igi_cert_cost || 0,
-    metalWeights: product.metal_weights || undefined
+    metalWeights: product.metal_weights || undefined,
+    color: product.ref_color || undefined
   })
 
   const targetPricing = pricingList.find(p => p.karat === karat)
@@ -92,6 +93,7 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
   let finalFloorCost = targetPricing.cogs
 
   // If reseller has custom floor price, adjust by ratio
+  let ratio = 1
   if (resellerPrice && resellerPrice.floor_price_paise) {
     const savedFloorRupees = Number(resellerPrice.floor_price_paise) / 100
     
@@ -106,7 +108,7 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
     }
 
     if (baseCatalogCogs > 0) {
-      const ratio = savedFloorRupees / baseCatalogCogs
+      ratio = savedFloorRupees / baseCatalogCogs
       finalFloorCost = targetPricing.cogs * ratio
     }
   }
@@ -115,9 +117,24 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
   const markupMultiplier = 1 + Number(shareLink.markup_percent) / 100
   const customerPriceRupees = Math.round(finalFloorCost * markupMultiplier)
 
+  const gold_value = Math.round(targetPricing.goldCost * ratio * markupMultiplier)
+  const diamond_value = Math.round((product.diamond_cost || 0) * ratio * markupMultiplier)
+  const making_charges = Math.round((targetPricing.labourCost + (product.making_charges || 0) + (product.igi_cert_cost || 0)) * ratio * markupMultiplier)
+  
+  const subtotal = gold_value + diamond_value + making_charges
+  const gst = Math.round(subtotal * 0.03)
+  const total = subtotal + gst
+
   return NextResponse.json({
     product_id: productId,
     karat,
-    selling_price_rupees: customerPriceRupees
+    selling_price_rupees: total,
+    breakup: {
+      gold_value,
+      diamond_value,
+      making_charges,
+      gst,
+      total
+    }
   })
 }

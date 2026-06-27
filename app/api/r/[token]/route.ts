@@ -117,7 +117,8 @@ export async function GET(req: Request, { params }: { params: { token: string } 
             diamondCost: p.diamond_cost || 0,
             makingCharges: p.making_charges || 0,
             igiCost: p.igi_cert_cost || 0,
-            metalWeights: p.metal_weights || undefined
+            metalWeights: p.metal_weights || undefined,
+            color: p.ref_color || undefined
           })
 
           const basePricing22 = pricingList.find(x => x.karat === 22)
@@ -132,7 +133,7 @@ export async function GET(req: Request, { params }: { params: { token: string } 
 
       const customerPriceRupees = Math.round(costRupees * markupMultiplier)
 
-      return {
+       return {
         id: p.id,
         code: p.code,
         name: p.name,
@@ -142,6 +143,13 @@ export async function GET(req: Request, { params }: { params: { token: string } 
         photo_urls: p.photo_urls || [],
         ref_karat: p.ref_karat,
         ref_color: p.ref_color,
+        gold_weight_g: p.gold_weight_g,
+        metal_weights: p.metal_weights || {},
+        diamond_weight: p.diamond_weight,
+        diamond_shape: p.diamond_shape,
+        diamond_quality: p.diamond_quality,
+        diamond_color: p.diamond_color,
+        diamond_type: p.diamond_type,
         attributes: p.attributes || {},
         // ONLY expose the marked up retail price to the public customer!
         selling_price_rupees: customerPriceRupees

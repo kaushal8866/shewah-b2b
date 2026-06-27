@@ -128,7 +128,7 @@ export default function NewProductPage() {
   const isSilver = form.metal_type === 'silver'
   const weight22 = isSilver
     ? (getMetalWeight(metalWeights, refKarat, 'default') || 0)
-    : (getMetalWeight(metalWeights, '22K', 'yellow') || 0)
+    : (getMetalWeight(metalWeights, '22K', refColor) || 0)
 
   const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1), 0)
   const makingCharges = parseFloat(form.making_charges) || 0
@@ -160,6 +160,7 @@ export default function NewProductPage() {
     makingCharges,
     igiCost,
     metalWeights: metalWeights && Object.keys(metalWeights).length > 0 ? metalWeights : undefined,
+    color: refColor
   })
 
   const default22 = pricing.find(p => p.karat === 22)
@@ -287,10 +288,10 @@ export default function NewProductPage() {
       gold_karat: isSilver ? null : 22,
       gold_weight_g: weight22 || null,
       gold_weight_22k: isSilver ? null : (weight22 || null),
-      gold_weight_18k: isSilver ? null : (getMetalWeight(metalWeights, '18K', 'yellow') || null),
-      gold_weight_14k: isSilver ? null : (getMetalWeight(metalWeights, '14K', 'yellow') || null),
-      gold_weight_10k: isSilver ? null : (getMetalWeight(metalWeights, '10K', 'yellow') || null),
-      gold_weight_9k:  isSilver ? null : (getMetalWeight(metalWeights, '9K', 'yellow')  || null),
+      gold_weight_18k: isSilver ? null : (getMetalWeight(metalWeights, '18K', refColor) || null),
+      gold_weight_14k: isSilver ? null : (getMetalWeight(metalWeights, '14K', refColor) || null),
+      gold_weight_10k: isSilver ? null : (getMetalWeight(metalWeights, '10K', refColor) || null),
+      gold_weight_9k:  isSilver ? null : (getMetalWeight(metalWeights, '9K', refColor)  || null),
       metal_weights: metalWeights,
       ref_karat: refKarat,
       ref_color: refColor,
