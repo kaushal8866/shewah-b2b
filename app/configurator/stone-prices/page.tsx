@@ -28,6 +28,17 @@ type Cell   = {
 const k = (shapeId: string, sizeId: string, qbId: string, cbId: string, type = 'lgd') =>
   `${shapeId}|${sizeId}|${qbId}|${cbId}|${type}`
 
+function getSieveSize(label: string): string {
+  const num = parseFloat(label)
+  if (isNaN(num)) return 'Other Sizes'
+  if (num >= 0.7 && num <= 1.25) return 'Sieve +000-2'
+  if (num >= 1.3 && num <= 2.05) return 'Sieve +2-8'
+  if (num >= 2.1 && num <= 2.65) return 'Sieve +8-11'
+  if (num >= 2.7 && num <= 2.95) return 'Sieve +11-12'
+  if (num >= 3.0 && num <= 3.25) return 'Sieve +12-14'
+  return 'Sieve Large'
+}
+
 export default function ConfiguratorStonePricesPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
@@ -204,6 +215,41 @@ export default function ConfiguratorStonePricesPage() {
     [qualities, colors],
   )
 
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
+
+  const sizesWithSieve = useMemo(() => {
+    const sorted = [...sizes].sort((a, b) => a.sort_order - b.sort_order)
+    const result: Record<string, { size: Size; sieve: string; rowSpan: number }[]> = {}
+    
+    for (const shape of shapes) {
+      const shapeSizes = sorted.filter(z => z.shape_id === shape.id)
+      const list: { size: Size; sieve: string; rowSpan: number }[] = []
+      let currentSieve = ''
+      let firstIndexInGroup = -1
+      
+      for (let i = 0; i < shapeSizes.length; i++) {
+        const sz = shapeSizes[i]
+        const sieve = getSieveSize(sz.label)
+        
+        if (sieve !== currentSieve) {
+          if (firstIndexInGroup !== -1) {
+            list[firstIndexInGroup].rowSpan = i - firstIndexInGroup
+          }
+          currentSieve = sieve
+          firstIndexInGroup = i
+          list.push({ size: sz, sieve, rowSpan: 1 })
+        } else {
+          list.push({ size: sz, sieve, rowSpan: 0 })
+        }
+      }
+      if (firstIndexInGroup !== -1) {
+        list[firstIndexInGroup].rowSpan = shapeSizes.length - firstIndexInGroup
+      }
+      result[shape.id] = list
+    }
+    return result
+  }, [sizes, shapes])
+
   if (status === 'loading' || !session || !isMaster) {
     return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading…</div>
   }
@@ -326,80 +372,108 @@ export default function ConfiguratorStonePricesPage() {
         const sizesForShape = sizes.filter(z => z.shape_id === shape.id)
         if (sizesForShape.length === 0) return null
         return (
-          <div key={shape.id} className="bg-white border border-stone-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 bg-stone-50 border-b border-stone-100 flex items-center gap-2">
+          <div key={shape.id} className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="px-4 py-3 bg-stone-50 border-b border-stone-200 flex items-center gap-2">
               <Diamond className="w-4 h-4 text-[#1E3A5F]" />
               <h2 className="font-semibold text-stone-900">{shape.name}</h2>
               <span className="text-xs text-stone-400">{sizesForShape.length} size{sizesForShape.length === 1 ? '' : 's'}</span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-full border-collapse border border-stone-300 text-sm">
                 <thead>
-                  <tr className="bg-stone-50/60 border-b border-stone-100">
-                    <th className="text-left font-medium text-stone-500 px-3 py-2 sticky left-0 bg-stone-50/60 z-10">Size</th>
+                  <tr className="bg-stone-100 border-b border-stone-300 text-xs text-stone-700 font-semibold uppercase tracking-wider">
+                    <th className="border border-stone-300 text-center px-3 py-2 bg-stone-100/80 sticky left-0 z-20 min-w-[7.5rem]">Sieve Size</th>
+                    <th className="border border-stone-300 text-center px-3 py-2 bg-stone-100/80">Size (mm)</th>
+                    <th className="border border-stone-300 text-right px-3 py-2 bg-stone-100/80">Weight per pc CT</th>
                     {colHeaders.map(h => (
-                      <th key={h.key} className="text-right font-medium text-stone-500 px-2 py-2 whitespace-nowrap">
-                        <div>{h.qb.label}</div>
-                        <div className="text-[10px] text-stone-400 font-normal">{h.cb.label}</div>
+                      <th key={h.key} className="border border-stone-300 text-right px-3 py-2 whitespace-nowrap bg-stone-100/80">
+                        {h.qb.label} {h.cb.label}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {sizesForShape.map(size => (
-                    <tr key={size.id} className="border-b border-stone-100 last:border-b-0">
-                      <td className="px-3 py-2 font-medium text-stone-700 sticky left-0 bg-white z-10 whitespace-nowrap">
-                        {size.label}
-                        {size.approx_carats != null && (
-                          <span className="text-[10px] text-stone-400 ml-1">({size.approx_carats}ct)</span>
-                        )}
-                      </td>
-                      {colHeaders.map(h => {
-                        const ck = k(shape.id, size.id, h.qb.id, h.cb.id, stoneType)
-                        const cell = cellsByKey[ck]
-                        const editing = ck in edits
-                        const value = editing ? edits[ck] : (cell ? String(cell.price_per_piece) : '')
-                        const status = savingKey[ck]
-                        return (
-                          <td key={h.key} className="px-1 py-1">
-                            <div className="relative">
-                              <input
-                                type="number" inputMode="decimal" min="0" step="1"
-                                className={
-                                  'w-24 text-right border rounded px-2 py-1.5 text-sm outline-none transition-colors ' +
-                                  (status === 'error' ? 'border-red-300 bg-red-50' :
-                                   status === 'saving' ? 'border-amber-300 bg-amber-50/50' :
-                                   status === 'saved' ? 'border-emerald-300 bg-emerald-50/50' :
-                                   cell ? 'border-stone-200 hover:border-stone-300' :
-                                   'border-stone-200 bg-stone-50/50 text-stone-400')
-                                }
-                                placeholder="—"
-                                value={value}
-                                onChange={e => setEdits(prev => ({ ...prev, [ck]: e.target.value }))}
-                                onBlur={() => {
-                                  if (!editing) return
-                                  const cur = edits[ck]
-                                  const prev = cell ? String(cell.price_per_piece) : ''
-                                  if (cur === prev) {
-                                    setEdits(p => { const n = { ...p }; delete n[ck]; return n })
-                                    return
-                                  }
-                                  saveCell(shape.id, size.id, h.qb.id, h.cb.id, cur)
-                                }}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                                  if (e.key === 'Escape') setEdits(p => { const n = { ...p }; delete n[ck]; return n })
-                                }}
-                              />
-                              {status === 'saved' && (
-                                <Check className="w-3 h-3 text-emerald-600 absolute -right-4 top-1/2 -translate-y-1/2" />
-                              )}
-                            </div>
+                  {(sizesWithSieve[shape.id] || []).map(({ size, sieve, rowSpan }) => {
+                    return (
+                      <tr key={size.id} className="hover:bg-stone-50/50 transition-colors">
+                        {rowSpan > 0 && (
+                          <td
+                            rowSpan={rowSpan}
+                            className="border border-stone-300 px-3 py-2 text-center font-bold text-stone-850 bg-stone-50 text-xs align-middle sticky left-0 z-10"
+                          >
+                            {sieve}
                           </td>
-                        )
-                      })}
-                    </tr>
-                  ))}
+                        )}
+                        <td className="border border-stone-300 px-3 py-2 text-center text-stone-700 font-medium whitespace-nowrap bg-white">
+                          {size.label}
+                        </td>
+                        <td className="border border-stone-300 px-3 py-2 text-right text-stone-600 whitespace-nowrap bg-white font-mono text-xs">
+                          {size.approx_carats != null ? `${size.approx_carats} ct` : '—'}
+                        </td>
+                        {colHeaders.map(h => {
+                          const ck = k(shape.id, size.id, h.qb.id, h.cb.id, stoneType)
+                          const cell = cellsByKey[ck]
+                          const editing = focusedKey === ck
+                          const value = editing ? (edits[ck] ?? (cell ? String(cell.price_per_piece) : '')) : (cell ? String(cell.price_per_piece) : '')
+                          const status = savingKey[ck]
+                          
+                          return (
+                            <td key={h.key} className="border border-stone-300 p-0 text-right min-w-[7.5rem] bg-white relative">
+                              {editing ? (
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  min="0"
+                                  step="1"
+                                  autoFocus
+                                  className={cn(
+                                    "w-full h-full text-right border-none outline-none focus:outline-none ring-0 focus:ring-0 px-3 py-2 text-sm",
+                                    status === 'error' ? 'bg-red-50 text-red-700' :
+                                    status === 'saving' ? 'bg-amber-50 text-amber-700' :
+                                    'bg-white text-stone-900'
+                                  )}
+                                  placeholder="—"
+                                  value={value}
+                                  onChange={e => setEdits(prev => ({ ...prev, [ck]: e.target.value }))}
+                                  onBlur={() => {
+                                    setFocusedKey(null)
+                                    const trimmed = (edits[ck] ?? '').trim()
+                                    const prev = cell ? String(cell.price_per_piece) : ''
+                                    if (trimmed === '' && !cell) return
+                                    if (trimmed === prev) return
+                                    saveCell(shape.id, size.id, h.qb.id, h.cb.id, edits[ck] ?? prev)
+                                  }}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                                    if (e.key === 'Escape') {
+                                      setEdits(p => { const n = { ...p }; delete n[ck]; return n })
+                                      setFocusedKey(null)
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  onClick={() => {
+                                    setEdits(p => ({ ...p, [ck]: cell ? String(cell.price_per_piece) : '' }))
+                                    setFocusedKey(ck)
+                                  }}
+                                  className={cn(
+                                    "cursor-pointer text-right w-full h-full px-3 py-2 text-sm font-medium select-none min-h-[2.25rem] flex items-center justify-end hover:bg-stone-50/80 transition-colors",
+                                    cell ? "text-stone-900 font-semibold" : "text-stone-300"
+                                  )}
+                                >
+                                  {cell ? `₹ ${Number(cell.price_per_piece).toLocaleString('en-IN')}` : '—'}
+                                  {status === 'saved' && (
+                                    <Check className="w-3.5 h-3.5 text-emerald-600 absolute right-1 top-1" />
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
