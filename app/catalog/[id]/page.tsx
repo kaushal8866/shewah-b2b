@@ -33,15 +33,13 @@ type DiamondRow = {
 }
 
 const SHAPES = ['round','oval','pear','cushion','princess','marquise','emerald','radiant','heart','asscher']
-const QUALITIES = ['IF','VVS1','VVS2','VS1','VS2','SI1','SI2']
-const COLORS = ['D','E','F','G','H','I','J']
 const ROLES = ['center','side','accent','other']
 
 function newDiamondRow(): DiamondRow {
   return {
     id: Math.random().toString(36).slice(2),
-    role: 'center', shape: 'round', weight: '', quality: 'VS2',
-    color: 'F', type: 'lgd', pieces: '1', cost: '',
+    role: 'center', shape: 'round', weight: '', quality: 'VS',
+    color: 'GH', type: 'lgd', pieces: '1', cost: '',
     shape_id: '', size_id: '', size_label: '',
     legacy_locked: false,
   }
@@ -87,6 +85,9 @@ export default function CatalogProductEditPage() {
     models_available: ['wholesale', 'design_make'],
   })
 
+  const [qualityBuckets, setQualityBuckets] = useState<any[]>([])
+  const [colorBuckets, setColorBuckets] = useState<any[]>([])
+
   useEffect(() => {
     Promise.all([
       supabase.from('gold_rates')
@@ -95,9 +96,14 @@ export default function CatalogProductEditPage() {
       supabase.from('products').select('*').eq('id', id).single(),
       supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c']),
       supabase.from('product_categories').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
-      supabase.from('reseller_product_prices').select('floor_price_paise').eq('product_id', id).maybeSingle()
-    ]).then(([{ data: gr }, { data }, { data: sd }, { data: catData }, { data: resellerPrice }]: any) => {
+      supabase.from('reseller_product_prices').select('floor_price_paise').eq('product_id', id).maybeSingle(),
+      supabase.from('diamond_quality_buckets').select('id, label').order('sort_order', { ascending: true }),
+      supabase.from('diamond_color_buckets').select('id, label').order('sort_order', { ascending: true })
+    ]).then(([{ data: gr }, { data }, { data: sd }, { data: catData }, { data: resellerPrice }, { data: qb }, { data: cb }]: any) => {
       if (catData) setCategories(catData)
+      if (qb) setQualityBuckets(qb)
+      if (cb) setColorBuckets(cb)
+
       if (resellerPrice?.floor_price_paise) {
         setSavedFloorPricePaise(Number(resellerPrice.floor_price_paise))
       }
@@ -192,7 +198,7 @@ export default function CatalogProductEditPage() {
     ? (getMetalWeight(metalWeights, refKarat, 'default') || 0)
     : (getMetalWeight(metalWeights, '22K', refColor) || 0)
 
-  const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseFloat(d.weight) || 0) * (parseFloat(d.pieces) || 1), 0)
+  const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseFloat(d.pieces) || 1), 0)
   const makingCharges = legacy.making_charges ?? 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
 
@@ -569,8 +575,8 @@ export default function CatalogProductEditPage() {
                   <div><label className={lbl}>Role</label><select disabled={locked} className={roInp} value={d.role} onChange={e => updateDiamond(d.id, 'role', e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}</select></div>
                   <div><label className={lbl}>Weight (ct)</label><input readOnly={locked} type="number" inputMode="decimal" step="0.01" className={roInp} value={d.weight} onChange={e => updateDiamond(d.id, 'weight', e.target.value)} /></div>
                   <div><label className={lbl}>Pieces</label><input readOnly={locked} type="number" inputMode="decimal" min="1" className={roInp} value={d.pieces} onChange={e => updateDiamond(d.id, 'pieces', e.target.value)} /></div>
-                  <div><label className={lbl}>Quality</label><select disabled={locked} className={roInp} value={d.quality} onChange={e => updateDiamond(d.id, 'quality', e.target.value)}>{QUALITIES.map(q => <option key={q} value={q}>{q}</option>)}</select></div>
-                  <div><label className={lbl}>Color</label><select disabled={locked} className={roInp} value={d.color} onChange={e => updateDiamond(d.id, 'color', e.target.value)}>{COLORS.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                  <div><label className={lbl}>Quality</label><select disabled={locked} className={roInp} value={d.quality} onChange={e => updateDiamond(d.id, 'quality', e.target.value)}>{qualityBuckets.map(q => <option key={q.label} value={q.label}>{q.label}</option>)}{qualityBuckets.length === 0 && <option value={d.quality}>{d.quality}</option>}</select></div>
+                  <div><label className={lbl}>Color</label><select disabled={locked} className={roInp} value={d.color} onChange={e => updateDiamond(d.id, 'color', e.target.value)}>{colorBuckets.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}{colorBuckets.length === 0 && <option value={d.color}>{d.color}</option>}</select></div>
                   <div><label className={lbl}>Type</label><select disabled={locked} className={roInp} value={d.type} onChange={e => updateDiamond(d.id, 'type', e.target.value)}><option value="lgd">LGD</option><option value="natural">Natural</option></select></div>
                   <div><label className={lbl}>Cost/pc (₹)</label><input readOnly={locked} type="number" inputMode="decimal" className={roInp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} /></div>
                 </div>

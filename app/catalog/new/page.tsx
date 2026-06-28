@@ -36,8 +36,6 @@ type DiamondRow = {
 }
 
 const SHAPES = ['round','oval','pear','cushion','princess','marquise','emerald','radiant','heart','asscher']
-const QUALITIES = ['IF','VVS1','VVS2','VS1','VS2','SI1','SI2']
-const COLORS = ['D','E','F','G','H','I','J']
 const ROLES = ['center','side','accent','other']
 const KARATS = [
   { value: '9',  label: '9K  (38%)',   purity: KARAT_FACTORS[9]  },
@@ -50,8 +48,8 @@ const KARATS = [
 function newDiamondRow(): DiamondRow {
   return {
     id: Math.random().toString(36).slice(2),
-    role: 'center', shape: 'round', weight: '', quality: 'VS2',
-    color: 'F', type: 'lgd', pieces: '1', cost: '',
+    role: 'center', shape: 'round', weight: '', quality: 'VS',
+    color: 'GH', type: 'lgd', pieces: '1', cost: '',
     shape_id: '', size_id: '', size_label: '',
     legacy_locked: false,
   }
@@ -85,6 +83,9 @@ export default function NewProductPage() {
     models_available: ['wholesale', 'design_make'],
   })
 
+  const [qualityBuckets, setQualityBuckets] = useState<any[]>([])
+  const [colorBuckets, setColorBuckets] = useState<any[]>([])
+
   useEffect(() => {
     Promise.all([
       supabase
@@ -100,11 +101,22 @@ export default function NewProductPage() {
         .from('product_categories')
         .select('*')
         .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('diamond_quality_buckets')
+        .select('id, label')
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('diamond_color_buckets')
+        .select('id, label')
         .order('sort_order', { ascending: true })
-    ]).then(([{ data: gd }, { data: sd }, { data: catData }]) => {
+    ]).then(([{ data: gd }, { data: sd }, { data: catData }, { data: qb }, { data: cb }]) => {
       if (catData) {
         setCategories(catData)
       }
+      if (qb) setQualityBuckets(qb)
+      if (cb) setColorBuckets(cb)
+
       const r = gd?.[0]
       if (r) {
         setGoldRate(Number(r.rate_24k) || 0)
@@ -130,7 +142,7 @@ export default function NewProductPage() {
     ? (getMetalWeight(metalWeights, refKarat, 'default') || 0)
     : (getMetalWeight(metalWeights, '22K', refColor) || 0)
 
-  const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseFloat(d.weight) || 0) * (parseFloat(d.pieces) || 1), 0)
+  const totalDiamondCost = diamonds.reduce((sum, d) => sum + (parseFloat(d.cost) || 0) * (parseFloat(d.pieces) || 1), 0)
   const makingCharges = parseFloat(form.making_charges) || 0
   const igiCost = parseFloat(form.igi_cert_cost) || 0
 
@@ -503,13 +515,15 @@ export default function NewProductPage() {
                   <div>
                     <label className={lbl}>Quality</label>
                     <select className={inp} value={d.quality} onChange={e => updateDiamond(d.id, 'quality', e.target.value)}>
-                      {QUALITIES.map(q => <option key={q} value={q}>{q}</option>)}
+                      {qualityBuckets.map(q => <option key={q.label} value={q.label}>{q.label}</option>)}
+                      {qualityBuckets.length === 0 && <option value={d.quality}>{d.quality}</option>}
                     </select>
                   </div>
                   <div>
                     <label className={lbl}>Color</label>
                     <select className={inp} value={d.color} onChange={e => updateDiamond(d.id, 'color', e.target.value)}>
-                      {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+                      {colorBuckets.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
+                      {colorBuckets.length === 0 && <option value={d.color}>{d.color}</option>}
                     </select>
                   </div>
                   <div>
