@@ -335,6 +335,11 @@ function ProductsTab() {
               : pct >= 25 ? 'bg-green-100 text-green-700'
               : pct >= 10 ? 'bg-amber-100 text-amber-700'
               : 'bg-red-100 text-red-700'
+            const totalCt = Array.isArray((p as any).diamond_specs)
+              ? (p as any).diamond_specs.reduce((acc: number, d: any) => acc + (parseFloat(d.weight) || 0) * (parseInt(d.pieces) || 1), 0)
+              : p.diamond_weight || 0
+            const totalCtStr = totalCt > 0 ? (parseFloat(totalCt.toFixed(3)) + 'ct') : '0ct'
+
             return (
             <div key={p.id} className={`bg-white rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-md ${p.is_active ? 'border-stone-200' : 'border-stone-100 opacity-60'} flex flex-row sm:flex-col`}>
               <Link href={`/catalog/${p.id}`} className="block w-28 h-28 sm:w-full sm:h-auto sm:aspect-square bg-gradient-to-br from-stone-50 to-yellow-50 flex items-center justify-center relative cursor-pointer hover:opacity-95 transition-opacity shrink-0" title="Open product">
@@ -356,9 +361,11 @@ function ProductsTab() {
                 <div>
                   <div className="flex items-start justify-between mb-1 gap-2">
                     <p className="font-semibold text-stone-900 text-xs sm:text-sm truncate" title={p.name}>{p.name}</p>
-                    <span className="text-[10px] sm:text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full shrink-0">{p.gold_karat}K</span>
+                    <span className="text-[10px] sm:text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full shrink-0">
+                      {p.ref_karat || (p.gold_karat ? `${p.gold_karat}K` : '22K')}
+                    </span>
                   </div>
-                  <p className="text-[10px] sm:text-xs text-stone-400 mb-2 truncate">{p.diamond_weight}ct {p.diamond_shape} · {p.diamond_quality}/{p.diamond_color}</p>
+                  <p className="text-[10px] sm:text-xs text-stone-400 mb-2 truncate">{totalCtStr} {p.diamond_shape} · {p.diamond_quality}/{p.diamond_color}</p>
                   <div className="grid grid-cols-3 gap-1 mb-2.5">
                     <div className="bg-stone-50 rounded-lg py-1 px-1.5 text-center">
                       <p className="text-[9px] sm:text-xs text-stone-400">Trade</p>

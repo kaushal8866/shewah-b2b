@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
   const user = session?.user as { role?: string } | undefined
@@ -35,4 +37,69 @@ export async function GET(req: Request) {
   return NextResponse.json({
     items: items.map((i: Record<string, unknown>) => ({ ...i, pending_offers: offerCounts[i.id as string] || 0 })),
   })
+}
+
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions)
+  const user = session?.user as { role?: string } | undefined
+  if (!user || (user.role !== 'master' && user.role !== 'admin' && user.role !== 'sub')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  try {
+    const body = await req.json()
+    const {
+      product_id,
+      karat,
+      gross_weight,
+      list_price,
+      diamond_specs,
+      photos,
+      internal_notes
+    } = body
+
+    if (!product_id || !karat || !gross_weight || !list_price) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    const karatNum = parseInt(karat)
+    if (isNaN(karatNum)) {
+      return NextResponse.json({ error: 'Karat must be a number' }, { status: 400 })
+    }
+
+    const KARAT_FACTORS: Record<number, number> = {
+      24: 1.0,
+      22: 0.916,
+      18: 0.75,
+      14: 0.60,
+      10: 0.42,
+      9: 0.38
+    }
+    const factor = KARAT_FACTORS[karatNum] || 0.75
+    const pureWeight = Number(gross_weight) * factor
+
+    const { data, error } = await supabaseAdmin
+      .from('ready_to_ship_items')
+      .insert([{
+        product_id,
+        karat: karatNum,
+        gross_weight: Number(gross_weight),
+        pure_24kt_weight: pureWeight,
+        diamond_specs: diamond_specs || [],
+        photos: photos || [],
+        list_price: Number(list_price),
+        status: 'available',
+        internal_notes: internal_notes || null
+      }])
+      .select('*')
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ item: data })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 }

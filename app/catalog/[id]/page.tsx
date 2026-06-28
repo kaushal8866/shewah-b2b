@@ -75,6 +75,20 @@ export default function CatalogProductEditPage() {
   const [savedFloorPricePaise, setSavedFloorPricePaise] = useState<number | null>(null)
   const [hasLoadedSavedPrice, setHasLoadedSavedPrice] = useState(false)
 
+  const [isReadyToShip, setIsReadyToShip] = useState(false)
+  const [rtsGrossWeight, setRtsGrossWeight] = useState('')
+  const [rtsListPrice, setRtsListPrice] = useState('')
+  const [rtsInternalNotes, setRtsInternalNotes] = useState('')
+
+  const handleToggleReadyToShip = (checked: boolean) => {
+    setIsReadyToShip(checked)
+    if (checked) {
+      const activeWeight = getMetalWeight(metalWeights, refKarat, 'default') || weight22 || 0
+      setRtsGrossWeight(activeWeight > 0 ? String(activeWeight.toFixed(3)) : '')
+      setRtsListPrice(tradePrice > 0 ? String(tradePrice) : '')
+    }
+  }
+
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'Ring',
     metal_type: 'gold',
@@ -379,7 +393,7 @@ export default function CatalogProductEditPage() {
     const updatePayload: Record<string, any> = {
       code: form.code, name: form.name, description: form.description, category: form.category,
       metal_type: form.metal_type,
-      gold_karat: isSilver ? null : 22,
+      gold_karat: isSilver ? null : (parseInt(refKarat.replace(/[^\d]/g, '')) || 22),
       gold_weight_g: weight22 || null,
       gold_weight_22k: isSilver ? null : (weight22 || null),
       gold_weight_18k: isSilver ? null : (getMetalWeight(metalWeights, '18K', refColor) || null),
@@ -424,6 +438,32 @@ export default function CatalogProductEditPage() {
     }
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }
+
+    if (isReadyToShip) {
+      try {
+        const karatNum = parseInt(refKarat.replace(/[^\d]/g, '')) || 22
+        const rtsRes = await fetch('/api/ready-to-ship', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: id,
+            karat: karatNum,
+            gross_weight: parseFloat(rtsGrossWeight) || 0,
+            list_price: parseFloat(rtsListPrice) || 0,
+            diamond_specs: updatePayload.diamond_specs,
+            photos: updatePayload.photo_urls || [],
+            internal_notes: rtsInternalNotes || null
+          })
+        })
+        if (!rtsRes.ok) {
+          const rtsData = await rtsRes.json()
+          alert('Product updated, but failed to create stock/ready-to-ship item: ' + rtsData.error)
+        }
+      } catch (err: any) {
+        alert('Product updated, but failed to create stock/ready-to-ship item: ' + err.message)
+      }
+    }
+
     router.push('/catalog')
   }
 
@@ -835,6 +875,74 @@ export default function CatalogProductEditPage() {
             </div>
           )
         })()}
+
+        {/* READY-TO-SHIP STOCK OPTION */}
+        <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5 space-y-4">
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="readyToShip"
+              className="mt-1 w-4 h-4 rounded text-[#1E3A5F] border-stone-300 focus:ring-[#1E3A5F]"
+              checked={isReadyToShip}
+              onChange={e => handleToggleReadyToShip(e.target.checked)}
+            />
+            <div>
+              <label htmlFor="readyToShip" className="font-medium text-stone-900 block cursor-pointer">
+                Add a new finished piece of this product to Ready-to-Ship stock
+              </label>
+              <p className="text-stone-500 text-xs mt-0.5">
+                Check this if you have a physical piece of this item ready in your inventory right now. It will appear in the Ready Now section.
+              </p>
+            </div>
+          </div>
+
+          {isReadyToShip && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-stone-100">
+              <div>
+                <label className="block text-xs font-semibold text-stone-500 mb-1.5 uppercase tracking-wider">Stock Karat</label>
+                <select
+                  className="w-full text-sm border-stone-200 rounded-xl focus:border-[#1E3A5F] focus:ring-[#1E3A5F] bg-stone-50"
+                  value={refKarat}
+                  disabled
+                >
+                  <option value={refKarat}>{refKarat}</option>
+                </select>
+                <p className="text-[10px] text-stone-400 mt-1">Matched to the reference karat of this product.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-stone-500 mb-1.5 uppercase tracking-wider">Gross Weight (g)</label>
+                <input
+                  type="number"
+                  step="0.001"
+                  className="w-full text-sm border-stone-200 rounded-xl focus:border-[#1E3A5F] focus:ring-[#1E3A5F]"
+                  placeholder="e.g. 5.230"
+                  value={rtsGrossWeight}
+                  onChange={e => setRtsGrossWeight(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-stone-500 mb-1.5 uppercase tracking-wider">List Price (₹)</label>
+                <input
+                  type="number"
+                  className="w-full text-sm border-stone-200 rounded-xl focus:border-[#1E3A5F] focus:ring-[#1E3A5F]"
+                  placeholder="e.g. 45000"
+                  value={rtsListPrice}
+                  onChange={e => setRtsListPrice(e.target.value)}
+                />
+              </div>
+              <div className="sm:col-span-3">
+                <label className="block text-xs font-semibold text-stone-500 mb-1.5 uppercase tracking-wider">Internal / Stock Notes</label>
+                <input
+                  type="text"
+                  className="w-full text-sm border-stone-200 rounded-xl focus:border-[#1E3A5F] focus:ring-[#1E3A5F]"
+                  placeholder="e.g. Size 12 ring, ready at counter 1"
+                  value={rtsInternalNotes}
+                  onChange={e => setRtsInternalNotes(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* MODELS */}
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">

@@ -1048,7 +1048,7 @@ export default function PublicStorefront() {
                                 key={p.id}
                                 onClick={() => {
                                   setSelectedProduct(p)
-                                  setSelectedKarat(p.ref_karat ? (parseInt(p.ref_karat) || 18) : 18)
+                                  setSelectedKarat(p.ref_karat ? (parseInt(p.ref_karat) || p.gold_karat || 18) : (p.gold_karat || 18))
                                   setSelectedSize('14')
                                   setEstimatedPrice(p.selling_price_rupees)
                                   setPriceBreakup(null)
