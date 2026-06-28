@@ -28,6 +28,7 @@ const navSections = [
       { href: '/customers',       icon: Heart,           label: 'Customers',     module: 'customers'     },
       { href: '/enquiries',       icon: InboxIcon,       label: 'Enquiries',     module: 'enquiries'     },
       { href: '/quotes',          icon: FileText,        label: 'Quotes',        module: 'orders'        },
+      { href: '/diamond-asks',    icon: Diamond,         label: 'Diamond Asks',  module: 'diamond_procurement' },
     ]
   },
   {

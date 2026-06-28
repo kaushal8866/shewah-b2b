@@ -21,6 +21,7 @@ export default function RetailerPortalLayout({ children }: { children: React.Rea
     { href: '/portal/retailer/catalog',  label: 'Catalog',      icon: Package },
     { href: '/portal/retailer/ready-to-ship', label: 'Ready Now', icon: Package },
     { href: '/portal/retailer/custom',   label: 'Custom order', icon: Sparkles },
+    { href: '/portal/retailer/diamonds', label: 'Loose Diamonds', icon: Diamond },
     { href: '/portal/retailer/orders',   label: 'Orders',       icon: ShoppingBag },
     { href: '/portal/retailer/profile',  label: 'Profile',      icon: User },
   ]
