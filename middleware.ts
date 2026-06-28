@@ -89,7 +89,11 @@ export default withAuth(
     }
 
     // Shared infrastructure endpoints any authenticated user can hit.
-    if (pathname === '/api/upload' || pathname.startsWith('/api/upload/')) {
+    if (
+      pathname === '/api/upload' ||
+      pathname.startsWith('/api/upload/') ||
+      pathname.startsWith('/api/diamonds/')
+    ) {
       return NextResponse.next()
     }
 
