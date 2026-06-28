@@ -51,15 +51,15 @@ export default function BrowseDiamondsPage() {
   // Fetch dimensions on mount
   useEffect(() => {
     Promise.all([
-      supabase.from('diamond_shapes').select('id, name').order('name'),
-      supabase.from('diamond_sizes').select('id, shape_id, label, approx_carats').order('sort_order', { ascending: true }),
-      supabase.from('diamond_quality_buckets').select('id, label').order('sort_order', { ascending: true }),
-      supabase.from('diamond_color_buckets').select('id, label').order('sort_order', { ascending: true })
-    ]).then(([shRes, szRes, qbRes, cbRes]) => {
-      setShapes(shRes.data || [])
-      setAllSizes(szRes.data || [])
-      setQualities(qbRes.data || [])
-      setColors(cbRes.data || [])
+      fetch('/api/diamonds/shapes').then(r => r.json()),
+      fetch('/api/diamonds/sizes').then(r => r.json()),
+      fetch('/api/diamonds/quality-buckets').then(r => r.json()),
+      fetch('/api/diamonds/color-buckets').then(r => r.json())
+    ]).then(([shData, szData, qbData, cbData]) => {
+      setShapes(shData.shapes || [])
+      setAllSizes(szData.sizes || [])
+      setQualities(qbData.buckets || [])
+      setColors(cbData.buckets || [])
     })
   }, [])
 

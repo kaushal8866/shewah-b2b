@@ -97,12 +97,12 @@ export default function CatalogProductEditPage() {
       supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c']),
       supabase.from('product_categories').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
       supabase.from('reseller_product_prices').select('floor_price_paise').eq('product_id', id).maybeSingle(),
-      supabase.from('diamond_quality_buckets').select('id, label').order('sort_order', { ascending: true }),
-      supabase.from('diamond_color_buckets').select('id, label').order('sort_order', { ascending: true })
-    ]).then(([{ data: gr }, { data }, { data: sd }, { data: catData }, { data: resellerPrice }, { data: qb }, { data: cb }]: any) => {
+      fetch('/api/diamonds/quality-buckets').then(r => r.json()),
+      fetch('/api/diamonds/color-buckets').then(r => r.json())
+    ]).then(([{ data: gr }, { data }, { data: sd }, { data: catData }, { data: resellerPrice }, qbData, cbData]: any) => {
       if (catData) setCategories(catData)
-      if (qb) setQualityBuckets(qb)
-      if (cb) setColorBuckets(cb)
+      if (qbData?.buckets) setQualityBuckets(qbData.buckets)
+      if (cbData?.buckets) setColorBuckets(cbData.buckets)
 
       if (resellerPrice?.floor_price_paise) {
         setSavedFloorPricePaise(Number(resellerPrice.floor_price_paise))

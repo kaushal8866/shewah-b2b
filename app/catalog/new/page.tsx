@@ -102,20 +102,14 @@ export default function NewProductPage() {
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      supabase
-        .from('diamond_quality_buckets')
-        .select('id, label')
-        .order('sort_order', { ascending: true }),
-      supabase
-        .from('diamond_color_buckets')
-        .select('id, label')
-        .order('sort_order', { ascending: true })
-    ]).then(([{ data: gd }, { data: sd }, { data: catData }, { data: qb }, { data: cb }]) => {
+      fetch('/api/diamonds/quality-buckets').then(r => r.json()),
+      fetch('/api/diamonds/color-buckets').then(r => r.json())
+    ]).then(([{ data: gd }, { data: sd }, { data: catData }, qbData, cbData]) => {
       if (catData) {
         setCategories(catData)
       }
-      if (qb) setQualityBuckets(qb)
-      if (cb) setColorBuckets(cb)
+      if (qbData?.buckets) setQualityBuckets(qbData.buckets)
+      if (cbData?.buckets) setColorBuckets(cbData.buckets)
 
       const r = gd?.[0]
       if (r) {
