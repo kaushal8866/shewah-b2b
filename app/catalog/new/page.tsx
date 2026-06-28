@@ -242,9 +242,12 @@ export default function NewProductPage() {
       setDiamonds(prev => prev.map(row => {
         if (row.id !== rowId) return row
         if (!forceOverwrite && row.cost && row.cost !== '') return row
-        const qMatch = matrix.find((m: any) => m.quality_label.toLowerCase().includes((row.quality || '').toLowerCase().slice(0, 2)))
-        const cMatch = qMatch && matrix.find((m: any) =>
-          m.quality_label === qMatch.quality_label && m.color_label.toLowerCase().includes((row.color || '').toLowerCase().slice(0, 1)))
+        const qMatch = matrix.find((m: any) => m.quality_label.toLowerCase() === (row.quality || '').toLowerCase())
+          || matrix.find((m: any) => m.quality_label.toLowerCase().includes((row.quality || '').toLowerCase().slice(0, 2)))
+        const cMatch = qMatch && (
+          matrix.find((m: any) => m.quality_label === qMatch.quality_label && m.color_label.toLowerCase() === (row.color || '').toLowerCase())
+          || matrix.find((m: any) => m.quality_label === qMatch.quality_label && m.color_label.toLowerCase().includes((row.color || '').toLowerCase().slice(0, 1)))
+        )
         const pick = cMatch?.price ?? qMatch?.price ?? matrix[0]?.price ?? history?.cost
         let costVal = ''
         if (pick != null) {
