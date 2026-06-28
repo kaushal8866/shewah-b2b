@@ -130,8 +130,8 @@ export default function BrowseDiamondsPage() {
           colorId: selectedColor,
           originalPricePerPc: priceData.price_per_piece,
           originalPricePerCt: priceData.price_per_carat,
-          askedPrice: priceData.price_per_piece,
-          askedUnit: 'per_pc',
+          askedPrice: priceData.price_per_carat,
+          askedUnit: 'per_ct',
           quantity: 10, // default minimum purchase
           reason: 'Instant Buy'
         })
@@ -160,8 +160,8 @@ export default function BrowseDiamondsPage() {
 
   const handleOpenAskModal = () => {
     if (!priceData) return
-    setAskPrice(String(priceData.price_per_piece))
-    setAskUnit('per_pc')
+    setAskPrice(String(priceData.price_per_carat))
+    setAskUnit('per_ct')
     setAskQty('10')
     setAskReason('')
     setShowAskModal(true)

@@ -73,7 +73,9 @@ export async function POST(req: NextRequest) {
       askedPricePerPc = askVal * approxCarats
     }
 
-    const isInstantBuy = Math.abs(askedPricePerPc - origPc) < 0.01
+    const isInstantBuy = askedUnit === 'per_ct'
+      ? Math.abs(askVal - origCt) < 0.01
+      : Math.abs(askVal - origPc) < 0.01
 
     if (askedPricePerPc > origPc) {
       return NextResponse.json({ error: 'Asked price cannot exceed original price' }, { status: 400 })

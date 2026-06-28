@@ -54,9 +54,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ price_per_piece: null, price_per_carat: null })
     }
 
-    const pricePerPc = Number(priceCell.price_per_piece)
+    const pricePerCt = Number(priceCell.price_per_piece)
     const approxCarats = Number(sizeData.approx_carats) || 0
-    const pricePerCt = approxCarats > 0 ? Math.round(pricePerPc / approxCarats) : 0
+    const pricePerPc = Math.round(pricePerCt * approxCarats)
 
     return NextResponse.json({
       price_per_piece: pricePerPc,
