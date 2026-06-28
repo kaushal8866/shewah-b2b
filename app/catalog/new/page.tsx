@@ -199,7 +199,7 @@ export default function NewProductPage() {
       if (row) {
         const nextRow = { ...row, [key]: val }
         if (nextRow.shape_id && nextRow.size_id) {
-          autofillCostFor(id, nextRow.shape_id, nextRow.size_id, nextRow.type)
+          autofillCostFor(id, nextRow.shape_id, nextRow.size_id, nextRow.type, true)
         }
       }
     }
@@ -219,7 +219,7 @@ export default function NewProductPage() {
   // list is rendered as clickable chips so the operator can swap to any
   // other quality/color or to the historical product cost — required for
   // closing verbal deals where the negotiated price differs.
-  async function autofillCostFor(rowId: string, shape_id: string, size_id: string, type: string) {
+  async function autofillCostFor(rowId: string, shape_id: string, size_id: string, type: string, forceOverwrite?: boolean) {
     if (!shape_id || !size_id) return
     try {
       const url = new URL('/api/diamonds/latest-cost', window.location.origin)
@@ -238,10 +238,10 @@ export default function NewProductPage() {
       setCostSuggestions(prev => ({ ...prev, [rowId]: { matrix, history } }))
       // First-time autofill: prefer the matrix price (preferring a row that
       // matches the diamond's quality + color when present), fall back to
-      // history. Never overwrite an operator-typed value.
+      // history. Never overwrite an operator-typed value unless forceOverwrite is true.
       setDiamonds(prev => prev.map(row => {
         if (row.id !== rowId) return row
-        if (row.cost && row.cost !== '') return row
+        if (!forceOverwrite && row.cost && row.cost !== '') return row
         const qMatch = matrix.find((m: any) => m.quality_label.toLowerCase().includes((row.quality || '').toLowerCase().slice(0, 2)))
         const cMatch = qMatch && matrix.find((m: any) =>
           m.quality_label === qMatch.quality_label && m.color_label.toLowerCase().includes((row.color || '').toLowerCase().slice(0, 1)))
@@ -482,16 +482,14 @@ export default function NewProductPage() {
                         // pricing fallbacks that read `diamond_shape` keep
                         // showing something sensible.
                         shape: picked.shape_name ? picked.shape_name.toLowerCase() : row.shape,
-                        // Auto-fill weight from the catalog the first time
-                        // (operator can still override).
-                        weight: row.weight === '' && picked.approx_carats != null
+                        // Always sync weight with the picked catalog size's approx carats
+                        weight: picked.approx_carats != null
                           ? String(picked.approx_carats)
                           : row.weight,
                       })))
                       // Auto-fill cost from the most recent diamond row that
-                      // matched this shape+size+type. Only fills when blank
-                      // so we never trample an operator-typed value.
-                      autofillCostFor(d.id, picked.shape_id, picked.size_id, d.type)
+                      // matched this shape+size+type. Force overwrite on change.
+                      autofillCostFor(d.id, picked.shape_id, picked.size_id, d.type, true)
                     }}
                   />
                 </div>

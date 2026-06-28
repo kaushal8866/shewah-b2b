@@ -270,7 +270,7 @@ export default function CatalogProductEditPage() {
       if (row) {
         const nextRow = { ...row, [key]: val }
         if (nextRow.shape_id && nextRow.size_id) {
-          autofillCostFor(id2, nextRow.shape_id, nextRow.size_id, nextRow.type)
+          autofillCostFor(id2, nextRow.shape_id, nextRow.size_id, nextRow.type, true)
         }
       }
     }
@@ -286,7 +286,7 @@ export default function CatalogProductEditPage() {
   }
   const [costSuggestions, setCostSuggestions] = useState<Record<string, CostSuggestion>>({})
 
-  async function autofillCostFor(rowId: string, shape_id: string, size_id: string, type: string) {
+  async function autofillCostFor(rowId: string, shape_id: string, size_id: string, type: string, forceOverwrite?: boolean) {
     if (!shape_id || !size_id) return
     try {
       const url = new URL('/api/diamonds/latest-cost', window.location.origin)
@@ -305,7 +305,7 @@ export default function CatalogProductEditPage() {
       setCostSuggestions(prev => ({ ...prev, [rowId]: { matrix, history } }))
       setDiamonds(prev => prev.map(row => {
         if (row.id !== rowId) return row
-        if (row.cost && row.cost !== '') return row
+        if (!forceOverwrite && row.cost && row.cost !== '') return row
         const qMatch = matrix.find((m: any) => m.quality_label.toLowerCase().includes((row.quality || '').toLowerCase().slice(0, 2)))
         const cMatch = qMatch && matrix.find((m: any) =>
           m.quality_label === qMatch.quality_label && m.color_label.toLowerCase().includes((row.color || '').toLowerCase().slice(0, 1)))
@@ -574,11 +574,12 @@ export default function CatalogProductEditPage() {
                           size_id: picked.size_id,
                           size_label: picked.size_label,
                           shape: picked.shape_name ? picked.shape_name.toLowerCase() : row.shape,
-                          weight: row.weight === '' && picked.approx_carats != null
+                          // Always sync weight with the picked catalog size's approx carats
+                          weight: picked.approx_carats != null
                             ? String(picked.approx_carats)
                             : row.weight,
                         })))
-                        autofillCostFor(d.id, picked.shape_id, picked.size_id, d.type)
+                        autofillCostFor(d.id, picked.shape_id, picked.size_id, d.type, true)
                       }}
                     />
                   </div>
