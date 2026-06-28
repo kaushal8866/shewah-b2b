@@ -50,18 +50,28 @@ Stored in `lib/karat.ts`:
 
 **Rule:** All gold inventory is held as **24K-pure net weight** (`gold_24k` in material_float / stock_movements). Karat is only a **labour-rate lens** at the catalog/order edges.
 
-### 2.2 Pricing Formula (Immutable)
+### 2.2 Pricing Formula (Isolated Diamond Markup & Carat Weights)
 
 For any product/order:
 
 ```
-netGoldWeight = user-entered gross weight (stored in gold_weight_22k)
-pureMassForKarat(k) = netGoldWeight × KARAT_FACTORS[k]
+// 1. Dynamic Karat Weight Scaling
+If metal_weights map exists:
+  grossGoldWeight(k) = getMetalWeight(metal_weights, karat, color)
+Else:
+  grossGoldWeight(k) = convertKaratWeight(netGoldWeight, '22K', refColor, karat, refColor) // density-scaled from 22K reference weight
+
+pureMassForKarat(k) = grossGoldWeight(k) × KARAT_FACTORS[k]
 goldCost(k) = pureMassForKarat(k) × rate24k
-labourCost(k) = retailLabourRate(k) × max(netGoldWeight, 1g)
+labourCost(k) = retailLabourRate(k) × max(grossGoldWeight(k), 1g)
+
+// 2. Diamond Cost (Sum of pieces × cost-per-piece)
+diamondCost = sum of (d.pieces × d.cost) for all diamond rows in diamond_specs
+
+// 3. COGS, B2B Trade Price and MRP Formulas (Markups isolated to Diamonds ONLY)
 cogs(k) = goldCost(k) + labourCost(k) + diamondCost + making_charges + igiCost
-tradePrice(k) = round(cogs(k) × 1.28)   // margin multiplier
-mrp(k) = round(tradePrice(k) × 1.40)    // retail markup
+tradePrice(k) = goldCost(k) + labourCost(k) + (diamondCost × 1.28) + making_charges + igiCost
+mrp(k) = goldCost(k) + labourCost(k) + (diamondCost × 1.28 × 1.40) + making_charges + igiCost
 ```
 
 **Default karat is 22K** for trade_price and mrp_suggested.
