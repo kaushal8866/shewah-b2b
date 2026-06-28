@@ -170,13 +170,13 @@ export default function CatalogProductEditPage() {
         })
         setPhotoUrls(data.photo_urls || [])
         if (Array.isArray(data.diamond_specs) && data.diamond_specs.length > 0) {
-          setDiamonds(data.diamond_specs.map((d: any) => ({
+          const mapped = data.diamond_specs.map((d: any) => ({
             id: Math.random().toString(36).slice(2),
             role: d.role || 'center',
             shape: d.shape || 'round',
             weight: String(d.weight ?? ''),
-            quality: d.quality || 'VS2',
-            color: d.color || 'F',
+            quality: d.quality || 'VS',
+            color: d.color || 'GH',
             type: d.type || 'lgd',
             pieces: String(d.pieces ?? '1'),
             cost: String(d.cost ?? ''),
@@ -186,7 +186,13 @@ export default function CatalogProductEditPage() {
             // Lock pre-catalog rows so a master can't unintentionally
             // mutate an old free-text spec — they have to "Upgrade" first.
             legacy_locked: !(d.shape_id && d.size_id),
-          })))
+          }))
+          setDiamonds(mapped)
+          mapped.forEach((row: any) => {
+            if (row.shape_id && row.size_id) {
+              autofillCostFor(row.id, row.shape_id, row.size_id, row.type)
+            }
+          })
         }
       }
       setLoading(false)
@@ -259,9 +265,14 @@ export default function CatalogProductEditPage() {
   function removeDiamondRow(id2: string) { if (diamonds.length > 1) setDiamonds(prev => prev.filter(d => d.id !== id2)) }
   function updateDiamond(id2: string, key: keyof DiamondRow, val: string) {
     setDiamonds(prev => prev.map(d => d.id === id2 ? { ...d, [key]: val } : d))
-    if (key === 'type') {
+    if (key === 'type' || key === 'quality' || key === 'color') {
       const row = diamonds.find(x => x.id === id2)
-      if (row?.shape_id && row?.size_id) autofillCostFor(id2, row.shape_id, row.size_id, val)
+      if (row) {
+        const nextRow = { ...row, [key]: val }
+        if (nextRow.shape_id && nextRow.size_id) {
+          autofillCostFor(id2, nextRow.shape_id, nextRow.size_id, nextRow.type)
+        }
+      }
     }
   }
 
@@ -305,7 +316,8 @@ export default function CatalogProductEditPage() {
             costVal = String(pick)
           } else {
             const wt = parseFloat(row.weight) || 0
-            costVal = String(wt * pick)
+            const isLgd = row.type === 'lgd'
+            costVal = isLgd ? String(pick) : String(Math.round(wt * pick))
           }
         }
         return costVal ? { ...row, cost: costVal } : row
@@ -589,7 +601,8 @@ export default function CatalogProductEditPage() {
                       <div className="flex flex-wrap gap-1.5">
                         {sug.matrix.map((m, i) => {
                           const wt = parseFloat(d.weight) || 0
-                          const pcCost = Math.round(wt * m.price)
+                          const isLgd = d.type === 'lgd'
+                          const pcCost = isLgd ? Math.round(m.price) : Math.round(wt * m.price)
                           const active = Math.abs((parseFloat(d.cost) || 0) - pcCost) < 0.01
                           return (
                             <button key={`m-${i}`} type="button"
@@ -597,10 +610,10 @@ export default function CatalogProductEditPage() {
                               className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
                                 (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
                                         : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}
-                              title={`Matrix · ${m.quality_label} · ${m.color_label} · Rate: ₹${m.price.toLocaleString('en-IN')}/ct`}>
+                              title={`Matrix · ${m.quality_label} · ${m.color_label} · Rate: ₹${m.price.toLocaleString('en-IN')}${isLgd ? '/pc' : '/ct'}`}>
                               <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
                               ₹{pcCost.toLocaleString('en-IN')}
-                              <span className="text-[10px] text-stone-400 ml-1">({m.price.toLocaleString('en-IN')}/ct)</span>
+                              <span className="text-[10px] text-stone-400 ml-1">({m.price.toLocaleString('en-IN')}{isLgd ? '/pc' : '/ct'})</span>
                             </button>
                           )
                         })}

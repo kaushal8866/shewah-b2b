@@ -200,11 +200,14 @@ export default function NewProductPage() {
   function removeDiamondRow(id: string) { if (diamonds.length > 1) setDiamonds(prev => prev.filter(d => d.id !== id)) }
   function updateDiamond(id: string, key: keyof DiamondRow, val: string) {
     setDiamonds(prev => prev.map(d => d.id === id ? { ...d, [key]: val } : d))
-    // Picking a different type for an already-picked stone should refresh
-    // the cost suggestion too.
-    if (key === 'type') {
+    if (key === 'type' || key === 'quality' || key === 'color') {
       const row = diamonds.find(x => x.id === id)
-      if (row?.shape_id && row?.size_id) autofillCostFor(id, row.shape_id, row.size_id, val)
+      if (row) {
+        const nextRow = { ...row, [key]: val }
+        if (nextRow.shape_id && nextRow.size_id) {
+          autofillCostFor(id, nextRow.shape_id, nextRow.size_id, nextRow.type)
+        }
+      }
     }
   }
 
@@ -255,7 +258,8 @@ export default function NewProductPage() {
             costVal = String(pick)
           } else {
             const wt = parseFloat(row.weight) || 0
-            costVal = String(wt * pick)
+            const isLgd = row.type === 'lgd'
+            costVal = isLgd ? String(pick) : String(Math.round(wt * pick))
           }
         }
         return costVal ? { ...row, cost: costVal } : row
@@ -547,7 +551,8 @@ export default function NewProductPage() {
                       <div className="flex flex-wrap gap-1.5">
                         {sug.matrix.map((m, i) => {
                           const wt = parseFloat(d.weight) || 0
-                          const pcCost = Math.round(wt * m.price)
+                          const isLgd = d.type === 'lgd'
+                          const pcCost = isLgd ? Math.round(m.price) : Math.round(wt * m.price)
                           const active = Math.abs((parseFloat(d.cost) || 0) - pcCost) < 0.01
                           return (
                             <button
@@ -557,11 +562,11 @@ export default function NewProductPage() {
                               className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
                                 (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
                                         : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}
-                              title={`Matrix · ${m.quality_label} · ${m.color_label} · Rate: ₹${m.price.toLocaleString('en-IN')}/ct`}
+                              title={`Matrix · ${m.quality_label} · ${m.color_label} · Rate: ₹${m.price.toLocaleString('en-IN')}${isLgd ? '/pc' : '/ct'}`}
                             >
                               <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
                               ₹{pcCost.toLocaleString('en-IN')}
-                              <span className="text-[10px] text-stone-400 ml-1">({m.price.toLocaleString('en-IN')}/ct)</span>
+                              <span className="text-[10px] text-stone-400 ml-1">({m.price.toLocaleString('en-IN')}{isLgd ? '/pc' : '/ct'})</span>
                             </button>
                           )
                         })}
