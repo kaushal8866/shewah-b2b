@@ -10,7 +10,8 @@ const DETAIL_COLS = `
   gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k,
   karat_pricing,
   trade_price, photo_urls, delivery_days, models_available, tags, attributes,
-  making_charges, igi_cert_cost, diamond_cost, diamond_specs
+  making_charges, igi_cert_cost, diamond_cost, diamond_specs,
+  sell_mode, set_discount_pct, set_parent_id, component_label
 `
 
 export async function GET(_: Request, ctx: { params: { id: string } }) {
@@ -63,8 +64,43 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
       }
     }
   }
+
+  // Fetch children if it's a set
+  let components: any[] = []
+  if (data.sell_mode && data.sell_mode !== 'single') {
+    const { data: kids } = await supabaseAdmin
+      .from('products')
+      .select(DETAIL_COLS)
+      .eq('set_parent_id', data.id)
+      .eq('is_active', true)
+      .order('component_sort_order', { ascending: true })
+    
+    if (kids) {
+      components = kids.map((k: any) => {
+        const rawComp = k.karat_pricing
+        let compPublicPricing: Record<string, PublicPricingRow> | null = null
+        if (rawComp && typeof rawComp === 'object') {
+          compPublicPricing = {}
+          for (const [key, row] of Object.entries(rawComp)) {
+            if (!row) continue
+            compPublicPricing[key] = {
+              karat: (row as any).karat,
+              weight: (row as any).weight,
+              trade: (row as any).trade,
+              mrp: (row as any).mrp,
+              goldCost: (row as any).goldCost,
+              labourCost: (row as any).labourCost
+            }
+          }
+        }
+        return { ...k, karat_pricing: compPublicPricing }
+      })
+    }
+  }
+
   return NextResponse.json({
     product: { ...data, karat_pricing: publicPricing },
     category_schema: categorySchema,
+    components,
   })
 }

@@ -61,6 +61,8 @@ export default function RetailerProductDetail() {
   const [notes, setNotes] = useState('')
   const [selectedKarat, setSelectedKarat] = useState<number>(22)
   const [submitting, setSubmitting] = useState(false)
+  const [components, setComponents] = useState<any[]>([])
+  const [selectedComponents, setSelectedComponents] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     fetch(`/api/portal/retailer/catalog/${id}`)
@@ -70,6 +72,15 @@ export default function RetailerProductDetail() {
         else {
           setProduct(d.product)
           setCategorySchema(d.category_schema || [])
+          setComponents(d.components || [])
+          
+          const initSelected: Record<string, boolean> = {}
+          if (d.components) {
+            d.components.forEach((c: any) => {
+              initSelected[c.id] = true
+            })
+          }
+          setSelectedComponents(initSelected)
         }
       })
       .catch(e => setError(e.message))
@@ -163,10 +174,49 @@ export default function RetailerProductDetail() {
     return []
   }, [product])
 
-  const selectedRow = useMemo(
-    () => karatRows.find(r => r.karat === selectedKarat) || karatRows[0] || null,
-    [karatRows, selectedKarat]
-  )
+  const selectedRow = useMemo(() => {
+    if (!product) return null
+    if (components.length > 0) {
+      const allSelected = components.every(c => selectedComponents[c.id])
+      const noneSelected = !components.some(c => selectedComponents[c.id])
+      if (noneSelected) return null
+
+      if (allSelected && product.sell_mode !== 'individual_only') {
+        return karatRows.find(r => r.karat === selectedKarat) || karatRows[0] || null
+      }
+      
+      let weightSum = 0
+      let goldCostSum = 0
+      let labourCostSum = 0
+      let cogsSum = 0
+      let tradeSum = 0
+      let mrpSum = 0
+
+      components.forEach(comp => {
+        if (!selectedComponents[comp.id]) return
+        const compPricing = comp.karat_pricing || {}
+        const match = compPricing[String(selectedKarat)] || compPricing['Silver']
+        if (match) {
+          weightSum += match.weight || 0
+          goldCostSum += match.goldCost || 0
+          labourCostSum += match.labourCost || 0
+          cogsSum += match.cogs || 0
+          tradeSum += match.trade || 0
+          mrpSum += match.mrp || 0
+        }
+      })
+      return {
+        karat: selectedKarat,
+        weight: weightSum,
+        goldCost: goldCostSum,
+        labourCost: labourCostSum,
+        cogs: cogsSum,
+        trade: tradeSum,
+        mrp: mrpSum
+      }
+    }
+    return karatRows.find(r => r.karat === selectedKarat) || karatRows[0] || null
+  }, [product, karatRows, selectedKarat, components, selectedComponents])
 
   // Default to reference karat the first time pricing data lands.
   useEffect(() => {
@@ -195,6 +245,10 @@ export default function RetailerProductDetail() {
         ring_size: size || null,
         special_notes: notes || null,
         selected_karat: selectedRow?.karat || null,
+        components: components.map(c => ({
+          id: c.id,
+          selected: !!selectedComponents[c.id]
+        }))
       }),
     })
     const data = await res.json()
@@ -256,6 +310,62 @@ export default function RetailerProductDetail() {
           <h1 className="text-2xl font-semibold text-stone-900 mb-2">{product.name}</h1>
           {product.description && (
             <p className="text-sm text-stone-600 mb-4 whitespace-pre-wrap">{product.description}</p>
+          )}
+
+          {/* SET COMPONENTS SELECTOR */}
+          {components.length > 0 && (
+            <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 mb-5">
+              <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider mb-2">
+                Set Components Curation
+              </h3>
+              <p className="text-xs text-stone-400 mb-3">
+                {product.sell_mode === 'set_only'
+                  ? 'This product is only sold as a complete set.'
+                  : 'Select which components you want to include in this order:'}
+              </p>
+              <div className="space-y-2">
+                {components.map(comp => {
+                  const isChecked = !!selectedComponents[comp.id]
+                  const isDisabled = product.sell_mode === 'set_only'
+                  return (
+                    <label key={comp.id} className="flex items-center gap-3 bg-white border border-stone-200/60 rounded-lg p-2.5 hover:bg-stone-50/50 cursor-pointer select-none transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        disabled={isDisabled}
+                        onChange={() => {
+                          if (isDisabled) return
+                          setSelectedComponents(prev => {
+                            const next = { ...prev, [comp.id]: !prev[comp.id] }
+                            if (product.sell_mode === 'individual_only' && !Object.values(next).some(Boolean)) {
+                              return prev
+                            }
+                            return next
+                          })
+                        }}
+                        className="rounded text-[#1E3A5F] focus:ring-[#1E3A5F] w-4 h-4 border-stone-300"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-stone-800 flex items-center gap-2">
+                          <span>{comp.component_label || comp.category}</span>
+                          <span className="text-[10px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded font-normal">
+                            {comp.code}
+                          </span>
+                        </p>
+                        <p className="text-[10px] text-stone-400 mt-0.5">
+                          {comp.category}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-stone-900">
+                          ₹{((comp.karat_pricing?.[String(selectedKarat)] || comp.karat_pricing?.['Silver'])?.trade || comp.trade_price || 0).toLocaleString('en-IN')}
+                        </p>
+                      </div>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-5 text-sm">

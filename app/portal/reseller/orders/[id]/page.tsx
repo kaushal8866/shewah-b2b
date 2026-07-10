@@ -53,6 +53,7 @@ export default function ResellerOrderDetail() {
   const [error, setError] = useState('')
   const [order, setOrder] = useState<any>(null)
   const [payments, setPayments] = useState<any[]>([])
+  const [groupOrders, setGroupOrders] = useState<any[]>([])
 
   // Payment proof form state
   const [paymentMethod, setPaymentMethod] = useState('upi')
@@ -81,6 +82,7 @@ export default function ResellerOrderDetail() {
       } else {
         setOrder(data.order)
         setPayments(data.payments || [])
+        setGroupOrders(data.groupOrders || [])
       }
     } catch (e: any) {
       setError(e.message)
@@ -197,9 +199,17 @@ export default function ResellerOrderDetail() {
   if (error) return <div className="p-4 lg:p-7 max-w-4xl mx-auto"><div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div></div>
   if (!order) return <div className="p-4 lg:p-7 text-stone-450 text-sm">Order not found.</div>
 
-  const costRupees = order.reseller_cost_paise / 100
-  const sellingPriceRupees = order.customer_selling_price_paise / 100
-  const earningsRupees = order.reseller_earnings_paise / 100
+  const costRupees = groupOrders.length > 0
+    ? groupOrders.reduce((acc, o) => acc + (o.reseller_cost_paise || 0), 0) / 100
+    : order.reseller_cost_paise / 100
+
+  const sellingPriceRupees = groupOrders.length > 0
+    ? groupOrders.reduce((acc, o) => acc + (o.customer_selling_price_paise || 0), 0) / 100
+    : order.customer_selling_price_paise / 100
+
+  const earningsRupees = groupOrders.length > 0
+    ? groupOrders.reduce((acc, o) => acc + (o.reseller_earnings_paise || 0), 0) / 100
+    : order.reseller_earnings_paise / 100
 
   // Resolve current active step index in timeline
   let activeTimelineIdx = 0
@@ -284,28 +294,55 @@ export default function ResellerOrderDetail() {
             <h3 className="font-bold text-stone-900 text-sm pb-2 border-b border-stone-100 flex items-center gap-1.5">
               <ShoppingBag className="w-4 h-4 text-stone-400" /> Order Specifications
             </h3>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between py-1 border-b border-stone-50 text-stone-600">
-                <span>Ordered Item:</span>
-                <span className="font-bold text-stone-900">{order.products?.code} · {order.products?.name}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-stone-50 text-stone-600">
-                <span>Quantity:</span>
-                <span className="font-bold text-stone-900">{order.quantity} pc(s)</span>
-              </div>
-              {order.ring_size && (
-                <div className="flex justify-between py-1 border-b border-stone-50 text-stone-600">
-                  <span>Ring Size:</span>
-                  <span className="font-bold text-stone-900">{order.ring_size}</span>
+            {groupOrders.length > 0 ? (
+              <div className="space-y-4">
+                <p className="text-[10px] text-stone-450 font-bold uppercase tracking-wider">Set Components Breakdown</p>
+                <div className="space-y-3">
+                  {groupOrders.map(comp => (
+                    <div key={comp.id} className="flex items-center gap-3 p-3 border rounded-xl bg-stone-50" style={{ borderColor: '#E7E5E4' }}>
+                      {comp.products?.photo_urls?.[0] ? (
+                        <img src={comp.products.photo_urls[0]} className="w-12 h-12 object-cover rounded border" alt="" />
+                      ) : (
+                        <div className="w-12 h-12 bg-stone-100 flex items-center justify-center rounded border border-stone-200 text-stone-400 font-bold text-xs uppercase">SET</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-stone-850 truncate">{comp.component_label || comp.products?.category}</p>
+                        <p className="text-[10px] text-stone-450 mt-0.5">
+                          SKU: {comp.products?.code} · Karat: {comp.configuration_summary?.karat || comp.custom_attributes?.karat || '18K'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-green-700">₹{((comp.customer_selling_price_paise || 0) / 100).toLocaleString('en-IN')}</p>
+                        <p className="text-[10px] text-stone-450">Profit: ₹{((comp.reseller_earnings_paise || 0) / 100).toLocaleString('en-IN')}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-              {(order.configuration_summary?.karat || order.custom_attributes?.karat) && (
+              </div>
+            ) : (
+              <div className="space-y-2 text-xs">
                 <div className="flex justify-between py-1 border-b border-stone-50 text-stone-600">
-                  <span>Metal Karat:</span>
-                  <span className="font-bold text-stone-900">{order.configuration_summary?.karat || order.custom_attributes?.karat}</span>
+                  <span>Ordered Item:</span>
+                  <span className="font-bold text-stone-900">{order.products?.code} · {order.products?.name}</span>
                 </div>
-              )}
-            </div>
+                <div className="flex justify-between py-1 border-b border-stone-50 text-stone-600">
+                  <span>Quantity:</span>
+                  <span className="font-bold text-stone-900">{order.quantity} pc(s)</span>
+                </div>
+                {order.ring_size && (
+                  <div className="flex justify-between py-1 border-b border-stone-50 text-stone-600">
+                    <span>Ring Size:</span>
+                    <span className="font-bold text-stone-900">{order.ring_size}</span>
+                  </div>
+                )}
+                {(order.configuration_summary?.karat || order.custom_attributes?.karat) && (
+                  <div className="flex justify-between py-1 border-b border-stone-50 text-stone-600">
+                    <span>Metal Karat:</span>
+                    <span className="font-bold text-stone-900">{order.configuration_summary?.karat || order.custom_attributes?.karat}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Custom attributes */}
             {Object.keys(order.custom_attributes || {}).filter(k => k !== 'customer_notes' && k !== 'reference_images' && k !== 'karat').length > 0 && (

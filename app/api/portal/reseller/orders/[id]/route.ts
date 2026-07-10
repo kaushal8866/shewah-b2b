@@ -34,7 +34,17 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     .eq('linked_order_id', orderId)
     .order('created_at', { ascending: false })
 
-  return NextResponse.json({ order, payments: payments || [] })
+  let groupOrders: any[] = []
+  if (order.set_order_group_id) {
+    const { data: gData } = await supabaseAdmin
+      .from('reseller_orders')
+      .select('*, products(code, name, photo_urls, ref_karat, ref_color)')
+      .eq('set_order_group_id', order.set_order_group_id)
+      .eq('reseller_id', reseller.id)
+    groupOrders = gData || []
+  }
+
+  return NextResponse.json({ order, payments: payments || [], groupOrders })
 }
 
 // Resellers submit proof of payment for this order
@@ -136,19 +146,21 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ error: 'Order is already processed' }, { status: 400 })
     }
 
-    const { data: updated, error: updErr } = await supabaseAdmin
-      .from('reseller_orders')
-      .update({
-        status: 'payment_pending',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', orderId)
-      .select('*')
-      .single()
-
-    if (updErr) {
-      return NextResponse.json({ error: 'Could not confirm order: ' + updErr.message }, { status: 500 })
+    let confirmQuery = supabaseAdmin.from('reseller_orders').update({
+      status: 'payment_pending',
+      updated_at: new Date().toISOString()
+    })
+    if (order.set_order_group_id) {
+      confirmQuery = confirmQuery.eq('set_order_group_id', order.set_order_group_id)
+    } else {
+      confirmQuery = confirmQuery.eq('id', orderId)
     }
+    const { data: updatedRows, error: updErr } = await confirmQuery.select('*')
+
+    if (updErr || !updatedRows || updatedRows.length === 0) {
+      return NextResponse.json({ error: 'Could not confirm order: ' + (updErr?.message || 'No rows updated') }, { status: 500 })
+    }
+    const updated = updatedRows.find((r: any) => r.id === orderId) || updatedRows[0]
     
     // Log system message in chat thread
     await supabaseAdmin.from('reseller_messages').insert({
@@ -167,41 +179,45 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ error: 'Order is already processed' }, { status: 400 })
     }
 
-    const { data: updated, error: updErr } = await supabaseAdmin
-      .from('reseller_orders')
-      .update({
-        status: 'cancelled',
-        custom_attributes: {
-          ...order.custom_attributes,
-          rejection_reason: rejection_reason || 'Rejected by reseller boutique'
-        },
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', orderId)
-      .select('*')
-      .single()
-
-    if (updErr) {
-      return NextResponse.json({ error: 'Could not reject order: ' + updErr.message }, { status: 500 })
+    let rejectQuery = supabaseAdmin.from('reseller_orders').update({
+      status: 'cancelled',
+      custom_attributes: {
+        ...order.custom_attributes,
+        rejection_reason: rejection_reason || 'Rejected by reseller boutique'
+      },
+      updated_at: new Date().toISOString()
+    })
+    if (order.set_order_group_id) {
+      rejectQuery = rejectQuery.eq('set_order_group_id', order.set_order_group_id)
+    } else {
+      rejectQuery = rejectQuery.eq('id', orderId)
     }
+    const { data: updatedRows, error: updErr } = await rejectQuery.select('*')
+
+    if (updErr || !updatedRows || updatedRows.length === 0) {
+      return NextResponse.json({ error: 'Could not reject order: ' + (updErr?.message || 'No rows updated') }, { status: 500 })
+    }
+    const updated = updatedRows.find((r: any) => r.id === orderId) || updatedRows[0]
 
     return NextResponse.json({ order: updated })
   }
 
   if (action === 'mark-paid') {
-    const { data: updated, error: updErr } = await supabaseAdmin
-      .from('reseller_orders')
-      .update({
-        customer_payment_status: 'paid',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', orderId)
-      .select('*')
-      .single()
-
-    if (updErr) {
-      return NextResponse.json({ error: 'Could not update payment status: ' + updErr.message }, { status: 500 })
+    let paidQuery = supabaseAdmin.from('reseller_orders').update({
+      customer_payment_status: 'paid',
+      updated_at: new Date().toISOString()
+    })
+    if (order.set_order_group_id) {
+      paidQuery = paidQuery.eq('set_order_group_id', order.set_order_group_id)
+    } else {
+      paidQuery = paidQuery.eq('id', orderId)
     }
+    const { data: updatedRows, error: updErr } = await paidQuery.select('*')
+
+    if (updErr || !updatedRows || updatedRows.length === 0) {
+      return NextResponse.json({ error: 'Could not update payment status: ' + (updErr?.message || 'No rows updated') }, { status: 500 })
+    }
+    const updated = updatedRows.find((r: any) => r.id === orderId) || updatedRows[0]
 
     return NextResponse.json({ order: updated })
   }

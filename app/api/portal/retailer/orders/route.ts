@@ -125,7 +125,137 @@ export async function POST(req: Request) {
     if (v != null) retailLabourAtOrder = Number(v)
   }
 
-  // Resolve the per-karat trade price + gross weight from the cached pricing.
+  const year = new Date().getFullYear()
+  const { data: lastRow } = await supabaseAdmin
+    .from('orders')
+    .select('order_number')
+    .ilike('order_number', `SH-ORD-${year}-%`)
+    .order('order_number', { ascending: false })
+    .limit(1)
+  let seq = 1
+  if (lastRow?.[0]?.order_number) {
+    const m = String(lastRow[0].order_number).match(/(\d+)$/)
+    if (m) seq = (parseInt(m[1]) || 0) + 1
+  }
+  const orderDate = new Date().toISOString().slice(0, 10)
+
+  // SET CHECK
+  if (type === 'catalog' && productRow.sell_mode && productRow.sell_mode !== 'single') {
+    const reqComponents = Array.isArray(body.components) ? body.components : []
+    const selectedCompIds = reqComponents.filter((c: any) => c.selected).map((c: any) => c.id)
+    if (selectedCompIds.length === 0) {
+      return NextResponse.json({ error: 'Select at least one component' }, { status: 400 })
+    }
+
+    const { data: kids, error: kidsErr } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .in('id', selectedCompIds)
+    if (kidsErr) return NextResponse.json({ error: kidsErr.message }, { status: 500 })
+    if (!kids || kids.length === 0) return NextResponse.json({ error: 'Components not found' }, { status: 400 })
+
+    const setGroupId = crypto.randomUUID()
+    const createdOrders: any[] = []
+
+    for (let idx = 0; idx < kids.length; idx++) {
+      const comp = kids[idx]
+      const compKarat = selectedKarat
+      const compPricing = comp.karat_pricing || {}
+      const compKaratRow = compPricing[String(compKarat)] || compPricing['Silver']
+      const compWeight = compKaratRow?.weight || Number(comp[`gold_weight_${compKarat}k`]) || comp.gold_weight_g || 0
+      const compPure = compWeight * (KARAT_FACTORS[compKarat] || 0)
+      const compTrade = Number(compKaratRow?.trade) || comp.trade_price || 0
+      const compTotal = compTrade * quantity
+      const compDelivery = comp.delivery_days || 21
+      const compExpected = new Date(Date.now() + compDelivery * 86400000).toISOString().slice(0, 10)
+
+      const compInsert = {
+        partner_id: user.partnerId,
+        product_id: comp.id,
+        type: 'catalog',
+        model: 'wholesale',
+        quantity,
+        ring_size: ringSize,
+        special_notes: specialNotes,
+        gold_rate_at_order: goldRate,
+        trade_price: compTrade,
+        total_amount: compTotal,
+        advance_paid: 0,
+        balance_due: compTotal,
+        order_date: orderDate,
+        expected_delivery: compExpected,
+        status: 'brief_received',
+        gold_source: 'self',
+        gold_karat: compKarat,
+        selected_karat: compKarat,
+        gross_weight_at_karat: compWeight || null,
+        gold_pure_24kt_g: compPure || null,
+        retail_labour_at_order: retailLabourAtOrder,
+        gold_weight_estimated: compWeight || null,
+        making_charges: comp.making_charges || null,
+        cad_cost: 0,
+        stone_cost: comp.diamond_cost || 0,
+        internal_notes: `Placed via retailer portal set checkout by ${user.username}`,
+        set_order_group_id: setGroupId,
+        component_label: comp.component_label || comp.category,
+      }
+
+      let attemptCreated: any = null
+      let attemptError: any = null
+      for (let attempt = 0; attempt < 5; attempt++) {
+        compInsert.order_number = `SH-ORD-${year}-${String(seq).padStart(3, '0')}`
+        const r = await supabaseAdmin
+          .from('orders')
+          .insert([compInsert])
+          .select('id, order_number, status')
+          .single()
+        if (!r.error) { attemptCreated = r.data; attemptError = null; seq += 1; break }
+        attemptError = r.error
+        if ((r.error as any).code === '23505' && r.error.message?.includes('order_number')) {
+          seq += 1
+          continue
+        }
+        break
+      }
+
+      if (attemptError) {
+        const minimal = {
+          order_number: `SH-ORD-${year}-${String(seq).padStart(3, '0')}`,
+          partner_id: compInsert.partner_id,
+          product_id: compInsert.product_id,
+          type: compInsert.type,
+          model: compInsert.model,
+          quantity: compInsert.quantity,
+          ring_size: compInsert.ring_size,
+          special_notes: compInsert.special_notes,
+          gold_rate_at_order: compInsert.gold_rate_at_order,
+          trade_price: compInsert.trade_price,
+          total_amount: compInsert.total_amount,
+          advance_paid: compInsert.advance_paid,
+          balance_due: compInsert.balance_due,
+          order_date: compInsert.order_date,
+          expected_delivery: compInsert.expected_delivery,
+          status: compInsert.status,
+          internal_notes: compInsert.internal_notes,
+          set_order_group_id: setGroupId,
+          component_label: compInsert.component_label,
+        }
+        const retry = await supabaseAdmin
+          .from('orders')
+          .insert([minimal])
+          .select('id, order_number, status')
+          .single()
+        if (retry.error) return NextResponse.json({ error: retry.error.message }, { status: 500 })
+        attemptCreated = retry.data
+        seq += 1
+      }
+      createdOrders.push(attemptCreated)
+    }
+
+    return NextResponse.json({ order: createdOrders[0], orders: createdOrders })
+  }
+
+  // Resolve single product details for default flow
   type KaratPricingRow = { karat: number; weight: number; trade: number; mrp: number }
   const karatPricing: Record<string, KaratPricingRow> | null = productRow?.karat_pricing || null
   const karatRow = karatPricing ? karatPricing[String(selectedKarat)] : null
@@ -139,23 +269,8 @@ export async function POST(req: Request) {
   const totalAmount = tradePrice * quantity
   const deliveryDays = productRow?.delivery_days || 21
   const expectedDelivery = new Date(Date.now() + deliveryDays * 86400000).toISOString().slice(0, 10)
-  const orderDate = new Date().toISOString().slice(0, 10)
 
-  // Compute a starting sequence based on the highest existing order_number for
-  // this year. We retry on unique-violation (23505) so concurrent submissions
-  // do not collide.
-  const year = new Date().getFullYear()
-  const { data: lastRow } = await supabaseAdmin
-    .from('orders')
-    .select('order_number')
-    .ilike('order_number', `SH-ORD-${year}-%`)
-    .order('order_number', { ascending: false })
-    .limit(1)
-  let seq = 1
-  if (lastRow?.[0]?.order_number) {
-    const m = String(lastRow[0].order_number).match(/(\d+)$/)
-    if (m) seq = (parseInt(m[1]) || 0) + 1
-  }
+
 
   const insert: any = {
     order_number: `SH-ORD-${year}-${String(seq).padStart(3, '0')}`,

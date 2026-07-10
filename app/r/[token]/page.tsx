@@ -100,8 +100,9 @@ export default function PublicStorefront() {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
 
-  // Selected Product detail drawer
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [components, setComponents] = useState<any[]>([])
+  const [selectedComponents, setSelectedComponents] = useState<Record<string, boolean>>({})
 
   // Made-to-order config states
   const [selectedKarat, setSelectedKarat] = useState<number>(18)
@@ -124,6 +125,50 @@ export default function PublicStorefront() {
   const [profileOrders, setProfileOrders] = useState<any[]>([])
   const [profileWishlist, setProfileWishlist] = useState<any[]>([])
   const [loadingProfile, setLoadingProfile] = useState(false)
+
+  const groupedProfileOrders = useMemo(() => {
+    const groups: Record<string, {
+      id: string
+      order_number: string
+      created_at: string
+      status: string
+      total_amount_paise: number
+      is_set: boolean
+      components: any[]
+    }> = {}
+
+    const singles: any[] = []
+
+    profileOrders.forEach(o => {
+      if (o.set_order_group_id) {
+        const gid = o.set_order_group_id
+        if (!groups[gid]) {
+          groups[gid] = {
+            id: gid,
+            order_number: o.order_number.split('-')[0] + ' (Set)',
+            created_at: o.created_at,
+            status: o.status,
+            total_amount_paise: 0,
+            is_set: true,
+            components: []
+          }
+        }
+        groups[gid].components.push(o)
+        groups[gid].total_amount_paise += (o.customer_selling_price_paise || 0)
+        if (o.status !== 'customer_placed') {
+          groups[gid].status = o.status
+        }
+      } else {
+        singles.push({
+          ...o,
+          is_set: false,
+          total_amount_paise: o.customer_selling_price_paise || 0
+        })
+      }
+    })
+
+    return [...singles, ...Object.values(groups)].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [profileOrders])
 
   // Callback modal
   const [showCallbackModal, setShowCallbackModal] = useState(false)
@@ -172,11 +217,31 @@ export default function PublicStorefront() {
     if (selectedProduct) {
       updateLivePrice()
     }
-  }, [selectedProduct, selectedKarat])
+  }, [selectedProduct, selectedKarat, selectedComponents])
 
   useEffect(() => {
     if (selectedProduct) {
       loadProductReviews()
+    }
+  }, [selectedProduct])
+
+  useEffect(() => {
+    if (selectedProduct && selectedProduct.sell_mode && selectedProduct.sell_mode !== 'single') {
+      fetch(`/api/r/${token}/components?product_id=${selectedProduct.id}`)
+        .then(r => r.json())
+        .then(d => {
+          setComponents(d.components || [])
+          const initSel: Record<string, boolean> = {}
+          if (d.components) {
+            d.components.forEach((c: any) => {
+              initSel[c.id] = true
+            })
+          }
+          setSelectedComponents(initSel)
+        })
+    } else {
+      setComponents([])
+      setSelectedComponents({})
     }
   }, [selectedProduct])
 
@@ -323,8 +388,29 @@ export default function PublicStorefront() {
       const res = await fetch(`/api/r/${token}/price?product_id=${selectedProduct.id}&karat=${selectedKarat}`)
       const data = await res.json()
       if (data.selling_price_rupees) {
-        setEstimatedPrice(data.selling_price_rupees)
-        setPriceBreakup(data.breakup || null)
+        if (components.length > 0) {
+          const allSelected = components.every(c => selectedComponents[c.id])
+          const noneSelected = !components.some(c => selectedComponents[c.id])
+          
+          if (noneSelected) {
+            setEstimatedPrice(0)
+            setPriceBreakup(null)
+          } else if (allSelected && selectedProduct.sell_mode !== 'individual_only') {
+            setEstimatedPrice(data.selling_price_rupees)
+            setPriceBreakup(data.breakup || null)
+          } else {
+            const sum = components.reduce((acc, comp) => {
+              if (!selectedComponents[comp.id]) return acc
+              const match = comp.karat_pricing?.[String(selectedKarat)] || comp.karat_pricing?.['Silver']
+              return acc + (match?.trade || comp.selling_price_rupees || 0)
+            }, 0)
+            setEstimatedPrice(sum)
+            setPriceBreakup(null)
+          }
+        } else {
+          setEstimatedPrice(data.selling_price_rupees)
+          setPriceBreakup(data.breakup || null)
+        }
       }
     } catch {}
   }
@@ -429,7 +515,16 @@ export default function PublicStorefront() {
       custom_attributes: {
         karat: `${selectedKarat}K`,
         custom_notes: customNotes,
-        reference_images: briefImages
+        reference_images: briefImages,
+        components: components.length > 0 ? components.map(c => ({
+          id: c.id,
+          selected: !!selectedComponents[c.id],
+          component_label: c.component_label,
+          category: c.category,
+          code: c.code,
+          photo_url: c.photo_urls?.[0],
+          selling_price: (c.karat_pricing?.[String(selectedKarat)] || c.karat_pricing?.['Silver'])?.trade || c.selling_price_rupees || 0
+        })) : undefined
       }
     }
 
@@ -1259,7 +1354,7 @@ export default function PublicStorefront() {
                     <p className="text-stone-400 text-xs italic py-8 text-center">You haven't placed any orders on this store yet.</p>
                   ) : (
                     <div className="space-y-4 divide-y divide-stone-100" style={{ borderColor: c.borders }}>
-                      {profileOrders.map((o: any) => (
+                      {groupedProfileOrders.map((o: any) => (
                         <div key={o.id} className="pt-4 first:pt-0 space-y-3">
                           <div className="flex justify-between items-start">
                             <div>
@@ -1275,21 +1370,51 @@ export default function PublicStorefront() {
                             </span>
                           </div>
 
-                          <div className="flex gap-3 items-center">
-                            {o.products?.photo_urls?.[0] ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={o.products.photo_urls[0]} className="w-10 h-10 object-cover rounded border" alt="" />
-                            ) : (
-                              <div className="w-10 h-10 rounded bg-stone-50 border flex items-center justify-center text-stone-300">
-                                <Package className="w-5 h-5" />
+                          {o.is_set ? (
+                            <div className="space-y-3 pl-3 border-l-2" style={{ borderColor: c.borders }}>
+                              {o.components.map((comp: any) => (
+                                <div key={comp.id} className="flex gap-3 items-center">
+                                  {comp.products?.photo_urls?.[0] ? (
+                                    <img src={comp.products.photo_urls[0]} className="w-10 h-10 object-cover rounded border" alt="" />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded bg-stone-50 border flex items-center justify-center text-stone-300">
+                                      <Package className="w-5 h-5" />
+                                    </div>
+                                  )}
+                                  <div className="flex-1 text-xs">
+                                    <p className="font-semibold text-stone-855">
+                                      {comp.component_label || comp.products?.name}
+                                    </p>
+                                    <p className="text-stone-400 mt-0.5">
+                                      Karat: {comp.custom_attributes?.karat || '18K'} · Qty: {comp.quantity}
+                                    </p>
+                                  </div>
+                                  <p className="font-bold text-stone-855 text-xs">
+                                    ₹{((comp.customer_selling_price_paise || 0) / 100).toLocaleString('en-IN')}
+                                  </p>
+                                </div>
+                              ))}
+                              <div className="flex justify-between items-center pt-2 border-t text-xs font-semibold" style={{ borderColor: c.borders }}>
+                                <span>Set Total:</span>
+                                <span>₹{(o.total_amount_paise / 100).toLocaleString('en-IN')}</span>
                               </div>
-                            )}
-                            <div className="flex-1 text-xs">
-                              <p className="font-semibold text-stone-850">{o.products?.name}</p>
-                              <p className="text-stone-400 mt-0.5">Karat: {o.custom_attributes?.karat || '18K'} · Qty: {o.quantity}</p>
                             </div>
-                            <p className="font-bold text-stone-855 text-xs">₹{((o.customer_selling_price_paise || 0) / 100).toLocaleString('en-IN')}</p>
-                          </div>
+                          ) : (
+                            <div className="flex gap-3 items-center">
+                              {o.products?.photo_urls?.[0] ? (
+                                <img src={o.products.photo_urls[0]} className="w-10 h-10 object-cover rounded border" alt="" />
+                              ) : (
+                                <div className="w-10 h-10 rounded bg-stone-50 border flex items-center justify-center text-stone-300">
+                                  <Package className="w-5 h-5" />
+                                </div>
+                              )}
+                              <div className="flex-1 text-xs">
+                                <p className="font-semibold text-stone-855">{o.products?.name}</p>
+                                <p className="text-stone-400 mt-0.5">Karat: {o.custom_attributes?.karat || '18K'} · Qty: {o.quantity}</p>
+                              </div>
+                              <p className="font-bold text-stone-855 text-xs">₹{(o.total_amount_paise / 100).toLocaleString('en-IN')}</p>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1734,6 +1859,63 @@ export default function PublicStorefront() {
                 <div className="space-y-1.5">
                   <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">Description</p>
                   <p className="text-xs leading-relaxed opacity-85 font-light">{selectedProduct.description}</p>
+                </div>
+              )}
+
+              {/* Set Components Checklist */}
+              {components.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">
+                    Set Components Curation
+                  </p>
+                  <p className="text-[10px] opacity-60">
+                    {selectedProduct.sell_mode === 'set_only'
+                      ? 'This product is only sold as a complete set.'
+                      : 'Select the components you want to purchase:'}
+                  </p>
+                  <div className="space-y-2">
+                    {components.map(comp => {
+                      const isChecked = !!selectedComponents[comp.id]
+                      const isDisabled = selectedProduct.sell_mode === 'set_only'
+                      return (
+                        <label key={comp.id} className="flex items-center gap-3 border rounded-xl p-3 hover:bg-stone-50/10 cursor-pointer select-none transition-colors" style={{ borderColor: c.borders, backgroundColor: c.surface }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isDisabled}
+                            onChange={() => {
+                              if (isDisabled) return
+                              setSelectedComponents(prev => {
+                                const next = { ...prev, [comp.id]: !prev[comp.id] }
+                                if (selectedProduct.sell_mode === 'individual_only' && !Object.values(next).some(Boolean)) {
+                                  return prev
+                                }
+                                return next
+                              })
+                            }}
+                            className="rounded text-[#1E3A5F] focus:ring-[#1E3A5F] w-4 h-4"
+                            style={{ borderColor: c.borders }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold flex items-center gap-2">
+                              <span>{comp.component_label || comp.category}</span>
+                              <span className="text-[9px] px-1 py-0.5 rounded font-normal opacity-50" style={{ backgroundColor: c.borders }}>
+                                {comp.code}
+                              </span>
+                            </p>
+                            <p className="text-[10px] opacity-60 mt-0.5">
+                              {comp.category}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-bold font-mono">
+                              ₹{((comp.karat_pricing?.[String(selectedKarat)] || comp.karat_pricing?.['Silver'])?.trade || comp.selling_price_rupees || 0).toLocaleString('en-IN')}
+                            </p>
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
                 </div>
               )}
 

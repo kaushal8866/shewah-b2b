@@ -212,15 +212,28 @@ export default function ResellerDetailPage() {
 
       // 2. Perform updates based on type
       if (payment.payment_type === 'order_payment' && payment.linked_order_id) {
-        // Update Order
-        const { error: orderErr } = await supabase
+        // Fetch order to check for group
+        const { data: ordRow } = await supabase
+          .from('reseller_orders')
+          .select('set_order_group_id')
+          .eq('id', payment.linked_order_id)
+          .maybeSingle()
+
+        let updateQuery = supabase
           .from('reseller_orders')
           .update({
             payment_status: 'paid',
             status: 'brief_received',
             updated_at: new Date().toISOString()
           })
-          .eq('id', payment.linked_order_id)
+
+        if (ordRow?.set_order_group_id) {
+          updateQuery = updateQuery.eq('set_order_group_id', ordRow.set_order_group_id)
+        } else {
+          updateQuery = updateQuery.eq('id', payment.linked_order_id)
+        }
+
+        const { error: orderErr } = await updateQuery
 
         if (orderErr) {
           alert('Failed to update linked order: ' + orderErr.message)

@@ -75,6 +75,13 @@ export default function CatalogProductEditPage() {
   const [savedFloorPricePaise, setSavedFloorPricePaise] = useState<number | null>(null)
   const [hasLoadedSavedPrice, setHasLoadedSavedPrice] = useState(false)
 
+  // Set Builder / Edit states
+  const [isSet, setIsSet] = useState(false)
+  const [sellMode, setSellMode] = useState<string>('set_only')
+  const [setDiscountPct, setSetDiscountPct] = useState(0)
+  const [components, setComponents] = useState<any[]>([])
+  const [parentSetId, setParentSetId] = useState<string | null>(null)
+
   const [isReadyToShip, setIsReadyToShip] = useState(false)
   const [rtsGrossWeight, setRtsGrossWeight] = useState('')
   const [rtsListPrice, setRtsListPrice] = useState('')
@@ -208,6 +215,22 @@ export default function CatalogProductEditPage() {
             }
           })
         }
+        
+        // Fetch set information
+        const isProdSet = data.sell_mode && data.sell_mode !== 'single'
+        setIsSet(isProdSet)
+        if (isProdSet) {
+          setSellMode(data.sell_mode)
+          setSetDiscountPct(data.set_discount_pct || 0)
+          supabase.from('products')
+            .select('*')
+            .eq('set_parent_id', data.id)
+            .order('component_sort_order', { ascending: true })
+            .then(({ data: kids }) => {
+              setComponents(kids || [])
+            })
+        }
+        setParentSetId(data.set_parent_id || null)
       }
       setLoading(false)
     })
@@ -354,6 +377,122 @@ export default function CatalogProductEditPage() {
     set('models_available', current.includes(model) ? current.filter(m => m !== model) : [...current, model])
   }
 
+  async function syncParentSet(parentSetId: string) {
+    // 1. Fetch parent set details
+    const { data: parent } = await supabase.from('products').select('*').eq('id', parentSetId).single()
+    if (!parent) return
+
+    // 2. Fetch all component child products of this parent set
+    const { data: kids } = await supabase
+      .from('products')
+      .select('*')
+      .eq('set_parent_id', parentSetId)
+      .order('component_sort_order', { ascending: true })
+    
+    if (!kids || kids.length === 0) return
+
+    // 3. Compute aggregated weights
+    const aggregatedWeights: Record<string, number> = {}
+    kids.forEach(comp => {
+      if (comp.metal_weights) {
+        Object.entries(comp.metal_weights).forEach(([key, val]) => {
+          const w = parseFloat(val as string) || 0
+          if (w > 0) {
+            aggregatedWeights[key] = (aggregatedWeights[key] || 0) + w
+          }
+        })
+      }
+    })
+    Object.keys(aggregatedWeights).forEach(key => {
+      aggregatedWeights[key] = parseFloat(aggregatedWeights[key].toFixed(3))
+    })
+
+    // 4. Compute aggregated pricing
+    const parentPricing = SELLABLE_KARATS.map(k => {
+      let weightSum = 0
+      let goldCostSum = 0
+      let labourCostSum = 0
+      let cogsSum = 0
+      let tradeSum = 0
+      let mrpSum = 0
+
+      kids.forEach(comp => {
+        const compKaratPricing = comp.karat_pricing || {}
+        const match = compKaratPricing[String(k)] || compKaratPricing['Silver']
+        if (match) {
+          if (match.karat === k || !match.karat) {
+            weightSum += match.weight || 0
+          }
+          goldCostSum += match.goldCost || 0
+          labourCostSum += match.labourCost || 0
+          cogsSum += match.cogs || 0
+          tradeSum += match.trade || 0
+          mrpSum += match.mrp || 0
+        }
+      })
+
+      const factor = 1 - (parent.set_discount_pct || 0) / 100
+      const discountedTrade = Math.round(tradeSum * factor)
+      const discountedMrp = Math.round(mrpSum * factor)
+
+      return {
+        karat: k,
+        weight: weightSum,
+        goldCost: goldCostSum,
+        labourCost: labourCostSum,
+        cogs: cogsSum,
+        trade: discountedTrade,
+        mrp: discountedMrp
+      }
+    })
+
+    const parentKaratPricing: Record<string, any> = {}
+    for (const row of parentPricing) {
+      parentKaratPricing[String(row.karat)] = row
+    }
+
+    const combinedPhotos = Array.from(new Set([
+      ...(parent.photo_urls || []),
+      ...kids.flatMap(comp => comp.photo_urls || [])
+    ]))
+
+    const combinedDiamondSpecs = kids.flatMap(comp => (comp.diamond_specs || []).map((d: any) => ({
+      ...d,
+      component_label: comp.component_label
+    })))
+
+    const totalParentDiamondCost = combinedDiamondSpecs.reduce((sum, d) => sum + ((parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1)), 0)
+    const firstDiamond = combinedDiamondSpecs[0] || null
+
+    const default22 = parentPricing.find(p => p.karat === 22)
+    const isParentSilver = parent.metal_type === 'silver'
+    const parentTradePrice = isParentSilver ? parentPricing[0]?.trade : (default22?.trade || 0)
+    const parentMrp = isParentSilver ? parentPricing[0]?.mrp : (default22?.mrp || 0)
+
+    // 5. Update parent product row
+    await supabase.from('products').update({
+      gold_weight_g: default22?.weight || null,
+      gold_weight_22k: default22?.weight || null,
+      gold_weight_18k: parentPricing.find(p => p.karat === 18)?.weight || null,
+      gold_weight_14k: parentPricing.find(p => p.karat === 14)?.weight || null,
+      gold_weight_10k: parentPricing.find(p => p.karat === 10)?.weight || null,
+      gold_weight_9k:  parentPricing.find(p => p.karat === 9)?.weight || null,
+      metal_weights: aggregatedWeights,
+      karat_pricing: parentKaratPricing,
+      igi_cert_cost: kids.reduce((sum, comp) => sum + (parseFloat(comp.igi_cert_cost) || 0), 0),
+      trade_price: parentTradePrice,
+      mrp_suggested: parentMrp,
+      photo_urls: combinedPhotos,
+      diamond_weight: firstDiamond ? parseFloat(firstDiamond.weight) : null,
+      diamond_shape: firstDiamond ? firstDiamond.shape : null,
+      diamond_quality: firstDiamond ? firstDiamond.quality : null,
+      diamond_color: firstDiamond ? firstDiamond.color : null,
+      diamond_type: firstDiamond ? firstDiamond.type : null,
+      diamond_cost: totalParentDiamondCost || null,
+      diamond_specs: combinedDiamondSpecs,
+    }).eq('id', parentSetId)
+  }
+
   async function handleSave() {
     if (!form.code || !form.name) { alert('Product code and name are required'); return }
     if (!weight22) { alert('Net weight is required'); return }
@@ -464,6 +603,12 @@ export default function CatalogProductEditPage() {
       }
     }
 
+    if (parentSetId) {
+      await syncParentSet(parentSetId)
+    } else if (isSet) {
+      await syncParentSet(id)
+    }
+
     router.push('/catalog')
   }
 
@@ -489,6 +634,17 @@ export default function CatalogProductEditPage() {
         </div>
       </div>
 
+      {parentSetId && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex items-center justify-between">
+          <div className="text-sm text-stone-700">
+            This product is a component of a set. Saving changes here will automatically recalculate the parent set's weights and prices.
+          </div>
+          <Link href={`/catalog/${parentSetId}`} className="text-sm font-semibold text-[#1E3A5F] hover:underline whitespace-nowrap">
+            View Parent Set →
+          </Link>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
           <h2 className="font-medium text-stone-900 mb-4">Basic information</h2>
@@ -513,8 +669,67 @@ export default function CatalogProductEditPage() {
           </div>
         </div>
 
+        {/* SET COMPONENTS LIST */}
+        {isSet && (
+          <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-stone-900">Components in this Set</h2>
+              <Link
+                href={`/catalog/new`}
+                className="text-xs text-[#1E3A5F] border border-[#1E3A5F] px-3 py-1.5 rounded-lg hover:bg-yellow-50 font-medium transition-colors"
+              >
+                + Add Component
+              </Link>
+            </div>
+            {components.length === 0 ? (
+              <p className="text-sm text-stone-400">No components found in this set.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {components.map((comp) => {
+                  const compTotalCt = Array.isArray(comp.diamond_specs)
+                    ? comp.diamond_specs.reduce((acc: number, d: any) => acc + (parseFloat(d.weight) || 0) * (parseInt(d.pieces) || 1), 0)
+                    : comp.diamond_weight || 0
+                  
+                  return (
+                    <div key={comp.id} className="border border-stone-200 rounded-xl p-3.5 flex flex-col justify-between hover:shadow-sm transition-all bg-stone-50">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-bold text-stone-800 text-sm">
+                            {comp.component_label || 'Unnamed component'}
+                          </span>
+                          <span className="bg-stone-200 text-stone-600 text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                            {comp.category}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-stone-500 mb-2">Code: {comp.code}</p>
+                        <p className="text-xs text-stone-600 mb-1">
+                          Metal: {comp.metal_type} ({comp.gold_weight_22k ? `${comp.gold_weight_22k}g` : 'N/A'})
+                        </p>
+                        <p className="text-xs text-stone-600 mb-2">
+                          Diamonds: {compTotalCt > 0 ? `${compTotalCt.toFixed(3)}ct` : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-stone-200/60">
+                        <span className="font-bold text-stone-900 text-xs sm:text-sm">
+                          ₹{(comp.trade_price || 0).toLocaleString('en-IN')}
+                        </span>
+                        <Link
+                          href={`/catalog/${comp.id}`}
+                          className="text-xs font-semibold text-[#1E3A5F] hover:underline"
+                        >
+                          Edit Component →
+                        </Link>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* DYNAMIC PRODUCT ATTRIBUTES */}
-        {(() => {
+        {!isSet && (() => {
           const selectedCategory = categories.find(c => c.name.toLowerCase() === form.category.toLowerCase())
           const schema = selectedCategory?.attribute_schema || []
           if (schema.length === 0) return null
@@ -566,6 +781,7 @@ export default function CatalogProductEditPage() {
           </div>
         </div>
 
+        {!isSet && (
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
           <div className="flex items-center justify-between mb-1">
             <h2 className="font-medium text-stone-900">Diamond specifications</h2>
@@ -681,8 +897,10 @@ export default function CatalogProductEditPage() {
             )})}
           </div>
         </div>
+        )}
 
         {/* METAL SPECIFICATIONS */}
+        {!isSet && (
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
           <h2 className="font-medium text-stone-900 mb-1">Metal specifications</h2>
           <p className="text-xs text-stone-400 mb-4">
@@ -714,6 +932,7 @@ export default function CatalogProductEditPage() {
             }}
           />
         </div>
+        )}
 
         {/* PRICING */}
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">

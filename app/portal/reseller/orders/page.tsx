@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
   ShoppingBag,
@@ -63,12 +63,79 @@ export default function ResellerOrdersList() {
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading orders...</div>
   if (error) return <div className="p-4 lg:p-7 max-w-4xl mx-auto"><div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div></div>
 
-  const filteredOrders = (orders || []).filter(o => {
+  const groupedOrdersList = useMemo(() => {
+    if (!orders) return []
+    const groups: Record<string, {
+      id: string
+      order_number: string
+      created_at: string
+      status: string
+      customer_selling_price_paise: number
+      reseller_earnings_paise: number
+      reseller_cost_paise: number
+      shipping_name: string
+      is_set: boolean
+      components: any[]
+      payment_deadline: string
+    }> = {}
+
+    const singles: any[] = []
+
+    orders.forEach(o => {
+      if (o.set_order_group_id) {
+        const gid = o.set_order_group_id
+        if (!groups[gid]) {
+          groups[gid] = {
+            id: o.id,
+            order_number: o.order_number.split('-')[0] + ' (Set)',
+            created_at: o.created_at,
+            status: o.status,
+            customer_selling_price_paise: 0,
+            reseller_earnings_paise: 0,
+            reseller_cost_paise: 0,
+            shipping_name: o.shipping_name,
+            is_set: true,
+            components: [],
+            payment_deadline: o.payment_deadline
+          }
+        }
+        groups[gid].components.push(o)
+        groups[gid].customer_selling_price_paise += (o.customer_selling_price_paise || 0)
+        groups[gid].reseller_earnings_paise += (o.reseller_earnings_paise || 0)
+        groups[gid].reseller_cost_paise += (o.reseller_cost_paise || 0)
+        if (o.status !== 'customer_placed') {
+          groups[gid].status = o.status
+        }
+      } else {
+        singles.push({
+          ...o,
+          is_set: false
+        })
+      }
+    })
+
+    return [...singles, ...Object.values(groups)].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [orders])
+
+  const filteredOrders = groupedOrdersList.filter(o => {
     // Search filter
-    const matchesSearch =
-      o.order_number.toLowerCase().includes(search.toLowerCase()) ||
-      o.shipping_name.toLowerCase().includes(search.toLowerCase()) ||
-      (o.products?.code || '').toLowerCase().includes(search.toLowerCase())
+    const searchLower = search.toLowerCase()
+    let matchesSearch = false
+    if (o.is_set) {
+      matchesSearch =
+        o.order_number.toLowerCase().includes(searchLower) ||
+        o.shipping_name.toLowerCase().includes(searchLower) ||
+        o.components.some((comp: any) =>
+          (comp.products?.code || '').toLowerCase().includes(searchLower) ||
+          (comp.products?.name || '').toLowerCase().includes(searchLower)
+        )
+    } else {
+      matchesSearch =
+        o.order_number.toLowerCase().includes(searchLower) ||
+        o.shipping_name.toLowerCase().includes(searchLower) ||
+        (o.products?.code || '').toLowerCase().includes(searchLower) ||
+        (o.products?.name || '').toLowerCase().includes(searchLower)
+    }
 
     // Tab filter
     if (tabFilter === 'customer_placed') {
@@ -147,9 +214,7 @@ export default function ResellerOrdersList() {
       ) : (
         <div className="space-y-3">
           {filteredOrders.map(o => {
-            const coverImg = o.products?.photo_urls?.[0]
-            const pCode = o.products?.code || '—'
-            const pName = o.products?.name || 'Jewelry Piece'
+            const coverImg = o.is_set ? o.components[0]?.products?.photo_urls?.[0] : o.products?.photo_urls?.[0]
             const isOverdue = o.status === 'payment_pending' && new Date(o.payment_deadline) < new Date()
 
             return (
@@ -168,7 +233,7 @@ export default function ResellerOrdersList() {
                     />
                   ) : (
                     <div className="w-14 h-14 rounded-xl bg-stone-100 flex items-center justify-center shrink-0 border border-stone-150 text-stone-400 font-bold text-xs uppercase">
-                      SKU
+                      {o.is_set ? 'SET' : 'SKU'}
                     </div>
                   )}
 
@@ -180,16 +245,24 @@ export default function ResellerOrdersList() {
                         {isOverdue && ' (Overdue)'}
                       </span>
                     </div>
-                    <p className="text-xs font-bold text-stone-850 truncate">{pCode} · {pName}</p>
+                    {o.is_set ? (
+                      <p className="text-xs font-bold text-stone-850 truncate">
+                        {o.components.map((c: any) => c.component_label || c.products?.category).join(' + ')} Set
+                      </p>
+                    ) : (
+                      <p className="text-xs font-bold text-stone-850 truncate">
+                        {o.products?.code || '—'} · {o.products?.name || 'Jewelry Piece'}
+                      </p>
+                    )}
                     <p className="text-[10px] text-stone-450 mt-1">
-                      Qty: {o.quantity} · Customer: {o.shipping_name} · Ordered: {new Date(o.created_at).toLocaleDateString('en-IN')}
+                      {o.is_set ? `Components: ${o.components.length}` : `Qty: ${o.quantity}`} · Customer: {o.shipping_name} · Ordered: {new Date(o.created_at).toLocaleDateString('en-IN')}
                     </p>
                   </div>
 
                   <div className="text-right shrink-0">
                     <p className="text-[10px] text-stone-400 font-bold uppercase leading-none">Selling Price</p>
                     <p className="text-sm font-black text-green-650 mt-1">₹{(o.customer_selling_price_paise / 100).toLocaleString('en-IN')}</p>
-                    <p className="text-[10px] text-stone-450 mt-0.5">Profit: ₹{(o.reseller_earnings_paise / 100).toLocaleString('en-IN')}</p>
+                    <p className="text-[10px] text-stone-450 mt-0.5 font-bold">Profit: ₹{(o.reseller_earnings_paise / 100).toLocaleString('en-IN')}</p>
                   </div>
 
                   <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-amber-600 transition-colors shrink-0" />

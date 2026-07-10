@@ -125,6 +125,116 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       return NextResponse.json({ error: `Product ID ${productId} not found` }, { status: 404 })
     }
 
+    // Curated Set Checkout splitting logic
+    const reqComponents = custom_attributes?.components ? (Array.isArray(custom_attributes.components) ? custom_attributes.components : []) : []
+    const selectedComponents = reqComponents.filter((c: any) => c.selected)
+
+    if (selectedComponents.length > 0) {
+      const setGroupId = crypto.randomUUID()
+
+      for (let compIdx = 0; compIdx < selectedComponents.length; compIdx++) {
+        const compItem = selectedComponents[compIdx]
+        const compId = compItem.id
+
+        // Fetch child component specs
+        const { data: compProduct } = await supabaseAdmin
+          .from('products')
+          .select('*')
+          .eq('id', compId)
+          .maybeSingle()
+
+        if (!compProduct) continue
+
+        // Calculate live raw COGS for this component
+        const compPricingList = computeKaratPricing({
+          netGoldWeight: compProduct.gold_weight_g || 0,
+          rate24k: goldRate,
+          retailLabour,
+          diamondCost: compProduct.diamond_cost || 0,
+          makingCharges: compProduct.making_charges || 0,
+          igiCost: compProduct.igi_cert_cost || 0,
+          metalWeights: compProduct.metal_weights || undefined,
+          color: compProduct.ref_color || undefined
+        })
+
+        const compKarat = parseInt(String(custom_attributes?.karat || compProduct.ref_karat || '18').replace(/[^\d]/g, '')) || 18
+        const compTargetPricing = compPricingList.find(p => p.karat === compKarat)
+        const compFinalFloorCost = compTargetPricing ? compTargetPricing.trade : (compProduct.trade_price || 0)
+
+        const compQty = Number(quantity) || 1
+        const compTotalCostPaise = Math.round(compFinalFloorCost * 100) * compQty
+
+        // Apply reseller markup
+        const markupMultiplier = 1 + markupPercent / 100
+        const compGoldCost = compTargetPricing ? compTargetPricing.goldCost : 0
+        const compLabourCost = compTargetPricing ? compTargetPricing.labourCost : 0
+        const compOtherCost = (Number(compProduct.making_charges) || 0) + (Number(compProduct.igi_cert_cost) || 0)
+
+        const compCustomerPricePerPieceRupees = Math.round(
+          compGoldCost +
+          compLabourCost + compOtherCost +
+          ((Number(compProduct.diamond_cost) || 0) * 1.28 * markupMultiplier)
+        )
+
+        let compItemPricePaise = compCustomerPricePerPieceRupees * 100 * compQty
+        if (discountType === 'percent') {
+          compItemPricePaise = Math.round(compItemPricePaise * (1 - discountValue / 100))
+        } else if (discountType === 'amount') {
+          const share = Math.round((discountValue * 100) / items.length)
+          compItemPricePaise = Math.max(compItemPricePaise - share, compTotalCostPaise)
+        }
+
+        const compEarningsPaise = compItemPricePaise - compTotalCostPaise
+        const compOrderNumber = `RSL-SF-${baseSerial + idx}-${compIdx}`
+
+        // Insert component order record
+        const { data: newCompOrder, error: compOrderErr } = await supabaseAdmin
+          .from('reseller_orders')
+          .insert({
+            order_number: compOrderNumber,
+            reseller_id: resellerId,
+            product_id: compId,
+            quantity: compQty,
+            ring_size: ring_size || null,
+            custom_attributes: {
+              ...custom_attributes,
+              customer_notes: customer_notes || ''
+            },
+            customer_selling_price_paise: compItemPricePaise,
+            reseller_cost_paise: compTotalCostPaise,
+            reseller_earnings_paise: compEarningsPaise,
+            payment_status: 'pending',
+            shipping_name,
+            shipping_phone,
+            shipping_address,
+            status: 'customer_placed',
+            payment_deadline: deadline.toISOString(),
+            customer_id: customer?.id || null,
+            configuration_summary: {
+              karat: custom_attributes.karat || 'Default',
+              ring_size: ring_size || 'N/A',
+              notes: customer_notes || '',
+              discount_code: promo_code || null,
+              discount_applied_paise: (compCustomerPricePerPieceRupees * 100 * compQty) - compItemPricePaise
+            },
+            set_order_group_id: setGroupId,
+            component_label: compProduct.component_label || compProduct.category,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select('*')
+          .single()
+
+        if (compOrderErr) {
+          return NextResponse.json({ error: compOrderErr.message }, { status: 500 })
+        }
+
+        insertedOrders.push(newCompOrder)
+      }
+
+      continue
+    }
+
     // Calculate live raw COGS for all karats
     const pricingList = computeKaratPricing({
       netGoldWeight: product.gold_weight_g || 0,

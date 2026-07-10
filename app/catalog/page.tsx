@@ -174,6 +174,9 @@ function ProductsTab() {
 
   const filtered = useMemo(() => {
     const list = products.filter(p => {
+      // Hide children of sets from the main list view
+      if ((p as any).set_parent_id) return false
+
       const matchSearch = !search ||
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.code.toLowerCase().includes(search.toLowerCase()) ||
@@ -356,6 +359,11 @@ function ProductsTab() {
                 <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2">
                   <span className="bg-white/90 backdrop-blur-sm text-stone-600 text-[10px] sm:text-xs px-2 py-0.5 rounded-full border border-stone-200 font-semibold">{p.code}</span>
                 </div>
+                {((p as any).sell_mode && (p as any).sell_mode !== 'single') && (
+                  <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2">
+                    <span className="bg-amber-500 text-white text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Set</span>
+                  </div>
+                )}
               </Link>
               <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between min-w-0">
                 <div>
