@@ -464,14 +464,28 @@ export default function CatalogProductEditPage() {
     const totalParentDiamondCost = combinedDiamondSpecs.reduce((sum, d) => sum + ((parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1)), 0)
     const firstDiamond = combinedDiamondSpecs[0] || null
 
+    const firstComp = kids[0] || null
+    const computedRefKarat = firstComp?.ref_karat || '22K'
+    const computedGoldKarat = firstComp?.gold_karat || 22
+    const computedRefColor = firstComp?.ref_color || 'Yellow'
+
     const default22 = parentPricing.find(p => p.karat === 22)
     const isParentSilver = parent.metal_type === 'silver'
-    const parentTradePrice = isParentSilver ? parentPricing[0]?.trade : (default22?.trade || 0)
-    const parentMrp = isParentSilver ? parentPricing[0]?.mrp : (default22?.mrp || 0)
+    
+    const targetKaratPricing = isParentSilver 
+      ? parentPricing[0] 
+      : (parentPricing.find(p => p.karat === computedGoldKarat) || default22)
+      
+    const parentTradePrice = targetKaratPricing?.trade || 0
+    const parentMrp = targetKaratPricing?.mrp || 0
+    const parentWeight = targetKaratPricing?.weight || null
 
     // 5. Update parent product row
     await supabase.from('products').update({
-      gold_weight_g: default22?.weight || null,
+      gold_karat: isParentSilver ? null : computedGoldKarat,
+      ref_karat: computedRefKarat,
+      ref_color: computedRefColor,
+      gold_weight_g: parentWeight,
       gold_weight_22k: default22?.weight || null,
       gold_weight_18k: parentPricing.find(p => p.karat === 18)?.weight || null,
       gold_weight_14k: parentPricing.find(p => p.karat === 14)?.weight || null,

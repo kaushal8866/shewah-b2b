@@ -497,18 +497,24 @@ export default function NewProductPage() {
   })()
 
   // ACTIVE BINDINGS
+  const firstComponent = components[0] || null
+  const computedRefKarat = isSet ? (firstComponent?.refKarat || '22K') : refKarat
+  const computedGoldKarat = isSilver ? null : (parseInt(computedRefKarat.replace(/[^\d]/g, '')) || 22)
+  const computedRefColor = isSet ? (firstComponent?.refColor || 'Yellow') : refColor
+
   const activeWeight22 = isSet ? parentWeight22 : weight22
   const activePricing = isSet ? parentPricing : pricing
   const activeDefault22 = activePricing.find(p => p.karat === 22)
-  const activeTradePrice = isSilver
-    ? (isSet ? (parentPricing[0]?.trade || 0) : silverTrade)
-    : (activeDefault22?.trade || 0)
-  const activeMrp = isSilver
-    ? (isSet ? (parentPricing[0]?.mrp || 0) : silverMrp)
-    : (activeDefault22?.mrp || 0)
-  const activeCogs22 = isSilver
-    ? (isSet ? (parentPricing[0]?.cogs || 0) : silverB2B_cogs)
-    : (activeDefault22?.cogs || 0)
+
+  const targetKaratPricing = isSilver 
+    ? activePricing[0] 
+    : (activePricing.find(p => p.karat === computedGoldKarat) || activeDefault22)
+
+  const activeTradePrice = targetKaratPricing?.trade || 0
+  const activeMrp = targetKaratPricing?.mrp || 0
+  const activeWeight = targetKaratPricing?.weight || 0
+  const activeCogs22 = targetKaratPricing?.cogs || 0
+
   const activeYourMargin = activeTradePrice - activeCogs22
   const activeJewelerMargin = activeMrp - activeTradePrice
 
@@ -689,22 +695,26 @@ export default function NewProductPage() {
         parentKaratPricing[String(row.karat)] = row
       }
 
+      const defaultRefKarat = components[0]?.refKarat || refKarat || '22K'
+      const defaultGoldKarat = isSilver ? null : (parseInt(defaultRefKarat.replace(/[^\d]/g, '')) || 22)
+      const defaultRefColor = components[0]?.refColor || refColor || 'Yellow'
+
       const parentPayload: Record<string, any> = {
         code: form.code,
         name: form.name,
         description: form.description,
         category: 'Set',
         metal_type: form.metal_type,
-        gold_karat: isSilver ? null : (parseInt(refKarat.replace(/[^\d]/g, '')) || 22),
-        gold_weight_g: parentWeight22 || null,
-        gold_weight_22k: isSilver ? null : (getMetalWeight(aggregatedMetalWeights, '22K', refColor) || null),
-        gold_weight_18k: isSilver ? null : (getMetalWeight(aggregatedMetalWeights, '18K', refColor) || null),
-        gold_weight_14k: isSilver ? null : (getMetalWeight(aggregatedMetalWeights, '14K', refColor) || null),
-        gold_weight_10k: isSilver ? null : (getMetalWeight(aggregatedMetalWeights, '10K', refColor) || null),
-        gold_weight_9k:  isSilver ? null : (getMetalWeight(aggregatedMetalWeights, '9K', refColor)  || null),
+        gold_karat: defaultGoldKarat,
+        gold_weight_g: activeWeight || null,
+        gold_weight_22k: isSilver ? null : (getMetalWeight(aggregatedMetalWeights, '22K', defaultRefColor) || null),
+        gold_weight_18k: isSilver ? null : (getMetalWeight(aggregatedMetalWeights, '18K', defaultRefColor) || null),
+        gold_weight_14k: isSilver ? null : (getMetalWeight(aggregatedMetalWeights, '14K', defaultRefColor) || null),
+        gold_weight_10k: isSilver ? null : (getMetalWeight(aggregatedMetalWeights, '10K', defaultRefColor) || null),
+        gold_weight_9k:  isSilver ? null : (getMetalWeight(aggregatedMetalWeights, '9K', defaultRefColor)  || null),
         metal_weights: aggregatedMetalWeights,
-        ref_karat: refKarat,
-        ref_color: refColor,
+        ref_karat: defaultRefKarat,
+        ref_color: defaultRefColor,
         karat_pricing: parentKaratPricing,
         igi_cert_cost: components.reduce((sum, comp) => sum + (parseFloat(comp.igi_cert_cost) || 0), 0),
         trade_price: activeTradePrice,
