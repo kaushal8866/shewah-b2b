@@ -56,6 +56,7 @@ export default function NewCircuitPage() {
     Maharashtra: ['Nashik', 'Aurangabad', 'Nagpur', 'Kolhapur', 'Solapur', 'Amravati'],
     MP: ['Indore', 'Bhopal', 'Ujjain', 'Jabalpur', 'Gwalior', 'Ratlam'],
     Rajasthan: ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota', 'Ajmer', 'Bikaner'],
+    Kerala: ['Kochi', 'Trivandrum', 'Kozhikode', 'Thrissur', 'Kollam', 'Alappuzha'],
   }
 
   const suggestedForRegion = form.region ? (SUGGESTED_CITIES as any)[form.region] || [] : []

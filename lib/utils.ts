@@ -80,6 +80,7 @@ export const CIRCUITS = [
   { value: 'Punjab', label: 'Punjab' },
   { value: 'Karnataka', label: 'Karnataka' },
   { value: 'Tamil Nadu', label: 'Tamil Nadu' },
+  { value: 'Kerala', label: 'Kerala' },
   { value: 'Other', label: 'Other' },
 ]
 

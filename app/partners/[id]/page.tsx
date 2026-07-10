@@ -376,7 +376,7 @@ export default function PartnerDetailPage() {
               <div>
                 <label className={lbl}>State</label>
                 <select className={inp} value={form.state || ''} onChange={e => set('state', e.target.value)}>
-                  {['Gujarat','Maharashtra','Madhya Pradesh','Rajasthan','Karnataka','Tamil Nadu','Delhi','Uttar Pradesh','Punjab','Haryana'].map(s => (
+                  {['Gujarat','Maharashtra','Madhya Pradesh','Rajasthan','Karnataka','Tamil Nadu','Kerala','Delhi','Uttar Pradesh','Punjab','Haryana'].map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>

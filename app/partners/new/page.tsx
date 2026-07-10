@@ -136,7 +136,7 @@ function NewPartnerForm() {
               <label className={label}>State *</label>
               <select className={select} value={form.state} onChange={e => set('state', e.target.value)}>
                 <option value="">Select state</option>
-                {['Gujarat','Maharashtra','Madhya Pradesh','Rajasthan','Karnataka','Tamil Nadu','Delhi','Uttar Pradesh','Punjab','Haryana'].map(s => (
+                {['Gujarat','Maharashtra','Madhya Pradesh','Rajasthan','Karnataka','Tamil Nadu','Kerala','Delhi','Uttar Pradesh','Punjab','Haryana'].map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
