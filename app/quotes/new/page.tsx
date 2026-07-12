@@ -187,9 +187,12 @@ function QuoteBuilderForm() {
       }
 
       const goldRate = Math.max(parseFloat(item.gold_rate_24k) || 0, 0)
-      if (goldRate > 0) {
-        goldRateSum += goldRate
-        goldRateCount++
+      const karatNum = parseInt(String(item.karat).replace(/[^\d]/g, '')) || 24
+      const karatFactor = isSilver ? 1 : (KARAT_FACTORS[karatNum] || 1)
+      const itemGoldRate = goldRate * karatFactor
+      if (itemGoldRate > 0) {
+        goldRateSum += itemGoldRate * grossWeight * qty
+        goldRateCount += grossWeight * qty
       }
 
       let goldCostPerPc = 0
@@ -245,7 +248,15 @@ function QuoteBuilderForm() {
     })
 
     const gold_component = Array.from(uniqueKarats).join(', ') || 'Gold'
-    const gold_rate = goldRateCount > 0 ? Math.round(goldRateSum / goldRateCount) : 0
+    let fallbackRate = 0
+    if (items.length > 0) {
+      const first = items[0]
+      const isSilver = String(first.karat).toLowerCase() === 'silver'
+      const karatNum = parseInt(String(first.karat).replace(/[^\d]/g, '')) || 24
+      const karatFactor = isSilver ? 1 : (KARAT_FACTORS[karatNum] || 1)
+      fallbackRate = Math.round((parseFloat(first.gold_rate_24k) || 0) * karatFactor)
+    }
+    const gold_rate = goldRateCount > 0 ? Math.round(goldRateSum / goldRateCount) : fallbackRate
     const making_charges_combined = totalLabour + totalMaking + totalHallmarking + totalOther
     
     const base_total = totalGoldValue + totalDiamondValue + making_charges_combined
