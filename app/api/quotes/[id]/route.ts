@@ -242,12 +242,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
   }
 
-  if (quote.status !== 'draft') {
-    return NextResponse.json(
-      { error: 'Only draft quotes can be deleted.' },
-      { status: 400 }
-    )
-  }
+  // Allow deleting quote of any status unconditionally
 
   const { error: deleteError } = await supabaseAdmin
     .from('quotes')

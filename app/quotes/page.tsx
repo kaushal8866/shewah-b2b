@@ -137,9 +137,9 @@ export default function QuotesPage() {
     }
   }
 
-  // Action: Delete draft
+  // Action: Delete quotation permanently
   async function handleDelete(quoteId: string) {
-    if (!confirm('Are you sure you want to delete this draft quotation?')) return
+    if (!confirm('Are you sure you want to permanently delete this quotation? This action cannot be undone.')) return
     setActionLoadingId(quoteId)
     try {
       const res = await fetch(`/api/quotes/${quoteId}`, { method: 'DELETE' })
@@ -329,13 +329,11 @@ export default function QuotesPage() {
                           </button>
                         )}
 
-                        {/* Delete Draft */}
-                        {isDraft && (
-                          <button onClick={() => handleDelete(q.id)} disabled={actionLoadingId === q.id} title="Delete Draft"
-                            className="p-1.5 text-red-500 hover:text-red-700 border border-red-100 rounded-md hover:bg-red-50 transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        {/* Delete Quote */}
+                        <button onClick={() => handleDelete(q.id)} disabled={actionLoadingId === q.id} title="Delete Quote"
+                          className="p-1.5 text-red-500 hover:text-red-700 border border-red-100 rounded-md hover:bg-red-50 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -410,6 +408,10 @@ export default function QuotesPage() {
                       Convert
                     </button>
                   )}
+                  <button onClick={() => handleDelete(q.id)} disabled={actionLoadingId === q.id}
+                    className="px-3 py-2 border border-red-200 text-red-500 rounded-lg text-xs hover:bg-red-50" title="Delete Quote">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             )

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Download, Share2, Copy, RefreshCw, ShoppingBag, Calendar, User, Info, FileText } from 'lucide-react'
+import { ArrowLeft, Download, Share2, Copy, RefreshCw, ShoppingBag, Calendar, User, Info, FileText, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface QuoteDetail {
@@ -173,6 +173,25 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
     }
   }
 
+  async function handleDelete() {
+    if (!quote) return
+    if (!confirm('Are you sure you want to permanently delete this quotation? This action cannot be undone.')) return
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/quotes/${quote.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        router.push('/quotes')
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Failed to delete quote')
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   function handleCopyLink() {
     if (!quote?.share_token) return
     const url = `${window.location.origin}/q/${quote.share_token}`
@@ -259,6 +278,12 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
           <button onClick={handleRevise} disabled={actionLoading}
             className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3.5 py-2 rounded-lg text-xs font-semibold hover:bg-[#162B47] disabled:opacity-50">
             <RefreshCw className="w-3.5 h-3.5" /> Make Revision
+          </button>
+
+          {/* Delete Quote permanently */}
+          <button onClick={handleDelete} disabled={actionLoading}
+            className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold disabled:opacity-50">
+            <Trash2 className="w-3.5 h-3.5" /> Delete Quote
           </button>
         </div>
       </div>
