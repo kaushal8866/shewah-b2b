@@ -8,7 +8,7 @@ import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import { ArrowLeft, Save, Plus, Trash2, Upload, FileText, Share2, HelpCircle } from 'lucide-react'
 import Link from 'next/link'
 import { DEFAULT_QUOTE_MARGIN_PCT, DEFAULT_QUOTE_GST_RATE_PCT, DEFAULT_QUOTE_TERMS } from '@/lib/quoteDefaults'
-import { getMetalWeight } from '@/lib/karat'
+import { getMetalWeight, pureGoldMass } from '@/lib/karat'
 
 interface Partner {
   id: string
