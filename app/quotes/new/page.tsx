@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
@@ -95,6 +95,7 @@ function QuoteBuilderForm() {
   const [silverRateD2C, setSilverRateD2C] = useState<number>(120)
   const [loadingInitial, setLoadingInitial] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [isBreakupOpen, setIsBreakupOpen] = useState(false)
 
   // Header State
   const [partnerId, setPartnerId] = useState('')
@@ -144,6 +145,142 @@ function QuoteBuilderForm() {
     cogs_total: 0,
     suggested_mrp_total: 0,
   })
+
+  // Consolidate live quote items for detailed price breakup drawer preview
+  const priceBreakup = useMemo(() => {
+    if (items.length === 0) return null
+
+    let totalGoldWeight = 0
+    let totalGoldValue = 0
+    let totalDiamondCount = 0
+    let totalDiamondWeight = 0
+    let totalDiamondValue = 0
+    let totalLabour = 0
+    let totalMaking = 0
+    let totalHallmarking = 0
+    let totalOther = 0
+    
+    const uniqueKarats = new Set<string>()
+    let goldRateSum = 0
+    let goldRateCount = 0
+
+    const diaGroups: Record<string, {
+      size_label: string
+      color: string
+      clarity: string
+      shape: string
+      count: number
+      price: number
+      weight: number
+    }> = {}
+
+    items.forEach(item => {
+      const qty = Math.max(parseInt(item.quantity, 10) || 1, 1)
+      const grossWeight = Math.max(parseFloat(item.gross_gold_weight_g) || 0, 0)
+      const isSilver = String(item.karat).toLowerCase() === 'silver'
+      
+      let karatLabel = item.karat
+      if (!isSilver) {
+        uniqueKarats.add(karatLabel.includes('K') ? karatLabel : `${karatLabel}K`)
+      } else {
+        uniqueKarats.add('Silver')
+      }
+
+      const goldRate = Math.max(parseFloat(item.gold_rate_24k) || 0, 0)
+      if (goldRate > 0) {
+        goldRateSum += goldRate
+        goldRateCount++
+      }
+
+      let goldCostPerPc = 0
+      if (isSilver) {
+        goldCostPerPc = grossWeight * goldRate
+      } else {
+        const net24kt = pureGoldMass(grossWeight, item.karat)
+        goldCostPerPc = net24kt * goldRate
+      }
+      totalGoldWeight += grossWeight * qty
+      totalGoldValue += Math.round(goldCostPerPc) * qty
+
+      const labourRate = Math.max(parseFloat(item.labour_rate_per_g) || 0, 0)
+      totalLabour += Math.round(labourRate * grossWeight) * qty
+
+      totalMaking += (Math.max(parseFloat(item.making_charges) || 0, 0)) * qty
+      totalHallmarking += (Math.max(parseFloat(item.hallmarking) || 0, 0)) * qty
+      totalOther += (Math.max(parseFloat(item.other_charges) || 0, 0)) * qty
+
+      const margin = 1 + (parseFloat(marginPct) || 0) / 100
+
+      if (Array.isArray(item.diamonds)) {
+        item.diamonds.forEach(d => {
+          const pieces = Math.max(parseInt(d.pieces, 10) || 0, 0)
+          const weight = Math.max(parseFloat(d.weight) || 0, 0)
+          const rate = Math.max(parseFloat(d.rate_per_pc) || 0, 0)
+          const igi = Math.max(parseFloat(d.igi_charge) || 0, 0)
+
+          const cogsCost = (weight * rate) + igi
+          const tradeCost = Math.round(cogsCost * margin)
+
+          totalDiamondCount += pieces * qty
+          totalDiamondWeight += weight * qty
+          totalDiamondValue += tradeCost * qty
+
+          const key = `${d.size_label || '—'}_${d.color_id || '—'}_${d.quality_id || '—'}_${d.shape_name || '—'}_${rate}`
+          if (!diaGroups[key]) {
+            diaGroups[key] = {
+              size_label: d.size_label || '—',
+              color: d.color_id || '—',
+              clarity: d.quality_id || '—',
+              shape: d.shape_name || '—',
+              count: 0,
+              price: rate,
+              weight: 0
+            }
+          }
+          diaGroups[key].count += pieces * qty
+          diaGroups[key].weight += weight * qty
+        })
+      }
+    })
+
+    const gold_component = Array.from(uniqueKarats).join(', ') || 'Gold'
+    const gold_rate = goldRateCount > 0 ? Math.round(goldRateSum / goldRateCount) : 0
+    const making_charges_combined = totalLabour + totalMaking + totalHallmarking + totalOther
+    
+    const base_total = totalGoldValue + totalDiamondValue + making_charges_combined
+    const gstRate = Math.max(parseFloat(gstRatePct) || 0, 0) / 100
+    let gstAmount = 0
+    let grandTotal = base_total
+
+    if (gstTreatment === 'exclusive') {
+      gstAmount = Math.round(base_total * gstRate)
+      grandTotal = base_total + gstAmount
+    } else if (gstTreatment === 'inclusive') {
+      grandTotal = base_total
+      gstAmount = Math.round(grandTotal - (grandTotal / (1 + gstRate)))
+    } else {
+      gstAmount = 0
+      grandTotal = base_total
+    }
+
+    return {
+      gold_component,
+      gold_rate,
+      gold_weight: totalGoldWeight,
+      gold_value: totalGoldValue,
+      diamond_component: 'Diamond',
+      diamond_count: totalDiamondCount,
+      diamond_weight: totalDiamondWeight,
+      diamond_value: totalDiamondValue,
+      making_charges: making_charges_combined,
+      total: base_total,
+      sub_total: base_total,
+      gst: gstAmount,
+      final_value: grandTotal,
+      diamond_specs: Object.values(diaGroups)
+    }
+  }, [items, marginPct, gstTreatment, gstRatePct])
+
 
   // Load setup data
   useEffect(() => {
@@ -1423,6 +1560,15 @@ function QuoteBuilderForm() {
                   <span>Grand Total:</span>
                   <span className="text-amber-400">₹ {previewTotals.grand_total.toLocaleString('en-IN')}</span>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsBreakupOpen(true)}
+                  className="w-full mt-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white text-xs font-semibold py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors border border-stone-700"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>View Detailed Breakup</span>
+                </button>
               </div>
 
               {/* Internal Admin Info */}
@@ -1483,6 +1629,142 @@ function QuoteBuilderForm() {
           </button>
         </div>
       </div>
+
+      {/* Price Breakup Overlay and Drawer */}
+      <div 
+        className={`rkkpb-overlay ${isBreakupOpen ? 'active' : ''}`}
+        onClick={() => setIsBreakupOpen(false)}
+      ></div>
+      <aside 
+        className="rkkpb-drawer" 
+        data-rkkpb-drawer="" 
+        aria-hidden={!isBreakupOpen}
+        style={{ display: 'flex', transform: isBreakupOpen ? 'translateX(0px)' : 'translateX(100%)', zIndex: 1000 }}
+      >
+        <header className="rkkpb-header">
+          <h3 className="rkkpb-title">Live Price Breakup</h3>
+          <button 
+            className="rkkpb-close" 
+            data-rkkpb-close="" 
+            aria-label="Close"
+            onClick={() => setIsBreakupOpen(false)}
+          >
+            ×
+          </button>
+        </header>
+
+        <div className="rkkpb-content text-stone-850">
+          {priceBreakup ? (
+            <>
+              {/* GOLD */}
+              <div className="rkkpb-block">
+                <div className="rkkpb-heading rkkpb-heading--gold">Gold</div>
+                <div className="rkkpb-table">
+                  <div className="rkkpb-row rkkpb-row--head">
+                    <div>Component</div><div>Rate</div><div>Weight</div><div>Value</div>
+                  </div>
+                  <div className="rkkpb-row" data-row="gold">
+                    <div data-field="rkk_gold_component">{priceBreakup.gold_component || 'Gold'}</div>
+                    <div data-field="rkk_gold_rate">₹ {priceBreakup.gold_rate?.toLocaleString('en-IN') || '—'}</div>
+                    <div data-field="rkk_gold_weight">{priceBreakup.gold_weight ? Number(priceBreakup.gold_weight).toFixed(3) + ' g' : '—'}</div>
+                    <div data-field="rkk_gold_value">₹ {priceBreakup.gold_value?.toLocaleString('en-IN') || '—'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* DIAMOND (summary) */}
+              {priceBreakup.diamond_weight > 0 && (
+                <div className="rkkpb-block">
+                  <div className="rkkpb-heading rkkpb-heading--gold">Diamond</div>
+                  <div className="rkkpb-table">
+                    <div className="rkkpb-row rkkpb-row--head">
+                      <div>Component</div><div>Count</div><div>Weight</div><div>Value</div>
+                    </div>
+                    <div className="rkkpb-row" data-row="diamond">
+                      <div>{priceBreakup.diamond_component || 'Diamond'}</div>
+                      <div data-field="rkk_diamond_count">{priceBreakup.diamond_count || '0'}</div>
+                      <div data-field="rkk_diamond_weight">{priceBreakup.diamond_weight ? Number(priceBreakup.diamond_weight).toFixed(2) + ' ct' : '0'}</div>
+                      <div data-field="rkk_diamond_value">₹ {priceBreakup.diamond_value?.toLocaleString('en-IN') || '0'}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TOTALS */}
+              <div className="rkkpb-block">
+                <div className="rkkpb-table rkkpb-table--totals">
+                  <div className="rkkpb-row">
+                    <div>Making &amp; Other Charges</div>
+                    <div data-field="rkk_making_charges">₹ {priceBreakup.making_charges?.toLocaleString('en-IN') || '0'}</div>
+                  </div>
+                  <div className="rkkpb-row">
+                    <div>Total</div>
+                    <div data-field="rkk_total">₹ {priceBreakup.total?.toLocaleString('en-IN') || '0'}</div>
+                  </div>
+                  <div className="rkkpb-row">
+                    <div>Sub-total</div>
+                    <div data-field="rkk_sub_total">₹ {priceBreakup.sub_total?.toLocaleString('en-IN') || '0'}</div>
+                  </div>
+                  <div className="rkkpb-row">
+                    <div>GST ({gstRatePct}%)</div>
+                    <div data-field="rkk_gst">₹ {priceBreakup.gst?.toLocaleString('en-IN') || '0'}</div>
+                  </div>
+                  <div className="rkkpb-row rkkpb-row--final">
+                    <div>Final Value</div>
+                    <div data-field="rkk_final_value">₹ {priceBreakup.final_value?.toLocaleString('en-IN') || '0'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* DIAMOND BREAK-UP */}
+              {priceBreakup.diamond_specs && priceBreakup.diamond_specs.length > 0 && (
+                <div className="rkkpb-block" data-hide-if-empty="">
+                  <div className="rkkpb-heading rkkpb-heading--gold rkkpb-heading-clean">
+                    <span>Diamond Break-up</span>
+                    <span className="rkkpb-arrow-btn">→</span>
+                  </div>
+                  <div className="rkkpb-diamond-scroll">
+                    <div className="rkkpb-table rkkpb-table--diamond" data-dia-table="">
+                      <div className="rkkpb-row rkkpb-row--head rkkpb-row--dia" style={{ gridTemplateColumns: 'repeat(7, minmax(120px, 1fr))' }}>
+                        <div>Size</div><div>Color</div><div>Clarity</div><div>Shape</div><div>Count</div><div>Price</div><div>Weight</div>
+                      </div>
+                      
+                      {priceBreakup.diamond_specs.map((spec: any, sIdx: number) => (
+                        <div key={sIdx} className="rkkpb-row rkkpb-row--dia" style={{ gridTemplateColumns: 'repeat(7, minmax(120px, 1fr))' }}>
+                          <div data-field="rkk_dia_size">{spec.size_label || '—'}</div>
+                          <div data-field="rkk_dia_color">{spec.color || '—'}</div>
+                          <div data-field="rkk_dia_clarity">{spec.clarity || '—'}</div>
+                          <div data-field="rkk_dia_shape" className="capitalize">{spec.shape || '—'}</div>
+                          <div data-field="rkk_dia_count">{spec.count || '0'}</div>
+                          <div data-field="rkk_dia_price">₹ {spec.price?.toLocaleString('en-IN') || '0'}</div>
+                          <div data-field="rkk_dia_weight">{spec.weight ? Number(spec.weight).toFixed(2) + ' ct' : '0'}</div>
+                        </div>
+                      ))}
+
+                      <div className="rkkpb-row rkkpb-row--dia rkkpb-row--total" style={{ gridTemplateColumns: 'repeat(7, minmax(120px, 1fr))' }}>
+                        <div><strong>Total</strong></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div><strong>Count</strong> <span data-dia-total="count">{priceBreakup.diamond_count}</span></div>
+                        <div></div>
+                        <div><strong>Weight</strong> <span data-dia-total="weight">{priceBreakup.diamond_weight ? Number(priceBreakup.diamond_weight).toFixed(2) + ' ct' : '0'}</span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Disclaimer */}
+                  <div className="rkkpb-disclaimer" style={{ marginTop: '8px', fontSize: '.88rem', opacity: '.9' }}>
+                    <b>Product Disclaimer: </b>Weight and prices are subject to minor changes.
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-stone-500 text-xs text-center py-8">Calculating live price breakup...</p>
+          )}
+        </div>
+      </aside>
     </div>
   )
 }
