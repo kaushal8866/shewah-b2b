@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ShoppingBag } from 'lucide-react'
-import { SELLABLE_KARATS } from '@/lib/karat'
+import { SELLABLE_KARATS, KARAT_FACTORS } from '@/lib/karat'
 
 type KaratPriceRow = {
   karat: number
@@ -63,6 +63,7 @@ export default function RetailerProductDetail() {
   const [submitting, setSubmitting] = useState(false)
   const [components, setComponents] = useState<any[]>([])
   const [selectedComponents, setSelectedComponents] = useState<Record<string, boolean>>({})
+  const [isBreakupOpen, setIsBreakupOpen] = useState(false)
 
   useEffect(() => {
     fetch(`/api/portal/retailer/catalog/${id}`)
@@ -217,6 +218,70 @@ export default function RetailerProductDetail() {
     }
     return karatRows.find(r => r.karat === selectedKarat) || karatRows[0] || null
   }, [product, karatRows, selectedKarat, components, selectedComponents])
+
+  const priceBreakup = useMemo(() => {
+    if (!product || !selectedRow) return null
+
+    const goldColorFormatted = product.ref_color ? product.ref_color.charAt(0).toUpperCase() + product.ref_color.slice(1).toLowerCase() : 'Yellow'
+    const gold_component = `${selectedKarat}KT Gold ${goldColorFormatted}`
+    const gold_value = Math.round(selectedRow.goldCost || 0)
+    const goldRateFactor = KARAT_FACTORS[selectedKarat] || 1
+    const gold_rate = selectedRow.weight > 0 ? Math.round(gold_value / (selectedRow.weight * goldRateFactor)) : 0
+
+    const diamond_component = product.diamond_quality && product.diamond_color ? `${product.diamond_quality}-${product.diamond_color}` : 'VVS/VS-EF'
+    const diamond_count = diamondRows.reduce((sum, d) => sum + d.pieces, 0)
+
+    const making_charges = Math.round((selectedRow.labourCost || 0) + (product.making_charges || 0) + (product.igi_cert_cost || 0))
+    const sub_total = gold_value + totalDiamondValue + making_charges
+    const gst = Math.round(sub_total * 0.03)
+    const final_value = sub_total + gst
+
+    const mappedDiamondSpecs = diamondRows.map(spec => {
+      const totalWeight = spec.weight
+      const pieces = spec.pieces
+      const wtPerPc = pieces > 0 ? (totalWeight / pieces) : 0
+      const ratePerCarat = spec.ratePerCarat
+      const markedUpRate = Math.round(ratePerCarat * 1.28)
+      const markedUpValue = Math.round(pieces * spec.cost * 1.28)
+
+      const origSpec = product.diamond_specs?.find(
+        o => o.shape === spec.shape && o.quality === spec.quality && o.color === spec.color && Number(o.pieces) === pieces
+      )
+      const size_label = origSpec?.size_label || '—'
+
+      return {
+        size_label,
+        color: spec.color || '—',
+        clarity: spec.quality || '—',
+        shape: spec.shape || '—',
+        count: pieces,
+        price: markedUpRate,
+        weight: totalWeight,
+        value: markedUpValue
+      }
+    })
+
+    return {
+      gold_component,
+      gold_rate,
+      gold_weight: selectedRow.weight,
+      gold_value,
+
+      diamond_component,
+      diamond_count,
+      diamond_weight: totalDiamondWeight,
+      diamond_value: totalDiamondValue,
+
+      making_charges,
+      total: sub_total,
+      diamond_discount: 0,
+      sub_total,
+      gst,
+      final_value,
+
+      diamond_specs: mappedDiamondSpecs
+    }
+  }, [product, selectedRow, diamondRows, totalDiamondWeight, totalDiamondValue, selectedKarat])
 
   // Default to reference karat the first time pricing data lands.
   useEffect(() => {
@@ -462,51 +527,16 @@ export default function RetailerProductDetail() {
 
             {selectedRow && (
               <div className="border-t border-stone-100 pt-4">
-                <details className="group">
-                  <summary className="flex items-center justify-between font-semibold text-xs text-stone-600 cursor-pointer list-none select-none hover:text-stone-900 transition-colors">
-                    <span>VIEW PRICE BREAKUP</span>
-                    <span className="text-[10px] text-stone-400 group-open:rotate-180 transition-transform">▼</span>
-                  </summary>
-                  <div className="mt-3 space-y-2 text-xs text-stone-600 bg-stone-50 p-3 rounded-lg border border-stone-150">
-                    <div className="flex justify-between">
-                      <span>Gold Metal Value ({selectedRow.weight?.toFixed(3) || '0.000'}g)</span>
-                      <span className="font-medium">₹{(selectedRow.goldCost || 0).toLocaleString('en-IN')}</span>
-                    </div>
-
-                    <div className="flex justify-between font-semibold text-stone-700 pt-1 border-t border-stone-100 mt-1">
-                      <span>Diamond Value ({totalDiamondWeight.toFixed(3)} ct)</span>
-                      <span className="font-semibold">₹{totalDiamondValue.toLocaleString('en-IN')}</span>
-                    </div>
-                    {diamondRows.map((d, idx) => (
-                      <div key={idx} className="flex justify-between text-[11px] text-stone-500 pl-3">
-                        <span className="capitalize">
-                          ↳ {d.shape} {d.type === 'natural' ? 'Nat' : 'LGD'} {d.quality}-{d.color} ({d.weight.toFixed(3)} ct @ ₹{Math.round(d.ratePerCarat * 1.28).toLocaleString('en-IN')}/ct)
-                        </span>
-                        <span>₹{Math.round(d.pieces * d.cost * 1.28).toLocaleString('en-IN')}</span>
-                      </div>
-                    ))}
-                    {(!diamondRows || diamondRows.length === 0) && product.diamond_weight ? (
-                      <div className="flex justify-between text-[11px] text-stone-500 pl-3">
-                        <span>↳ Default Diamond ({product.diamond_weight} ct)</span>
-                        <span>₹{Math.round((product.diamond_cost || 0) * 1.28).toLocaleString('en-IN')}</span>
-                      </div>
-                    ) : null}
-
-                    <div className="flex justify-between pt-1 border-t border-stone-100 mt-1">
-                      <span>Making & Cert Charges</span>
-                      <span className="font-medium">₹{((selectedRow.labourCost || 0) + (product.making_charges || 0) + (product.igi_cert_cost || 0)).toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="border-t border-stone-200 my-1"></div>
-                    <div className="flex justify-between font-bold text-stone-800">
-                      <span>Total B2B Trade Price</span>
-                      <span>₹{(selectedRow.trade || 0).toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between text-[11px] text-stone-400">
-                      <span>Jeweler Suggested MRP (incl markup)</span>
-                      <span>₹{(selectedRow.mrp || 0).toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                </details>
+                <button
+                  onClick={() => setIsBreakupOpen(true)}
+                  className="w-full py-2.5 px-4 rounded-xl border text-xs font-semibold hover:bg-stone-150 transition-colors flex items-center justify-between text-stone-700 bg-stone-50"
+                  style={{ borderColor: '#e5e8ee' }}
+                >
+                  <span className="flex items-center gap-1.5 uppercase font-bold text-[10px] tracking-wider opacity-75">
+                    View Price Breakup
+                  </span>
+                  <span>→</span>
+                </button>
               </div>
             )}
 
@@ -550,6 +580,182 @@ export default function RetailerProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* Price Breakup Overlay and Drawer */}
+      <div 
+        className={`rkkpb-overlay ${isBreakupOpen ? 'active' : ''}`}
+        onClick={() => setIsBreakupOpen(false)}
+      ></div>
+      <aside 
+        className="rkkpb-drawer" 
+        data-rkkpb-drawer="" 
+        aria-hidden={!isBreakupOpen}
+        style={{ display: 'flex', transform: isBreakupOpen ? 'translateX(0px)' : 'translateX(100%)' }}
+      >
+        <header className="rkkpb-header">
+          <h3 className="rkkpb-title">Price Breakup</h3>
+          <button 
+            className="rkkpb-close" 
+            data-rkkpb-close="" 
+            aria-label="Close"
+            onClick={() => setIsBreakupOpen(false)}
+          >
+            ×
+          </button>
+        </header>
+
+        <div className="rkkpb-content">
+          {priceBreakup ? (
+            <>
+              {/* GOLD */}
+              <div className="rkkpb-block">
+                <div className="rkkpb-heading rkkpb-heading--gold">Gold</div>
+                <div className="rkkpb-table">
+                  <div className="rkkpb-row rkkpb-row--head">
+                    <div>Component</div><div>Rate</div><div>Weight</div><div>Value</div>
+                  </div>
+                  <div className="rkkpb-row" data-row="gold">
+                    <div data-field="rkk_gold_component">{priceBreakup.gold_component || 'Gold'}</div>
+                    <div data-field="rkk_gold_rate">{priceBreakup.gold_rate || '—'}</div>
+                    <div data-field="rkk_gold_weight">{priceBreakup.gold_weight ? Number(priceBreakup.gold_weight).toFixed(2) : '—'}</div>
+                    <div data-field="rkk_gold_value">{priceBreakup.gold_value || '—'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* DIAMOND (summary) */}
+              {priceBreakup.diamond_weight > 0 && (
+                <div className="rkkpb-block">
+                  <div className="rkkpb-heading rkkpb-heading--gold">Diamond</div>
+                  <div className="rkkpb-table">
+                    <div className="rkkpb-row rkkpb-row--head">
+                      <div>Component</div><div>Count</div><div>Weight</div><div>Value</div>
+                    </div>
+                    <div className="rkkpb-row" data-row="diamond">
+                      <div>{priceBreakup.diamond_component || 'Diamond'}</div>
+                      <div data-field="rkk_diamond_count">{priceBreakup.diamond_count || '0'}</div>
+                      <div data-field="rkk_diamond_weight">{priceBreakup.diamond_weight ? Number(priceBreakup.diamond_weight).toFixed(2) : '0'}</div>
+                      <div data-field="rkk_diamond_value">{priceBreakup.diamond_value || '0'}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* GEMSTONES 1..4 (auto-hide if fully empty) */}
+              <div className="rkkpb-block" data-hide-if-empty="" style={{ display: 'none' }}>
+                <div className="rkkpb-heading rkkpb-heading--gold">Gemstone</div>
+                <div className="rkkpb-table">
+                  <div className="rkkpb-row rkkpb-row--head">
+                    <div>Component</div><div>Count</div><div>Weight</div><div>Value</div>
+                  </div>
+                  <div className="rkkpb-row" data-row="gem1" style={{ display: 'none' }}>
+                    <div data-field="rkk_gem_component"></div>
+                    <div data-field="rkk_gem_rate"></div>
+                    <div data-field="rkk_gem_weight"></div>
+                    <div data-field="rkk_gem_value"></div>
+                  </div>
+                  <div className="rkkpb-row" data-row="gem2" style={{ display: 'none' }}>
+                    <div data-field="rkk_gem2_component"></div>
+                    <div data-field="rkk_gem2_rate"></div>
+                    <div data-field="rkk_gem2_weight"></div>
+                    <div data-field="rkk_gem2_value"></div>
+                  </div>
+                  <div className="rkkpb-row" data-row="gem3" style={{ display: 'none' }}>
+                    <div data-field="rkk_gem3_component"></div>
+                    <div data-field="rkk_gem3_rate"></div>
+                    <div data-field="rkk_gem3_weight"></div>
+                    <div data-field="rkk_gem3_value"></div>
+                  </div>
+                  <div className="rkkpb-row" data-row="gem4" style={{ display: 'none' }}>
+                    <div data-field="rkk_gem4_component"></div>
+                    <div data-field="rkk_gem4_rate"></div>
+                    <div data-field="rkk_gem4_weight"></div>
+                    <div data-field="rkk_gem4_value"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* TOTALS */}
+              <div className="rkkpb-block">
+                <div className="rkkpb-table rkkpb-table--totals">
+                  <div className="rkkpb-row">
+                    <div>Making Charges</div>
+                    <div data-field="rkk_making_charges">{priceBreakup.making_charges || '0'}</div>
+                  </div>
+                  <div className="rkkpb-row">
+                    <div>Total</div>
+                    <div data-field="rkk_total">{priceBreakup.total || '0'}</div>
+                  </div>
+                  {priceBreakup.diamond_discount > 0 && (
+                    <div className="rkkpb-row">
+                      <div>Diamond Discount</div>
+                      <div data-field="rkk_discount">{priceBreakup.diamond_discount}</div>
+                    </div>
+                  )}
+                  <div className="rkkpb-row">
+                    <div>Sub-total</div>
+                    <div data-field="rkk_sub_total">{priceBreakup.sub_total || '0'}</div>
+                  </div>
+                  <div className="rkkpb-row">
+                    <div>GST</div>
+                    <div data-field="rkk_gst">{priceBreakup.gst || '0'}</div>
+                  </div>
+                  <div className="rkkpb-row rkkpb-row--final">
+                    <div>Final Value</div>
+                    <div data-field="rkk_final_value">{priceBreakup.final_value || '0'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* DIAMOND BREAK-UP */}
+              {priceBreakup.diamond_specs && priceBreakup.diamond_specs.length > 0 && (
+                <div className="rkkpb-block" data-hide-if-empty="">
+                  <div className="rkkpb-heading rkkpb-heading--gold rkkpb-heading-clean">
+                    <span>Diamond Break-up</span>
+                    <span className="rkkpb-arrow-btn">→</span>
+                  </div>
+                  <div className="rkkpb-diamond-scroll">
+                    <div className="rkkpb-table rkkpb-table--diamond" data-dia-table="">
+                      <div className="rkkpb-row rkkpb-row--head rkkpb-row--dia" style={{ gridTemplateColumns: 'repeat(7, minmax(120px, 1fr))' }}>
+                        <div>Size</div><div>Color</div><div>Clarity</div><div>Shape</div><div>Count</div><div>Price</div><div>Weight</div>
+                      </div>
+                      
+                      {priceBreakup.diamond_specs.map((spec: any, sIdx: number) => (
+                        <div key={sIdx} className="rkkpb-row rkkpb-row--dia" style={{ gridTemplateColumns: 'repeat(7, minmax(120px, 1fr))' }}>
+                          <div data-field="rkk_dia_size">{spec.size_label || '—'}</div>
+                          <div data-field="rkk_dia_color">{spec.color || '—'}</div>
+                          <div data-field="rkk_dia_clarity">{spec.clarity || '—'}</div>
+                          <div data-field="rkk_dia_shape" className="capitalize">{spec.shape || '—'}</div>
+                          <div data-field="rkk_dia_count">{spec.count || '0'}</div>
+                          <div data-field="rkk_dia_price">{spec.price || '0'}</div>
+                          <div data-field="rkk_dia_weight">{spec.weight ? Number(spec.weight).toFixed(2) : '0'}</div>
+                        </div>
+                      ))}
+
+                      <div className="rkkpb-row rkkpb-row--dia rkkpb-row--total" style={{ gridTemplateColumns: 'repeat(7, minmax(120px, 1fr))' }}>
+                        <div><strong>Total</strong></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div><strong>Count</strong> <span data-dia-total="count">{priceBreakup.diamond_count}</span></div>
+                        <div></div>
+                        <div><strong>Weight</strong> <span data-dia-total="weight">{priceBreakup.diamond_weight ? Number(priceBreakup.diamond_weight).toFixed(2) : '0'}</span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Disclaimer */}
+                  <div className="rkkpb-disclaimer" style={{ marginTop: '8px', fontSize: '.88rem', opacity: '.9' }}>
+                    <b>Product Disclaimer: </b>Weight and prices are subject to minor changes.
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-stone-500 text-xs text-center py-8">Calculating live price breakup...</p>
+          )}
+        </div>
+      </aside>
     </div>
   )
 }

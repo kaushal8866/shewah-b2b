@@ -124,16 +124,57 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
   const gst = Math.round(subtotal * 0.03)
   const total = subtotal + gst
 
+  const goldColorFormatted = product.ref_color ? product.ref_color.charAt(0).toUpperCase() + product.ref_color.slice(1).toLowerCase() : 'Yellow'
+  const gold_component = `${karat}KT Gold ${goldColorFormatted}`
+  const gold_rate = Math.round(goldRate * (KARAT_FACTORS[karat] || 1))
+
+  const specs = product.diamond_specs || []
+  const diamond_count = specs.reduce((sum: number, d: any) => sum + (parseInt(d.pieces) || 0), 0)
+  const diamond_weight = specs.reduce((sum: number, d: any) => sum + ((parseFloat(d.weight) || 0) * (parseInt(d.pieces) || 1)), 0)
+
+  const mappedDiamondSpecs = specs.map((spec: any) => {
+    const pieces = parseInt(spec.pieces) || 0
+    const weightPerPiece = parseFloat(spec.weight) || 0
+    const totalWeight = pieces * weightPerPiece
+    const ratePerCarat = weightPerPiece > 0 ? (parseFloat(spec.cost) / weightPerPiece) : 0
+    const markedUpRate = Math.round(ratePerCarat * 1.28 * ratio * markupMultiplier)
+    const markedUpValue = Math.round((parseFloat(spec.cost) || 0) * pieces * 1.28 * ratio * markupMultiplier)
+
+    return {
+      size_label: spec.size_label || '—',
+      color: spec.color || '—',
+      clarity: spec.quality || '—',
+      shape: spec.shape || '—',
+      count: pieces,
+      price: markedUpRate,
+      weight: totalWeight,
+      value: markedUpValue
+    }
+  })
+
   return NextResponse.json({
     product_id: productId,
     karat,
     selling_price_rupees: total,
     breakup: {
+      gold_component,
+      gold_rate,
+      gold_weight: targetPricing.weight,
       gold_value,
+
+      diamond_component: product.diamond_quality && product.diamond_color ? `${product.diamond_quality}-${product.diamond_color}` : 'VVS/VS-EF',
+      diamond_count,
+      diamond_weight,
       diamond_value,
+
       making_charges,
+      total: subtotal,
+      diamond_discount: 0,
+      sub_total: subtotal,
       gst,
-      total
+      final_value: total,
+
+      diamond_specs: mappedDiamondSpecs
     }
   })
 }
