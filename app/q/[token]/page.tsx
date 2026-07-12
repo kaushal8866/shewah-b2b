@@ -220,141 +220,51 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
           )}
         </div>
 
-        {/* Dual Mode: Embed PDF on desktop / Details list on Mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          
-          {/* Left panel: PDF preview on desktop (3 columns wide) */}
-          <div className="md:col-span-3 h-[520px] bg-stone-100 rounded-2xl border border-stone-200 overflow-hidden shadow-inner hidden md:block">
-            <iframe
-              src={`/api/quotes/share/${token}/pdf`}
-              className="w-full h-full border-none"
-              title="Quotation PDF Sheet"
-            />
+        {/* Full-width PDF Viewer */}
+        <div className="w-full bg-stone-100 rounded-2xl border border-stone-200 overflow-hidden shadow-inner" style={{ height: '82vh', minHeight: '560px' }}>
+          {/* Desktop & Tablet: embedded iframe */}
+          <iframe
+            src={`/api/quotes/share/${token}/pdf`}
+            className="w-full h-full border-none hidden sm:block"
+            title="Quotation PDF Sheet"
+          />
+          {/* Mobile: prominent download button instead of tiny iframe */}
+          <div className="sm:hidden w-full h-full flex flex-col items-center justify-center gap-4 p-6">
+            <div className="w-16 h-16 bg-[#C9A86A]/10 border border-[#C9A86A]/20 rounded-2xl flex items-center justify-center">
+              <FileText className="w-8 h-8 text-[#C9A86A]" />
+            </div>
+            <div className="text-center">
+              <p className="font-serif font-bold text-stone-800 text-base">Your Quotation is Ready</p>
+              <p className="text-stone-500 text-xs mt-1">Tap below to open the full PDF with all details</p>
+            </div>
+            <a href={`/api/quotes/share/${token}/pdf`} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-[#C9A86A] text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-md hover:bg-[#B39356] transition-colors">
+              <Download className="w-4 h-4" /> Open Full PDF
+            </a>
           </div>
+        </div>
 
-          {/* Right panel: Line items list & summary (2 columns wide, visible on all) */}
-          <div className="md:col-span-2 space-y-4">
-            
-            {/* List of items */}
-            <div className="bg-white rounded-2xl border border-[#C9A86A]/15 p-5 shadow-sm space-y-4">
-              <h3 className="font-serif font-bold text-stone-800 border-b border-stone-100 pb-2 text-sm">Line Items</h3>
-              
-              <div className="divide-y divide-stone-100 max-h-[300px] overflow-y-auto space-y-3 pr-1">
-                {items.map((item, idx) => (
-                  <div key={`item-${idx}`} className="pt-3 first:pt-0 flex gap-3 items-start">
-                    {item.reference_images?.[0] ? (
-                      <img src={item.reference_images[0]} className="w-10 h-10 rounded object-cover border border-stone-100 shrink-0" alt="thumbnail" />
-                    ) : (
-                      <div className="w-10 h-10 rounded border border-stone-200 bg-stone-50 flex items-center justify-center shrink-0">
-                        <FileText className="w-5 h-5 text-stone-300" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0 text-xs">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold text-stone-800 truncate">{item.name}</p>
-                          <p className="text-stone-400 mt-0.5">
-                            Karat: {item.karat} · Qty: {item.quantity} {item.ring_size ? `· Size: ${item.ring_size}` : ''}
-                          </p>
-                        </div>
-                        <p className="text-stone-800 font-medium whitespace-nowrap">₹ {item.line_total.toLocaleString('en-IN')}</p>
-                      </div>
-
-                      {/* Detailed Price Breakdown */}
-                      {quote.show_breakup && (
-                        <div className="mt-2.5 pt-2 border-t border-stone-100/60 space-y-2">
-                          {/* Gold Breakdown */}
-                          <div className="flex justify-between items-start text-[10px]">
-                            <div className="text-stone-500">
-                              <span className="font-medium text-stone-600">Gold</span> ({item.gross_gold_weight_g}g @ ₹ {item.gold_rate_24k?.toLocaleString('en-IN')}/g)
-                            </div>
-                          </div>
-
-                          {/* Labour Breakdown */}
-                          {item.labour_total > 0 && (
-                            <div className="flex justify-between items-start text-[10px]">
-                              <div className="text-stone-500">
-                                <span className="font-medium text-stone-600">Labour</span> ({item.labour_rate_per_g ? `₹ ${item.labour_rate_per_g.toLocaleString('en-IN')}/g` : 'Fixed'})
-                              </div>
-                              <span className="text-stone-600">₹ {item.labour_total.toLocaleString('en-IN')}</span>
-                            </div>
-                          )}
-
-                          {/* Diamonds Breakdown */}
-                          {item.diamonds && item.diamonds.length > 0 && (
-                            <div className="space-y-1">
-                              {item.diamonds.map((d: any, dIdx: number) => {
-                                const shapeName = d.shape_name || d.shape_label || d.role || 'Diamond';
-                                const weightText = d.approx_carats ? `${d.approx_carats}ct` : '';
-                                const dRate = d.rate_per_pc ? `@ ₹ ${Number(d.rate_per_pc).toLocaleString('en-IN')}/pc` : '';
-                                const dTotal = (d.rate_per_pc && d.pieces) ? (d.rate_per_pc * d.pieces) : 0;
-                                return (
-                                  <div key={dIdx} className="flex justify-between items-start text-[10px]">
-                                    <div className="text-stone-500">
-                                      <span className="font-medium text-stone-600">{shapeName}</span> ({d.pieces} pcs {weightText} {dRate})
-                                    </div>
-                                    {dTotal > 0 && <span className="text-stone-600">₹ {dTotal.toLocaleString('en-IN')}</span>}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          {/* Making / Hallmarking / Other Charges */}
-                          {(item.making_charges > 0 || item.hallmarking > 0 || item.other_charges > 0) && (
-                            <div className="flex justify-between items-start text-[10px]">
-                              <div className="text-stone-500 space-x-2">
-                                {item.making_charges > 0 && <span><span className="font-medium text-stone-600">Making:</span> ₹ {item.making_charges.toLocaleString('en-IN')}</span>}
-                                {item.hallmarking > 0 && <span><span className="font-medium text-stone-600">Hallmark:</span> ₹ {item.hallmarking.toLocaleString('en-IN')}</span>}
-                                {item.other_charges > 0 && <span><span className="font-medium text-stone-600">{item.other_charges_label || 'Other'}:</span> ₹ {item.other_charges.toLocaleString('en-IN')}</span>}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+        {/* Compact Totals Strip */}
+        <div className="bg-white rounded-2xl border border-[#C9A86A]/15 p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+            <div className="flex items-center gap-6">
+              <div>
+                <span className="text-xs text-stone-400 block">Subtotal</span>
+                <span className="font-semibold text-stone-800">₹ {quote.subtotal.toLocaleString('en-IN')}</span>
               </div>
-            </div>
-
-            {/* Totals panel */}
-            <div className="bg-white rounded-2xl border border-[#C9A86A]/15 p-5 shadow-sm space-y-3 text-xs">
-              <h3 className="font-serif font-bold text-stone-800 border-b border-stone-100 pb-2 text-sm">Totals</h3>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-stone-500">
-                  <span>Subtotal:</span>
-                  <span className="font-medium text-stone-800">₹ {quote.subtotal.toLocaleString('en-IN')}</span>
+              {quote.gst_treatment !== 'none' && (
+                <div>
+                  <span className="text-xs text-stone-400 block">
+                    GST {quote.gst_treatment === 'inclusive' ? '(Included)' : 'Extra'} ({quote.gst_rate_pct}%)
+                  </span>
+                  <span className="font-semibold text-stone-800">₹ {quote.gst_amount.toLocaleString('en-IN')}</span>
                 </div>
-                {quote.gst_treatment === 'exclusive' && (
-                  <div className="flex justify-between text-stone-500">
-                    <span>GST Extra ({quote.gst_rate_pct}%):</span>
-                    <span className="font-medium text-stone-800">₹ {quote.gst_amount.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-                {quote.gst_treatment === 'inclusive' && (
-                  <div className="flex justify-between text-stone-500">
-                    <span>GST ({quote.gst_rate_pct}% Included):</span>
-                    <span className="font-medium text-stone-800">₹ {quote.gst_amount.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between font-serif font-bold text-sm text-stone-900 border-t border-stone-100 pt-2">
-                  <span>Grand Total:</span>
-                  <span className="text-[#C9A86A] text-base">₹ {quote.grand_total.toLocaleString('en-IN')}</span>
-                </div>
-              </div>
+              )}
             </div>
-
-            {/* Mobile-only Download link */}
-            <div className="md:hidden">
-              <a href={`/api/quotes/share/${token}/pdf`} target="_blank" rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-[#C9A86A]/20 rounded-xl text-xs font-semibold text-[#C9A86A] shadow-sm">
-                <FileText className="w-4 h-4" /> View Detailed PDF Sheet
-              </a>
+            <div className="text-right">
+              <span className="text-xs text-stone-400 block">Grand Total</span>
+              <span className="font-serif font-bold text-xl text-[#C9A86A]">₹ {quote.grand_total.toLocaleString('en-IN')}</span>
             </div>
-
           </div>
         </div>
 
