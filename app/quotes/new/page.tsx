@@ -218,11 +218,12 @@ function QuoteBuilderForm() {
           const rate = Math.max(parseFloat(d.rate_per_pc) || 0, 0)
           const igi = Math.max(parseFloat(d.igi_charge) || 0, 0)
 
-          const cogsCost = (weight * rate) + igi
+          const rowWeight = pieces * weight
+          const cogsCost = (rowWeight * rate) + igi
           const tradeCost = Math.round(cogsCost * margin)
 
           totalDiamondCount += pieces * qty
-          totalDiamondWeight += weight * qty
+          totalDiamondWeight += rowWeight * qty
           totalDiamondValue += tradeCost * qty
 
           const key = `${d.size_label || '—'}_${d.color_id || '—'}_${d.quality_id || '—'}_${d.shape_name || '—'}_${rate}`
@@ -238,7 +239,7 @@ function QuoteBuilderForm() {
             }
           }
           diaGroups[key].count += pieces * qty
-          diaGroups[key].weight += weight * qty
+          diaGroups[key].weight += rowWeight * qty
         })
       }
     })

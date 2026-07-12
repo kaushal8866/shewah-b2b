@@ -88,9 +88,10 @@ export function computeQuoteItem(
   const diamonds = Array.isArray(input.diamonds) ? input.diamonds : []
   const diamondCostPerPc = diamonds.reduce((sum, d) => {
     const wt = Math.max(Number((d as any).weight || (d as any).approx_carats) || 0, 0)
+    const pcs = Math.max(Number((d as any).pieces) || 1, 1)
     const rate = Math.max(Number(d.rate_per_pc) || 0, 0)
     const igi = Math.max(Number(d.igi_charge) || 0, 0)
-    return sum + (wt * rate) + igi
+    return sum + (wt * pcs * rate) + igi
   }, 0)
 
   const makingCharges = Math.max(Number(input.making_charges) || 0, 0)
