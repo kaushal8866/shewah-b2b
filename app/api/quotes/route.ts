@@ -117,6 +117,7 @@ export async function POST(req: NextRequest) {
     walk_in_name: body.walk_in_name || null,
     walk_in_phone: body.walk_in_phone || null,
     walk_in_city: body.walk_in_city || null,
+    customer_id: body.customer_id || null,
     reference_no: body.reference_no || null,
     prepared_by: (session.user as any).id || null,
     quote_date: body.quote_date || new Date().toISOString().slice(0, 10),

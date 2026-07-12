@@ -78,6 +78,7 @@ export async function POST(
     walk_in_name: parentQuote.walk_in_name,
     walk_in_phone: parentQuote.walk_in_phone,
     walk_in_city: parentQuote.walk_in_city,
+    customer_id: parentQuote.customer_id,
     reference_no: parentQuote.reference_no,
     prepared_by: (session.user as any).id || null,
     quote_date: new Date().toISOString().slice(0, 10),

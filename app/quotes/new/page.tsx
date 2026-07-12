@@ -99,11 +99,22 @@ function QuoteBuilderForm() {
   // Header State
   const [partnerId, setPartnerId] = useState('')
   const [isWalkIn, setIsWalkIn] = useState(false)
+  const [customerMode, setCustomerMode] = useState<'partner' | 'd2c' | 'walk_in'>('partner')
+  const [d2cCustomers, setD2cCustomers] = useState<any[]>([])
+  const [selectedD2cCustomerId, setSelectedD2cCustomerId] = useState('')
   const [walkInName, setWalkInName] = useState('')
   const [walkInPhone, setWalkInPhone] = useState('')
   const [walkInCity, setWalkInCity] = useState('')
   const [referenceNo, setReferenceNo] = useState('')
   const [quoteDate, setQuoteDate] = useState(new Date().toISOString().slice(0, 10))
+
+  // D2C customer quick-create modal states
+  const [showCreateD2c, setShowCreateD2c] = useState(false)
+  const [newD2cName, setNewD2cName] = useState('')
+  const [newD2cWhatsapp, setNewD2cWhatsapp] = useState('')
+  const [newD2cCity, setNewD2cCity] = useState('')
+  const [creatingD2c, setCreatingD2c] = useState(false)
+  const [d2cError, setD2cError] = useState<string | null>(null)
   
   // Default valid until is 30 days from now
   const defaultValidUntil = () => {
@@ -138,14 +149,15 @@ function QuoteBuilderForm() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [resPartners, resKarigars, resProducts, resGold, resQualities, resColors, resSilverRates] = await Promise.all([
+        const [resPartners, resKarigars, resProducts, resGold, resQualities, resColors, resSilverRates, resD2cCustomers] = await Promise.all([
           supabase.from('partners').select('id, owner_name, store_name, city, phone').order('store_name'),
           supabase.from('manufacturing_partners').select('id, name, city, labour_rate_9k, labour_rate_10k, labour_rate_14k, labour_rate_18k, labour_rate_22k').eq('status', 'active'),
           supabase.from('products').select('id, code, name, category, gold_weight_g, making_charges, diamond_cost, photo_urls, metal_type, metal_weights, ref_karat, ref_color').order('name'),
           supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
           fetch('/api/diamonds/quality-buckets').then(r => r.json().catch(() => ({ buckets: [] }))),
           fetch('/api/diamonds/color-buckets').then(r => r.json().catch(() => ({ buckets: [] }))),
-          supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c'])
+          supabase.from('settings').select('key, value').in('key', ['silver_rate_b2b', 'silver_rate_d2c']),
+          supabase.from('customers').select('id, full_name, whatsapp, city').is('archived_at', null).order('full_name')
         ])
 
         if (resPartners.data) setPartners(resPartners.data)
@@ -154,6 +166,7 @@ function QuoteBuilderForm() {
         if (resGold.data?.[0]) setLatestGoldRate(Number(resGold.data[0].rate_24k) || 0)
         if (resQualities?.buckets) setQualityBuckets(resQualities.buckets)
         if (resColors?.buckets) setColorBuckets(resColors.buckets)
+        if (resD2cCustomers.data) setD2cCustomers(resD2cCustomers.data)
 
         if (resSilverRates.data) {
           const b2b = resSilverRates.data.find((d: any) => d.key === 'silver_rate_b2b')?.value
@@ -169,8 +182,18 @@ function QuoteBuilderForm() {
             const { quote, items: loadedItems } = await resQuote.json()
             
             // Set header fields
-            setIsWalkIn(!quote.partner_id)
-            setPartnerId(quote.partner_id || '')
+            if (quote.partner_id) {
+              setCustomerMode('partner')
+              setIsWalkIn(false)
+              setPartnerId(quote.partner_id)
+            } else if (quote.customer_id) {
+              setCustomerMode('d2c')
+              setIsWalkIn(true)
+              setSelectedD2cCustomerId(quote.customer_id)
+            } else {
+              setCustomerMode('walk_in')
+              setIsWalkIn(true)
+            }
             setWalkInName(quote.walk_in_name || '')
             setWalkInPhone(quote.walk_in_phone || '')
             setWalkInCity(quote.walk_in_city || '')
@@ -576,13 +599,96 @@ function QuoteBuilderForm() {
     }))
   }
 
-  // Assemble full payload for saving
+  function handleSetCustomerMode(mode: 'partner' | 'd2c' | 'walk_in') {
+    setCustomerMode(mode)
+    if (mode === 'partner') {
+      setIsWalkIn(false)
+    } else {
+      setIsWalkIn(true)
+      if (mode === 'd2c') {
+        if (!selectedD2cCustomerId && d2cCustomers.length > 0) {
+          const first = d2cCustomers[0]
+          setSelectedD2cCustomerId(first.id)
+          setWalkInName(first.full_name)
+          setWalkInPhone(first.whatsapp)
+          setWalkInCity(first.city || '')
+        } else if (selectedD2cCustomerId) {
+          const found = d2cCustomers.find(c => c.id === selectedD2cCustomerId)
+          if (found) {
+            setWalkInName(found.full_name)
+            setWalkInPhone(found.whatsapp)
+            setWalkInCity(found.city || '')
+          }
+        }
+      } else {
+        setWalkInName('')
+        setWalkInPhone('')
+        setWalkInCity('')
+        setSelectedD2cCustomerId('')
+      }
+    }
+    
+    const isWalk = mode !== 'partner'
+    setItems(prev => prev.map(item => {
+      if (item.karat === 'Silver') {
+        const defaultRate = isWalk ? silverRateD2C : silverRateB2B
+        return { ...item, gold_rate_24k: String(defaultRate || '80') }
+      }
+      return item
+    }))
+  }
+
+  async function handleCreateD2cCustomer() {
+    setD2cError(null)
+    if (!newD2cName.trim() || !newD2cWhatsapp.trim()) {
+      setD2cError('Name and WhatsApp number are required.')
+      return
+    }
+    setCreatingD2c(true)
+    try {
+      const res = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: newD2cName.trim(),
+          whatsapp: newD2cWhatsapp.trim(),
+          city: newD2cCity.trim() || null,
+        })
+      })
+      const j = await res.json()
+      if (!res.ok) {
+        setD2cError(j.error || 'Failed to create customer.')
+        return
+      }
+      
+      const added = j.customer
+      setD2cCustomers(prev => [...prev, added].sort((a, b) => a.full_name.localeCompare(b.full_name)))
+      setSelectedD2cCustomerId(added.id)
+      setWalkInName(added.full_name)
+      setWalkInPhone(added.whatsapp)
+      setWalkInCity(added.city || '')
+      
+      setNewD2cName('')
+      setNewD2cWhatsapp('')
+      setNewD2cCity('')
+      setShowCreateD2c(false)
+    } catch (e: any) {
+      setD2cError(e.message || 'Error occurred.')
+    } finally {
+      setCreatingD2c(false)
+    }
+  }
+
   function buildPayload() {
+    const isPartner = customerMode === 'partner'
+    const isD2c = customerMode === 'd2c'
+    
     return {
-      partner_id: isWalkIn ? null : (partnerId || null),
-      walk_in_name: isWalkIn ? walkInName : null,
-      walk_in_phone: isWalkIn ? walkInPhone : null,
-      walk_in_city: isWalkIn ? walkInCity : null,
+      partner_id: isPartner ? (partnerId || null) : null,
+      customer_id: isD2c ? (selectedD2cCustomerId || null) : null,
+      walk_in_name: !isPartner ? walkInName : null,
+      walk_in_phone: !isPartner ? walkInPhone : null,
+      walk_in_city: !isPartner ? walkInCity : null,
       reference_no: referenceNo || null,
       quote_date: quoteDate,
       valid_until: validUntil,
@@ -605,6 +711,7 @@ function QuoteBuilderForm() {
         labour_source: i.labour_source,
         labour_partner_id: i.labour_partner_id,
         labour_rate_per_g: parseFloat(i.labour_rate_per_g) || 0,
+        labour_total: (parseFloat(i.labour_rate_per_g) || 0) * (parseFloat(i.gross_gold_weight_g) || 0),
         making_charges: parseFloat(i.making_charges) || 0,
         hallmarking: parseFloat(i.hallmarking) || 0,
         other_charges: parseFloat(i.other_charges) || 0,
@@ -629,11 +736,15 @@ function QuoteBuilderForm() {
   }
 
   async function handleSaveDraft() {
-    if (isWalkIn && !walkInName) {
+    if (customerMode === 'walk_in' && !walkInName) {
       alert('Walk-in Customer Name is required')
       return
     }
-    if (!isWalkIn && !partnerId) {
+    if (customerMode === 'd2c' && !selectedD2cCustomerId) {
+      alert('Please select a D2C customer')
+      return
+    }
+    if (customerMode === 'partner' && !partnerId) {
       alert('Please select a registered partner')
       return
     }
@@ -776,19 +887,23 @@ function QuoteBuilderForm() {
           <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-4">
             <h2 className="font-semibold text-stone-900 text-sm border-b border-stone-100 pb-2">Client Details</h2>
             
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <label className="text-xs font-medium text-stone-500">Customer Type:</label>
-              <button type="button" onClick={() => handleSetWalkIn(false)}
-                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${!isWalkIn ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
+              <button type="button" onClick={() => handleSetCustomerMode('partner')}
+                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${customerMode === 'partner' ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
                 Registered Partner
               </button>
-              <button type="button" onClick={() => handleSetWalkIn(true)}
-                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${isWalkIn ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
+              <button type="button" onClick={() => handleSetCustomerMode('d2c')}
+                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${customerMode === 'd2c' ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
+                D2C Customer
+              </button>
+              <button type="button" onClick={() => handleSetCustomerMode('walk_in')}
+                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${customerMode === 'walk_in' ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
                 Walk-in customer
               </button>
             </div>
 
-            {!isWalkIn ? (
+            {customerMode === 'partner' && (
               <div>
                 <label className={labelClass}>Partner *</label>
                 <select className={inputClass} value={partnerId} onChange={e => setPartnerId(e.target.value)}>
@@ -800,7 +915,113 @@ function QuoteBuilderForm() {
                   ))}
                 </select>
               </div>
-            ) : (
+            )}
+
+            {customerMode === 'd2c' && (
+              <div className="space-y-3">
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <label className={labelClass}>Select D2C Customer *</label>
+                    <select 
+                      className={inputClass} 
+                      value={selectedD2cCustomerId} 
+                      onChange={e => {
+                        const cid = e.target.value
+                        setSelectedD2cCustomerId(cid)
+                        const found = d2cCustomers.find(c => c.id === cid)
+                        if (found) {
+                          setWalkInName(found.full_name)
+                          setWalkInPhone(found.whatsapp)
+                          setWalkInCity(found.city || '')
+                        }
+                      }}
+                    >
+                      <option value="">Select Customer...</option>
+                      {d2cCustomers.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.full_name} ({c.whatsapp}) — {c.city || 'No city'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateD2c(true)}
+                    className="bg-[#1E3A5F] hover:bg-[#162B47] text-white text-xs font-semibold px-3 py-2.5 rounded-lg flex items-center gap-1.5 h-[38px] transition-colors"
+                  >
+                    <span>+ New</span>
+                  </button>
+                </div>
+
+                {showCreateD2c && (
+                  <div className="border border-stone-200 rounded-lg p-3 bg-stone-50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-stone-700">Quick Register D2C Customer</span>
+                      <button type="button" onClick={() => setShowCreateD2c(false)} className="text-stone-400 hover:text-stone-600 text-sm">×</button>
+                    </div>
+                    {d2cError && (
+                      <p className="text-[11px] text-red-500 font-medium">{d2cError}</p>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <input 
+                          type="text" 
+                          placeholder="Full Name *" 
+                          className={inputClass + ' py-1.5 text-xs'} 
+                          value={newD2cName} 
+                          onChange={e => setNewD2cName(e.target.value)} 
+                        />
+                      </div>
+                      <div>
+                        <input 
+                          type="text" 
+                          placeholder="WhatsApp *" 
+                          className={inputClass + ' py-1.5 text-xs'} 
+                          value={newD2cWhatsapp} 
+                          onChange={e => setNewD2cWhatsapp(e.target.value)} 
+                        />
+                      </div>
+                      <div>
+                        <input 
+                          type="text" 
+                          placeholder="City (Optional)" 
+                          className={inputClass + ' py-1.5 text-xs'} 
+                          value={newD2cCity} 
+                          onChange={e => setNewD2cCity(e.target.value)} 
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button 
+                        type="button" 
+                        onClick={() => setShowCreateD2c(false)} 
+                        className="text-stone-500 hover:text-stone-700 text-xs px-2 py-1"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="button" 
+                        disabled={creatingD2c} 
+                        onClick={handleCreateD2cCustomer} 
+                        className="bg-[#1E3A5F] text-white text-xs font-semibold px-3 py-1 rounded hover:bg-[#162B47] disabled:opacity-50"
+                      >
+                        {creatingD2c ? 'Saving...' : 'Register'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {selectedD2cCustomerId && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-stone-50 p-2.5 rounded-lg border border-stone-150 text-xs text-stone-600">
+                    <div><strong>Name:</strong> {walkInName}</div>
+                    <div><strong>WhatsApp:</strong> {walkInPhone}</div>
+                    <div><strong>City:</strong> {walkInCity || '—'}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {customerMode === 'walk_in' && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className={labelClass}>Customer Name *</label>

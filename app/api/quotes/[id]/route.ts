@@ -137,6 +137,7 @@ export async function PATCH(
     walk_in_name: body.walk_in_name || null,
     walk_in_phone: body.walk_in_phone || null,
     walk_in_city: body.walk_in_city || null,
+    customer_id: body.customer_id || null,
     reference_no: body.reference_no || null,
     quote_date: body.quote_date || undefined, // Keep existing if not provided
     valid_until: body.valid_until || undefined,
