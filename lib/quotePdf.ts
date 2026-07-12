@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit'
 import { fmtDate, fetchImage } from './pdfHelpers'
+import { KARAT_FACTORS } from './karat'
 
 // Helper to convert numbers to words in Indian numbering system
 export function numToWordsIndian(num: number): string {
@@ -184,8 +185,12 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
       doc.moveDown(0.4)
 
       items.forEach((item, index) => {
-        // Ensure page breaks dynamically
-        if (doc.y > doc.page.height - 200) {
+        const cardHeight = quote.show_breakup 
+          ? (135 + (item.diamonds && item.diamonds.length > 0 ? (42 + item.diamonds.length * 12) : 0))
+          : 60
+
+        // Ensure page breaks dynamically based on actual card height
+        if (doc.y > doc.page.height - cardHeight - 40) {
           doc.addPage()
           drawHeader()
           doc.y = 95
@@ -194,8 +199,6 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
         const itemStartY = doc.y
         const itemImg = itemImages[index]
 
-        // Box wrapper for item card
-        const cardHeight = quote.show_breakup ? 120 + (item.diamonds?.length || 0) * 15 : 60
         doc.save()
         doc.roundedRect(48, itemStartY, contentWidth, cardHeight, 4)
            .fillColor(lightBg)
@@ -239,63 +242,173 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
         if (quote.show_breakup) {
           const tableY = itemStartY + 45
           
-          // Header row for sub-table
-          doc.strokeColor('#E2E8F0').lineWidth(0.5).moveTo(56, tableY).lineTo(rightMarginX - 8, tableY).stroke()
-          
           const isSilver = String(item.karat).toLowerCase() === 'silver'
-          doc.fillColor(lightText).font('Helvetica-Bold').fontSize(7)
-          doc.text(isSilver ? 'SILVER SPEC' : 'GOLD SPEC', 56, tableY + 4)
-          doc.text('LABOUR', 160, tableY + 4)
-          doc.text('DIAMONDS & GEMS', 240, tableY + 4)
-          doc.text('CHARGES', 380, tableY + 4)
-
-          doc.strokeColor('#E2E8F0').lineWidth(0.5).moveTo(56, tableY + 13).lineTo(rightMarginX - 8, tableY + 13).stroke()
-
-          // Data row
-          doc.fillColor(textColor).font('Helvetica').fontSize(8)
+          const itemKaratStr = typeof item.karat === 'number' ? `${item.karat}K` : String(item.karat)
           
-          // Metal Column (Gold/Silver)
-          let goldText = `Gross: ${item.gross_gold_weight_g.toFixed(3)}g`
-          if (isSilver) {
-            goldText += `\nRate: Rs.${item.gold_rate_24k.toLocaleString('en-IN')}/g`
-          } else {
-            if (quote.show_24kt_column) {
-              goldText += `\nNet 24kt: ${item.net_24kt_weight_g.toFixed(3)}g`
-            }
-            goldText += `\nRate 24kt: Rs.${item.gold_rate_24k.toLocaleString('en-IN')}/g`
+          // 1. Calculate values
+          const gold_component = `${itemKaratStr} Gold`
+          const gold_val = Math.round(item.gross_gold_weight_g * item.gold_rate_24k * (KARAT_FACTORS[item.karat] || 1))
+          const gold_rate = Math.round(item.gold_rate_24k * (KARAT_FACTORS[item.karat] || 1))
+          
+          const dia_count = item.diamonds?.reduce((sum, d) => sum + (parseInt(d.pieces) || 0), 0) || 0
+          const dia_weight = item.diamonds?.reduce((sum, d) => sum + (parseFloat(d.approx_carats || d.weight) || 0), 0) || 0
+          const dia_val = item.diamonds?.reduce((sum, d) => sum + ((parseFloat(d.rate_per_pc || d.cost) || 0) * (parseInt(d.pieces) || 1)), 0) || 0
+          
+          const making_charges = Math.round(item.labour_total + item.making_charges + item.hallmarking + item.other_charges)
+          const total_raw = gold_val + dia_val + making_charges
+          const discount = 0
+          const sub_total = total_raw - discount
+          const final_value = sub_total
+          
+          // 2. Draw Left Column (Gold & Diamond)
+          const leftX = 56
+          const leftColWidth = 205
+          
+          // Gold Block
+          doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(8).text('GOLD', leftX, tableY)
+          
+          // Gold Table Header
+          const goldHeaderY = tableY + 12
+          doc.fillColor(lightText).font('Helvetica-Bold').fontSize(7)
+          doc.text('Component', leftX, goldHeaderY)
+          doc.text('Rate', leftX + 65, goldHeaderY, { width: 35, align: 'right' })
+          doc.text('Weight', leftX + 105, goldHeaderY, { width: 45, align: 'right' })
+          doc.text('Value', leftX + 155, goldHeaderY, { width: 50, align: 'right' })
+          
+          doc.strokeColor('#E2E8F0').lineWidth(0.5).moveTo(leftX, goldHeaderY + 9).lineTo(leftX + leftColWidth, goldHeaderY + 9).stroke()
+          
+          // Gold Data Row
+          const goldDataY = goldHeaderY + 13
+          doc.fillColor(textColor).font('Helvetica').fontSize(8)
+          doc.text(gold_component, leftX, goldDataY, { width: 65, height: 10, ellipsis: true })
+          doc.text(gold_rate.toLocaleString('en-IN'), leftX + 65, goldDataY, { width: 35, align: 'right' })
+          doc.text(`${item.gross_gold_weight_g.toFixed(2)}g`, leftX + 105, goldDataY, { width: 45, align: 'right' })
+          doc.text(gold_val.toLocaleString('en-IN'), leftX + 155, goldDataY, { width: 50, align: 'right' })
+          
+          // Diamond Block
+          const diamondBlockY = goldDataY + 16
+          doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(8).text('DIAMOND', leftX, diamondBlockY)
+          
+          // Diamond Table Header
+          const diaHeaderY = diamondBlockY + 12
+          doc.fillColor(lightText).font('Helvetica-Bold').fontSize(7)
+          doc.text('Component', leftX, diaHeaderY)
+          doc.text('Count', leftX + 65, diaHeaderY, { width: 35, align: 'right' })
+          doc.text('Weight', leftX + 105, diaHeaderY, { width: 45, align: 'right' })
+          doc.text('Value', leftX + 155, diaHeaderY, { width: 50, align: 'right' })
+          
+          doc.strokeColor('#E2E8F0').lineWidth(0.5).moveTo(leftX, diaHeaderY + 9).lineTo(leftX + leftColWidth, diaHeaderY + 9).stroke()
+          
+          // Diamond Data Row
+          const diaDataY = diaHeaderY + 13
+          doc.fillColor(textColor).font('Helvetica').fontSize(8)
+          const diamondLabel = item.diamonds?.[0]?.clarity_label || item.diamonds?.[0]?.quality || 'VVS/VS-EF'
+          doc.text(diamondLabel, leftX, diaDataY, { width: 65, height: 10, ellipsis: true })
+          doc.text(dia_count.toString(), leftX + 65, diaDataY, { width: 35, align: 'right' })
+          doc.text(`${dia_weight.toFixed(2)}ct`, leftX + 105, diaDataY, { width: 45, align: 'right' })
+          doc.text(dia_val.toLocaleString('en-IN'), leftX + 155, diaDataY, { width: 50, align: 'right' })
+          
+          // 3. Draw Right Column (Totals Box)
+          const rightX = 280
+          const rightColWidth = 255
+          
+          // Draw grey background for totals table
+          const totalsHeight = 76
+          doc.save()
+          doc.roundedRect(rightX, tableY, rightColWidth, totalsHeight, 4)
+             .fillColor(lightBg)
+             .fill()
+          doc.roundedRect(rightX, tableY, rightColWidth, totalsHeight, 4)
+             .strokeColor('#E2E8F0')
+             .lineWidth(0.5)
+             .stroke()
+          doc.restore()
+          
+          // Render key-value rows inside totals box
+          let totalRowY = tableY + 5
+          const drawTotalsBoxRow = (lbl: string, val: string, isBold = false) => {
+            doc.fillColor(isBold ? brandColor : textColor)
+               .font(isBold ? 'Helvetica-Bold' : 'Helvetica')
+               .fontSize(7.5)
+               .text(lbl, rightX + 8, totalRowY)
+            doc.text(val, rightX + 8, totalRowY, { align: 'right', width: rightColWidth - 16 })
+            totalRowY += 11
           }
-          doc.text(goldText, 56, tableY + 18, { lineGap: 2 })
-
-          // Labour Column
-          const labourText = `Rate: Rs.${item.labour_rate_per_g.toLocaleString('en-IN')}/g\nTotal: Rs.${item.labour_total.toLocaleString('en-IN')}`
-          doc.text(labourText, 160, tableY + 18, { lineGap: 2 })
-
-          // Diamonds Column
+          
+          drawTotalsBoxRow('Making Charges', making_charges.toLocaleString('en-IN'))
+          drawTotalsBoxRow('Total', total_raw.toLocaleString('en-IN'))
+          drawTotalsBoxRow('Diamond Discount', discount > 0 ? `-${discount.toLocaleString('en-IN')}` : '0')
+          drawTotalsBoxRow('Sub-total', sub_total.toLocaleString('en-IN'))
+          
+          // GST row
+          const itemGst = quote.gst_treatment === 'inclusive' ? Math.round(sub_total * (quote.gst_rate_pct / 100)) : 0
+          drawTotalsBoxRow('GST', itemGst > 0 ? itemGst.toLocaleString('en-IN') : '0')
+          
+          // Divider line before Final Value
+          doc.strokeColor('#CBD5E1').lineWidth(0.5).moveTo(rightX + 6, totalRowY - 1).lineTo(rightX + rightColWidth - 6, totalRowY - 1).stroke()
+          totalRowY += 2
+          
+          drawTotalsBoxRow('Final Value', final_value.toLocaleString('en-IN'), true)
+          
+          // 4. Draw Diamond Break-up Table (spanning full width)
           if (item.diamonds && item.diamonds.length > 0) {
-            let diamondY = tableY + 18
+            const breakupStartY = tableY + 86
+            
+            doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(8).text('DIAMOND BREAK-UP', leftX, breakupStartY)
+            
+            const breakupHeaderY = breakupStartY + 12
+            doc.fillColor(lightText).font('Helvetica-Bold').fontSize(7)
+            
+            const colWidths = [60, 50, 50, 60, 45, 60, 60]
+            const colPositions = [
+              leftX,
+              leftX + 60,
+              leftX + 110,
+              leftX + 160,
+              leftX + 220,
+              leftX + 265,
+              leftX + 325
+            ]
+            
+            doc.text('Size', colPositions[0], breakupHeaderY)
+            doc.text('Color', colPositions[1], breakupHeaderY)
+            doc.text('Clarity', colPositions[2], breakupHeaderY)
+            doc.text('Shape', colPositions[3], breakupHeaderY)
+            doc.text('Count', colPositions[4], breakupHeaderY, { width: colWidths[4], align: 'right' })
+            doc.text('Price', colPositions[5], breakupHeaderY, { width: colWidths[5], align: 'right' })
+            doc.text('Weight', colPositions[6], breakupHeaderY, { width: colWidths[6], align: 'right' })
+            
+            doc.strokeColor('#CBD5E1').lineWidth(0.5).moveTo(leftX, breakupHeaderY + 9).lineTo(rightMarginX - 8, breakupHeaderY + 9).stroke()
+            
+            let rowY = breakupHeaderY + 13
             item.diamonds.forEach((d) => {
-              // Use shape_name (set by picker) or shape_label, falling back gracefully
-              const dShape = d.shape_name || d.shape_label || d.role || 'Diamond'
+              const dShape = d.shape_name || d.shape_label || d.role || 'Round'
               const dPieces = d.pieces || 0
-              const dWeight = d.approx_carats ? `${d.approx_carats}ct` : ''
-              const dRate = d.rate_per_pc ? `Rs.${Number(d.rate_per_pc).toLocaleString('en-IN')}/pc` : ''
-              const dIgi = d.igi_charge && Number(d.igi_charge) > 0 ? ` + IGI: Rs.${Number(d.igi_charge).toLocaleString('en-IN')}` : ''
-              const sizeLabel = d.size_label ? ` (${d.size_label})` : ''
+              const dWeight = parseFloat(d.approx_carats || d.weight) || 0
+              const dRate = d.rate_per_pc ? Math.round(parseFloat(d.rate_per_pc)) : 0
+              const dSize = d.size_label || '—'
+              const dColor = d.color_label || d.color || '—'
+              const dClarity = d.clarity_label || d.quality || '—'
               
-              const dText = `${dShape}${sizeLabel} x${dPieces}pcs ${dWeight} (${dRate})${dIgi}`
-              doc.fontSize(7).text(dText, 240, diamondY, { width: 130 })
-              diamondY += 12
+              doc.fillColor(textColor).font('Helvetica').fontSize(7.5)
+              doc.text(dSize, colPositions[0], rowY, { width: colWidths[0], height: 9, ellipsis: true })
+              doc.text(dColor, colPositions[1], rowY, { width: colWidths[1], height: 9, ellipsis: true })
+              doc.text(dClarity, colPositions[2], rowY, { width: colWidths[2], height: 9, ellipsis: true })
+              doc.text(dShape, colPositions[3], rowY, { width: colWidths[3], height: 9, ellipsis: true })
+              doc.text(dPieces.toString(), colPositions[4], rowY, { width: colWidths[4], align: 'right' })
+              doc.text(dRate.toLocaleString('en-IN'), colPositions[5], rowY, { width: colWidths[5], align: 'right' })
+              doc.text(`${dWeight.toFixed(2)}ct`, colPositions[6], rowY, { width: colWidths[6], align: 'right' })
+              
+              doc.strokeColor('#E2E8F0').lineWidth(0.3).moveTo(leftX, rowY + 9).lineTo(rightMarginX - 8, rowY + 9).stroke()
+              rowY += 12
             })
-          } else {
-            doc.text('None', 240, tableY + 18)
+            
+            // Total Row
+            doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(7.5)
+            doc.text('Total', colPositions[0], rowY)
+            doc.text(dia_count.toString(), colPositions[4], rowY, { width: colWidths[4], align: 'right' })
+            doc.text(`${dia_weight.toFixed(2)}ct`, colPositions[6], rowY, { width: colWidths[6], align: 'right' })
           }
-
-          // Charges Column
-          let chargesText = `Making: Rs.${item.making_charges.toLocaleString('en-IN')}\nHallmark: Rs.${item.hallmarking.toLocaleString('en-IN')}`
-          if (item.other_charges > 0) {
-            chargesText += `\nOther: Rs.${item.other_charges.toLocaleString('en-IN')} (${item.other_charges_label || 'Charges'})`
-          }
-          doc.fontSize(8).text(chargesText, 380, tableY + 18, { lineGap: 2 })
         }
 
         doc.y = itemStartY + cardHeight + 12
