@@ -246,13 +246,25 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
           const itemKaratStr = typeof item.karat === 'number' ? `${item.karat}K` : String(item.karat)
           
           // 1. Calculate values
-          const gold_component = `${itemKaratStr} Gold`
-          const gold_val = Math.round(item.gross_gold_weight_g * item.gold_rate_24k * (KARAT_FACTORS[item.karat] || 1))
-          const gold_rate = Math.round(item.gold_rate_24k * (KARAT_FACTORS[item.karat] || 1))
+          const karatNum = parseInt(String(item.karat).replace(/[^\d]/g, '')) || 24
+          const karatFactor = isSilver ? 1 : (KARAT_FACTORS[karatNum] || 1)
           
+          const gold_component = `${itemKaratStr} Gold`
+          const gold_rate = Math.round(item.gold_rate_24k * karatFactor)
+          const gold_val = Math.round(item.gross_gold_weight_g * item.gold_rate_24k * karatFactor)
+          
+          const margin = 1 + (quote.margin_pct || 0) / 100
           const dia_count = item.diamonds?.reduce((sum, d) => sum + (parseInt(d.pieces) || 0), 0) || 0
           const dia_weight = item.diamonds?.reduce((sum, d) => sum + (parseInt(d.pieces) || 1) * (parseFloat(d.approx_carats || d.weight) || 0), 0) || 0
-          const dia_val = item.diamonds?.reduce((sum, d) => sum + ((parseFloat(d.rate_per_pc || d.cost) || 0) * (parseInt(d.pieces) || 1)), 0) || 0
+          const dia_val = item.diamonds?.reduce((sum, d) => {
+            const wt = parseFloat(d.approx_carats || d.weight) || 0
+            const rate = parseFloat(d.rate_per_pc || d.cost) || 0
+            const pieces = parseInt(d.pieces) || 0
+            const igi = parseFloat(d.igi_charge) || 0
+            const cogsCost = (wt * pieces * rate) + igi
+            const tradeCost = Math.round(cogsCost * margin)
+            return sum + tradeCost
+          }, 0) || 0
           
           const making_charges = Math.round(item.labour_total + item.making_charges + item.hallmarking + item.other_charges)
           const total_raw = gold_val + dia_val + making_charges
@@ -385,7 +397,7 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
               const dShape = d.shape_name || d.shape_label || d.role || 'Round'
               const dPieces = d.pieces || 0
               const dWeight = dPieces * (parseFloat(d.approx_carats || d.weight) || 0)
-              const dRate = d.rate_per_pc ? Math.round(parseFloat(d.rate_per_pc)) : 0
+              const dRate = d.rate_per_pc ? Math.round(parseFloat(d.rate_per_pc) * margin) : 0
               const dSize = d.size_label || '—'
               const dColor = d.color_label || d.color || '—'
               const dClarity = d.clarity_label || d.quality || '—'
