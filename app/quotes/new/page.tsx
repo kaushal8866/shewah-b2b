@@ -218,16 +218,17 @@ function QuoteBuilderForm() {
         item.diamonds.forEach(d => {
           const pieces = Math.max(parseInt(d.pieces, 10) || 0, 0)
           const weight = Math.max(parseFloat(d.weight) || 0, 0)
-          const rate = Math.max(parseFloat(d.rate_per_pc) || 0, 0)
-          const igi = Math.max(parseFloat(d.igi_charge) || 0, 0)
+          const rate   = Math.max(parseFloat(d.rate_per_pc) || 0, 0)
+          const igi    = Math.max(parseFloat(d.igi_charge) || 0, 0)
 
-          const rowWeight = pieces * weight
-          const cogsCost = (rowWeight * rate) + igi
-          const tradeCost = Math.round(cogsCost * margin)
+          const rowWeight  = pieces * weight            // total carats for this row
+          // rate_per_pc = price per piece — do NOT multiply by carat weight
+          const cogsCost   = (pieces * rate) + igi
+          const tradeCost  = Math.round(cogsCost * margin)
 
-          totalDiamondCount += pieces * qty
+          totalDiamondCount  += pieces * qty
           totalDiamondWeight += rowWeight * qty
-          totalDiamondValue += tradeCost * qty
+          totalDiamondValue  += tradeCost * qty
 
           const key = `${d.size_label || '—'}_${d.color_id || '—'}_${d.quality_id || '—'}_${d.shape_name || '—'}_${rate}`
           if (!diaGroups[key]) {
@@ -241,7 +242,7 @@ function QuoteBuilderForm() {
               weight: 0
             }
           }
-          diaGroups[key].count += pieces * qty
+          diaGroups[key].count  += pieces * qty
           diaGroups[key].weight += rowWeight * qty
         })
       }
