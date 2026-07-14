@@ -394,7 +394,7 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
             
             let rowY = breakupHeaderY + 13
             item.diamonds.forEach((d) => {
-              const dShape = d.shape_name || d.shape_label || d.role || 'Round'
+              const dShape = d.shape_name || d.shape_label || d.name || '—'
               const dPieces = d.pieces || 0
               const dWeight = dPieces * (parseFloat(d.approx_carats || d.weight) || 0)
               const dRate = d.rate_per_pc ? Math.round(parseFloat(d.rate_per_pc) * margin) : 0

@@ -65,10 +65,29 @@ export async function GET(
     return NextResponse.json({ error: itemsError.message }, { status: 500 })
   }
 
+  // 3b. Build a shape_id → name lookup to backfill shape_name for older
+  //     diamond rows that were saved before the picker stored shape_name.
+  const { data: shapes } = await supabaseAdmin
+    .from('diamond_shapes')
+    .select('id, name')
+  const shapeMap: Record<string, string> = {}
+  for (const s of shapes || []) shapeMap[s.id] = s.name
+
+  const patchedItems = (items || []).map((item: any) => ({
+    ...item,
+    diamonds: Array.isArray(item.diamonds)
+      ? item.diamonds.map((d: any) => ({
+          ...d,
+          // Prefer stored shape_name; fall back to lookup via shape_id
+          shape_name: d.shape_name || (d.shape_id ? shapeMap[d.shape_id] : null) || null,
+        }))
+      : [],
+  }))
+
   // 4. Generate PDF Buffer
   let pdfBuffer: Buffer
   try {
-    pdfBuffer = await renderQuotePdf(quote as any, items as any[])
+    pdfBuffer = await renderQuotePdf(quote as any, patchedItems as any[])
   } catch (err: any) {
     return NextResponse.json({ error: `PDF generation failed: ${err.message || err}` }, { status: 500 })
   }
