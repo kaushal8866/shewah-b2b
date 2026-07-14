@@ -218,12 +218,12 @@ function QuoteBuilderForm() {
         item.diamonds.forEach(d => {
           const pieces = Math.max(parseInt(d.pieces, 10) || 0, 0)
           const weight = Math.max(parseFloat(d.weight) || 0, 0)
-          const rate   = Math.max(parseFloat(d.rate_per_pc) || 0, 0)
+          const rate   = Math.max(parseFloat(d.rate_per_pc) || 0, 0)  // rate per carat
           const igi    = Math.max(parseFloat(d.igi_charge) || 0, 0)
 
-          const rowWeight  = pieces * weight            // total carats for this row
-          // rate_per_pc = price per piece — do NOT multiply by carat weight
-          const cogsCost   = (pieces * rate) + igi
+          const rowWeight  = pieces * weight              // total carats for this row
+          // total_carats × rate_per_carat + igi
+          const cogsCost   = (rowWeight * rate) + igi
           const tradeCost  = Math.round(cogsCost * margin)
 
           totalDiamondCount  += pieces * qty

@@ -406,9 +406,9 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
               const dShape   = d.shape_name || d.shape_label || d.name || '—'
               const dPieces  = d.pieces || 0
               const dCtPc    = parseFloat(d.approx_carats || d.weight) || 0   // carats per piece
-              const dWeight  = dPieces * dCtPc                                // total carats
+              const dWeight  = dPieces * dCtPc                                // total carats for this row
               const dRate    = d.rate_per_pc ? Math.round(parseFloat(d.rate_per_pc) * margin) : 0
-              const dTotal   = dPieces * dRate                                // row total ₹
+              const dTotal   = Math.round(dWeight * dRate)                   // total_carats × rate_per_carat
               const dSize    = d.size_label || '—'
               const dColor   = d.color_label || d.color || '—'
               const dClarity = d.clarity_label || d.quality || '—'
