@@ -371,45 +371,62 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
             const breakupHeaderY = breakupStartY + 12
             doc.fillColor(lightText).font('Helvetica-Bold').fontSize(7)
             
-            const colWidths = [60, 50, 50, 60, 45, 60, 60]
+            // 9 columns: Size | Color | Clarity | Shape | Count | Price | Weight | CT/PC | TOTAL
+            // leftX=56, rightMarginX≈547 → usable ≈ 491px
+            const colWidths = [52, 42, 42, 52, 38, 52, 52, 45, 55]
             const colPositions = [
-              leftX,
-              leftX + 60,
-              leftX + 110,
-              leftX + 160,
-              leftX + 220,
-              leftX + 265,
-              leftX + 325
+              leftX,            // 56  Size
+              leftX + 52,       // 108 Color
+              leftX + 94,       // 150 Clarity
+              leftX + 136,      // 192 Shape
+              leftX + 188,      // 244 Count
+              leftX + 226,      // 282 Price
+              leftX + 278,      // 334 Weight
+              leftX + 330,      // 386 CT/PC
+              leftX + 375,      // 431 TOTAL
             ]
             
-            doc.text('Size', colPositions[0], breakupHeaderY)
-            doc.text('Color', colPositions[1], breakupHeaderY)
+            doc.text('Size',    colPositions[0], breakupHeaderY)
+            doc.text('Color',   colPositions[1], breakupHeaderY)
             doc.text('Clarity', colPositions[2], breakupHeaderY)
-            doc.text('Shape', colPositions[3], breakupHeaderY)
-            doc.text('Count', colPositions[4], breakupHeaderY, { width: colWidths[4], align: 'right' })
-            doc.text('Price', colPositions[5], breakupHeaderY, { width: colWidths[5], align: 'right' })
-            doc.text('Weight', colPositions[6], breakupHeaderY, { width: colWidths[6], align: 'right' })
+            doc.text('Shape',   colPositions[3], breakupHeaderY)
+            doc.text('Count',   colPositions[4], breakupHeaderY, { width: colWidths[4], align: 'right' })
+            doc.text('Price',   colPositions[5], breakupHeaderY, { width: colWidths[5], align: 'right' })
+            doc.text('Weight',  colPositions[6], breakupHeaderY, { width: colWidths[6], align: 'right' })
+            // CT/PC and TOTAL in accent red to match the screenshot style
+            doc.fillColor('#E74C3C').font('Helvetica-Bold').fontSize(7)
+            doc.text('CT/PC',   colPositions[7], breakupHeaderY, { width: colWidths[7], align: 'right' })
+            doc.text('TOTAL',   colPositions[8], breakupHeaderY, { width: colWidths[8], align: 'right' })
             
             doc.strokeColor('#CBD5E1').lineWidth(0.5).moveTo(leftX, breakupHeaderY + 9).lineTo(rightMarginX - 8, breakupHeaderY + 9).stroke()
             
             let rowY = breakupHeaderY + 13
+            let grandDiaTotal = 0   // accumulate TOTAL across all rows
             item.diamonds.forEach((d) => {
-              const dShape = d.shape_name || d.shape_label || d.name || '—'
-              const dPieces = d.pieces || 0
-              const dWeight = dPieces * (parseFloat(d.approx_carats || d.weight) || 0)
-              const dRate = d.rate_per_pc ? Math.round(parseFloat(d.rate_per_pc) * margin) : 0
-              const dSize = d.size_label || '—'
-              const dColor = d.color_label || d.color || '—'
+              const dShape   = d.shape_name || d.shape_label || d.name || '—'
+              const dPieces  = d.pieces || 0
+              const dCtPc    = parseFloat(d.approx_carats || d.weight) || 0   // carats per piece
+              const dWeight  = dPieces * dCtPc                                // total carats
+              const dRate    = d.rate_per_pc ? Math.round(parseFloat(d.rate_per_pc) * margin) : 0
+              const dTotal   = dPieces * dRate                                // row total ₹
+              const dSize    = d.size_label || '—'
+              const dColor   = d.color_label || d.color || '—'
               const dClarity = d.clarity_label || d.quality || '—'
-              
+
+              grandDiaTotal += dTotal
+
               doc.fillColor(textColor).font('Helvetica').fontSize(7.5)
-              doc.text(dSize, colPositions[0], rowY, { width: colWidths[0], height: 9, ellipsis: true })
-              doc.text(dColor, colPositions[1], rowY, { width: colWidths[1], height: 9, ellipsis: true })
-              doc.text(dClarity, colPositions[2], rowY, { width: colWidths[2], height: 9, ellipsis: true })
-              doc.text(dShape, colPositions[3], rowY, { width: colWidths[3], height: 9, ellipsis: true })
-              doc.text(dPieces.toString(), colPositions[4], rowY, { width: colWidths[4], align: 'right' })
-              doc.text(dRate.toLocaleString('en-IN'), colPositions[5], rowY, { width: colWidths[5], align: 'right' })
-              doc.text(`${dWeight.toFixed(2)}ct`, colPositions[6], rowY, { width: colWidths[6], align: 'right' })
+              doc.text(dSize,                          colPositions[0], rowY, { width: colWidths[0], height: 9, ellipsis: true })
+              doc.text(dColor,                         colPositions[1], rowY, { width: colWidths[1], height: 9, ellipsis: true })
+              doc.text(dClarity,                       colPositions[2], rowY, { width: colWidths[2], height: 9, ellipsis: true })
+              doc.text(dShape,                         colPositions[3], rowY, { width: colWidths[3], height: 9, ellipsis: true })
+              doc.text(dPieces.toString(),              colPositions[4], rowY, { width: colWidths[4], align: 'right' })
+              doc.text(dRate.toLocaleString('en-IN'),   colPositions[5], rowY, { width: colWidths[5], align: 'right' })
+              doc.text(`${dWeight.toFixed(2)}ct`,       colPositions[6], rowY, { width: colWidths[6], align: 'right' })
+              // CT/PC and TOTAL in red
+              doc.fillColor('#E74C3C').font('Helvetica').fontSize(7.5)
+              doc.text(dCtPc > 0 ? dCtPc.toFixed(3) : '—', colPositions[7], rowY, { width: colWidths[7], align: 'right' })
+              doc.text(dTotal > 0 ? dTotal.toLocaleString('en-IN') : '—', colPositions[8], rowY, { width: colWidths[8], align: 'right' })
               
               doc.strokeColor('#E2E8F0').lineWidth(0.3).moveTo(leftX, rowY + 9).lineTo(rightMarginX - 8, rowY + 9).stroke()
               rowY += 12
@@ -418,8 +435,11 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
             // Total Row
             doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(7.5)
             doc.text('Total', colPositions[0], rowY)
-            doc.text(dia_count.toString(), colPositions[4], rowY, { width: colWidths[4], align: 'right' })
-            doc.text(`${dia_weight.toFixed(2)}ct`, colPositions[6], rowY, { width: colWidths[6], align: 'right' })
+            doc.text(dia_count.toString(),             colPositions[4], rowY, { width: colWidths[4], align: 'right' })
+            doc.text(`${dia_weight.toFixed(2)}ct`,     colPositions[6], rowY, { width: colWidths[6], align: 'right' })
+            // Grand total in red bold
+            doc.fillColor('#E74C3C').font('Helvetica-Bold').fontSize(7.5)
+            doc.text(grandDiaTotal > 0 ? grandDiaTotal.toLocaleString('en-IN') : '—', colPositions[8], rowY, { width: colWidths[8], align: 'right' })
           }
         }
 
