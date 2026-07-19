@@ -1,6 +1,6 @@
-# Shewah B2B — Living Architecture Knowledge Base v2.0
+# Shewah B2B — Living Architecture Knowledge Base v2.1
 
-> **Version:** 2.0 | **Date:** 2025-06-17 | **Purpose:** Comprehensive architectural decision support for future feature building
+> **Version:** 2.1 | **Date:** 2026-07-19 | **Purpose:** Comprehensive architectural decision support for future feature building
 
 ---
 
@@ -8,9 +8,9 @@
 
 Before building any new feature, check these three things:
 
-1. **Which user roles touch this?** (master, sub, manufacturer, retailer, anonymous)
-2. **Which data entities does it need?** (orders, products, partners, manufacturing_orders, quotes, etc.)
-3. **Which existing system rule will interact with it?** (gold-rate locking, float ledger, COGS snapshots, WhatsApp webhooks, karat pricing)
+1. **Which user roles touch this?** (master, sub, manufacturer, retailer, reseller, anonymous)
+2. **Which data entities does it need?** (orders, products, partners, manufacturing_orders, quotes, diamond_matrix, loose_diamonds, reseller_themes, etc.)
+3. **Which existing system rule will interact with it?** (gold-rate locking, float ledger, COGS snapshots, WhatsApp webhooks, karat pricing, diamond rate matrix)
 
 This prevents you from building features that conflict with existing business logic.
 
@@ -25,7 +25,7 @@ This prevents you from building features that conflict with existing business lo
 | Framework | Next.js 14 (App Router) | Server Components by default, `'use client'` for interactivity |
 | Language | TypeScript | Strict mode |
 | Styling | Tailwind CSS | Custom brand color: `#1E3A5F` (navy blue) |
-| Database | PostgreSQL (Supabase) | 35+ tables, views, triggers, functions |
+| Database | PostgreSQL (Supabase) | 40+ tables, views, triggers, functions |
 | Auth | NextAuth.js (Credentials) | JWT strategy, 30-day expiry, custom session shape |
 | ORM/Client | `@supabase/supabase-js` | Two clients: `supabase` (anon, RLS) + `supabaseAdmin` (service_role) |
 | PDF | `pdfkit` | Server-side PDF generation for quotes, catalog, manufacturing briefs |
@@ -39,27 +39,26 @@ This prevents you from building features that conflict with existing business lo
 - Static export not used (`output: 'export'` is commented out in `next.config.js`)
 - Image optimization disabled (`unoptimized: true`) — required for static export but currently active even in server mode
 
-### 1.3 The Three-App Architecture
+### 1.3 The Four-App Architecture
 
-The codebase contains **three distinct applications** sharing one Next.js instance:
+The codebase now contains **four distinct applications** sharing one Next.js instance:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     NEXT.JS APP                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │
-│  │   ADMIN     │  │  RETAILER   │  │  MANUFACTURER   │  │
-│  │   /, /dash  │  │  /portal/   │  │  /portal/       │  │
-│  │   /orders   │  │  retailer/* │  │  manufacturer/* │  │
-│  │   /catalog  │  │             │  │                 │  │
-│  │   /quotes   │  │             │  │                 │  │
-│  │   /manufac  │  │             │  │                 │  │
-│  └─────────────┘  └─────────────┘  └─────────────────┘  │
-│         │                │                  │             │
-│         ▼                ▼                  ▼             │
-│  master/sub role    retailer role      manufacturer role │
-│  AppShell layout    Isolated layout    Isolated layout   │
-│  Full module access Module-restricted  Orders only       │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                         NEXT.JS APP                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────┐  ┌────────────┐  │
+│  │  ADMIN   │  │ RETAILER │  │ MANUFACTURER │  │  RESELLER  │  │
+│  │ /dash    │  │ /portal/ │  │ /portal/     │  │ /store/    │  │
+│  │ /orders  │  │ retailer │  │ manufacturer │  │ /onboard   │  │
+│  │ /catalog │  │          │  │              │  │ /apply     │  │
+│  │ /quotes  │  │          │  │              │  │            │  │
+│  │ /manufac │  │          │  │              │  │            │  │
+│  └──────────┘  └──────────┘  └──────────────┘  └────────────┘  │
+│       │              │               │                │          │
+│       ▼              ▼               ▼                ▼          │
+│  master/sub     retailer role   manufacturer    reseller role    │
+│  Full access   Module-limited   Orders only    Storefront only   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 **Critical rule:** Middleware sandboxes each role to their allowed routes. Any attempt to cross portals results in 403.
@@ -77,10 +76,11 @@ interface SessionUser {
   id: string          // app_users.id
   username: string
   displayName: string
-  role: 'master' | 'sub' | 'retailer' | 'manufacturer'
+  role: 'master' | 'sub' | 'retailer' | 'manufacturer' | 'reseller'
   permissions: string[]  // module names for sub users
   manufacturingPartnerId?: string  // for manufacturer role
   partnerId?: string                 // for retailer role
+  resellerId?: string                // for reseller role
 }
 ```
 
@@ -92,15 +92,17 @@ interface SessionUser {
 | `sub` | `app_users` | Master creates via admin UI; has subset of `permissions` |
 | `retailer` | `app_users` + `partners` | Admin creates partner account; `partnerId` links to `partners` row |
 | `manufacturer` | `app_users` + `manufacturing_partners` | Admin creates; `manufacturingPartnerId` links to `manufacturing_partners` row |
+| `reseller` | `app_users` + `resellers` | Admin onboards; `resellerId` links to `resellers` row + white-label storefront |
 
 ### 2.3 Middleware Behavior (`middleware.ts`)
 
 ```
-1. Public paths (matcher excluded): /api/auth, /api/setup, /api/public, /api/showcase, /api/track, /api/cron, /api/whatsapp, /api/m/, /api/cad-share/, /api/c/, /api/quotes/share/, /api/quotes/test-compute
+1. Public paths (matcher excluded): /api/auth, /api/setup, /api/public, /api/showcase, /api/track, /api/cron, /api/whatsapp, /api/m/, /api/cad-share/, /api/c/, /api/quotes/share/, /api/quotes/test-compute, /api/diamonds/ (retailer allowed)
 2. Logged-in user on /login → redirect to dashboardForRole(role)
 3. Manufacturer on non-/portal/manufacturer/* → 403
 4. Retailer on non-/portal/retailer/* → 403
-5. Everyone else → allow (master/sub can go anywhere)
+5. Reseller on non-/store/* and non-/onboard/* → 403
+6. Everyone else → allow (master/sub can go anywhere)
 ```
 
 ### 2.4 Sub-User Permission System (`lib/modules.ts`)
@@ -152,7 +154,7 @@ const KARAT_FACTORS: Record<number, number> = {
 }
 ```
 
-**Rule:** All gold inventory is held as **24K-pure net weight** (`gold_24k` in `material_float` / `stock_movements`). Karat is only a **labour-rate lens** at the catalog/order edges. This is Task #78.
+**Rule:** All gold inventory is held as **24K-pure net weight** (`gold_24k` in `material_float` / `stock_movements`). Karat is only a **labour-rate lens** at the catalog/order edges.
 
 ### 3.2 Pricing Formula (Immutable)
 
@@ -172,24 +174,21 @@ mrp(k) = round(tradePrice(k) × 1.40)    // 40% retail markup
 
 **Every order stores its own `gold_rate_at_order` snapshot at creation time.** The trade price is locked. Editing an order later never re-prices it. This is a guarantee to retailers.
 
-- Admin: `app/orders/new/page.tsx` captures current gold rate from `gold_rates` table
-- Retailer portal: `app/api/portal/retailer/orders/route.ts` captures current gold rate
-- Catalog: `recomputeCatalogPrices()` only touches `products` table, never `orders`
-
 **Do NOT** build a feature that re-prices existing orders automatically.
 
-### 3.4 COGS Calculation (Task #68 + #78)
+### 3.4 Diamond Cost Formula (CRITICAL — Updated July 2026)
+
+Diamond pricing uses **rate per carat**, not rate per piece:
 
 ```
-gold_cost = gold_weight_actual × gold_rate_at_order × KARAT_FACTORS[gold_karat]
-labour_cost = labour_per_gram × max(gross_weight, min_labour_grams)
-total_cogs = gold_cost + labour_cost + cad_cost + stone_cost
-margin = total_amount - total_cogs
+dCtPc        = approx_carats per single piece (stored in diamond row)
+dTotalWeight = pieces × dCtPc                (total carats for that row)
+dRate        = rate_per_pc field             (confusingly named — actually rate/carat)
+dRowCost     = dTotalWeight × dRate          (total carats × rate per carat)
+diamondCostPerPc = Σ(dTotalWeight × dRate) + Σ(igi_charge)
 ```
 
-Labour rate comes from the assigned manufacturing partner's per-karat rate (`labour_rate_22k`, `labour_rate_18k`, etc.). If no partner, falls back to `making_charges`.
-
-**COGS lives in the `orders` row** and is calculated on-demand or when the admin saves actual manufacturing data.
+**Never multiply `pieces × rate_per_pc` directly** — that produces an inflated per-piece total. Always go via `weight × pieces × rate`.
 
 ### 3.5 Per-Karat Pricing Cache (`products.karat_pricing`)
 
@@ -233,7 +232,7 @@ orders (customer orders)
 ├── manufacturing_orders (1:N, nullable)
 ├── cad_requests (1:1, nullable)
 ├── order_change_requests
-├── order_payments (Task #69)
+├── order_payments
 ├── production_updates
 ├── customer_journey_links
 └── quotes (via convert-to-order flow)
@@ -242,6 +241,10 @@ manufacturing_partners (karigars)
 ├── manufacturing_orders
 ├── material_float (one per material type)
 └── material_transactions
+
+resellers (white-label storefront owners)
+├── reseller_themes (JSONB brand config)
+└── app_users (role: 'reseller')
 ```
 
 ### 4.2 Inventory / Ledger System
@@ -254,8 +257,8 @@ stock_movements (central HQ inventory)
 └── material_transaction_id (links to float ledger)
 
 material_float (per-karigar custody — pre-computed balance columns)
-├── material_type: gold_14k|gold_18k|gold_22k|diamond_* (legacy! Task #78 migrates to 24k-only)
-├── total_deposited, total_returned, total_consumed, balance (stored columns)
+├── material_type: gold_14k|gold_18k|gold_22k|diamond_* (legacy; compute from transactions)
+├── total_deposited, total_returned, total_consumed, balance (stored, not auto-synced)
 └── unique (manufacturing_partner_id, material_type)
 
 material_transactions (the ledger — single source of truth)
@@ -265,9 +268,101 @@ material_transactions (the ledger — single source of truth)
 └── creates_negative_balance (computed by trigger)
 ```
 
-**Important:** The `material_float` table has stored balance columns (`total_deposited`, `total_returned`, `total_consumed`, `balance`) but these are **legacy**. Task #78 moved to computing balances from `material_transactions`. The `mfg_reserve_float()` PostgreSQL function computes available balance from the transaction ledger, not the stored columns.
+### 4.3 Diamond System (Updated July 2026)
 
-### 4.3 D2C / Consumer Entities
+```
+diamond_shapes     (Round, Oval, Princess, Radiant, etc.)
+├── id, name, sort_order, active
+
+diamond_sizes      (size labels with approx_carats per piece)
+├── id, shape_id, label (e.g. "6.0mm"), approx_carats, sort_order
+
+diamond_quality_grades   (VVS, VS, SI, etc.)
+diamond_color_grades     (EF, GH, IJ, etc.)
+
+metal_weights      (per-shape, per-karat, per-metal-type weight data)
+
+diamond_price_matrix     (LGD and Natural rate lookup)
+├── shape_id, size_id, quality_id, color_id
+├── lgd_rate_per_ct, natural_rate_per_ct
+└── Used by DiamondCatalogPicker for auto-fill
+
+loose_diamond_procurement  (NEW — Loose Diamond Module)
+├── enquiry/negotiation lifecycle for procuring loose stones
+├── retailer-browsable via portal
+└── admin review workspace
+```
+
+**DiamondCatalogPicker** (`components/DiamondCatalogPicker.tsx`):
+- Fetches `diamond_shapes`, `diamond_sizes`, `diamond_quality_grades`, `diamond_color_grades`
+- Auto-fills `approx_carats` when size is selected
+- Auto-fills `rate_per_pc` from the price matrix when shape+size+quality+color match
+- Writes `shape_id`, `shape_name`, `size_id`, `size_label` to the diamond row
+
+### 4.4 Quotation System (Updated July 2026)
+
+```
+quotes
+├── quote_items (line items)
+├── quote_share_links (public tokenized links, 60-day expiry)
+├── partner_id (nullable for walk-in/D2C)
+└── customer_id (nullable — D2C customer selection now supported)
+
+quote_items
+├── diamonds (JSONB array of DiamondSpec)
+│   └── Each spec: {id, role, shape_id, shape_name, size_id, size_label,
+│                   color_id, quality_id, pieces, approx_carats, weight,
+│                   rate_per_pc, igi_charge, color_label, clarity_label}
+├── karat, gross_gold_weight_g, net_24kt_weight_g
+├── labour_rate_per_g, labour_total
+├── line_cogs, line_trade, line_total
+├── metal_weights (JSONB — per-karat computed weights)
+└── reference_images (array of Cloudinary/Supabase URLs)
+```
+
+**Quote PDF** (`lib/quotePdf.ts`) — Diamond Break-up table columns (as of July 2026):
+- Size | Color | Clarity | Shape | Count | Price | Weight | **CT/PC** | **TOTAL**
+- CT/PC = `approx_carats` per piece (carats per single stone)
+- TOTAL = `total_weight × rate_per_carat` (row cost with margin)
+- Grand TOTAL = sum of all row TOTALs = matches DIAMOND "Value" in summary
+- Shape is resolved: `shape_name → shape_label → d.name → '—'` (never falls back to `role`)
+- Both PDF routes (`/api/quotes/[id]/pdf` and `/api/quotes/share/[token]/pdf`) backfill `shape_name` from `diamond_shapes` lookup if the stored value is null
+
+**Quote share page** (`/q/[token]/page.tsx`) — Updated July 2026:
+- Removed the "Line Items" sidebar
+- Full-width PDF iframe + compact totals strip only
+
+### 4.5 Set / Pair Selling (New July 2026)
+
+- Products can be grouped as **sets** (e.g., necklace + earrings)
+- `set_products` junction table or `parent_product_id` column tracks set membership
+- Retailer can add a set to cart and checkout all child items together
+- Default karat selection on catalog creation applies to all set children
+
+### 4.6 Reseller White-Label Storefront (New July 2026)
+
+```
+resellers
+├── id, name, subdomain, status (active|inactive), created_at
+
+reseller_themes
+├── reseller_id
+├── config (JSONB): brand colors, fonts, logo, hero image, trust signals,
+│                   category grid, video showcase, reviews, etc.
+└── Edited via /store/brand-studio visual editor
+
+app/store/[...]/         → Public reseller storefront (no AppShell)
+app/onboard/             → Reseller onboarding flow
+app/apply/               → Reseller application page
+```
+
+- Reseller storefront bypasses AppShell layout entirely
+- Theme config is fully customizable via brand studio (Palmonas-style visual editor)
+- Background support chat polling on both admin and reseller portals
+- Active resellers only can access storefront; inactive → redirect
+- Configurator (stone prices, quality-color matrix) is a separate admin module
+
+### 4.7 D2C / Consumer Entities
 
 ```
 customers (walk-in consumers)
@@ -282,44 +377,7 @@ customer_enquiries
 └── status: new | in_discussion | quoted | approved
 ```
 
-### 4.4 Quotation System
-
-```
-quotes
-├── quote_items (line items)
-├── quote_share_links (public tokenized links, 60-day expiry)
-└── partner_id (nullable for walk-in/D2C)
-
-quote_items
-├── diamonds (JSONB array of DiamondSpec)
-├── karat, gross_gold_weight_g, net_24kt_weight_g
-├── labour_rate_per_g, labour_total
-├── line_cogs, line_trade, line_total
-```
-
-### 4.5 Marketing / Landing Page Entities
-
-```
-partner_signups (lead capture from landing page)
-├── full_name, store_name, city, phone, whatsapp, email, gst_number
-├── monthly_volume, note
-├── utm_source, utm_medium, utm_campaign, utm_content, utm_term
-├── referrer, landing_path, landing_variant, user_agent, ip_hash
-├── status: new | contacted | qualified | converted
-├── email_dispatch, whatsapp_dispatch (notification outcomes)
-
-design_collections (showcase collections)
-├── name, description, circuit_target, is_published
-└── design_collection_products (junction)
-
-design_interests (partner shortlists from showcase)
-├── partner_id, product_id, collection_id, note, quantity_hint
-
-showcase_views (collection view tracking)
-├── collection_id, partner_id, user_agent
-```
-
-### 4.6 Settings-Driven Configuration
+### 4.8 Settings-Driven Configuration
 
 The `settings` table stores **all** runtime configuration:
 
@@ -334,9 +392,8 @@ The `settings` table stores **all** runtime configuration:
 | `lead_notify_email_enabled`, `lead_notify_whatsapp_enabled` | Lead notification toggles |
 | `lead_notify_email_to`, `lead_notify_whatsapp_to` | Lead notification targets |
 | `reconciliation_alert_email_to`, `reconciliation_alert_email_from` | Reconciliation digest |
-| `reconciliation_alert_window_days`, `reconciliation_alert_variance_g`, `reconciliation_alert_negative_count`, `reconciliation_alert_unlinked_count` | Reconciliation thresholds |
+| `reconciliation_alert_window_days`, `reconciliation_alert_variance_g`, etc. | Reconciliation thresholds |
 | `default_igi_cost`, `default_making_charges` | Default pricing values |
-| `gold_markup_*`, `trade_margin_target`, `mrp_markup_target` | Legacy pricing defaults |
 | `surat_address` | Business address |
 | `whatsapp_inbound_token` | Inbound webhook auth |
 
@@ -358,18 +415,6 @@ app/orders/new/page.tsx
     → balance_due = total_amount - advance_paid
 ```
 
-**Retailer places order via portal:**
-```
-app/portal/retailer/catalog
-  → Browses products with per-karat pricing
-  → Selects product + karat
-  → POST /api/portal/retailer/orders
-    → Validates product_id, is_active
-    → Captures gold_rate_at_order, selected_karat, retail_labour_at_order
-    → Locks trade_price from product.karat_pricing[selected_karat]
-    → Creates order row with status='brief_received'
-```
-
 **Quote converts to order:**
 ```
 app/quotes/[id]/page.tsx
@@ -384,7 +429,32 @@ app/quotes/[id]/page.tsx
     → Sets quote.converted_order_id = order.id
 ```
 
-### 5.2 Manufacturing Assignment Flow
+### 5.2 Quote Lifecycle (Updated July 2026)
+
+```
+Admin: app/quotes/new/page.tsx
+  → Adds items with DiamondCatalogPicker (auto-fills shape/size/rate)
+  → Live price breakup drawer shows gold + diamond breakdown per item
+  → POST /api/quotes → creates quote + quote_items
+    → computeQuoteItem() calculates:
+        diamondCost = Σ(pieces × approx_carats × rate_per_pc) + igi
+        goldCost    = net24ktWeight × gold_rate_24k × KARAT_FACTORS[karat]
+  → POST /api/quotes/[id]/send
+    → Generates 32-char hex token
+    → Creates quote_share_links (expiry: min 60 days, valid_until+30)
+    → Sends WhatsApp link to partner
+
+Retailer: /q/[token]
+  → Full-width PDF iframe + compact totals strip
+  → Accept → POST /api/quotes/[id]/accept
+  → Revision → POST /api/quotes/[id]/revision
+
+Quote Deletion (New July 2026):
+  → Admin can permanently delete ANY quote from list or detail view
+  → DELETE /api/quotes/[id] — cascades quote_items, quote_share_links
+```
+
+### 5.3 Manufacturing Assignment Flow
 
 ```
 Admin: app/orders/[id]/page.tsx
@@ -404,7 +474,7 @@ Float finalization on completed:
   → quantity updated to actual gold_weight_actual × KARAT_FACTORS[karat]
 ```
 
-### 5.3 Gold Rate Change Cascade
+### 5.4 Gold Rate Change Cascade
 
 ```
 Admin saves gold rate: app/gold-rates/page.tsx
@@ -414,23 +484,6 @@ Admin saves gold rate: app/gold-rates/page.tsx
     → For each product: computes per-karat pricing
     → Updates products.karat_pricing, trade_price, mrp_suggested, priced_at_rate, priced_at
   → Does NOT touch orders table
-```
-
-### 5.4 Lead Capture Flow
-
-```
-Visitor on /
-  → Middleware sets lp_variant cookie (50/50 A/B test)
-  → Renders LandingPage or LandingPageOriginal
-  → Fills LeadForm
-  → POST /api/public/partner-signup
-    → Rate-limited (5/min, 30/hour per IP)
-    → Honeypot field (website) — bots filtered silently
-    → Phone validation: strict India 10-digit
-    → UTM attribution from cookie or body
-    → Inserts into partner_signups
-    → notifyNewPartnerLead() → email (Resend) + WhatsApp (Meta API)
-    → Updates partner_signups with dispatch outcomes
 ```
 
 ### 5.5 Quote Share Flow
@@ -445,30 +498,11 @@ Admin: app/quotes/[id]/page.tsx
     → Updates quote.status = 'sent', quote.share_token, quote.shared_at
     → sendQuoteShareLink() → WhatsApp webhook or wa.me link
   → Retailer receives link: /q/[token]
+    → Full-width PDF iframe (Line Items sidebar removed)
+    → Compact totals strip below iframe
   → Clicks Accept or Request Revision
     → Accept: POST /api/quotes/[id]/accept → notifies internal team
     → Revision: POST /api/quotes/[id]/revision → notifies internal team
-```
-
-### 5.6 Customer Journey Flow (D2C)
-
-```
-Admin creates customer + enquiry
-  → app/customers/new/page.tsx → POST /api/customers
-  → app/enquiries/new/page.tsx → POST /api/enquiries
-    → enquiry_number from sequence: ENQ-00042
-    → activity logged in customer_enquiry_activity (append-only)
-
-Admin converts enquiry to order
-  → order gets customer_id, audience='consumer'
-  → Admin creates customer_journey_link
-    → POST /api/customer-journey-links
-    → 90-day expiry token
-  → Customer opens /c/[token]
-    → GET /api/c/[token] → public, no auth
-    → Stamped visit count
-    → Returns: customer first name, order status, production updates, CAD images
-    → Consumer theme: champagne/ivory, Cormorant Garamond serif
 ```
 
 ---
@@ -484,13 +518,13 @@ POST /api/db
 body: { table, op, values, filters, select, order, limit, range, single, count }
 ```
 
-**Allowed tables:** `partners`, `visits`, `orders`, `products`, `gold_rates`, `circuits`, `manufacturing_partners`, `manufacturing_orders`, `design_collections`, `material_float`, `material_transactions`, `stock_movements`, `quotes`, `quote_items`, `customers`, `customer_enquiries`, `production_updates`, `customer_journey_links`, `ready_to_ship_items`, `ready_to_ship_offers`, `partner_signups`, `cad_requests`, `cad_revisions`, `cad_partner_share_links`, `cad_partner_responses`, `mfg_share_links`, `settings`, `reconciliation_alerts`, `app_users` (master only), `customer_addresses` (master only), `customer_enquiry_activity` (master only), `order_change_requests` (master only), `order_payments` (master only), `diamond_shapes` (master only), `diamond_sizes` (master only), `diamond_quality_grades` (master only), `diamond_color_grades` (master only), `metal_weights` (master only).
+**Allowed tables:** `partners`, `visits`, `orders`, `products`, `gold_rates`, `circuits`, `manufacturing_partners`, `manufacturing_orders`, `design_collections`, `material_float`, `material_transactions`, `stock_movements`, `quotes`, `quote_items`, `customers`, `customer_enquiries`, `production_updates`, `customer_journey_links`, `ready_to_ship_items`, `ready_to_ship_offers`, `partner_signups`, `cad_requests`, `cad_revisions`, `cad_partner_share_links`, `cad_partner_responses`, `mfg_share_links`, `settings`, `reconciliation_alerts`, `app_users` (master only), `customer_addresses` (master only), `customer_enquiry_activity` (master only), `order_change_requests` (master only), `order_payments` (master only), `diamond_shapes` (master only), `diamond_sizes` (master only), `diamond_quality_grades` (master only), `diamond_color_grades` (master only), `metal_weights` (master only), `resellers` (master only), `reseller_themes` (master only).
 
 **Master-only tables:** `app_users`, `material_float`, `material_transactions`, `reconciliation_alerts`, `stock_movements` (sub users get 403).
 
 **Security:** Only `master` and `sub` roles can use this. Manufacturers and retailers must use their dedicated `/api/portal/*` routes.
 
-**Critical vulnerability:** The `/api/db` proxy accepts arbitrary `filters` arrays and passes them directly to Supabase. There is no input validation, CSRF protection, or rate limiting. A malicious page could craft requests to exfiltrate data or modify records.
+**Critical vulnerability:** The `/api/db` proxy accepts arbitrary `filters` arrays and passes them directly to Supabase. There is no input validation, CSRF protection, or rate limiting.
 
 ### 6.2 Portal API Routes
 
@@ -506,7 +540,36 @@ body: { table, op, values, filters, select, order, limit, range, single, count }
 /api/portal/manufacturer/orders/[id] → GET (order detail), PATCH (update status, notes, images)
 ```
 
-### 6.3 Public/Unauthenticated Routes
+### 6.3 Quotes-Specific Routes (Updated July 2026)
+
+```
+/api/quotes                        → GET (list), POST (create)
+/api/quotes/[id]                   → GET, PATCH (update), DELETE (permanent delete — any status)
+/api/quotes/[id]/send              → POST (generate share link + WhatsApp)
+/api/quotes/[id]/convert-to-order → POST (get prefill), PATCH (link order)
+/api/quotes/[id]/accept            → POST (retailer accepts quote)
+/api/quotes/[id]/revision         → POST (retailer requests revision)
+/api/quotes/[id]/pdf              → GET (admin PDF download — backfills shape_name from DB)
+/api/quotes/share/[token]         → GET (public quote data)
+/api/quotes/share/[token]/pdf     → GET (public PDF — backfills shape_name from DB)
+/api/quotes/share/[token]/respond → POST (accept/revision from public link)
+```
+
+### 6.4 Diamond Routes (Updated July 2026)
+
+```
+/api/diamonds/shapes              → GET (list all shapes), POST (create) — master only
+/api/diamonds/shapes/[id]         → PATCH (toggle active/inactive), DELETE
+/api/diamonds/sizes               → GET (list), POST (create)
+/api/diamonds/quality-grades      → GET (list)
+/api/diamonds/color-grades        → GET (list)
+/api/diamonds/stock               → GET (diamond group balances from view)
+/api/diamonds/matrix              → GET/POST/PATCH/DELETE (LGD + Natural price matrix)
+```
+
+Note: `/api/diamonds/*` routes are accessible to `retailer` role (middleware whitelisted).
+
+### 6.5 Public/Unauthenticated Routes
 
 ```
 /api/public/partner-signup    → POST (lead capture, rate-limited, honeypot, phone validation)
@@ -516,43 +579,6 @@ body: { table, op, values, filters, select, order, limit, range, single, count }
 /api/showcase/track           → POST (collection view tracking)
 /api/showcase/interests       → POST (design interest from showcase)
 /api/m/[token]                → GET (manufacturing order asset pack, 48h expiry)
-```
-
-### 6.4 Internal/Service Routes
-
-```
-/api/db                        → Generic CRUD proxy (admin only)
-/api/setup                     → GET (check if setup needed), POST (create master user)
-/api/auth/...                  → NextAuth.js endpoints
-/api/quotes                    → GET (list), POST (create)
-/api/quotes/[id]/send          → POST (generate share link + WhatsApp)
-/api/quotes/[id]/convert-to-order → POST (get prefill), PATCH (link order)
-/api/quotes/[id]/accept        → POST (retailer accepts quote)
-/api/quotes/[id]/revision     → POST (retailer requests revision)
-/api/catalog/pdf              → GET (generate catalog PDF, showPrice param)
-/api/manufacturing/orders/[id]/reserve-float → POST (atomic float reservation)
-/api/manufacturing/orders/[id]/share-link    → GET, POST, DELETE (48h links)
-/api/stock/balances            → GET (central stock balances)
-/api/stock/movements           → GET, POST (stock movement CRUD)
-/api/stock/issue               → POST (issue to karigar, dual-write)
-/api/stock/receive             → POST (receive from karigar)
-/api/diamonds/stock            → GET (diamond group balances)
-/api/cron/reconciliation-digest → GET/POST (scheduled digest, self-auth)
-/api/whatsapp/inbound          → GET/POST (webhook verification + ACK parsing)
-/api/customers                 → POST (create with de-dupe)
-/api/customers/[id]            → GET (profile bundle)
-/api/enquiries                 → POST (create + log activity)
-/api/enquiries/[id]            → GET/PATCH (update + diff + log activity)
-/api/enquiries/[id]/notes      → POST (append note activity)
-/api/customer-journey-links    → POST (create link)
-/api/ready-to-ship/offers      → POST (admin counter/accept/reject)
-/api/collections/[id]/views    → GET (collection view stats)
-/api/collections/[id]/products → GET (collection products for showcase)
-/api/collections/[id]/interest → POST (record interest)
-/api/cad-requests/[id]/share   → POST (create CAD partner share link)
-/api/cad-requests/[id]/revisions → POST (add revision)
-/api/cad-share/[token]         → GET (public CAD brief), POST (submit response)
-/api/cad-partner/[token]       → GET (public CAD review page data)
 ```
 
 ---
@@ -568,9 +594,9 @@ body: { table, op, values, filters, select, order, limit, range, single, count }
 ### 7.2 Session / Auth
 
 - NextAuth.js with JWT strategy (30-day expiry)
-- Token contains: `id`, `username`, `displayName`, `role`, `permissions`, `manufacturingPartnerId`, `partnerId`
+- Token contains: `id`, `username`, `displayName`, `role`, `permissions`, `manufacturingPartnerId`, `partnerId`, `resellerId`
 - Middleware reads the token and enforces role-based routing
-- Portal layouts (`portal/retailer/layout.tsx`, `portal/manufacturer/layout.tsx`) are isolated — they don't use AppShell.
+- Portal layouts are isolated — they don't use AppShell.
 
 ### 7.3 Data Sharing Between Pages
 
@@ -587,8 +613,8 @@ body: { table, op, values, filters, select, order, limit, range, single, count }
 | `lib/karat.ts` | All karat purity math, `KARAT_FACTORS`, `computeKaratPricing()`, `deriveAllKaratWeights()`, `pure24kt()`, `pureGoldMass()`, `getMetalWeight()` | Breaks pricing everywhere. |
 | `lib/supabase.ts` | QueryBuilder proxy, all TypeScript types, `recomputeCatalogPrices()`, `computeOrderCogs()`, `ORDER_STATUSES`, `AppUser`, `Product`, `Order`, `Quote` types | Client-side DB contract for entire app. |
 | `lib/supabaseAdmin.ts` | Service role client for server-side APIs | Must never leak to client bundle. |
-| `lib/quoteCompute.ts` | Quote item calculation, `computeQuoteItem()`, `computeQuoteTotals()`, GST logic | Quote pricing engine. |
-| `lib/quotePdf.ts` | `renderQuotePdf()` — generates PDF with branding, item cards, breakup tables, totals, signature, page numbers | Quote PDF output. |
+| `lib/quoteCompute.ts` | Quote item calculation, `computeQuoteItem()`, `computeQuoteTotals()`, GST logic | Quote pricing engine. Diamond cost = `Σ(weight × pieces × rate_per_ct) + igi` |
+| `lib/quotePdf.ts` | `renderQuotePdf()` — A4 PDF with branding, item cards, Diamond Break-up table (9 cols incl. CT/PC + TOTAL), totals, signature, page numbers | Quote PDF output. |
 | `lib/catalogPdf.ts` | `renderCatalogPdf()` — A4 grid layout, 4 items per page, image placeholders, clickable links | Catalog PDF output. |
 | `lib/quoteNumber.ts` | `nextQuoteNumber()` — sequential quote number generation (Q-YYMMDD-NNN) | Quote numbering. |
 | `lib/quoteDefaults.ts` | Default margin (28%), GST rate (3%), validity (30 days), terms text | Quote defaults. |
@@ -609,7 +635,7 @@ body: { table, op, values, filters, select, order, limit, range, single, count }
 | `lib/auth.ts` | NextAuth configuration, session shape, bcrypt password hashing, `authorize()` credentials logic | Auth system. |
 | `middleware.ts` | Route access control, A/B cookie assignment, landing variant header injection, role-based redirects | Portal security. |
 | `app/api/db/route.ts` | Generic CRUD proxy for admin tables — table allowlist, master-only gates, `safeDbError` | Admin data access. |
-| `app/api/setup/route.ts` | First-time setup — creates master user with full permissions | Initial provisioning. |
+| `components/DiamondCatalogPicker.tsx` | Diamond row picker — fetches shapes/sizes/grades, auto-fills approx_carats + rate from matrix, writes shape_name | Diamond spec entry. |
 
 ---
 
@@ -628,121 +654,59 @@ body: { table, op, values, filters, select, order, limit, range, single, count }
 
 ### 9.2 Known Security Gaps
 
-1. **No CSRF protection** on `/api/db` — the proxy blindly accepts any POST from an authenticated session. A malicious page could craft requests.
+1. **No CSRF protection** on `/api/db` — the proxy blindly accepts any POST from an authenticated session.
 2. **No rate limiting** on `/api/db` — a sub user could flood the proxy.
-3. **No input validation** on the generic `/api/db` proxy — it accepts arbitrary `filters` arrays and passes them to Supabase. Malicious `or` filters could potentially exfiltrate data.
-4. **No audit log** for who changed what — no `created_by`, `updated_by` on most tables (except `stock_movements` and `customer_enquiry_activity`).
-5. **No API versioning** — adding a breaking change to `/api/db` breaks all clients simultaneously.
-6. **Image URL validation** in `pdfHelpers.ts` only allows `.cloudinary.com`, `.supabase.co`, `.supabase.in` — but this is not enforced on all image inputs throughout the app.
-7. **Sub-user permissions are client-side** — the middleware checks `role` but the `/api/db` proxy only checks `master` vs `sub`; it doesn't validate individual `permissions` against the requested table. A sub user with `orders` permission could theoretically access `products` via the proxy if they crafted the request.
+3. **No input validation** on the generic `/api/db` proxy — arbitrary `filters` arrays.
+4. **No audit log** for who changed what — no `created_by`, `updated_by` on most tables.
+5. **Sub-user permissions are client-side** — `/api/db` only checks `master` vs `sub`; it doesn't validate individual `permissions` against the requested table.
+6. **Image URL validation** in `pdfHelpers.ts` only allows `.cloudinary.com`, `.supabase.co`, `.supabase.in`.
 
 ---
 
-## 10. THE MOST IMPORTANT COORDINATION GAPS
+## 10. KNOWN ARCHITECTURAL GAPS
 
 ### 10.1 Quote → Order Conversion Is Fragile
+Uses `sessionStorage` to pass data. If user refreshes, prefill is lost. Need `quote_id` on `orders` table for true atomicity.
 
-The quote-to-order flow uses `sessionStorage` to pass data between pages. If the user refreshes the order page, the prefill is lost. The PATCH endpoint does set `quote.converted_order_id` and `quote.status = 'converted_to_order'`, but there is no database-level constraint ensuring the order actually exists.
+### 10.2 D2C and B2B Orders Are Mixed
+`orders` has no reliable discriminator. Use `customer_id IS NOT NULL` for D2C, `partner_id IS NOT NULL` for B2B.
 
-**If you build:** Better quote-to-order flow, you need to add `quote_id` to the `orders` table and make the conversion atomic (transaction wrap).
+### 10.3 Stock Dual-Write Is Not Atomic
+`issueToPartner()` writes `material_transactions` first, then `stock_movements`. No 2PC — can diverge on crash.
 
-### 10.2 D2C and B2B Orders Are Mixed in One Table
+### 10.4 No Inventory Reservation for Orders
+Nothing is reserved from stock when an order is placed. No "can we fulfill this?" check.
 
-`orders` serves both retailer orders (B2B) and consumer orders (D2C). The `type` column is `'catalog'` or `'custom'` — not `'b2b'` or `'d2c'`. D2C is inferred by `customer_id` being set or `audience` column. This is a semantic ambiguity that causes bugs when querying "all retailer orders" or "all consumer orders."
+### 10.5 Ready-to-Ship Has No Atomic Reservation
+No `SELECT FOR UPDATE` on item rows — concurrent claims are possible.
 
-**If you build:** D2C-specific features, always check `customer_id` or `audience` to avoid showing consumer data to retailers and vice versa.
+### 10.6 Payments Not Integrated
+`order_payments` exists as a ledger only (no gateway, no reconciliation, no status machine).
 
-### 10.3 Manufacturing Orders Have No Link Back to Customer Orders for Partial Shipments
+### 10.7 Float Ledger and Stored Balance Can Drift
+`material_float.balance` stored columns are not auto-synced from `material_transactions`. Always compute from transactions.
 
-A customer order can have multiple manufacturing orders, but there's no concept of "which manufacturing order fulfilled which portion of the customer order." This makes partial delivery, multi-item orders, and split shipments impossible to track accurately.
+### 10.8 No Audit Trail for Order Changes
+`orders.updated_at` exists but no `updated_by`, no change history. Admin edits are invisible.
 
-**If you build:** Partial delivery, split order, or multi-item order tracking, you need a `fulfillment_items` junction table linking `orders` ↔ `manufacturing_orders` with quantity mapping.
-
-### 10.4 Stock Movements and Material Float Are Dual-Written but Not Atomic
-
-`issueToPartner()` in `lib/centralStock.ts` writes a `material_transactions` row first, then a `stock_movements` row. If the second write fails, it tries to delete the first. But there's no database-level atomicity (no 2PC). Under a crash or network failure, the two ledgers can diverge.
-
-**If you build:** More sophisticated inventory operations, you need a transaction wrapper or a queue-based reconciliation job.
-
-### 10.5 There's No Audit Trail for Order Changes
-
-The `orders` table has `updated_at` but no `updated_by` and no change history. The `order_change_requests` table captures retailer-initiated changes, but admin edits are invisible. There's no way to answer "who changed this price and when?"
-
-**If you build:** Audit trails, compliance features, or "who changed this price" queries, you need an `order_history` table or use a PostgreSQL trigger + audit table.
-
-### 10.6 Payments Are Not Integrated
-
-`order_payments` exists as a simple ledger (date, amount, method, reference), but there's no:
-- Integration with Razorpay, UPI, or any payment gateway
-- Automatic reconciliation of payment status
-- Payment link generation for customers
-- Payment status on the retailer portal
-- Balance due auto-calculation on payment receipt
-
-**If you build:** Payment integration, the existing `order_payments` table is a good starting point but you'll need a payment gateway webhook handler and a status machine (`pending`, `confirmed`, `failed`, `refunded`).
-
-### 10.7 No Inventory Reservation for Orders
-
-When an order is placed, nothing is reserved from stock or float. The manufacturing order is issued manually later. There's no "check if we have enough gold to fulfill this order" logic. This means you can accept orders that you cannot manufacture.
-
-**If you build:** Inventory-aware order validation, you need to compute `required_gold = sum(orders.gold_weight_estimated × KARAT_FACTORS[gold_karat])` against `stock_balances` and `material_float.available`.
-
-### 10.8 Ready-to-Ship Items Have No Atomic Reservation Logic
-
-`ready_to_ship_items` tracks items with status (`available`, `reserved`, `sold`, `withdrawn`), but there's no atomic reservation mechanism. A retailer could theoretically claim the same item twice if requests arrive simultaneously. The `ready_to_ship_offers` table tracks offers, but the item status update and offer creation are not in a transaction.
-
-**If you build:** E-commerce-style ready-to-ship purchasing, you need a `reserved_until` timestamp and a lock mechanism (e.g., `SELECT FOR UPDATE` on the item row).
-
-### 10.9 No Multi-User Coordination for CAD Reviews
-
-CAD revisions use `cad_revisions` table, but there's no assignment of who is the CAD designer, no work queue, and no "CAD designer X is working on this" locking. Multiple designers could overwrite each other's work or duplicate effort.
-
-**If you build:** CAD team workflow, you need a `cad_assignments` table or a `assigned_to` field on `cad_requests` indicating who is currently assigned.
-
-### 10.10 No Commission or Partner Revenue Sharing
-
-The system tracks `margin` per order (selling price - COGS), but there's no concept of:
-- Sales rep commissions
-- Retailer volume discounts or tiered pricing
-- Partner loyalty programs or credits
-- Profit sharing with manufacturing partners
-- Sales team performance tracking
-
-**If you build:** Incentive systems, you'll need to add commission tables, discount tiers, or partner credit ledgers.
-
-### 10.11 No Reconciliation Between Float Ledger and Stored Float Balance
-
-The `material_float` table has stored columns (`total_deposited`, `total_returned`, `total_consumed`, `balance`) that are **not automatically kept in sync** with `material_transactions`. The `mfg_reserve_float()` function computes from the transaction ledger, but old code might still read the stored columns. This creates data drift.
-
-**If you build:** Float reporting, always compute from `material_transactions`, not from `material_float.balance`.
-
-### 10.12 The `/api/db` Proxy Is a Security Risk
-
-The generic CRUD proxy has no:
-- Input validation on `filters` (could be used for SQL injection via PostgREST)
-- CSRF tokens
-- Rate limiting
-- Audit logging
-- Row-level permission checks for sub users
-
-This is the single biggest security risk in the application.
+### 10.9 The `/api/db` Proxy Is a Security Risk
+No input validation, CSRF tokens, rate limiting, audit logging, or per-table sub-user permission checks.
 
 ---
 
 ## 11. FEATURE BUILDING DECISION TREE
-
-Use this when someone asks you to build a new feature:
 
 ```
 Q1: Which user role initiates it?
   → master/sub → Admin API / /api/db
   → retailer → /api/portal/retailer/* + validate partnerId
   → manufacturer → /api/portal/manufacturer/* + validate manufacturingPartnerId
+  → reseller → /api/store/* + validate resellerId
   → anonymous → Public route, rate limit, no auth
 
 Q2: Does it touch pricing?
   → Yes → Use lib/quoteCompute.ts or lib/supabase.ts computeOrderCogs
-  → Yes and it's a new product → Add to karat_pricing cache, trigger recompute
+  → Diamond pricing → weight × pieces × rate_per_ct (rate_per_pc is per carat!)
   → No → Skip gold math
 
 Q3: Does it touch inventory/float?
@@ -769,6 +733,10 @@ Q7: Does it need to be visible to customers?
 Q8: Does it need scheduled/background processing?
   → Yes → Use /api/cron/* route with CRON_SECRET self-auth
   → No → Skip
+
+Q9: Does it involve diamonds?
+  → Yes → Use DiamondCatalogPicker for UI; rate is per-carat; shape_name from diamond_shapes
+  → Never use d.role as the shape display value
 ```
 
 ---
@@ -778,40 +746,46 @@ Q8: Does it need scheduled/background processing?
 | If you change... | What will break |
 |-----------------|-----------------|
 | `KARAT_FACTORS` | All pricing, all COGS, all float conversions, all inventory balances, all quote computations |
-| `products` table schema | `/api/db` allowlist needs update; `recomputeCatalogPrices()` may need update; retailer portal pricing may break; catalog PDF generation may break |
-| `orders` table schema | `order_pipeline` view needs update; retailer portal order list needs update; `/api/portal/retailer/orders` may need update; COGS calculation needs update; manufacturing order linkage may break |
-| `gold_rates` table schema | `recomputeCatalogPrices()` needs update; `calculateGoldRates()` needs update; quote preview API needs update |
-| `middleware.ts` matcher | Public routes may become 403; portal routes may leak to wrong roles; A/B test may break |
+| Diamond cost formula in `quoteCompute.ts` | Quote prices, PDF totals, line_trade values — DIAMOND Value in summary must equal break-up TOTAL |
+| `shape_name` field on diamond rows | PDF break-up will show '—'; shape backfill in PDF routes tries `shape_id → shapeMap` |
+| `products` table schema | `/api/db` allowlist, `recomputeCatalogPrices()`, retailer portal pricing, catalog PDF |
+| `orders` table schema | `order_pipeline` view, retailer portal order list, COGS calculation |
+| `middleware.ts` matcher | Public routes may 403; portal routes may leak; A/B test may break; `/api/diamonds/` retailer access may break |
 | `ALLOWED_TABLES` in `/api/db` | Admin pages that used that table will break with "Table not allowed" error |
-| `next-auth` session shape | Every page that reads `session.user.role`, `permissions`, `partnerId`, or `manufacturingPartnerId` will break |
-| `lib/supabase.ts` QueryBuilder | Every page in the app that does client-side DB calls will break |
+| `next-auth` session shape | Every page that reads `session.user.role`, `permissions`, `partnerId`, `resellerId` will break |
 | `lib/quoteCompute.ts` formula | All quote creation, all PDF generation, all quote-to-order conversions |
 | `MODULE_PERMISSIONS` in `lib/modules.ts` | Sub users may gain or lose access to modules |
 | `DEFAULT_QUOTE_MARGIN_PCT` or `DEFAULT_QUOTE_GST_RATE_PCT` | All new quotes will use different defaults |
-| `settings` table keys | Features that depend on those settings will fail silently (no error, just empty values) |
-| `whatsappNotify.ts` webhook format | All WhatsApp notifications stop working |
-| `consumerTheme.ts` colors | Customer journey page will look broken |
-| `landingCopy.ts` constants | Landing page copy changes (safe, but all marketing text lives here) |
+| `settings` table keys | Features that depend on those settings will fail silently |
+| `reseller_themes` config JSONB shape | Brand studio visual editor will fail or render incorrectly |
 
 ---
 
-## 13. RECOMMENDED NEXT SESSION PROTOCOL
+## 13. QUICK REFERENCE: TABLE SCHEMAS AT A GLANCE
 
-When you come back to build a feature, tell me:
+### quotes
+```
+id, quote_number, partner_id, customer_id (nullable — D2C), walk_in_name, walk_in_phone, walk_in_city
+reference_no, prepared_by, quote_date, valid_until, status (draft → sent → viewed → accepted → converted_to_order → expired)
+gst_treatment, gst_rate_pct, margin_pct, show_breakup, show_24kt_column, cover_note, terms_text
+subtotal, gst_amount, grand_total, share_token, converted_order_id
+shared_at
+```
 
-1. **Which module/area** is it in? (orders, quotes, catalog, manufacturing, D2C, marketing, payments, inventory, etc.)
-2. **Which user role** uses it? (master, sub, retailer, manufacturer, consumer, anonymous)
-3. **Does it interact with existing data?** (gold rates, inventory, orders, partners, products, etc.)
-4. **Does it need public sharing or notifications?**
-5. **Does it need PDF generation or scheduled processing?**
+### quote_items
+```
+id, quote_id, position, product_id, name, category, ring_size, quantity
+karat, gross_gold_weight_g, net_24kt_weight_g, gold_rate_24k
+labour_source, labour_partner_id, labour_rate_per_g, labour_total
+diamonds (JSONB: [{id, role, shape_id, shape_name, size_id, size_label, color_id, quality_id,
+                   pieces, approx_carats, weight, rate_per_pc, igi_charge, color_label, clarity_label}])
+making_charges, hallmarking, other_charges, other_charges_label
+line_cogs, line_trade, line_total
+reference_images (array)
+metal_weights (JSONB)
+```
 
-I'll reference this knowledge base and give you the exact files to touch, the exact API routes to create, and the exact database changes needed — without rebuilding the whole system.
-
----
-
-## 14. QUICK REFERENCE: TABLE SCHEMAS AT A GLANCE
-
-### orders (core table)
+### orders
 ```
 id, order_number, partner_id, product_id, type, model, quantity, ring_size
 special_notes, brief_text, brief_images, cad_request_id
@@ -820,32 +794,7 @@ status (brief_received → cad_in_progress → cad_sent → design_approved → 
 order_date, expected_delivery, actual_delivery, tracking_number, courier, dispatch_date
 internal_notes, gold_source, gold_weight_estimated, gold_weight_actual, making_charges, cad_cost, stone_cost, total_cogs, margin
 assigned_manufacturer_id, selected_karat, gross_weight_at_karat, gold_pure_24kt_g, retail_labour_at_order
-```
-
-### manufacturing_orders
-```
-id, order_number, manufacturing_partner_id, customer_order_id, description
-quantity, ring_size, special_notes, reference_images, cad_files, cad_file_names
-material_from_float, gold_weight_required, gold_weight_actual, gold_karat, diamond_weight
-material_notes, labour_per_gram, labour_amount, other_charges, total_manufacturing_cost
-expected_date, issued_date, completed_date, status
-```
-
-### quotes
-```
-id, quote_number, partner_id, walk_in_name, walk_in_phone, walk_in_city
-reference_no, prepared_by, quote_date, valid_until, status (draft → sent → viewed → accepted → converted_to_order → expired)
-gst_treatment, gst_rate_pct, margin_pct, show_breakup, show_24kt_column, cover_note, terms_text
-subtotal, gst_amount, grand_total, share_token, converted_order_id
-```
-
-### quote_items
-```
-id, quote_id, position, product_id, name, category, ring_size, quantity
-karat, gross_gold_weight_g, net_24kt_weight_g, gold_rate_24k
-labour_source, labour_partner_id, labour_rate_per_g, labour_total
-diamonds (JSONB), making_charges, hallmarking, other_charges, other_charges_label
-line_cogs, line_trade, line_total, reference_images
+customer_id (nullable — D2C), audience
 ```
 
 ### products
@@ -854,137 +803,135 @@ id, code, name, description, category, diamond_weight, diamond_shape, diamond_qu
 gold_karat, gold_weight_g, gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k
 karat_pricing (JSONB), diamond_cost, making_charges, igi_cert_cost, trade_price, mrp_suggested
 priced_at_rate, priced_at, photo_urls, is_active, delivery_days, models_available, tags
+default_karat (new — used for set/catalog default selection)
 ```
 
-### partner_signups
+### diamond_shapes
 ```
-id, full_name, store_name, city, phone, whatsapp, email, gst_number, monthly_volume, note
-utm_source, utm_medium, utm_campaign, utm_content, utm_term, referrer, landing_path, landing_variant
-user_agent, ip_hash, status, email_dispatch, whatsapp_dispatch, created_at
+id (uuid), name, sort_order, active
 ```
 
-### ready_to_ship_items
+### diamond_sizes
 ```
-id, product_id, source_mfg_order_id, source_order_id, karat, gross_weight, pure_24kt_weight
- diamond_specs (JSONB), photos, list_price, original_cogs, status (available|reserved|sold|withdrawn)
-sold_to_partner_id, sold_order_id, sold_at, internal_notes
+id (uuid), shape_id → diamond_shapes, label, approx_carats, sort_order
 ```
 
-### ready_to_ship_offers
+### resellers
 ```
-id, item_id, partner_id, offer_price, note, status (pending|countered|accepted|rejected|withdrawn)
-counter_price, counter_note, decided_at, decided_by, resulting_order_id
-```
-
-### customer_enquiries
-```
-id, enquiry_number, customer_id, source, status (new|in_discussion|quoted|approved|converted|closed)
-product_interest, budget_hint, deadline_hint, notes, order_id, created_at
+id, name, subdomain, status (active|inactive), created_at
 ```
 
-### customer_enquiry_activity
+### reseller_themes
 ```
-id, enquiry_id, kind, actor, note, before, after, created_at
-```
-
-### customer_journey_links
-```
-id, token, customer_id, order_id, enquiry_id, expires_at, revoked_at, opened_count, last_opened_at, first_opened_at
-```
-
-### reconciliation_alerts
-```
-id, partner_id, run_date, window_days, consumed_total, benchmark_total, variance_total
-negative_count, unlinked_count, unlinked_consumed, triggered_reasons, notified_at, notify_channel, notify_error
+id, reseller_id → resellers, config (JSONB), updated_at
 ```
 
 ---
 
-## 15. COMPLETE PAGE DIRECTORY MAP
+## 14. COMPLETE PAGE DIRECTORY MAP
 
 ### Admin Pages (`app/`)
 
-| Route | File | Purpose | Role |
-|-------|------|---------|------|
-| `/` | `page.tsx` | Landing page (A/B test) | Anonymous |
-| `/login` | `login/page.tsx` | Login form | All |
-| `/setup` | `setup/page.tsx` | First-time master creation | Anonymous (one-time) |
-| `/dashboard` | `dashboard/page.tsx` | Admin dashboard with KPIs | master/sub |
-| `/orders` | `orders/page.tsx` | Order list, kanban, filters | master/sub (orders perm) |
-| `/orders/new` | `orders/new/page.tsx` | Order creation form | master/sub (orders perm) |
-| `/orders/[id]` | `orders/[id]/page.tsx` | Order detail, status, manufacturing handoff | master/sub (orders perm) |
-| `/catalog` | `catalog/page.tsx` | Product grid, collections, interests | master/sub (catalog perm) |
-| `/catalog/new` | `catalog/new/page.tsx` | Product creation | master/sub (catalog perm) |
-| `/catalog/[id]` | `catalog/[id]/page.tsx` | Product edit, per-karat pricing | master/sub (catalog perm) |
-| `/catalog/categories` | `catalog/categories/page.tsx` | Category management | master/sub (catalog perm) |
-| `/catalog/collections/new` | `catalog/collections/new/page.tsx` | Create collection | master/sub (catalog perm) |
-| `/catalog/collections/[id]` | `catalog/collections/[id]/page.tsx` | Edit collection | master/sub (catalog perm) |
-| `/quotes` | `quotes/page.tsx` | Quote list, pagination, search | master/sub (quotes perm) |
-| `/quotes/new` | `quotes/new/page.tsx` | Quote builder | master/sub (quotes perm) |
-| `/quotes/[id]` | `quotes/[id]/page.tsx` | Quote detail, send, revise, convert | master/sub (quotes perm) |
-| `/manufacturing` | `manufacturing/page.tsx` | Partner list, float summary, active orders | master/sub (manufacturing perm) |
-| `/manufacturing/orders/new` | `manufacturing/orders/new/page.tsx` | Issue manufacturing order | master/sub (manufacturing perm) |
-| `/manufacturing/orders/[id]` | `manufacturing/orders/[id]/page.tsx` | Mfg order detail, float reservation | master/sub (manufacturing perm) |
-| `/manufacturing/partners/[id]` | `manufacturing/partners/[id]/page.tsx` | Partner detail, per-karat labour rates | master/sub (manufacturing perm) |
-| `/manufacturing/partners/[id]/float` | `manufacturing/partners/[id]/float/page.tsx` | Float ledger, deposit/return | master/sub (manufacturing perm) |
-| `/manufacturing/partners/[id]/reconciliation` | `manufacturing/partners/[id]/reconciliation/page.tsx` | Reconciliation report | master/sub (manufacturing perm) |
-| `/stock` | `stock/page.tsx` | Dashboard, balances, diamond groups | master/sub (stock perm) |
-| `/stock/issue` | `stock/issue/page.tsx` | Issue to karigar (dual-write) | master/sub (stock perm) |
-| `/stock/receive` | `stock/receive/page.tsx` | Receive from karigar | master/sub (stock perm) |
-| `/stock/movements` | `stock/movements/page.tsx` | Full audit ledger | master/sub (stock perm) |
-| `/partners` | `partners/page.tsx` | Partner CRM list | master/sub (partners perm) |
-| `/partners/[id]` | `partners/[id]/page.tsx` | Partner detail, orders, visits | master/sub (partners perm) |
-| `/partners/leads` | `partners/leads/page.tsx` | Lead inbox, variant conversion stats | master/sub (partners perm) |
-| `/circuits` | `circuits/page.tsx` | Circuit trip planning | master/sub (circuits perm) |
-| `/circuits/[id]` | `circuits/[id]/page.tsx` | Circuit detail | master/sub (circuits perm) |
-| `/gold-rates` | `gold-rates/page.tsx` | Gold rate entry, history | master/sub (gold_rates perm) |
-| `/analytics` | `analytics/page.tsx` | Revenue charts, funnel, top partners | master/sub (analytics perm) |
-| `/profitability` | `profitability/page.tsx` | COGS / margin dashboard | master/sub (profitability perm) |
-| `/customers` | `customers/page.tsx` | Consumer list (D2C) | master/sub (customers perm) |
-| `/customers/[id]` | `customers/[id]/page.tsx` | Consumer profile, addresses, enquiries | master/sub (customers perm) |
-| `/enquiries` | `enquiries/page.tsx` | Enquiry inbox (kanban + list) | master/sub (enquiries perm) |
-| `/enquiries/[id]` | `enquiries/[id]/page.tsx` | Enquiry detail, timeline, activity | master/sub (enquiries perm) |
-| `/enquiries/new` | `enquiries/new/page.tsx` | Operator intake form | master/sub (enquiries perm) |
-| `/ready-to-ship` | `ready-to-ship/page.tsx` | Inventory listing, offer management | master/sub (ready_to_ship perm) |
-| `/cad-requests` | `cad-requests/page.tsx` | CAD request list | master/sub (cad_requests perm) |
-| `/cad-requests/[id]` | `cad-requests/[id]/page.tsx` | CAD request detail, revisions | master/sub (cad_requests perm) |
-| `/settings` | `settings/page.tsx` | Admin settings, notifications | master/sub (settings perm) |
-| `/vendors` | `vendors/page.tsx` | Vendor management | master/sub (vendors perm) |
-| `/showcase` | `showcase/page.tsx` | Public design showcase | Anonymous |
-| `/showcase/[id]` | `showcase/[id]/page.tsx` | Collection showcase page | Anonymous |
+| Route | Purpose | Role |
+|-------|---------|------|
+| `/` | Landing page (A/B test) | Anonymous |
+| `/login` | Login form | All |
+| `/setup` | First-time master creation | Anonymous (one-time) |
+| `/dashboard` | Admin dashboard with KPIs | master/sub |
+| `/orders` | Order list, kanban, filters | master/sub (orders) |
+| `/orders/new` | Order creation form | master/sub (orders) |
+| `/orders/[id]` | Order detail, status, mfg handoff | master/sub (orders) |
+| `/catalog` | Product grid, collections, interests | master/sub (catalog) |
+| `/catalog/new` | Product creation | master/sub (catalog) |
+| `/catalog/[id]` | Product edit, per-karat pricing | master/sub (catalog) |
+| `/catalog/categories` | Category management | master/sub (catalog) |
+| `/catalog/collections/*` | Collection CRUD | master/sub (catalog) |
+| `/quotes` | Quote list, pagination, search | master/sub (quotes) |
+| `/quotes/new` | Quote builder with DiamondCatalogPicker | master/sub (quotes) |
+| `/quotes/[id]` | Quote detail, send, revise, convert, delete | master/sub (quotes) |
+| `/manufacturing` | Partner list, float summary, active orders | master/sub (manufacturing) |
+| `/manufacturing/orders/new` | Issue manufacturing order | master/sub (manufacturing) |
+| `/manufacturing/orders/[id]` | Mfg order detail, float reservation | master/sub (manufacturing) |
+| `/manufacturing/partners/[id]` | Partner detail, per-karat labour rates | master/sub (manufacturing) |
+| `/manufacturing/partners/[id]/float` | Float ledger, deposit/return | master/sub (manufacturing) |
+| `/manufacturing/partners/[id]/reconciliation` | Reconciliation report | master/sub (manufacturing) |
+| `/stock` | Dashboard, balances, diamond groups | master/sub (stock) |
+| `/stock/issue` | Issue to karigar (dual-write) | master/sub (stock) |
+| `/stock/receive` | Receive from karigar | master/sub (stock) |
+| `/stock/movements` | Full audit ledger | master/sub (stock) |
+| `/partners` | Partner CRM list | master/sub (partners) |
+| `/partners/[id]` | Partner detail, orders, visits | master/sub (partners) |
+| `/partners/leads` | Lead inbox, variant conversion stats | master/sub (partners) |
+| `/circuits` | Circuit trip planning | master/sub (circuits) |
+| `/gold-rates` | Gold rate entry, history | master/sub (gold_rates) |
+| `/analytics` | Revenue charts, funnel, top partners | master/sub (analytics) |
+| `/profitability` | COGS / margin dashboard | master/sub (profitability) |
+| `/customers` | Consumer list (D2C) | master/sub (customers) |
+| `/customers/[id]` | Consumer profile, addresses, enquiries | master/sub (customers) |
+| `/enquiries` | Enquiry inbox (kanban + list) | master/sub (enquiries) |
+| `/enquiries/[id]` | Enquiry detail, timeline, activity | master/sub (enquiries) |
+| `/enquiries/new` | Operator intake form | master/sub (enquiries) |
+| `/ready-to-ship` | Inventory listing, offer management | master/sub (ready_to_ship) |
+| `/cad-requests` | CAD request list | master/sub (cad_requests) |
+| `/cad-requests/[id]` | CAD request detail, revisions | master/sub (cad_requests) |
+| `/settings` | Admin settings, notifications | master/sub (settings) |
+| `/vendors` | Vendor management (with inline edit/delete) | master/sub (vendors) |
+| `/showcase` | Public design showcase | Anonymous |
+| `/showcase/[id]` | Collection showcase page | Anonymous |
 
 ### Retailer Portal Pages (`app/portal/retailer/`)
 
-| Route | File | Purpose |
-|-------|------|---------|
-| `/portal/retailer` | `page.tsx` | Retailer dashboard |
-| `/portal/retailer/layout` | `layout.tsx` | Isolated layout (no AppShell) |
-| `/portal/retailer/catalog` | `catalog/page.tsx` | Browse products with karat pricing |
-| `/portal/retailer/orders` | `orders/page.tsx` | Own orders list |
-| `/portal/retailer/orders/[id]` | `orders/[id]/page.tsx` | Order detail, change request |
-| `/portal/retailer/ready-to-ship` | `ready-to-ship/page.tsx` | Browse available items, make offers |
-| `/portal/retailer/profile` | `profile/page.tsx` | Edit profile, change password |
-| `/portal/retailer/quotes` | `quotes/page.tsx` | View own quotes |
+| Route | Purpose |
+|-------|---------|
+| `/portal/retailer` | Retailer dashboard |
+| `/portal/retailer/catalog` | Browse products with karat pricing + price breakup drawer |
+| `/portal/retailer/orders` | Own orders list |
+| `/portal/retailer/orders/[id]` | Order detail, change request |
+| `/portal/retailer/ready-to-ship` | Browse available items, make offers |
+| `/portal/retailer/profile` | Edit profile, change password |
+| `/portal/retailer/quotes` | View own quotes |
 
 ### Manufacturer Portal Pages (`app/portal/manufacturer/`)
 
-| Route | File | Purpose |
-|-------|------|---------|
-| `/portal/manufacturer` | `page.tsx` | Manufacturer dashboard |
-| `/portal/manufacturer/layout` | `layout.tsx` | Isolated layout (no AppShell) |
-| `/portal/manufacturer/orders` | `orders/page.tsx` | Assigned orders list |
-| `/portal/manufacturer/orders/[id]` | `orders/[id]/page.tsx` | Order detail, update status, notes, images |
+| Route | Purpose |
+|-------|---------|
+| `/portal/manufacturer` | Manufacturer dashboard |
+| `/portal/manufacturer/orders` | Assigned orders list |
+| `/portal/manufacturer/orders/[id]` | Order detail, update status, notes, images |
 
-### Public Pages (`app/`)
+### Reseller / Storefront Pages (New July 2026)
 
-| Route | File | Purpose |
-|-------|------|---------|
-| `/q/[token]` | `q/[token]/page.tsx` | Quote share link (client view) |
-| `/c/[token]` | `c/[token]/page.tsx` | Customer journey link (consumer skin) |
-| `/m/[token]` | `m/[token]/page.tsx` | Manufacturing asset pack (48h expiry) |
-| `/cad-share/[token]` | `cad-share/[token]/page.tsx` | CAD partner review link |
-| `/partner-signup` | `partner-signup/page.tsx` | Full-page signup form |
+| Route | Purpose |
+|-------|---------|
+| `/store/*` | White-label storefront (per reseller, no AppShell) |
+| `/store/brand-studio` | Visual editor for storefront theme config |
+| `/onboard/*` | Reseller onboarding flow |
+| `/apply` | Reseller application page |
+
+### Public Pages
+
+| Route | Purpose |
+|-------|---------|
+| `/q/[token]` | Quote share link (full-width PDF iframe + totals strip) |
+| `/c/[token]` | Customer journey link (consumer skin) |
+| `/m/[token]` | Manufacturing asset pack (48h expiry) |
+| `/cad-share/[token]` | CAD partner review link |
+| `/partner-signup` | Full-page signup form |
 
 ---
 
-*End of Living Knowledge Base v2.0*
+## 15. RECOMMENDED NEXT SESSION PROTOCOL
+
+When you come back to build a feature, tell me:
+
+1. **Which module/area** is it in? (orders, quotes, catalog, manufacturing, D2C, marketing, payments, inventory, diamonds, reseller storefront, etc.)
+2. **Which user role** uses it? (master, sub, retailer, manufacturer, reseller, consumer, anonymous)
+3. **Does it interact with existing data?** (gold rates, inventory, orders, partners, products, diamonds, etc.)
+4. **Does it need public sharing or notifications?**
+5. **Does it need PDF generation or scheduled processing?**
+
+I'll reference this knowledge base and give you the exact files to touch, the exact API routes to create, and the exact database changes needed — without rebuilding the whole system.
+
+---
+
+*End of Living Architecture Knowledge Base v2.1 — Updated 2026-07-19*
