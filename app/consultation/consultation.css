@@ -1,11 +1,29 @@
-/* Consultation scoped stylesheet */
+/* Custom CSS for SHEWAH Consultation Landing Page */
+
+:root {
+  --color-gold: #C8A46B;
+  --color-gold-hover: #b5925a;
+  --color-dark-bg: #0A0A0A;
+  --color-card-bg: #121212;
+  --color-text-primary: #F8F6F2;
+  --color-text-secondary: #8E8E8E;
+  --color-border: rgba(255, 255, 255, 0.05);
+  --color-border-hover: rgba(200, 164, 107, 0.25);
+  
+  --transition-luxury: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-snappy: all 0.3s ease;
+}
 
 .consultation-shell {
   font-family: var(--font-sans), system-ui, sans-serif;
-  background-color: #111111;
-  color: #F8F6F2;
+  background-color: var(--color-dark-bg);
+  color: var(--color-text-primary);
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Typography styles */
 .consultation-shell h1,
 .consultation-shell h2,
 .consultation-shell h3,
@@ -15,6 +33,280 @@
   letter-spacing: -0.01em;
 }
 
-.consultation-shell .champagne-glow:hover {
-  box-shadow: 0 0 15px rgba(200, 164, 107, 0.25);
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes float-subtle {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(200, 164, 107, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(200, 164, 107, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(200, 164, 107, 0); }
+}
+
+@keyframes pulseGlowWhatsApp {
+  0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes drawLine {
+  from { height: 0%; }
+  to { height: 100%; }
+}
+
+@keyframes drawLineHorizontal {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+/* IntersectionObserver reveal system */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: var(--transition-luxury);
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: var(--transition-luxury);
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: var(--transition-luxury);
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(40px);
+  transition: var(--transition-luxury);
+}
+
+.revealed {
+  opacity: 1;
+  transform: translate(0) scale(1);
+}
+
+/* Staggered transition delays */
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+.reveal-delay-6 { transition-delay: 0.6s; }
+
+/* Custom components & enhancements */
+.luxury-card {
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  transition: var(--transition-luxury);
+  position: relative;
+  overflow: hidden;
+}
+
+.luxury-card:hover {
+  border-color: var(--color-border-hover);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(200, 164, 107, 0.05);
+}
+
+/* Gold text shimmer effect */
+.text-shimmer {
+  background: linear-gradient(90deg, #F8F6F2 0%, var(--color-gold) 50%, #F8F6F2 100%);
+  background-size: 200% auto;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: shimmer 8s linear infinite;
+}
+
+/* Interactive Card Flip for Lab Diamond comparison */
+.card-flip-container {
+  perspective: 1000px;
+  height: 380px;
+}
+
+.card-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+}
+
+.card-flip-container:hover .card-flip-inner,
+.card-flip-container.flipped .card-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 4px;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* Smooth Accordion Height Expansion */
+.faq-accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+.faq-accordion-content.open {
+  max-height: 250px;
+  opacity: 1;
+}
+
+/* Line drawing triggers */
+.timeline-line-vertical::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: var(--color-gold);
+  height: 0%;
+  transition: height 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timeline-line-vertical.revealed::after {
+  height: 100%;
+}
+
+.timeline-line-horizontal::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--color-gold);
+  width: 0%;
+  transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timeline-line-horizontal.revealed::after {
+  width: 100%;
+}
+
+/* Form input styling */
+.luxury-input {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
+  transition: var(--transition-snappy);
+}
+
+.luxury-input:focus {
+  border-color: var(--color-gold);
+  background-color: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 0 1px var(--color-gold);
+  outline: none;
+}
+
+/* Floating widgets */
+.whatsapp-pulse {
+  animation: pulseGlowWhatsApp 2s infinite;
+}
+
+.cta-pulse {
+  animation: pulseGlow 2.5s infinite;
+}
+
+.float-icon {
+  animation: float 4s ease-in-out infinite;
+}
+
+.float-icon-delayed {
+  animation: float 4s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+/* Ken Burns slow zoom */
+.ken-burns {
+  transition: transform 20s linear;
+}
+
+.ken-burns:hover {
+  transform: scale(1.05);
+}
+
+/* Occasions Horizontal Scroll snap points for mobile */
+.mobile-scroll-snap {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-scroll-snap > div {
+  scroll-snap-align: start;
+}
+
+/* Accessibility: respect user preferences for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-scale,
+  .reveal-left,
+  .reveal-right,
+  .ken-burns,
+  .float-icon,
+  .float-icon-delayed,
+  .whatsapp-pulse,
+  .cta-pulse,
+  .card-flip-inner,
+  .faq-accordion-content {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  
+  .revealed {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
