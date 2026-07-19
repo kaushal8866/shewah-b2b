@@ -1,0 +1,13 @@
+/* Consultation scoped stylesheet */
+
+.consultation-shell {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.consultation-shell h1,
+.consultation-shell h2,
+.consultation-shell h3,
+.consultation-shell .serif {
+  font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif;
+  letter-spacing: -0.015em;
+}
