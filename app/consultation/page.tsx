@@ -1,62 +1,139 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Diamond, Check, Sparkles, Clock, ShieldCheck,
   Send, PhoneCall, MessageSquare, Video, ArrowRight,
   ChevronDown, MapPin, User, Mail, Sparkle, Loader2,
-  CheckCircle2, Menu, X
+  CheckCircle2, Compass, PenTool, Layout, Hammer, Gift,
+  Calendar, Award, Lock, Eye, RefreshCw, Star
 } from 'lucide-react'
 
-// FAQs Array matching copy deck
+// FAQ list with premium answers
 const FAQS = [
   {
-    q: "What is a lab-grown diamond?",
-    a: "A lab-grown diamond is a real diamond. It has the exact same optical, chemical, and physical qualities as a mined diamond. The only difference is that it is grown in a high-tech laboratory rather than pulled from the ground."
+    q: "How does the consultation work?",
+    a: "It is a private, relaxed conversation. We begin by learning about your story, aesthetic preferences, and occasion. Together, we explore design shapes, metal choices, and stone sizes to outline a concept that matches your vision."
+  },
+  {
+    q: "Is the consultation complimentary?",
+    a: "Yes. Our initial discovery calls, style consults, and custom sketches are fully complimentary. We believe you should explore the possibilities of custom design with zero friction."
+  },
+  {
+    q: "What happens after I submit the form?",
+    a: "A dedicated design consultant will reach out via your preferred method (WhatsApp, phone, or video) within 24 hours. We will introduce ourselves, ask a few clarifying questions, and begin planning your design sketch."
+  },
+  {
+    q: "Can I create a completely unique design?",
+    a: "Absolutely. Every commission we accept starts as a completely clean canvas. We design from scratch specifically around your input, ensuring your piece exists for no one else."
+  },
+  {
+    q: "Can you recreate a design I've seen elsewhere?",
+    a: "We can use reference photos of designs you admire as inspiration. However, we do not copy other designers' work directly. Instead, we refine and adapt the details to craft a unique version tailored specifically to you."
+  },
+  {
+    q: "How long does the process take?",
+    a: "Typically, the journey takes 15 to 25 business days from design approval to delivery. For complex heirloom commissions, we recommend starting at least 6 weeks in advance of your occasion."
+  },
+  {
+    q: "What if I don't like the first design?",
+    a: "That is completely normal. The design phase is collaborative. We present sketches and digital models specifically to get your feedback. We will alter the details until it is exactly what you want."
+  },
+  {
+    q: "Are revisions included?",
+    a: "Yes. We offer unlimited digital design modifications during the CAD phase. We do not place the gold into the crucible or set any diamonds until you have given your final, written approval."
+  },
+  {
+    q: "Are lab-grown diamonds real?",
+    a: "Yes. They are physically, chemically, and optically identical to mined diamonds. They are made of pure carbon crystallized under high heat and pressure, carrying the same hardness (10 on Mohs scale) and refractive brilliance."
   },
   {
     q: "Are your diamonds certified?",
-    a: "Yes. All our diamonds of significant size are certified by independent grading authorities such as the International Gemological Institute (IGI) or the Gemological Institute of America (GIA)."
+    a: "Yes. Every center gem we source is independently graded and certified by leading gemological institutions like the International Gemological Institute (IGI) or the Gemological Institute of America (GIA)."
   },
   {
-    q: "How does the custom design process work?",
-    a: "It begins with a free consultation. Once we map out your vision, we create a 3D digital model (CAD preview). You review this model, suggest changes, and approve the design before we start hand-crafting the physical piece."
+    q: "Do you also work with natural diamonds?",
+    a: "We specialize in certified lab-grown diamonds due to their superior value and conflict-free origins. However, upon special request, we can source ethically mined natural diamonds for your commission."
   },
   {
-    q: "How long does it take to make a custom piece?",
-    a: "Typically, the process takes 15 to 25 business days from design approval to delivery. If you have an urgent date (like a proposal or anniversary), let us know during your consultation and we will try to accommodate it."
+    q: "Is my budget respected?",
+    a: "Always. Designing custom jewelry allows us to control the materials. We can adjust the gold weight, karat purity, and diamond specifications to align with your investment targets without compromising the visual beauty."
   },
   {
-    q: "Can you work within my budget?",
-    a: "Absolutely. Because we customize everything, we can adjust the gold weight, karat purity, and diamond specs to meet your budget targets while maintaining the premium look."
+    q: "Can you work remotely?",
+    a: "Yes, the majority of our clients co-create their pieces remotely. We hold consultations over video call, send digital sketch files, and share high-definition 3D CAD renders that show every angle of the piece."
   },
   {
-    q: "Do you use real gold?",
-    a: "Yes. We exclusively use government-regulated BIS Hallmarked gold in 14-karat and 18-karat purities. You can choose yellow gold, rose gold, or white gold."
+    q: "Is my consultation confidential?",
+    a: "Yes. All commissions, design ideas, and personal details shared during our calls remain strictly private and confidential. We respect the personal nature of bespoke jewelry."
   },
   {
-    q: "What if the size is wrong?",
-    a: "We offer one complimentary resizing within 30 days of delivery for all rings where resizing is technically possible."
+    q: "How is the jewellery delivered?",
+    a: "We use fully insured, signature-required luxury courier services. Your bespoke piece is shipped in secure, unbranded packaging to guarantee safe transit and preserve any surprise."
   },
   {
-    q: "Do you offer a warranty?",
-    a: "Every SHEWAH piece comes with a lifetime manufacturing warranty covering structural defects. We also provide free annual cleaning and stone tightening."
+    q: "Do you provide aftercare?",
+    a: "Yes. Every commission includes our lifetime commitment. This includes complimentary deep cleaning, yearly stone tightening checks, and one free ring resizing within 30 days of receipt."
   },
   {
-    q: "How is my jewellery shipped?",
-    a: "We use fully insured, signature-required luxury courier services. Your package is tracked from our atelier straight to your doorstep in secure, unbranded shipping boxes."
+    q: "Can I commission jewellery as a gift?",
+    a: "Yes. A custom piece is the ultimate gift. We can work secretly with you, keeping the design hidden, and package it beautifully with custom initials or engraving."
   },
   {
-    q: "Can I use my own stones or redesign old gold?",
-    a: "We specialize in sourcing custom certified lab diamonds. During the consultation, we can evaluate options for integrating heirloom stones on a case-by-case basis."
+    q: "Can I redesign inherited jewellery?",
+    a: "We evaluate heirloom redesigns on a case-by-case basis. During your discovery call, we can discuss resetting existing family gems into a modern, custom gold setting."
+  }
+]
+
+// Interactive Client Journey Stages
+const JOURNEY_STAGES = [
+  {
+    id: "dream",
+    title: "Dream",
+    desc: "A client from Bangalore wanted a ring that captured the architecture of the Florence Cathedral, where they got engaged.",
+    imageText: "Reference notes, arch photos, and hand-sketched styling cues."
   },
   {
-    q: "Do you accept returns on custom orders?",
-    a: "Because each piece is designed, sized, and handcrafted exclusively for a single client, custom orders are final. However, we walk you through digital 3D models and approvals before crafting to ensure you love it."
+    id: "moodboard",
+    title: "Moodboard",
+    desc: "We curated geometric details, Gothic arches, and select diamond cuts that matched the cathedral's stone carvings.",
+    imageText: "Curation of design details, metal textures, and raw gem placement."
   },
   {
-    q: "Is the consultation really free?",
-    a: "Yes. The initial call, sketching phase, and project budget guidance are completely complimentary. There is no obligation to purchase."
+    id: "sketch",
+    title: "Hand Sketch",
+    desc: "Our designer created three hand-drawn variations showing different band profiles and diamond orientation options.",
+    imageText: "Finished pencil sketches with dimensional guides."
+  },
+  {
+    id: "cad",
+    title: "CAD Preview",
+    desc: "A hyper-realistic 3D digital render was generated. The client adjusted the height of the center claw for a lower profile.",
+    imageText: "Wireframe models and textured rendering previews."
+  },
+  {
+    id: "craft",
+    title: "Craft",
+    desc: "Our master goldsmiths cast the band in 18k yellow gold, hand-setting the 2.5-carat oval lab-grown center stone.",
+    imageText: "Artisan placing diamonds under magnifying loupes."
+  },
+  {
+    id: "proposal",
+    title: "Proposal",
+    desc: "The ring was delivered in a custom leather case, ready for a surprise sunset anniversary dinner.",
+    imageText: "Unboxing moments and emotional client feedback."
+  },
+  {
+    id: "wedding",
+    title: "Wedding",
+    desc: "We later crafted a nested wedding band designed to slide flush against the cathedral prongs.",
+    imageText: "Matching bridal set resting on textured linen."
+  },
+  {
+    id: "lifetime",
+    title: "Lifetime",
+    desc: "Annual cleaning and prong checks ensure this custom heirloom maintains its cathedral brilliance forever.",
+    imageText: "Polishing wheel reflections and certification cards."
   }
 ]
 
@@ -74,8 +151,31 @@ export default function ConsultationPage() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  // Accordion state for FAQs
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
+  const [selectedJourneyStage, setSelectedJourneyStage] = useState(0)
+  
+  // Navigation active indicators
+  const [showStickyNav, setShowStickyNav] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
+
+  // Track scroll for sticky nav and progress bar
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight
+      if (totalScroll > 0) {
+        setScrollProgress((window.scrollY / totalScroll) * 100)
+      }
+      
+      if (window.scrollY > 400) {
+        setShowStickyNav(true)
+      } else {
+        setShowStickyNav(false)
+      }
+    }
+    
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const handleFaqToggle = (index: number) => {
     setExpandedFaq(expandedFaq === index ? null : index)
@@ -83,6 +183,13 @@ export default function ConsultationPage() {
 
   const scrollToIntake = () => {
     const el = document.getElementById('intake-form')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id)
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' })
     }
@@ -140,88 +247,130 @@ export default function ConsultationPage() {
   }
 
   return (
-    <div className="relative selection:bg-[#C5A880]/30 selection:text-white pb-16 lg:pb-0">
+    <div className="relative selection:bg-[#C8A46B]/30 selection:text-white pb-20 lg:pb-0 min-h-screen bg-[#111111] text-[#F8F6F2] font-sans antialiased">
       
-      {/* Sticky Top Branding Header */}
-      <header className="sticky top-0 z-50 bg-[#070A11]/80 backdrop-blur-md border-b border-white/5 py-4 px-6 md:px-12 flex justify-between items-center">
+      {/* Scroll Progress Bar */}
+      <div 
+        className="fixed top-0 left-0 right-0 h-[2px] bg-[#C8A46B] z-50 transition-all duration-100"
+        style={{ width: `${scrollProgress}%` }}
+      />
+
+      {/* Floating WhatsApp Button */}
+      <a
+        href="https://wa.me/918866579547?text=Hi%20Shewah,%20I'd%20like%20to%20know%20more%20about%20your%20custom%20jewellery%20design%20consultations."
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-40 bg-[#1A1A1A] border border-[#C8A46B]/30 p-3.5 rounded-full text-[#C8A46B] hover:text-white hover:bg-[#C8A46B] transition-all duration-300 shadow-xl shadow-black/50 flex items-center justify-center"
+      >
+        <MessageSquare className="w-6 h-6" />
+      </a>
+
+      {/* Sticky Navigation bar */}
+      <nav className={`fixed top-0 left-0 right-0 z-40 bg-[#111111]/90 backdrop-blur-md border-b border-white/5 py-4 px-6 md:px-12 flex justify-between items-center transition-all duration-300 ${showStickyNav ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#C5A880]/15 flex items-center justify-center border border-[#C5A880]/30">
-            <Diamond className="w-4 h-4 text-[#C5A880]" />
+          <div className="w-7 h-7 rounded-lg bg-[#C8A46B]/15 flex items-center justify-center border border-[#C8A46B]/30">
+            <Diamond className="w-3.5 h-3.5 text-[#C8A46B]" />
           </div>
-          <span className="font-semibold text-lg tracking-widest text-[#F8FAFC]">SHEWAH</span>
+          <span className="font-semibold text-base tracking-widest text-[#F8F6F2]">SHEWAH</span>
         </div>
+        
+        <div className="hidden md:flex items-center gap-8 text-xs uppercase tracking-widest text-[#7A7A7A]">
+          <button onClick={() => scrollToSection('about')} className="hover:text-[#C8A46B] transition-colors">About</button>
+          <button onClick={() => scrollToSection('process')} className="hover:text-[#C8A46B] transition-colors">Process</button>
+          <button onClick={() => scrollToSection('stories')} className="hover:text-[#C8A46B] transition-colors">Design Stories</button>
+          <button onClick={() => scrollToSection('faq')} className="hover:text-[#C8A46B] transition-colors">FAQ</button>
+        </div>
+
         <button 
           onClick={scrollToIntake}
-          className="text-xs uppercase tracking-widest border border-[#C5A880]/40 text-[#C5A880] hover:bg-[#C5A880] hover:text-[#070A11] px-4 py-2 rounded-md transition-all duration-300 font-medium"
+          className="text-xs uppercase tracking-widest border border-[#C8A46B] text-[#C8A46B] hover:bg-[#C8A46B] hover:text-[#111111] px-5 py-2.5 rounded transition-all duration-300 font-medium"
         >
           Book Consultation
         </button>
-      </header>
+      </nav>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-24 md:py-32 px-6 md:px-12 border-b border-white/5 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#131B2E] via-[#070A11] to-[#070A11]">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      {/* SECTION 1: Hero (The Invitation) */}
+      <section className="relative min-h-[90vh] flex flex-col justify-center py-20 px-6 md:px-12 border-b border-white/5 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1E1E1E] via-[#111111] to-[#111111]">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           
-          <div className="lg:col-span-7 text-left space-y-6">
-            <div className="inline-flex items-center gap-2 bg-[#C5A880]/10 border border-[#C5A880]/20 px-3 py-1 rounded-full">
-              <Sparkles className="w-3.5 h-3.5 text-[#C5A880]" />
-              <span className="text-[10px] uppercase tracking-widest text-[#C5A880] font-semibold">Exclusively Made-to-Order</span>
+          <div className="lg:col-span-7 space-y-8 text-left">
+            <div className="inline-flex items-center gap-2.5 bg-[#1A1A1A] border border-white/5 px-4 py-1.5 rounded-full">
+              <Sparkle className="w-3.5 h-3.5 text-[#C8A46B]" />
+              <span className="text-[10px] uppercase tracking-widest text-[#C8A46B] font-semibold">Bespoke Design Studio</span>
             </div>
-            
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-normal leading-tight text-white font-serif">
-              We Do Not Sell Ready-Made Jewellery. <br />
-              <span className="text-[#C5A880] italic">We Craft Your Story.</span>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-normal leading-[1.1] text-[#F8F6F2] font-serif">
+              Every Extraordinary Piece <br className="hidden md:inline" />
+              Begins With a <span className="text-[#C8A46B] italic">Conversation.</span>
             </h1>
-            
-            <p className="text-stone-300 text-base md:text-lg leading-relaxed max-w-xl font-light">
-              Mass-produced jewellery carries no history. At SHEWAH, your most meaningful moments deserve an exclusive creation. Work hand-in-hand with our master designers to co-create a singular piece of art—crafted in solid hallmarked gold and brilliant, certified lab-grown diamonds. Tailored to your taste. Made entirely for you.
+
+            <p className="text-[#7A7A7A] text-base md:text-lg leading-relaxed max-w-xl font-light">
+              The most meaningful jewellery is never selected from a display. It begins with your story. At SHEWAH, every commission starts with a private design consultation where we understand your vision, refine every detail together, and create a piece that exists for no one else.
             </p>
-            
-            <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <button 
-                onClick={scrollToIntake}
-                className="bg-[#C5A880] text-[#070A11] hover:bg-[#b0936e] px-8 py-4 rounded-lg font-medium text-sm tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-[#C5A880]/10"
-              >
-                Book Your Free Design Session <ArrowRight className="w-4 h-4" />
-              </button>
+
+            {/* Trust bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2 text-[10px] uppercase tracking-widest text-[#F8F6F2] font-mono border-t border-b border-white/5 pt-4 pb-4">
+              <div className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-[#C8A46B]" />
+                <span>IGI Certified</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-[#C8A46B]" />
+                <span>BIS Hallmarked</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-[#C8A46B]" />
+                <span>CAD Preview</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-[#C8A46B]" />
+                <span>Secure Delivery</span>
+              </div>
             </div>
-            <p className="text-xs text-stone-500 italic mt-2">
-              Zero pressure. Fully bespoke design preview before we begin crafting.
-            </p>
+
+            <div className="pt-2 space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+                <button 
+                  onClick={scrollToIntake}
+                  className="bg-[#C8A46B] text-[#111111] hover:bg-[#b5925a] px-8 py-4 rounded font-medium text-xs tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2.5 shadow-lg shadow-[#C8A46B]/5"
+                >
+                  Book Your Complimentary Design Consultation <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-[#7A7A7A] italic">
+                No obligation. Crafted only after your complete approval.
+              </p>
+            </div>
           </div>
 
           <div className="lg:col-span-5 relative">
-            <div className="aspect-[4/5] w-full rounded-2xl border border-white/10 bg-[#0F1422] p-4 flex flex-col justify-between relative overflow-hidden shadow-2xl">
+            <div className="aspect-[4/5] w-full rounded-xl border border-white/5 bg-[#1A1A1A] p-6 flex flex-col justify-between relative overflow-hidden shadow-2xl">
               
-              {/* Decorative design lines */}
-              <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+              <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:30px_30px]"></div>
               
-              <div className="z-10 flex justify-between items-start">
-                <span className="text-[10px] tracking-widest text-[#C5A880] uppercase font-mono">SPECIFICATION SHEETS</span>
-                <span className="text-[10px] text-stone-500 font-mono">SHEWAH STUDIO v2.1</span>
+              <div className="flex justify-between items-start text-[10px] tracking-widest text-[#C8A46B] uppercase font-mono">
+                <span>STUDIO SKETCH SHEET</span>
+                <span>COMMISSION #099</span>
               </div>
 
-              {/* Central Diamond Illustration Placeholder */}
-              <div className="flex-1 flex flex-col items-center justify-center relative py-6">
-                <div className="w-48 h-48 border border-[#C5A880]/30 rounded-full flex items-center justify-center animate-[spin_60s_linear_infinite]">
-                  <div className="w-40 h-40 border border-[#C5A880]/20 border-dashed rounded-full flex items-center justify-center">
-                    <Diamond className="w-16 h-16 text-[#C5A880]/60" />
+              {/* Hand Drawn Design Concept Render */}
+              <div className="flex-1 flex flex-col items-center justify-center py-6 relative">
+                <div className="w-52 h-52 border border-[#C8A46B]/15 rounded-full flex items-center justify-center">
+                  <div className="w-40 h-40 border border-[#C8A46B]/10 border-dashed rounded-full flex items-center justify-center relative">
+                    <Diamond className="w-20 h-20 text-[#C8A46B]/40" />
                   </div>
                 </div>
-                <div className="absolute bottom-4 text-center">
-                  <p className="text-xs text-[#C5A880] font-mono">3D CAD MODEL GENERATION</p>
-                  <p className="text-[10px] text-stone-500">PRECISION CLAW PLACEMENT</p>
-                </div>
+                <p className="absolute bottom-6 text-[10px] text-[#7A7A7A] uppercase tracking-widest font-mono">CAD GEOMETRY ACTIVE</p>
               </div>
 
-              <div className="z-10 flex justify-between items-end border-t border-white/5 pt-3">
+              <div className="flex justify-between items-end border-t border-white/5 pt-4 text-xs font-mono text-[#F8F6F2]">
                 <div>
-                  <p className="text-[10px] text-stone-500">SETTING TYPE</p>
-                  <p className="text-xs text-stone-300 font-medium">Bespoke Prong</p>
+                  <p className="text-[10px] text-[#7A7A7A] uppercase tracking-widest">DESIGN FOCUS</p>
+                  <p className="font-semibold text-stone-300">Custom Setting</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] text-stone-500">GOLD WEIGHT</p>
-                  <p className="text-xs text-[#C5A880] font-medium font-mono">Tailored to spec</p>
+                  <p className="text-[10px] text-[#7A7A7A] uppercase tracking-widest">GEM SPEC</p>
+                  <p className="text-[#C8A46B] font-semibold">Exquisite Fire</p>
                 </div>
               </div>
 
@@ -231,380 +380,591 @@ export default function ConsultationPage() {
         </div>
       </section>
 
-      {/* Philosophy Section */}
-      <section className="py-24 px-6 md:px-12 bg-[#070A11] border-b border-white/5 text-center">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
-            A Legacy Created, <span className="text-[#C5A880] italic">Not Merely Bought</span>
-          </h2>
-          <p className="text-stone-300 text-base md:text-lg leading-relaxed font-light">
-            The finest piece of jewellery is not one that sits in a display case waiting for any passerby. It is the one that begins as a whisper of an idea in your mind, translates into an artist's sketch, and comes to life under the patient hands of a master karigar. 
-          </p>
-          <p className="text-stone-400 text-sm md:text-base leading-relaxed font-light">
-            Ready-made jewellery forces you to compromise on scale, metal weight, or diamond purity. Custom design honors your personal narrative. When you choose custom, you choose to buy exactly what you want, built precisely how you want it, ensuring that the final heirloom holds a soul that matches the moment it celebrates.
-          </p>
-        </div>
-      </section>
-
-      {/* Lab Grown Diamonds Section */}
-      <section className="py-24 px-6 md:px-12 bg-[#0C111D] border-b border-white/5">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-6">
+      {/* SECTION 2: What Happens After You Book? */}
+      <section id="process" className="py-24 px-6 md:px-12 bg-[#1A1A1A] border-b border-white/5">
+        <div className="max-w-6xl mx-auto space-y-16">
+          <div className="text-center space-y-4">
             <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
-              Brilliance Reimagined: <br />
-              <span className="text-[#C5A880] italic">Luxury Without Compromise</span>
+              From Your First Conversation <br />
+              <span className="text-[#C8A46B] italic">To Your Forever Piece.</span>
             </h2>
-            <p className="text-stone-300 text-base leading-relaxed font-light">
-              We believe that luxury should be intelligent, transparent, and kind. Our certified lab-grown diamonds represent the future of fine jewellery. 
-            </p>
-            <p className="text-stone-400 text-sm leading-relaxed font-light">
-              They are chemically, physically, and optically identical to mined diamonds. They possess the exact same hardness, refractive index, and fire. Yet, because they are grown in controlled environments using advanced technology, they are completely free from the environmental and ethical toll of traditional mining.
-            </p>
-            <p className="text-stone-400 text-sm leading-relaxed font-light">
-              By choosing lab-grown diamonds, you redirect your investment away from expensive mining markups and toward superior diamond size, exceptional clarity, and meticulous custom craftsmanship. It is luxury refined.
+            <p className="text-[#7A7A7A] text-sm max-w-md mx-auto font-light">
+              An elegant co-creation sequence designed to put you at the center of the journey.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-[#070A11] p-6 rounded-xl border border-white/5 space-y-2">
-              <span className="text-[#C5A880] font-serif text-2xl font-semibold">100%</span>
-              <p className="text-xs font-semibold text-stone-300 uppercase tracking-widest">Identical Beauty</p>
-              <p className="text-xs text-stone-500">Same carbon structure, crystal grid, and brilliance as mined gems.</p>
-            </div>
-            <div className="bg-[#070A11] p-6 rounded-xl border border-white/5 space-y-2">
-              <span className="text-[#C5A880] font-serif text-2xl font-semibold">IGI / GIA</span>
-              <p className="text-xs font-semibold text-stone-300 uppercase tracking-widest">Fully Certified</p>
-              <p className="text-xs text-stone-500">Every centerpiece diamond is independently certified and laser inscribed.</p>
-            </div>
-            <div className="bg-[#070A11] p-6 rounded-xl border border-white/5 space-y-2">
-              <span className="text-[#C5A880] font-serif text-2xl font-semibold">Ethical</span>
-              <p className="text-xs font-semibold text-stone-300 uppercase tracking-widest">Zero Mining</p>
-              <p className="text-xs text-stone-500">Conflict-free origins that protect both human labor and the planet.</p>
-            </div>
-            <div className="bg-[#070A11] p-6 rounded-xl border border-white/5 space-y-2">
-              <span className="text-[#C5A880] font-serif text-2xl font-semibold">3.5x</span>
-              <p className="text-xs font-semibold text-stone-300 uppercase tracking-widest">Greater Value</p>
-              <p className="text-xs text-stone-500">Acquire larger size and higher quality grade stones for the same pricing.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* The 5-Step Process */}
-      <section className="py-24 px-6 md:px-12 bg-[#070A11] border-b border-white/5">
-        <div className="max-w-6xl mx-auto text-center space-y-16">
-          <div className="space-y-4">
-            <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
-              The Journey of <span className="text-[#C5A880] italic">Creation</span>
-            </h2>
-            <p className="text-stone-400 text-sm max-w-lg mx-auto font-light">
-              From an absolute blank sketch page to a custom solid gold masterpiece, mapped to your budget.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 text-left relative">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-6 text-left">
             
             {/* Step 1 */}
-            <div className="space-y-4 bg-[#0F1422]/50 p-6 rounded-xl border border-white/5">
-              <div className="w-10 h-10 rounded-full bg-[#C5A880]/15 flex items-center justify-center border border-[#C5A880]/30 text-[#C5A880] font-mono text-sm font-bold">
-                01
-              </div>
-              <h3 className="text-lg font-medium text-white font-serif">Discover</h3>
-              <p className="text-xs text-stone-400 leading-relaxed font-light">
-                Begin with a private conversation. Share your ideas, reference photos, budget preferences, and stories with your dedicated design consultant.
+            <div className="space-y-4 p-6 bg-[#111111] rounded border border-white/5 hover:border-[#C8A46B]/20 transition-all">
+              <div className="text-[10px] font-mono text-[#C8A46B] uppercase tracking-widest">01 / Booking</div>
+              <h3 className="text-base font-semibold text-white">Book Consultation</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Submit a few initial details to coordinate your session.
               </p>
             </div>
 
             {/* Step 2 */}
-            <div className="space-y-4 bg-[#0F1422]/50 p-6 rounded-xl border border-white/5">
-              <div className="w-10 h-10 rounded-full bg-[#C5A880]/15 flex items-center justify-center border border-[#C5A880]/30 text-[#C5A880] font-mono text-sm font-bold">
-                02
-              </div>
-              <h3 className="text-lg font-medium text-white font-serif">Design</h3>
-              <p className="text-xs text-stone-400 leading-relaxed font-light">
-                Our artists sketch your concept, helping you select the perfect diamond shape, karat weight, and metal color to balance beauty and budget.
+            <div className="space-y-4 p-6 bg-[#111111] rounded border border-white/5 hover:border-[#C8A46B]/20 transition-all">
+              <div className="text-[10px] font-mono text-[#C8A46B] uppercase tracking-widest">02 / Discovery</div>
+              <h3 className="text-base font-semibold text-white">Private Discovery</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                We learn your story, preferences, and design ideas.
               </p>
             </div>
 
             {/* Step 3 */}
-            <div className="space-y-4 bg-[#0F1422]/50 p-6 rounded-xl border border-white/5">
-              <div className="w-10 h-10 rounded-full bg-[#C5A880]/15 flex items-center justify-center border border-[#C5A880]/30 text-[#C5A880] font-mono text-sm font-bold">
-                03
-              </div>
-              <h3 className="text-lg font-medium text-white font-serif">CAD Preview</h3>
-              <p className="text-xs text-stone-400 leading-relaxed font-light">
-                Examine a hyper-realistic 3D digital model of your jewellery. Adjust every angle until it matches your vision perfectly. We do not craft until you approve.
+            <div className="space-y-4 p-6 bg-[#111111] rounded border border-white/5 hover:border-[#C8A46B]/20 transition-all">
+              <div className="text-[10px] font-mono text-[#C8A46B] uppercase tracking-widest">03 / Consultation</div>
+              <h3 className="text-base font-semibold text-white">Design Consult</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Discuss gemstone shapes, color values, and gold karat weights.
               </p>
             </div>
 
             {/* Step 4 */}
-            <div className="space-y-4 bg-[#0F1422]/50 p-6 rounded-xl border border-white/5">
-              <div className="w-10 h-10 rounded-full bg-[#C5A880]/15 flex items-center justify-center border border-[#C5A880]/30 text-[#C5A880] font-mono text-sm font-bold">
-                04
-              </div>
-              <h3 className="text-lg font-medium text-white font-serif">Craft</h3>
-              <p className="text-xs text-stone-400 leading-relaxed font-light">
-                Our experienced artisans hand-carve, set, and polish your piece using certified lab-grown diamonds and hallmarked gold in our private atelier.
+            <div className="space-y-4 p-6 bg-[#111111] rounded border border-white/5 hover:border-[#C8A46B]/20 transition-all">
+              <div className="text-[10px] font-mono text-[#C8A46B] uppercase tracking-widest">04 / Preview</div>
+              <h3 className="text-base font-semibold text-white">CAD Preview</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Visualize every detail with realistic 3D renderings before crafting.
               </p>
             </div>
 
             {/* Step 5 */}
-            <div className="space-y-4 bg-[#0F1422]/50 p-6 rounded-xl border border-white/5">
-              <div className="w-10 h-10 rounded-full bg-[#C5A880]/15 flex items-center justify-center border border-[#C5A880]/30 text-[#C5A880] font-mono text-sm font-bold">
-                05
-              </div>
-              <h3 className="text-lg font-medium text-white font-serif">Deliver</h3>
-              <p className="text-xs text-stone-400 leading-relaxed font-light">
-                Your bespoke creation is hand-delivered to your door in custom premium packaging, accompanied by its independent certification and lifetime warranty.
+            <div className="space-y-4 p-6 bg-[#111111] rounded border border-white/5 hover:border-[#C8A46B]/20 transition-all">
+              <div className="text-[10px] font-mono text-[#C8A46B] uppercase tracking-widest">05 / Refinement</div>
+              <h3 className="text-base font-semibold text-white">Refine Together</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Enjoy unlimited tweaks to the design until it matches perfectly.
+              </p>
+            </div>
+
+            {/* Step 6 */}
+            <div className="space-y-4 p-6 bg-[#111111] rounded border border-white/5 hover:border-[#C8A46B]/20 transition-all">
+              <div className="text-[10px] font-mono text-[#C8A46B] uppercase tracking-widest">06 / Crafting</div>
+              <h3 className="text-base font-semibold text-white">Crafting</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Master karigars cast, assemble, and hand-finish your piece.
+              </p>
+            </div>
+
+            {/* Step 7 */}
+            <div className="space-y-4 p-6 bg-[#111111] rounded border border-white/5 hover:border-[#C8A46B]/20 transition-all">
+              <div className="text-[10px] font-mono text-[#C8A46B] uppercase tracking-widest">07 / Arrival</div>
+              <h3 className="text-base font-semibold text-white">Luxury Delivery</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Securely shipped directly to your hands in premium boxes.
               </p>
             </div>
 
           </div>
-        </div>
-      </section>
 
-      {/* Craftsmanship Section */}
-      <section className="py-24 px-6 md:px-12 bg-[#0C111D] border-b border-white/5">
-        <div className="max-w-5xl mx-auto text-center space-y-8">
-          <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
-            Honoring the Hand of the <span className="text-[#C5A880] italic">Artisan</span>
-          </h2>
-          <p className="text-stone-300 text-base md:text-lg leading-relaxed font-light max-w-3xl mx-auto">
-            In an age of instant gratification and high-speed machinery, SHEWAH preserves the slow, deliberate art of fine jewellery. Every setting is hand-carved. Every diamond prong is individually pushed. 
-          </p>
-          <p className="text-stone-400 text-sm leading-relaxed font-light max-w-2xl mx-auto">
-            Our gems are hand-selected by GIA-trained gemologists who inspect each stone for fire, scintillation, and brilliance. Our gold is refined to exact standards and carries government-regulated hallmarking. We limit the number of commissions we accept each month to guarantee our master artisans have the time required to treat your piece as a masterpiece.
-          </p>
-          <div className="pt-6">
-            <div className="inline-flex gap-8 justify-center items-center text-left text-xs uppercase tracking-widest text-stone-400 font-mono">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-[#C5A880]" />
-                <span>Hand-Selected Diamonds</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-[#C5A880]" />
-                <span>BIS Hallmarked Gold</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-[#C5A880]" />
-                <span>Private Atelier Finishing</span>
-              </div>
-            </div>
+          <div className="text-center pt-4">
+            <button 
+              onClick={scrollToIntake}
+              className="bg-transparent border border-[#C8A46B] text-[#C8A46B] hover:bg-[#C8A46B] hover:text-[#111111] px-8 py-4 rounded text-xs tracking-widest uppercase transition-all duration-300 font-medium"
+            >
+              Reserve My Consultation
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Popular Custom Pieces */}
-      <section className="py-24 px-6 md:px-12 bg-[#070A11] border-b border-white/5">
-        <div className="max-w-6xl mx-auto space-y-12">
+      {/* SECTION 3: Why Custom? */}
+      <section id="about" className="py-24 px-6 md:px-12 bg-[#111111] border-b border-white/5">
+        <div className="max-w-4xl mx-auto space-y-16">
           <div className="text-center space-y-4">
             <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
-              Bespoke Inspiration: <span className="text-[#C5A880] italic">Popular Commissions</span>
+              The Difference Between Buying Jewellery <br />
+              <span className="text-[#C8A46B] italic">And Creating It.</span>
             </h2>
-            <p className="text-stone-400 text-sm max-w-md mx-auto font-light">
-              Explore classic designs frequently commissioned by our clients and customized to their budgets.
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            
+            {/* Column 1 - Buying */}
+            <div className="bg-[#1A1A1A] p-8 rounded border border-white/5 space-y-6">
+              <h3 className="text-lg font-serif text-[#7A7A7A] uppercase tracking-widest border-b border-white/5 pb-3">Buying Jewellery</h3>
+              <ul className="space-y-4 text-sm text-[#7A7A7A] font-light">
+                <li className="flex items-start gap-3">
+                  <span className="text-red-500/60 mt-0.5">✕</span>
+                  <span>Choose only from what is currently available on display.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-red-500/60 mt-0.5">✕</span>
+                  <span>Adjust your personal taste to match the retail design.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-red-500/60 mt-0.5">✕</span>
+                  <span>Hope the piece carries a deeper emotional significance.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-red-500/60 mt-0.5">✕</span>
+                  <span>Own a mass-produced product that hundreds of others may also own.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 2 - Creating */}
+            <div className="bg-[#1A1A1A] p-8 rounded border border-[#C8A46B]/30 space-y-6 shadow-xl shadow-black/10">
+              <h3 className="text-lg font-serif text-[#C8A46B] uppercase tracking-widest border-b border-[#C8A46B]/20 pb-3">Creating with SHEWAH</h3>
+              <ul className="space-y-4 text-sm text-[#F8F6F2] font-light">
+                <li className="flex items-start gap-3">
+                  <span className="text-[#C8A46B] mt-0.5">✓</span>
+                  <span>Begin from scratch, anchored entirely around your story.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-[#C8A46B] mt-0.5">✓</span>
+                  <span>Ensure every setting and dimensions detail reflects your vision.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-[#C8A46B] mt-0.5">✓</span>
+                  <span>Optionally scale gold and diamond specs to match your budget.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-[#C8A46B] mt-0.5">✓</span>
+                  <span>Commission a singular, unique creation that belongs only to you.</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+          <div className="text-center space-y-2">
+            <p className="text-[#F8F6F2] font-serif text-lg md:text-xl italic">
+              "The difference isn’t the jewellery. It’s how it makes you feel every time you wear it."
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 4: Meet Your Designer */}
+      <section className="py-24 px-6 md:px-12 bg-[#1A1A1A] border-b border-white/5">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+          
+          <div className="lg:col-span-5 relative">
+            <div className="aspect-[3/4] w-full rounded-xl bg-[#111111] border border-white/5 flex flex-col justify-end p-8 relative overflow-hidden shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              
+              {/* Designer Details Card */}
+              <div className="z-10 space-y-2">
+                <p className="text-xs uppercase tracking-widest text-[#C8A46B] font-mono">ATELIER DIRECTORS</p>
+                <h3 className="text-2xl font-normal text-white font-serif">The Craftsmanship Lead</h3>
+                <p className="text-xs text-stone-400 font-light">SHEWAH Private Commissions Team</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-7 space-y-8 text-left">
+            <h2 className="text-3xl md:text-4xl font-normal font-serif text-white leading-tight">
+              Behind Every Meaningful Piece <br />
+              <span className="text-[#C8A46B] italic">Is Someone Who Listens.</span>
+            </h2>
+
+            <div className="space-y-4 text-stone-300 font-light text-sm md:text-base leading-relaxed">
+              <p>
+                Luxury jewellery isn’t about transient trends. It is about translating deep emotions, promises, and milestones into timeless physical forms.
+              </p>
+              <p>
+                We believe that the design is only as good as the understanding behind it. Every consultation begins with co-creating the moodboard and understanding the client before discussing the specific diamond cuts or metal bands.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-6 pt-4 border-t border-white/5">
+              <div>
+                <p className="text-2xl md:text-3xl font-normal text-[#C8A46B] font-serif">12+</p>
+                <p className="text-[10px] text-[#7A7A7A] uppercase tracking-widest mt-1">Years Experience</p>
+              </div>
+              <div>
+                <p className="text-2xl md:text-3xl font-normal text-[#C8A46B] font-serif">1000+</p>
+                <p className="text-[10px] text-[#7A7A7A] uppercase tracking-widest mt-1">Commissions Created</p>
+              </div>
+              <div>
+                <p className="text-2xl md:text-3xl font-normal text-[#C8A46B] font-serif">Bespoke</p>
+                <p className="text-[10px] text-[#7A7A7A] uppercase tracking-widest mt-1">Design Philosophy</p>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <button 
+                onClick={scrollToIntake}
+                className="bg-[#C8A46B] text-[#111111] hover:bg-[#b5925a] px-8 py-4 rounded font-medium text-xs tracking-widest uppercase transition-all duration-300"
+              >
+                Start Your Design Journey
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* SECTION 5: Luxury Without Mining */}
+      <section className="py-24 px-6 md:px-12 bg-[#111111] border-b border-white/5">
+        <div className="max-w-6xl mx-auto space-y-12">
+          
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
+              Modern Luxury <span className="text-[#C8A46B] italic">Has Evolved.</span>
+            </h2>
+            <p className="text-[#7A7A7A] text-sm max-w-md mx-auto font-light">
+              Acquire superior-grade diamonds crafted ethically, chemically identical to mined stones.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-[#1A1A1A] p-8 rounded border border-white/5 space-y-2">
+              <h3 className="text-base font-semibold text-white">Identical Brilliance</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Our diamonds possess the exact same crystalline carbon structure, fire, scintillation, and refractive index as natural mined diamonds.
+              </p>
+            </div>
+            <div className="bg-[#1A1A1A] p-8 rounded border border-white/5 space-y-2">
+              <h3 className="text-base font-semibold text-white">IGI / GIA Certification</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Every centerpiece gem is individually evaluated by independent international diamond labs and inscribed with its distinct grading number.
+              </p>
+            </div>
+            <div className="bg-[#1A1A1A] p-8 rounded border border-white/5 space-y-2">
+              <h3 className="text-base font-semibold text-white">Ethically Created</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                By growing diamond crystals in high-tech laboratories, we bypass the heavy environmental and social costs of deep mining.
+              </p>
+            </div>
+          </div>
+
+          <div className="text-center pt-4">
+            <p className="text-xs tracking-widest text-[#7A7A7A] uppercase font-mono">
+              "Luxury should reflect your values as beautifully as your style."
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* SECTION 6: Designed Around Your Budget */}
+      <section className="py-24 px-6 md:px-12 bg-[#1A1A1A] border-b border-white/5">
+        <div className="max-w-6xl mx-auto space-y-16">
+          <div className="max-w-2xl mx-auto text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
+              Every Story Is Different. <br />
+              <span className="text-[#C8A46B] italic">So Is Every Commission.</span>
+            </h2>
+            <p className="text-stone-300 text-sm md:text-base font-light leading-relaxed">
+              Rather than asking you to fit into predefined collections, we begin by understanding your investment range and designing accordingly.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            
+            {/* Card 1 */}
+            <div className="bg-[#111111] p-8 rounded border border-white/5 space-y-4 hover:border-[#C8A46B]/30 transition-colors">
+              <p className="text-2xl font-normal text-[#C8A46B] font-serif">₹75,000+</p>
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Elegant Everyday Luxury</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Delicate diamond bands, custom initials pendants, and initial stackable gold pieces.
+              </p>
+            </div>
+
+            {/* Card 2 */}
+            <div className="bg-[#111111] p-8 rounded border border-white/5 space-y-4 hover:border-[#C8A46B]/30 transition-colors">
+              <p className="text-2xl font-normal text-[#C8A46B] font-serif">₹1.5 Lakh+</p>
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Signature Solitaires</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Bespoke engagement rings, oval solitaire rings, and custom bezel gold bands.
+              </p>
+            </div>
+
+            {/* Card 3 */}
+            <div className="bg-[#111111] p-8 rounded border border-white/5 space-y-4 hover:border-[#C8A46B]/30 transition-colors">
+              <p className="text-2xl font-normal text-[#C8A46B] font-serif">₹3.0 Lakh+</p>
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Wedding Sets</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Coordinated matching wedding bands, multi-stone bracelets, and bridal accents.
+              </p>
+            </div>
+
+            {/* Card 4 */}
+            <div className="bg-[#111111] p-8 rounded border border-white/5 space-y-4 hover:border-[#C8A46B]/30 transition-colors">
+              <p className="text-2xl font-normal text-[#C8A46B] font-serif">₹5.0 Lakh+</p>
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Heirloom Commissions</h3>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Multi-carat diamond tennis bracelets, luxury chokers, and detailed bespoke collars.
+              </p>
+            </div>
+
+          </div>
+
+          <div className="text-center">
+            <button 
+              onClick={scrollToIntake}
+              className="bg-[#C8A46B] text-[#111111] hover:bg-[#b5925a] px-8 py-4 rounded font-medium text-xs tracking-widest uppercase transition-all duration-300"
+            >
+              Discuss Your Vision
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 7: Popular Commissions */}
+      <section className="py-24 px-6 md:px-12 bg-[#111111] border-b border-white/5">
+        <div className="max-w-6xl mx-auto space-y-12">
+          
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
+              Bespoke Categories: <span className="text-[#C8A46B] italic">Popular Commissions</span>
+            </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             
-            {/* Card 1 */}
-            <div className="bg-[#0F1422] rounded-2xl overflow-hidden border border-white/5 flex flex-col justify-between group hover:border-[#C5A880]/30 transition-all duration-300">
-              <div className="p-8 space-y-4">
-                <h3 className="text-xl font-normal text-white font-serif">Engagement Rings</h3>
-                <p className="text-xs text-stone-400 leading-relaxed font-light">
-                  Designed to capture the promise of a lifetime. From timeless solitaire bands to elaborate halo and cluster settings, built around your chosen diamond shape.
-                </p>
-              </div>
-              <div className="p-8 pt-0 flex justify-between items-center text-xs tracking-wider uppercase text-[#C5A880]">
-                <span>Oval, Round, Emerald cut</span>
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-              </div>
+            <div className="p-8 bg-[#1A1A1A] rounded border border-white/5 space-y-3">
+              <h3 className="text-lg font-serif text-[#C8A46B]">Engagement Rings</h3>
+              <p className="text-xs font-semibold text-stone-300 uppercase tracking-widest">Two People. One Promise.</p>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Tailored claw settings, hidden halos, and custom band profiles built around your diamond choice.
+              </p>
             </div>
 
-            {/* Card 2 */}
-            <div className="bg-[#0F1422] rounded-2xl overflow-hidden border border-white/5 flex flex-col justify-between group hover:border-[#C5A880]/30 transition-all duration-300">
-              <div className="p-8 space-y-4">
-                <h3 className="text-xl font-normal text-white font-serif">Wedding Bands</h3>
-                <p className="text-xs text-stone-400 leading-relaxed font-light">
-                  Coordinated pairs or individual bands that nestle flush against your engagement ring, detailed with hidden gems, hand-engraving, or custom satin textures.
-                </p>
-              </div>
-              <div className="p-8 pt-0 flex justify-between items-center text-xs tracking-wider uppercase text-[#C5A880]">
-                <span>Textured, Pave, Matching Pairs</span>
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-              </div>
+            <div className="p-8 bg-[#1A1A1A] rounded border border-white/5 space-y-3">
+              <h3 className="text-lg font-serif text-[#C8A46B]">Wedding Bands</h3>
+              <p className="text-xs font-semibold text-stone-300 uppercase tracking-widest">Designed for the beginning of forever.</p>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Classic high-polish bands, hand-textured finishes, and nesting rings crafted to slide together.
+              </p>
             </div>
 
-            {/* Card 3 */}
-            <div className="bg-[#0F1422] rounded-2xl overflow-hidden border border-white/5 flex flex-col justify-between group hover:border-[#C5A880]/30 transition-all duration-300">
-              <div className="p-8 space-y-4">
-                <h3 className="text-xl font-normal text-white font-serif">Tennis Bracelets</h3>
-                <p className="text-xs text-stone-400 leading-relaxed font-light">
-                  An uninterrupted line of matching, brilliant-cut lab diamonds chosen for identical color and clarity. Hand-linked for exceptional drape and weight.
-                </p>
-              </div>
-              <div className="p-8 pt-0 flex justify-between items-center text-xs tracking-wider uppercase text-[#C5A880]">
-                <span>2.0ct to 10.0ct Total Weight</span>
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-              </div>
+            <div className="p-8 bg-[#1A1A1A] rounded border border-white/5 space-y-3">
+              <h3 className="text-lg font-serif text-[#C8A46B]">Anniversary Gifts</h3>
+              <p className="text-xs font-semibold text-stone-300 uppercase tracking-widest">Celebrate every year beautifully.</p>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Custom diamond eternity bands or drop earrings that reflect the milestones you've built.
+              </p>
             </div>
 
-            {/* Card 4 */}
-            <div className="bg-[#0F1422] rounded-2xl overflow-hidden border border-white/5 flex flex-col justify-between group hover:border-[#C5A880]/30 transition-all duration-300">
-              <div className="p-8 space-y-4">
-                <h3 className="text-xl font-normal text-white font-serif">Pendants & Necklaces</h3>
-                <p className="text-xs text-stone-400 leading-relaxed font-light">
-                  From delicate initials and halo lockets to statement drop collars. Crafted to sit perfectly against the collarbone.
-                </p>
-              </div>
-              <div className="p-8 pt-0 flex justify-between items-center text-xs tracking-wider uppercase text-[#C5A880]">
-                <span>Solitaire or cluster settings</span>
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-              </div>
+            <div className="p-8 bg-[#1A1A1A] rounded border border-white/5 space-y-3">
+              <h3 className="text-lg font-serif text-[#C8A46B]">Push Gifts</h3>
+              <p className="text-xs font-semibold text-stone-300 uppercase tracking-widest">A memory that lasts longer than flowers.</p>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Elegant diamond studs or initial bracelets marking the arrival of a new chapter.
+              </p>
             </div>
 
-            {/* Card 5 */}
-            <div className="bg-[#0F1422] rounded-2xl overflow-hidden border border-white/5 flex flex-col justify-between group hover:border-[#C5A880]/30 transition-all duration-300">
-              <div className="p-8 space-y-4">
-                <h3 className="text-xl font-normal text-white font-serif">Bridal Collars</h3>
-                <p className="text-xs text-stone-400 leading-relaxed font-light">
-                  Intricate, multi-carat designs curated for life’s most grand milestones. Flowing geometry that conforms beautifully to your movement.
-                </p>
-              </div>
-              <div className="p-8 pt-0 flex justify-between items-center text-xs tracking-wider uppercase text-[#C5A880]">
-                <span>Custom Anniversary Collars</span>
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-              </div>
+            <div className="p-8 bg-[#1A1A1A] rounded border border-white/5 space-y-3">
+              <h3 className="text-lg font-serif text-[#C8A46B]">Daily Luxury</h3>
+              <p className="text-xs font-semibold text-stone-300 uppercase tracking-widest">Crafted for everyday confidence.</p>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Simple solitaire studs, stackable rings, and bezel pendant chains built for daily wear.
+              </p>
             </div>
 
-            {/* Card 6 */}
-            <div className="bg-[#0F1422] rounded-2xl overflow-hidden border border-white/5 flex flex-col justify-between group hover:border-[#C5A880]/30 transition-all duration-300">
-              <div className="p-8 space-y-4">
-                <h3 className="text-xl font-normal text-white font-serif">Earrings & Studs</h3>
-                <p className="text-xs text-stone-400 leading-relaxed font-light">
-                  Classical drop earrings, modern hoops, or minimal studs. Designed with comfortable, secure backings for daily luxury or evening wear.
-                </p>
-              </div>
-              <div className="p-8 pt-0 flex justify-between items-center text-xs tracking-wider uppercase text-[#C5A880]">
-                <span>Claw set studs & drop styles</span>
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-              </div>
+            <div className="p-8 bg-[#1A1A1A] rounded border border-white/5 space-y-3">
+              <h3 className="text-lg font-serif text-[#C8A46B]">Family Heirlooms</h3>
+              <p className="text-xs font-semibold text-stone-300 uppercase tracking-widest">Designed to be treasured across generations.</p>
+              <p className="text-xs text-[#7A7A7A] leading-relaxed font-light">
+                Detailed statement necklaces, grand pendants, and heavy gold rings that preserve legacy.
+              </p>
             </div>
 
           </div>
+
         </div>
       </section>
 
-      {/* Pillars Section */}
-      <section className="py-24 px-6 md:px-12 bg-[#0C111D] border-b border-white/5">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* SECTION 8: Real Client Journey */}
+      <section id="stories" className="py-24 px-6 md:px-12 bg-[#1A1A1A] border-b border-white/5">
+        <div className="max-w-6xl mx-auto space-y-12">
           
-          <div className="space-y-2 border-l border-[#C5A880]/30 pl-6">
-            <h4 className="text-[#F8FAFC] font-medium font-serif">Authenticated Brilliance</h4>
-            <p className="text-xs text-stone-400 leading-relaxed font-light">
-              Every diamond above 0.5 carats is independently graded by international laboratories like IGI or GIA.
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
+              Bespoke Storytelling: <span className="text-[#C8A46B] italic">The Client Journey</span>
+            </h2>
+            <p className="text-[#7A7A7A] text-sm max-w-md mx-auto font-light">
+              Follow how an abstract cathedral inspiration became a physical legacy. Click the stages below to explore.
             </p>
           </div>
 
-          <div className="space-y-2 border-l border-[#C5A880]/30 pl-6">
-            <h4 className="text-[#F8FAFC] font-medium font-serif">BIS Hallmarked Purity</h4>
-            <p className="text-xs text-stone-400 leading-relaxed font-light">
-              We work exclusively with certified 18k and 14k gold, ensuring your investment retains its lifetime value.
-            </p>
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            {/* Timeline selector */}
+            <div className="lg:col-span-4 space-y-2 max-h-[400px] overflow-y-auto pr-2">
+              {JOURNEY_STAGES.map((stg, idx) => (
+                <button
+                  key={stg.id}
+                  onClick={() => setSelectedJourneyStage(idx)}
+                  className={`w-full text-left p-4 rounded transition-all duration-300 border ${selectedJourneyStage === idx ? 'bg-[#111111] border-[#C8A46B] text-white' : 'border-transparent text-[#7A7A7A] hover:text-[#F8F6F2]'}`}
+                >
+                  <div className="text-[10px] font-mono uppercase tracking-widest mb-1">STAGE 0{idx + 1}</div>
+                  <div className="font-serif text-base font-medium">{stg.title}</div>
+                </button>
+              ))}
+            </div>
 
-          <div className="space-y-2 border-l border-[#C5A880]/30 pl-6">
-            <h4 className="text-[#F8FAFC] font-medium font-serif">Value-Driven Design</h4>
-            <p className="text-xs text-stone-400 leading-relaxed font-light">
-              We select diamond carat size and metal weight combinations to match your target budget without compromising beauty.
-            </p>
-          </div>
+            {/* Display stage detail */}
+            <div className="lg:col-span-8 bg-[#111111] p-8 md:p-10 rounded border border-white/5 space-y-6 shadow-xl relative min-h-[320px] flex flex-col justify-between">
+              
+              <div className="space-y-4">
+                <span className="text-[10px] font-mono text-[#C8A46B] uppercase tracking-widest">
+                  STAGE 0{selectedJourneyStage + 1} · {JOURNEY_STAGES[selectedJourneyStage].title}
+                </span>
+                <h3 className="text-2xl font-normal text-white font-serif leading-relaxed">
+                  {JOURNEY_STAGES[selectedJourneyStage].desc}
+                </h3>
+              </div>
 
-          <div className="space-y-2 border-l border-[#C5A880]/30 pl-6">
-            <h4 className="text-[#F8FAFC] font-medium font-serif">Single-Run Commissions</h4>
-            <p className="text-xs text-stone-400 leading-relaxed font-light">
-              Your piece will never be replicated or sold to another customer. The design template is yours alone.
-            </p>
-          </div>
+              <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-[#7A7A7A] gap-2">
+                <span>Visual output: <span className="text-[#F8F6F2] font-mono">{JOURNEY_STAGES[selectedJourneyStage].imageText}</span></span>
+                <span className="text-[10px] uppercase font-mono tracking-widest text-[#C8A46B]">Interactive preview</span>
+              </div>
 
-          <div className="space-y-2 border-l border-[#C5A880]/30 pl-6">
-            <h4 className="text-[#F8FAFC] font-medium font-serif">Transparent Pricing</h4>
-            <p className="text-xs text-stone-400 leading-relaxed font-light">
-              Receive a line-item breakdown of gold weight, diamond value, and labor. No hidden fees or inflated retail markups.
-            </p>
-          </div>
+            </div>
 
-          <div className="space-y-2 border-l border-[#C5A880]/30 pl-6">
-            <h4 className="text-[#F8FAFC] font-medium font-serif">Lifetime Care</h4>
-            <p className="text-xs text-stone-400 leading-relaxed font-light">
-              Complimentary yearly prong checks, professional deep cleaning, and minor resizing to keep your piece pristine.
-            </p>
           </div>
 
         </div>
       </section>
 
-      {/* Social Proof Stats & Reviews */}
-      <section className="py-24 px-6 md:px-12 bg-[#070A11] border-b border-white/5">
-        <div className="max-w-6xl mx-auto space-y-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center border-y border-white/5 py-12">
-            <div>
-              <p className="text-4xl md:text-5xl font-normal text-[#C5A880] font-serif">500+</p>
-              <p className="text-xs text-stone-400 uppercase tracking-widest mt-2">Custom Pieces Crafted</p>
-            </div>
-            <div>
-              <p className="text-4xl md:text-5xl font-normal text-[#C5A880] font-serif">98%</p>
-              <p className="text-xs text-stone-400 uppercase tracking-widest mt-2">Client Satisfaction Rating</p>
-            </div>
-            <div>
-              <p className="text-4xl md:text-5xl font-normal text-[#C5A880] font-serif">100%</p>
-              <p className="text-xs text-stone-400 uppercase tracking-widest mt-2">Ethical, Certified Diamonds</p>
-            </div>
+      {/* SECTION 9: Why SHEWAH (The Comparison) */}
+      <section className="py-24 px-6 md:px-12 bg-[#111111] border-b border-white/5">
+        <div className="max-w-4xl mx-auto space-y-12">
+          
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
+              Bespoke Curation <span className="text-[#C8A46B] italic">vs Traditional Retail</span>
+            </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-[#0F1422] p-8 rounded-xl border border-white/5 space-y-4">
-              <p className="text-stone-300 text-xs italic leading-relaxed font-light">
-                "I was hesitant about ordering a custom ring online, but the CAD preview changed everything. Seeing the exact dimensions before production gave me total confidence. The final ring exceeded every expectation. It is breathtaking."
-              </p>
-              <div>
-                <p className="text-xs font-semibold text-white">Rohan S.</p>
-                <p className="text-[10px] text-[#C5A880]">Mumbai</p>
-              </div>
-            </div>
-            <div className="bg-[#0F1422] p-8 rounded-xl border border-white/5 space-y-4">
-              <p className="text-stone-300 text-xs italic leading-relaxed font-light">
-                "SHEWAH helped me design a custom diamond bracelet for my wife. They worked with my budget and sourced the most beautiful matching emerald-cut diamonds. The transparency of costs was refreshing."
-              </p>
-              <div>
-                <p className="text-xs font-semibold text-white">Priya M.</p>
-                <p className="text-[10px] text-[#C5A880]">Bangalore</p>
-              </div>
-            </div>
-            <div className="bg-[#0F1422] p-8 rounded-xl border border-white/5 space-y-4">
-              <p className="text-stone-300 text-xs italic leading-relaxed font-light">
-                "The craftsmanship is evident in the weight of the gold and the fire of the diamonds. It feels like a true luxury experience, personal and highly professional."
-              </p>
-              <div>
-                <p className="text-xs font-semibold text-white">Anjali K.</p>
-                <p className="text-[10px] text-[#C5A880]">Delhi</p>
-              </div>
-            </div>
+          <div className="overflow-x-auto border border-white/5 rounded">
+            <table className="w-full text-left border-collapse text-xs md:text-sm">
+              <thead>
+                <tr className="bg-[#1A1A1A] border-b border-white/5 font-serif text-white">
+                  <th className="p-4 uppercase tracking-widest font-normal">Feature</th>
+                  <th className="p-4 uppercase tracking-widest font-normal text-[#7A7A7A]">Traditional Retail</th>
+                  <th className="p-4 uppercase tracking-widest font-normal text-[#C8A46B]">SHEWAH</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-[#7A7A7A]">
+                <tr>
+                  <td className="p-4 font-medium text-white">Product Sourcing</td>
+                  <td className="p-4">Display Case limitations</td>
+                  <td className="p-4 text-[#F8F6F2]">Designed Around You</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-medium text-white">Personalization</td>
+                  <td className="p-4">Pre-defined sizing template</td>
+                  <td className="p-4 text-[#F8F6F2]">Unlimited Bespoke Details</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-medium text-white">Pricing Model</td>
+                  <td className="p-4">Heavy distributor margins</td>
+                  <td className="p-4 text-[#F8F6F2]">Transparent direct-to-atelier rates</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-medium text-white">Design Revisions</td>
+                  <td className="p-4">Sold as-is, no changes allowed</td>
+                  <td className="p-4 text-[#F8F6F2]">Unlimited CAD adjustments</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-medium text-white">Manufacturing</td>
+                  <td className="p-4">Mass production lines</td>
+                  <td className="p-4 text-[#F8F6F2]">One Client. One Creation.</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-medium text-white">Purchase Type</td>
+                  <td className="p-4">Transactional checkout</td>
+                  <td className="p-4 text-[#F8F6F2]">Personal co-creation experience</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
+
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-24 px-6 md:px-12 bg-[#0C111D] border-b border-white/5">
+      {/* SECTION 10: Trust */}
+      <section className="py-24 px-6 md:px-12 bg-[#1A1A1A] border-b border-white/5">
+        <div className="max-w-6xl mx-auto space-y-12">
+          
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
+              Bespoke Integrity: <span className="text-[#C8A46B] italic">Our Commitments</span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            
+            <div className="p-6 bg-[#111111] rounded border border-white/5 space-y-2">
+              <Award className="w-5 h-5 text-[#C8A46B]" />
+              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">IGI Certified</h4>
+              <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">Independently graded diamonds.</p>
+            </div>
+
+            <div className="p-6 bg-[#111111] rounded border border-white/5 space-y-2">
+              <ShieldCheck className="w-5 h-5 text-[#C8A46B]" />
+              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">BIS Hallmarked</h4>
+              <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">Assured gold karat purity.</p>
+            </div>
+
+            <div className="p-6 bg-[#111111] rounded border border-white/5 space-y-2">
+              <Clock className="w-5 h-5 text-[#C8A46B]" />
+              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">Private Atelier</h4>
+              <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">Master karigars only.</p>
+            </div>
+
+            <div className="p-6 bg-[#111111] rounded border border-white/5 space-y-2">
+              <Lock className="w-5 h-5 text-[#C8A46B]" />
+              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">Secure Delivery</h4>
+              <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">Fully insured transit.</p>
+            </div>
+
+            <div className="p-6 bg-[#111111] rounded border border-white/5 space-y-2">
+              <Gift className="w-5 h-5 text-[#C8A46B]" />
+              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">Luxury Box</h4>
+              <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">Beautiful presentation.</p>
+            </div>
+
+            <div className="p-6 bg-[#111111] rounded border border-white/5 space-y-2">
+              <RefreshCw className="w-5 h-5 text-[#C8A46B]" />
+              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">Lifetime Care</h4>
+              <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">Cleaning and prong adjustments.</p>
+            </div>
+
+            <div className="p-6 bg-[#111111] rounded border border-white/5 space-y-2">
+              <Award className="w-5 h-5 text-[#C8A46B]" />
+              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">Transparent</h4>
+              <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">Cost breakdown guaranteed.</p>
+            </div>
+
+            <div className="p-6 bg-[#111111] rounded border border-white/5 space-y-2">
+              <Eye className="w-5 h-5 text-[#C8A46B]" />
+              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">CAD Approval</h4>
+              <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">Check design before crafting.</p>
+            </div>
+
+            <div className="p-6 bg-[#111111] rounded border border-white/5 space-y-2">
+              <Star className="w-5 h-5 text-[#C8A46B]" />
+              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">Single-Run</h4>
+              <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">We never repeat templates.</p>
+            </div>
+
+            <div className="p-6 bg-[#111111] rounded border border-white/5 space-y-2">
+              <Hammer className="w-5 h-5 text-[#C8A46B]" />
+              <h4 className="text-xs font-semibold text-white uppercase tracking-wider">Fine Handcraft</h4>
+              <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">No mass manufacturing.</p>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* SECTION 11: Frequently Asked Questions */}
+      <section id="faq" className="py-24 px-6 md:px-12 bg-[#111111] border-b border-white/5">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="text-center space-y-4">
             <h2 className="text-3xl font-normal font-serif text-white">
-              Bespoke Design: <span className="text-[#C5A880] italic">Common Questions</span>
+              Bespoke Design: <span className="text-[#C8A46B] italic">Common Questions</span>
             </h2>
-            <p className="text-stone-400 text-sm font-light">
-              Everything you need to know about commissioning custom lab-grown diamond jewellery.
-            </p>
           </div>
 
           <div className="space-y-4">
@@ -614,13 +974,13 @@ export default function ConsultationPage() {
                 <div key={idx} className="border-b border-white/5 pb-4">
                   <button
                     onClick={() => handleFaqToggle(idx)}
-                    className="w-full flex justify-between items-center text-left py-3 text-stone-200 hover:text-white transition-colors"
+                    className="w-full flex justify-between items-center text-left py-3 text-stone-200 hover:text-white transition-colors focus:outline-none"
                   >
                     <span className="font-medium text-sm md:text-base font-serif">{faq.q}</span>
-                    <ChevronDown className={`w-4 h-4 text-[#C5A880] transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-[#C8A46B] transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {isOpen && (
-                    <p className="text-xs md:text-sm text-stone-400 leading-relaxed font-light pt-2 pl-1 transition-opacity duration-300">
+                    <p className="text-xs md:text-sm text-stone-400 leading-relaxed font-light pt-2 pl-1 transition-all duration-300">
                       {faq.a}
                     </p>
                   )}
@@ -631,34 +991,34 @@ export default function ConsultationPage() {
         </div>
       </section>
 
-      {/* Lead Generation Intake Section */}
-      <section id="intake-form" className="py-24 px-6 md:px-12 bg-[#070A11] border-b border-white/5 scroll-mt-16">
+      {/* SECTION 12: Lead Form */}
+      <section id="intake-form" className="py-24 px-6 md:px-12 bg-[#1A1A1A] border-b border-white/5 scroll-mt-24">
         <div className="max-w-xl mx-auto space-y-8">
           
           <div className="text-center space-y-3">
-            <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">Begin Your Bespoke Commission</h2>
-            <p className="text-stone-400 text-sm font-light">
-              Reserve your complimentary private consultation with a SHEWAH design expert. Let us bring your ideas to life.
+            <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">Let’s Begin With Your Story.</h2>
+            <p className="text-[#7A7A7A] text-sm font-light">
+              Every commission begins with a private conversation. Share a few details below, and one of our design consultants will personally reach out within 24 hours.
             </p>
           </div>
 
-          <div className="bg-[#0F1422] p-8 md:p-10 rounded-2xl border border-white/5 shadow-2xl relative">
+          <div className="bg-[#111111] p-8 md:p-10 rounded border border-white/5 shadow-2xl relative">
             
             {success ? (
               <div className="text-center py-8 space-y-4">
-                <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <h3 className="text-2xl font-normal font-serif text-white">Consultation Reserved</h3>
-                <p className="text-stone-300 text-xs leading-relaxed max-w-sm mx-auto font-light">
-                  Thank you. Your details have been securely logged. A dedicated SHEWAH design consultant will reach out via <span className="text-[#C5A880] font-semibold capitalize">{preferredContact}</span> within 24 hours to schedule your digital sketch preview.
+                <p className="text-[#7A7A7A] text-xs leading-relaxed max-w-sm mx-auto font-light">
+                  Thank you. Your details have been securely logged. A dedicated SHEWAH design consultant will reach out via <span className="text-[#C8A46B] font-semibold capitalize">{preferredContact}</span> within 24 hours to schedule your digital sketch preview.
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 
                 {error && (
-                  <div className="bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg p-3 text-xs">
+                  <div className="bg-red-500/10 text-red-400 border border-red-500/20 rounded p-3 text-xs">
                     {error}
                   </div>
                 )}
@@ -668,74 +1028,74 @@ export default function ConsultationPage() {
                   
                   {/* Name */}
                   <div className="relative">
-                    <label className="block text-[10px] uppercase tracking-widest text-[#C5A880] mb-1.5 font-semibold">First Name *</label>
+                    <label className="block text-[10px] uppercase tracking-widest text-[#C8A46B] mb-1.5 font-semibold">First Name *</label>
                     <div className="relative">
                       <input
                         type="text"
                         value={firstName}
                         onChange={e => setFirstName(e.target.value)}
                         placeholder="Enter your name"
-                        className="w-full bg-[#070A11] border border-white/10 rounded-lg py-3 px-4 text-sm text-white placeholder-stone-600 focus:outline-none focus:border-[#C5A880] transition-colors"
+                        className="w-full bg-[#1A1A1A] border border-white/10 rounded py-3 px-4 text-sm text-white placeholder-stone-700 focus:outline-none focus:border-[#C8A46B] transition-colors"
                         required
                       />
-                      <User className="absolute right-3.5 top-3.5 w-4 h-4 text-stone-600" />
+                      <User className="absolute right-3.5 top-3.5 w-4 h-4 text-stone-700" />
                     </div>
                   </div>
 
                   {/* Phone */}
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-[#C5A880] mb-1.5 font-semibold">WhatsApp Mobile Number *</label>
+                    <label className="block text-[10px] uppercase tracking-widest text-[#C8A46B] mb-1.5 font-semibold">WhatsApp Mobile Number *</label>
                     <div className="relative">
                       <input
                         type="tel"
                         value={phone}
                         onChange={e => setPhone(e.target.value)}
                         placeholder="10-digit Indian mobile"
-                        className="w-full bg-[#070A11] border border-white/10 rounded-lg py-3 px-4 text-sm text-white placeholder-stone-600 focus:outline-none focus:border-[#C5A880] transition-colors"
+                        className="w-full bg-[#1A1A1A] border border-white/10 rounded py-3 px-4 text-sm text-white placeholder-stone-700 focus:outline-none focus:border-[#C8A46B] transition-colors"
                         required
                       />
-                      <PhoneCall className="absolute right-3.5 top-3.5 w-4 h-4 text-stone-600" />
+                      <PhoneCall className="absolute right-3.5 top-3.5 w-4 h-4 text-stone-700" />
                     </div>
                   </div>
 
                   {/* Email */}
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-[#C5A880] mb-1.5 font-semibold">Email Address (Optional)</label>
+                    <label className="block text-[10px] uppercase tracking-widest text-[#C8A46B] mb-1.5 font-semibold">Email Address (Optional)</label>
                     <div className="relative">
                       <input
                         type="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         placeholder="Enter your email address"
-                        className="w-full bg-[#070A11] border border-white/10 rounded-lg py-3 px-4 text-sm text-white placeholder-stone-600 focus:outline-none focus:border-[#C5A880] transition-colors"
+                        className="w-full bg-[#1A1A1A] border border-white/10 rounded py-3 px-4 text-sm text-white placeholder-stone-700 focus:outline-none focus:border-[#C8A46B] transition-colors"
                       />
-                      <Mail className="absolute right-3.5 top-3.5 w-4 h-4 text-stone-600" />
+                      <Mail className="absolute right-3.5 top-3.5 w-4 h-4 text-stone-700" />
                     </div>
                   </div>
 
                   {/* City */}
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-[#C5A880] mb-1.5 font-semibold">City *</label>
+                    <label className="block text-[10px] uppercase tracking-widest text-[#C8A46B] mb-1.5 font-semibold">City *</label>
                     <div className="relative">
                       <input
                         type="text"
                         value={city}
                         onChange={e => setCity(e.target.value)}
                         placeholder="Your location"
-                        className="w-full bg-[#070A11] border border-white/10 rounded-lg py-3 px-4 text-sm text-white placeholder-stone-600 focus:outline-none focus:border-[#C5A880] transition-colors"
+                        className="w-full bg-[#1A1A1A] border border-white/10 rounded py-3 px-4 text-sm text-white placeholder-stone-700 focus:outline-none focus:border-[#C8A46B] transition-colors"
                         required
                       />
-                      <MapPin className="absolute right-3.5 top-3.5 w-4 h-4 text-stone-600" />
+                      <MapPin className="absolute right-3.5 top-3.5 w-4 h-4 text-stone-700" />
                     </div>
                   </div>
 
                   {/* Occasion */}
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-[#C5A880] mb-1.5 font-semibold">Occasion</label>
+                    <label className="block text-[10px] uppercase tracking-widest text-[#C8A46B] mb-1.5 font-semibold">Occasion</label>
                     <select
                       value={occasion}
                       onChange={e => setOccasion(e.target.value)}
-                      className="w-full bg-[#070A11] border border-white/10 rounded-lg py-3 px-4 text-sm text-white focus:outline-none focus:border-[#C5A880] transition-colors appearance-none"
+                      className="w-full bg-[#1A1A1A] border border-white/10 rounded py-3 px-4 text-sm text-white focus:outline-none focus:border-[#C8A46B] transition-colors appearance-none"
                     >
                       <option value="">Select occasion</option>
                       <option value="Engagement">Engagement</option>
@@ -748,11 +1108,11 @@ export default function ConsultationPage() {
 
                   {/* Jewellery Type */}
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-[#C5A880] mb-1.5 font-semibold">Jewellery Type</label>
+                    <label className="block text-[10px] uppercase tracking-widest text-[#C8A46B] mb-1.5 font-semibold">Jewellery Type</label>
                     <select
                       value={jewelleryType}
                       onChange={e => setJewelleryType(e.target.value)}
-                      className="w-full bg-[#070A11] border border-white/10 rounded-lg py-3 px-4 text-sm text-white focus:outline-none focus:border-[#C5A880] transition-colors appearance-none"
+                      className="w-full bg-[#1A1A1A] border border-white/10 rounded py-3 px-4 text-sm text-white focus:outline-none focus:border-[#C8A46B] transition-colors appearance-none"
                     >
                       <option value="">Select type</option>
                       <option value="Ring">Ring</option>
@@ -765,11 +1125,11 @@ export default function ConsultationPage() {
 
                   {/* Budget */}
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-[#C5A880] mb-1.5 font-semibold">Target Budget Range</label>
+                    <label className="block text-[10px] uppercase tracking-widest text-[#C8A46B] mb-1.5 font-semibold">Estimated Budget Range</label>
                     <select
                       value={budget}
                       onChange={e => setBudget(e.target.value)}
-                      className="w-full bg-[#070A11] border border-white/10 rounded-lg py-3 px-4 text-sm text-white focus:outline-none focus:border-[#C5A880] transition-colors appearance-none"
+                      className="w-full bg-[#1A1A1A] border border-white/10 rounded py-3 px-4 text-sm text-white focus:outline-none focus:border-[#C8A46B] transition-colors appearance-none"
                     >
                       <option value="">Select budget range</option>
                       <option value="₹50,000 - ₹1,00,000">₹50,000 - ₹1,00,000</option>
@@ -781,10 +1141,10 @@ export default function ConsultationPage() {
 
                   {/* Contact Method */}
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-[#C5A880] mb-2 font-semibold">Preferred Consultation Method</label>
+                    <label className="block text-[10px] uppercase tracking-widest text-[#C8A46B] mb-2 font-semibold">Preferred Consultation Method</label>
                     <div className="grid grid-cols-3 gap-3">
                       
-                      <label className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center cursor-pointer transition-all duration-300 ${preferredContact === 'whatsapp' ? 'border-[#C5A880] bg-[#C5A880]/5 text-white' : 'border-white/10 hover:border-white/20 text-stone-400'}`}>
+                      <label className={`flex flex-col items-center justify-center p-3 rounded border text-center cursor-pointer transition-all duration-300 ${preferredContact === 'whatsapp' ? 'border-[#C8A46B] bg-[#C8A46B]/5 text-white' : 'border-white/10 hover:border-white/20 text-stone-400'}`}>
                         <input
                           type="radio"
                           name="contact"
@@ -797,7 +1157,7 @@ export default function ConsultationPage() {
                         <span className="text-[10px] font-semibold">WhatsApp</span>
                       </label>
 
-                      <label className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center cursor-pointer transition-all duration-300 ${preferredContact === 'phone' ? 'border-[#C5A880] bg-[#C5A880]/5 text-white' : 'border-white/10 hover:border-white/20 text-stone-400'}`}>
+                      <label className={`flex flex-col items-center justify-center p-3 rounded border text-center cursor-pointer transition-all duration-300 ${preferredContact === 'phone' ? 'border-[#C8A46B] bg-[#C8A46B]/5 text-white' : 'border-white/10 hover:border-white/20 text-stone-400'}`}>
                         <input
                           type="radio"
                           name="contact"
@@ -810,13 +1170,13 @@ export default function ConsultationPage() {
                         <span className="text-[10px] font-semibold">Phone Call</span>
                       </label>
 
-                      <label className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center cursor-pointer transition-all duration-300 ${preferredContact === 'email' ? 'border-[#C5A880] bg-[#C5A880]/5 text-white' : 'border-white/10 hover:border-white/20 text-stone-400'}`}>
+                      <label className={`flex flex-col items-center justify-center p-3 rounded border text-center cursor-pointer transition-all duration-300 ${preferredContact === 'video' ? 'border-[#C8A46B] bg-[#C8A46B]/5 text-white' : 'border-white/10 hover:border-white/20 text-stone-400'}`}>
                         <input
                           type="radio"
                           name="contact"
-                          value="email"
-                          checked={preferredContact === 'email'}
-                          onChange={() => setPreferredContact('email')}
+                          value="video"
+                          checked={preferredContact === 'video'}
+                          onChange={() => setPreferredContact('video')}
                           className="sr-only"
                         />
                         <Video className="w-4 h-4 mb-1" />
@@ -831,7 +1191,7 @@ export default function ConsultationPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-[#C5A880] text-[#070A11] hover:bg-[#b0936e] py-4 rounded-lg font-medium text-xs uppercase tracking-widest transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="w-full bg-[#C8A46B] text-[#111111] hover:bg-[#b5925a] py-4 rounded font-medium text-xs uppercase tracking-widest transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {submitting ? (
                     <>
@@ -840,14 +1200,14 @@ export default function ConsultationPage() {
                     </>
                   ) : (
                     <>
-                      <span>Book My Free Consultation</span>
+                      <span>Reserve My Private Consultation</span>
                       <Send className="w-3.5 h-3.5" />
                     </>
                   )}
                 </button>
 
                 <p className="text-[10px] text-stone-500 text-center leading-none">
-                  We respect your privacy. No spam. No obligation.
+                  No pressure. No obligation. Everything you share remains completely confidential.
                 </p>
 
               </form>
@@ -858,21 +1218,28 @@ export default function ConsultationPage() {
         </div>
       </section>
 
-      {/* Final Close */}
-      <section className="py-24 px-6 md:px-12 bg-[#0C111D] text-center">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <h2 className="text-3xl md:text-4xl font-normal font-serif text-white">
-            Do Not Just Buy Jewellery. <span className="text-[#C5A880] italic">Create an Heirloom.</span>
+      {/* SECTION 13: Final Close */}
+      <section className="py-32 px-6 md:px-12 bg-[#111111] text-center border-b border-white/5">
+        <div className="max-w-2xl mx-auto space-y-8">
+          <h2 className="text-3xl md:text-5xl font-normal font-serif text-[#F8F6F2] leading-tight">
+            The Most Beautiful Jewellery <br />
+            Doesn't Begin With Gold. <br />
+            <span className="text-[#C8A46B] italic">It Begins With Meaning.</span>
           </h2>
-          <p className="text-stone-300 text-sm md:text-base leading-relaxed font-light max-w-xl mx-auto">
-            A beautiful design catches the eye. A custom masterpiece holds your history. Whether it is a promise of forever or a milestone of personal success, let it be told in gold and diamonds that reflect your values. Step into the studio and design a piece that will live on for generations.
-          </p>
-          <div className="pt-4">
+          <div className="space-y-4 text-stone-400 text-sm md:text-base font-light max-w-lg mx-auto">
+            <p>
+              Years from now, the brilliance of a diamond may catch the light. But it will be the memory behind it that catches your heart.
+            </p>
+            <p>
+              Some pieces become possessions. Others become family history. Let’s create the latter.
+            </p>
+          </div>
+          <div className="pt-6">
             <button
               onClick={scrollToIntake}
-              className="bg-transparent border border-[#C5A880] hover:bg-[#C5A880] text-[#C5A880] hover:text-[#070A11] px-8 py-4 rounded-lg font-medium text-xs tracking-widest uppercase transition-all duration-300 inline-flex items-center gap-2"
+              className="bg-transparent border border-[#C8A46B] hover:bg-[#C8A46B] text-[#C8A46B] hover:text-[#111111] px-8 py-4 rounded font-medium text-xs tracking-widest uppercase transition-all duration-300 inline-flex items-center gap-2"
             >
-              <span>Reserve Your Design Session</span>
+              <span>Begin Your Private Consultation</span>
               <Sparkle className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -880,15 +1247,15 @@ export default function ConsultationPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#070A11] py-8 text-center text-[10px] text-stone-600 border-t border-white/5 uppercase tracking-widest">
+      <footer className="bg-[#111111] py-8 text-center text-[10px] text-[#7A7A7A] uppercase tracking-widest">
         <p>&copy; {new Date().getFullYear()} SHEWAH. ALL RIGHTS RESERVED. PRIVATE ATELIER BY CONCIERGE.</p>
       </footer>
 
       {/* Sticky Mobile Action Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#070A11]/90 backdrop-blur-md border-t border-white/5 p-3 flex justify-center items-center safe-area-pb">
+      <div className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#111111]/95 border-t border-white/5 p-3 flex justify-center items-center safe-area-pb transition-all duration-300 ${showStickyNav ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
         <button
           onClick={scrollToIntake}
-          className="w-full bg-[#C5A880] text-[#070A11] hover:bg-[#b0936e] py-3 rounded-lg font-medium text-xs tracking-wider uppercase text-center transition-colors duration-300 flex items-center justify-center gap-2"
+          className="w-full bg-[#C8A46B] text-[#111111] hover:bg-[#b5925a] py-3 rounded font-medium text-xs tracking-wider uppercase text-center transition-colors duration-300 flex items-center justify-center gap-2"
         >
           <span>Book Free Design Consultation</span>
           <ArrowRight className="w-3.5 h-3.5" />

@@ -2,12 +2,19 @@
 
 .consultation-shell {
   font-family: var(--font-sans), system-ui, sans-serif;
+  background-color: #111111;
+  color: #F8F6F2;
 }
 
 .consultation-shell h1,
 .consultation-shell h2,
 .consultation-shell h3,
+.consultation-shell h4,
 .consultation-shell .serif {
   font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.01em;
+}
+
+.consultation-shell .champagne-glow:hover {
+  box-shadow: 0 0 15px rgba(200, 164, 107, 0.25);
 }
