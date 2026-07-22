@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
-  Diamond, Sparkle, ArrowRight, ChevronRight, CheckCircle2,
+  Diamond, Sparkle, ArrowRight, CheckCircle2,
   Loader2, MessageSquare, PhoneCall, Video, User, Mail, MapPin,
-  Flame, Microscope, Sparkles, Heart, Shield, RefreshCw
+  Flame, Microscope, Sparkles, Shield, RefreshCw
 } from 'lucide-react'
 
 const TOTAL_FRAMES = 300
-const PRELOAD_CRITICAL = 40 // Preload first 40 frames immediately
 
 const getFrameUrl = (index: number) => {
   const frameNum = String(index + 1).padStart(3, '0')
@@ -21,6 +20,7 @@ export default function ConsultationPage() {
   const [scrollProgress, setScrollProgress] = useState(0) // 0 to 1 within sequence
   const [currentFrame, setCurrentFrame] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [loadedCount, setLoadedCount] = useState(0)
 
   // Questionnaire / Consultation State
   const [step, setStep] = useState(1)
@@ -39,13 +39,34 @@ export default function ConsultationPage() {
   const [success, setSuccess] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
-  // Refs for Canvas & Image Cache
+  // Refs for Canvas, Target Frame, & Image Cache
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const sequenceContainerRef = useRef<HTMLDivElement | null>(null)
   const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_FRAMES).fill(null))
+  const targetFrameRef = useRef(0)
   const requestRef = useRef<number | null>(null)
 
-  // Render Frame on Canvas
+  // Helper to get nearest loaded image if target frame is still downloading
+  const getNearestLoadedImage = useCallback((targetIndex: number) => {
+    if (imagesRef.current[targetIndex]?.complete && imagesRef.current[targetIndex]?.naturalWidth! > 0) {
+      return imagesRef.current[targetIndex]
+    }
+    // Search backwards for closest loaded frame
+    for (let i = targetIndex - 1; i >= 0; i--) {
+      if (imagesRef.current[i]?.complete && imagesRef.current[i]?.naturalWidth! > 0) {
+        return imagesRef.current[i]
+      }
+    }
+    // Search forwards for closest loaded frame
+    for (let i = targetIndex + 1; i < TOTAL_FRAMES; i++) {
+      if (imagesRef.current[i]?.complete && imagesRef.current[i]?.naturalWidth! > 0) {
+        return imagesRef.current[i]
+      }
+    }
+    return null
+  }, [])
+
+  // Render Frame on Canvas with retina scaling & contain math
   const renderFrame = useCallback((frameIndex: number) => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -53,12 +74,14 @@ export default function ConsultationPage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const img = imagesRef.current[frameIndex]
-    if (!img || !img.complete || img.naturalWidth === 0) return
+    const img = getNearestLoadedImage(frameIndex)
+    if (!img) return
 
     const dpr = window.devicePixelRatio || 1
     const width = canvas.clientWidth
     const height = canvas.clientHeight
+
+    if (width === 0 || height === 0) return
 
     if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
       canvas.width = width * dpr
@@ -91,75 +114,78 @@ export default function ConsultationPage() {
 
     ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight)
     ctx.restore()
-  }, [])
+  }, [getNearestLoadedImage])
 
-  // Preload Image Strategy
+  // High-Speed Chunked Preloader Strategy
   useEffect(() => {
-    let mounted = true
+    let active = true
 
-    // 1. Critical Preload (Frames 0 to 39)
-    const loadCritical = async () => {
-      const promises = []
-      for (let i = 0; i < PRELOAD_CRITICAL; i++) {
-        promises.push(
-          new Promise<void>((resolve) => {
-            const img = new window.Image()
-            img.src = getFrameUrl(i)
-            img.onload = () => {
-              imagesRef.current[i] = img
-              resolve()
-            }
-            img.onerror = () => resolve()
-          })
-        )
+    const loadSingleFrame = (index: number): Promise<void> => {
+      return new Promise((resolve) => {
+        if (imagesRef.current[index]) {
+          resolve()
+          return
+        }
+        const img = new window.Image()
+        img.src = getFrameUrl(index)
+        img.onload = () => {
+          if (!active) return
+          imagesRef.current[index] = img
+          setLoadedCount((prev) => prev + 1)
+          
+          // If this loaded frame is the current target frame, re-render canvas immediately
+          if (index === targetFrameRef.current || Math.abs(index - targetFrameRef.current) < 2) {
+            renderFrame(targetFrameRef.current)
+          }
+          resolve()
+        }
+        img.onerror = () => resolve()
+      })
+    }
+
+    const loadAllFrames = async () => {
+      // Priority 1: Load initial 10 frames
+      for (let i = 0; i < 10; i++) {
+        await loadSingleFrame(i)
       }
-      await Promise.all(promises)
-      if (mounted) {
+      if (active) {
         setIsLoaded(true)
         renderFrame(0)
       }
-    }
 
-    loadCritical()
-
-    // 2. Stream Remaining Frames (Frames 40 to 299)
-    const loadRemaining = () => {
-      for (let i = PRELOAD_CRITICAL; i < TOTAL_FRAMES; i++) {
-        if (imagesRef.current[i]) continue
-        const img = new window.Image()
-        img.src = getFrameUrl(i)
-        img.onload = () => {
-          imagesRef.current[i] = img
+      // Priority 2: Batch load rest of frames in parallel chunks of 15
+      const BATCH_SIZE = 15
+      for (let i = 10; i < TOTAL_FRAMES; i += BATCH_SIZE) {
+        if (!active) break
+        const batch = []
+        for (let j = i; j < Math.min(TOTAL_FRAMES, i + BATCH_SIZE); j++) {
+          batch.push(loadSingleFrame(j))
         }
+        await Promise.all(batch)
       }
     }
 
-    // Delay remaining load slightly to prioritize initial render
-    const timer = setTimeout(loadRemaining, 400)
+    loadAllFrames()
 
     return () => {
-      mounted = false
-      clearTimeout(timer)
+      active = false
     }
   }, [renderFrame])
 
   // Window Resize Listener
   useEffect(() => {
     const handleResize = () => {
-      renderFrame(currentFrame)
+      renderFrame(targetFrameRef.current)
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [currentFrame, renderFrame])
+  }, [renderFrame])
 
   // Scroll Sync & Canvas Animation Loop
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 80) {
-        setShowNav(true)
-      } else {
-        setShowNav(false)
-      }
+      const scrollY = window.scrollY
+      setShowNav(scrollY > 80)
 
       const container = sequenceContainerRef.current
       if (!container) return
@@ -172,26 +198,28 @@ export default function ConsultationPage() {
       // Calculate 0 to 1 progress within sequence container
       const currentScroll = -rect.top
       const progress = Math.min(1, Math.max(0, currentScroll / totalScrollable))
-      
+
       setScrollProgress(progress)
 
-      const targetFrame = Math.min(TOTAL_FRAMES - 1, Math.floor(progress * (TOTAL_FRAMES - 1)))
+      const targetFrame = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.round(progress * (TOTAL_FRAMES - 1))))
+      
+      targetFrameRef.current = targetFrame
+      setCurrentFrame(targetFrame)
 
-      if (targetFrame !== currentFrame) {
-        setCurrentFrame(targetFrame)
-        if (requestRef.current) cancelAnimationFrame(requestRef.current)
-        requestRef.current = requestAnimationFrame(() => {
-          renderFrame(targetFrame)
-        })
-      }
+      if (requestRef.current) cancelAnimationFrame(requestRef.current)
+      requestRef.current = requestAnimationFrame(() => {
+        renderFrame(targetFrame)
+      })
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // initial positioning check
+
     return () => {
       window.removeEventListener('scroll', handleScroll)
       if (requestRef.current) cancelAnimationFrame(requestRef.current)
     }
-  }, [currentFrame, renderFrame])
+  }, [renderFrame])
 
   // Smooth Scroll Handlers
   const scrollToConsultation = () => {
@@ -326,7 +354,7 @@ export default function ConsultationPage() {
         <MessageSquare className="w-5 h-5" />
       </a>
 
-      {/* PINNED HTML5 CANVAS IMAGE SEQUENCE CONTAINER (500vh Scroll Length) */}
+      {/* PINNED HTML5 CANVAS IMAGE SEQUENCE CONTAINER (550vh Scroll Length) */}
       <div ref={sequenceContainerRef} className="relative h-[550vh]">
         
         {/* Sticky Canvas & Text Overlays Wrapper */}
@@ -348,6 +376,19 @@ export default function ConsultationPage() {
               <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4AF37]">Loading Atelier Film...</p>
             </div>
           )}
+
+          {/* Frame Progress Indicator (Subtle Luxury Badge at Bottom Left) */}
+          <div className="absolute bottom-6 left-6 z-20 hidden sm:flex items-center gap-3 bg-[#0B0B0E]/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 text-[9px] font-mono text-white/50">
+            <span className="text-[#D4AF37]">FRAME {String(currentFrame + 1).padStart(3, '0')}</span>
+            <span>/</span>
+            <span>300</span>
+            <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden ml-1">
+              <div 
+                className="h-full bg-[#D4AF37] transition-all duration-100" 
+                style={{ width: `${((currentFrame + 1) / TOTAL_FRAMES) * 100}%` }}
+              />
+            </div>
+          </div>
 
           {/* STORY OVERLAY PANELS (Fades dynamically mapped to frame timeline) */}
 
