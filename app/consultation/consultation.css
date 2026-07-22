@@ -20,7 +20,7 @@
   background-color: var(--color-dark-bg);
   color: var(--color-text-primary);
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
 }
 
