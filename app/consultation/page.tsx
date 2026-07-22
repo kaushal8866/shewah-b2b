@@ -307,18 +307,18 @@ export default function ConsultationPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#050505] text-[rgba(255,255,255,0.90)] font-sans antialiased selection:bg-[#D4AF37]/30 selection:text-white">
+    <div className="relative min-h-screen bg-[#050505] text-[rgba(255,255,255,0.90)] font-sans antialiased selection:bg-[#D4AF37]/30 selection:text-white overflow-x-clip">
       
       {/* Apple-Inspired Slim Glassmorphism Header Nav */}
-      <header className={`fixed top-0 left-0 right-0 z-50 py-4 px-6 md:px-12 transition-all duration-500 ${showNav ? 'bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 py-3.5 shadow-2xl' : 'bg-transparent'}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 py-3.5 px-4 sm:px-6 md:px-12 transition-all duration-500 ${showNav ? 'bg-[#050505]/85 backdrop-blur-xl border-b border-white/5 py-3 shadow-2xl' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           
           {/* Left: Brand */}
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={scrollToStory}>
-            <div className="w-6 h-6 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center">
-              <Diamond className="w-3 h-3 text-[#D4AF37]" />
+          <div className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform" onClick={scrollToStory}>
+            <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center">
+              <Diamond className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#D4AF37]" />
             </div>
-            <span className="font-semibold text-xs tracking-[0.25em] text-white uppercase">SHEWAH</span>
+            <span className="font-semibold text-[11px] sm:text-xs tracking-[0.22em] sm:tracking-[0.25em] text-white uppercase">SHEWAH</span>
           </div>
 
           {/* Center Links */}
@@ -332,7 +332,7 @@ export default function ConsultationPage() {
           {/* Right CTA */}
           <button 
             onClick={scrollToConsultation}
-            className="text-[10px] uppercase tracking-[0.2em] bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] px-4 py-2 rounded-full transition-all duration-300 shadow-md shadow-[#D4AF37]/10"
+            className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] sm:tracking-[0.2em] bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-95 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all duration-300 shadow-md shadow-[#D4AF37]/10"
           >
             Design Your Ring
           </button>
@@ -344,10 +344,10 @@ export default function ConsultationPage() {
         href="https://wa.me/919662266360?text=Hi%20Shewah,%20I'd%20like%20to%20know%20more%20about%20your%20custom%20jewellery%20design%20consultations."
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 bg-[#0B0B0E]/90 backdrop-blur-lg border border-[#D4AF37]/30 p-3.5 rounded-full text-[#D4AF37] hover:text-white hover:bg-[#D4AF37] transition-all duration-300 shadow-2xl flex items-center justify-center"
+        className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 bg-[#0B0B0E]/90 backdrop-blur-lg border border-[#D4AF37]/40 p-3 sm:p-3.5 rounded-full text-[#D4AF37] hover:text-white hover:bg-[#D4AF37] active:scale-90 transition-all duration-300 shadow-2xl flex items-center justify-center group"
         aria-label="Contact WhatsApp Concierge"
       >
-        <MessageSquare className="w-5 h-5" />
+        <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-6 transition-transform" />
       </a>
 
       {/* PINNED HTML5 CANVAS IMAGE SEQUENCE CONTAINER (550vh Scroll Length) */}
@@ -367,18 +367,18 @@ export default function ConsultationPage() {
 
           {/* Loading Overlay */}
           {!isLoaded && (
-            <div className="absolute inset-0 bg-[#050505] z-30 flex flex-col items-center justify-center gap-4">
+            <div className="absolute inset-0 bg-[#050505] z-30 flex flex-col items-center justify-center gap-4 px-4 text-center">
               <Loader2 className="w-7 h-7 text-[#D4AF37] animate-spin" />
               <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4AF37]">Loading Atelier Film...</p>
             </div>
           )}
 
           {/* Frame Progress Indicator (Subtle Luxury Badge at Bottom Left) */}
-          <div className="absolute bottom-6 left-6 z-20 hidden sm:flex items-center gap-3 bg-[#0B0B0E]/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 text-[9px] font-mono text-white/50">
+          <div className="absolute bottom-5 left-4 sm:bottom-6 sm:left-6 z-20 flex items-center gap-2 sm:gap-3 bg-[#0B0B0E]/80 backdrop-blur-md px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-white/10 text-[8px] sm:text-[9px] font-mono text-white/50">
             <span className="text-[#D4AF37]">FRAME {String(currentFrame + 1).padStart(3, '0')}</span>
             <span>/</span>
             <span>300</span>
-            <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden ml-1">
+            <div className="w-8 sm:w-12 h-1 bg-white/10 rounded-full overflow-hidden ml-0.5 sm:ml-1">
               <div 
                 className="h-full bg-[#D4AF37] transition-all duration-100" 
                 style={{ width: `${((currentFrame + 1) / TOTAL_FRAMES) * 100}%` }}
@@ -389,73 +389,92 @@ export default function ConsultationPage() {
           {/* STORY OVERLAY PANELS (Fades dynamically mapped to frame timeline) */}
 
           {/* HERO OVERLAY: Frames 1 - 40 */}
-          <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-6 transition-all duration-700 pointer-events-none ${currentFrame <= 40 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
-            <div className="max-w-4xl space-y-6 pointer-events-auto">
-              <div className="inline-flex items-center gap-2 border border-[#D4AF37]/30 bg-[#0B0B0E]/60 backdrop-blur-md px-4 py-1.5 rounded-full mb-2">
-                <Sparkle className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span className="text-[9px] uppercase tracking-[0.25em] text-[#E8D7A8] font-semibold">SHEWAH PRIVATE COMMISSION</span>
+          <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame <= 40 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
+            <div className="max-w-4xl space-y-4 sm:space-y-6 pointer-events-auto">
+              <div className="inline-flex items-center gap-2 border border-[#D4AF37]/30 bg-[#0B0B0E]/75 backdrop-blur-md px-3 py-1 sm:px-4 sm:py-1.5 rounded-full mb-1 sm:mb-2">
+                <Sparkle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D4AF37]" />
+                <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#E8D7A8] font-semibold">SHEWAH PRIVATE COMMISSION</span>
               </div>
               
-              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-normal font-serif text-white tracking-apple leading-[1.05]">
+              <h1 className="text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-normal font-serif text-white tracking-apple leading-[1.08] sm:leading-[1.05]">
                 Designed to be <br />
                 <span className="text-shimmer-gold italic">unforgettable.</span>
               </h1>
               
-              <p className="text-sm sm:text-base md:text-lg text-white/60 font-light max-w-xl mx-auto tracking-wide">
+              <p className="text-xs sm:text-base md:text-lg text-white/70 font-light max-w-xl mx-auto tracking-wide px-2">
                 Every custom ring begins with a story. Yours.
               </p>
 
-              <div className="pt-6">
+              <div className="pt-3 sm:pt-6">
                 <button 
                   onClick={scrollToCraftsmanship}
-                  className="bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] px-8 py-4 rounded-full text-xs uppercase tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-3 shadow-xl shadow-[#D4AF37]/10"
+                  className="bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-95 px-6 py-3 sm:px-8 sm:py-4 rounded-full text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-xl shadow-[#D4AF37]/10"
                 >
                   <span>Begin Your Story</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
 
             {/* Scroll Indicator Prompt */}
-            <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center space-y-2 opacity-60">
-              <p className="text-[9px] uppercase tracking-[0.25em] text-[#E8D7A8]">Scroll to view craftsmanship</p>
-              <div className="w-4 h-7 border border-white/20 rounded-full mx-auto flex items-start justify-center p-1">
-                <div className="w-1 h-2 bg-[#D4AF37] rounded-full animate-bounce" />
+            <div className="absolute bottom-8 sm:bottom-10 left-1/2 transform -translate-x-1/2 text-center space-y-1.5 sm:space-y-2 opacity-60">
+              <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#E8D7A8]">Scroll to view craftsmanship</p>
+              <div className="w-3.5 h-6 sm:w-4 sm:h-7 border border-white/20 rounded-full mx-auto flex items-start justify-center p-0.5 sm:p-1">
+                <div className="w-0.5 h-1.5 sm:w-1 sm:h-2 bg-[#D4AF37] rounded-full animate-bounce" />
               </div>
             </div>
           </div>
 
           {/* CRAFTSMANSHIP OVERLAY: Frames 41 - 110 */}
-          <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 41 && currentFrame <= 110 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="max-w-3xl space-y-6">
-              <div className="inline-flex items-center gap-2 text-[#D4AF37] font-mono text-[10px] uppercase tracking-[0.25em]">
-                <Flame className="w-4 h-4 text-[#D4AF37]" />
-                <span>01 / GOLDSMITHTING & FIRE</span>
+          <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 41 && currentFrame <= 110 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <div className="max-w-3xl space-y-4 sm:space-y-6">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[#D4AF37] font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#0B0B0E]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/20">
+                <Flame className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span>01 / GOLDSMITHING & FIRE</span>
               </div>
-              <h2 className="text-3xl sm:text-5xl md:text-6xl font-serif text-white font-normal leading-tight">
+              <h2 className="text-2xl sm:text-5xl md:text-6xl font-serif text-white font-normal leading-tight">
                 Crafted by hand.
               </h2>
-              <p className="text-sm sm:text-base text-white/60 font-light max-w-lg mx-auto leading-relaxed">
+              <p className="text-xs sm:text-base text-white/70 font-light max-w-lg mx-auto leading-relaxed px-2">
                 Every masterpiece begins long before the diamond shines. Heat, molten gold, and gold artisans shaping precious metal by eye.
               </p>
             </div>
           </div>
 
-          {/* PRECISION OVERLAY: Frames 111 - 180 (Includes Floating Technical Info Badges) */}
+          {/* PRECISION OVERLAY: Frames 111 - 180 (Includes Technical Info Badges) */}
           <div className={`absolute inset-0 z-10 transition-all duration-700 pointer-events-none ${currentFrame >= 111 && currentFrame <= 180 ? 'opacity-100' : 'opacity-0'}`}>
             
             {/* Center Story Title */}
-            <div className="absolute top-24 left-1/2 transform -translate-x-1/2 text-center space-y-2">
-              <div className="inline-flex items-center gap-2 text-[#D4AF37] font-mono text-[10px] uppercase tracking-[0.25em]">
-                <Microscope className="w-4 h-4" />
+            <div className="absolute top-20 sm:top-24 left-1/2 transform -translate-x-1/2 text-center space-y-1.5 sm:space-y-2 w-full px-4">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[#D4AF37] font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#0B0B0E]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/20">
+                <Microscope className="w-3.5 h-3.5" />
                 <span>02 / MICRON-LEVEL PRECISION</span>
               </div>
-              <h3 className="text-2xl sm:text-4xl font-serif text-white font-normal">
+              <h3 className="text-xl sm:text-4xl font-serif text-white font-normal">
                 Engineered for lifetime wear.
               </h3>
             </div>
 
-            {/* Floating Info Label 1 (Top Left) */}
+            {/* Mobile HUD Floating Pill Card (Visible on mobile screens) */}
+            <div className="sm:hidden absolute bottom-16 left-4 right-4 z-20">
+              <div className="tech-badge p-3.5 rounded-2xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-[#D4AF37]/30 space-y-1 text-center shadow-2xl">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="radar-dot" />
+                  <span className="text-[9px] uppercase tracking-[0.2em] font-mono text-[#D4AF37] font-semibold">
+                    {currentFrame < 135 ? 'Diamond Setting' : currentFrame < 160 ? 'Micron Accuracy' : 'Hand Finished'}
+                  </span>
+                </div>
+                <p className="text-[10.5px] text-white/80 font-light leading-snug">
+                  {currentFrame < 135 
+                    ? 'Hand-adjusted claw angles securing brilliant diamonds under 40x optical magnification.' 
+                    : currentFrame < 160 
+                    ? 'Sub-millimeter tolerance checks ensuring seamless comfort and structural security.'
+                    : 'Hand polished with silk buffs to achieve mirror-like gold finish.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Desktop Floating Info Label 1 (Top Left) */}
             <div className="absolute top-[32%] left-[10%] sm:left-[16%] tech-badge p-4 rounded-xl max-w-[220px] space-y-1.5 hidden sm:block transition-all duration-500">
               <div className="flex items-center gap-2">
                 <div className="radar-dot" />
@@ -466,7 +485,7 @@ export default function ConsultationPage() {
               </p>
             </div>
 
-            {/* Floating Info Label 2 (Bottom Right) */}
+            {/* Desktop Floating Info Label 2 (Bottom Right) */}
             <div className="absolute bottom-[28%] right-[10%] sm:right-[16%] tech-badge p-4 rounded-xl max-w-[220px] space-y-1.5 hidden sm:block transition-all duration-500">
               <div className="flex items-center gap-2">
                 <div className="radar-dot" />
@@ -477,7 +496,7 @@ export default function ConsultationPage() {
               </p>
             </div>
 
-            {/* Floating Info Label 3 (Bottom Left) */}
+            {/* Desktop Floating Info Label 3 (Bottom Left) */}
             <div className="absolute bottom-[20%] left-[12%] sm:left-[20%] tech-badge p-4 rounded-xl max-w-[200px] space-y-1.5 hidden md:block transition-all duration-500">
               <div className="flex items-center gap-2">
                 <div className="radar-dot" />
@@ -490,10 +509,10 @@ export default function ConsultationPage() {
           </div>
 
           {/* COMPLETION OVERLAY: Frames 181 - 240 */}
-          <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 181 && currentFrame <= 240 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="max-w-2xl space-y-4">
-              <span className="text-[10px] font-mono text-[#D4AF37] uppercase tracking-[0.25em]">03 / PERFECTED SILENCE</span>
-              <h2 className="text-3xl sm:text-5xl font-serif text-white font-normal leading-relaxed">
+          <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 181 && currentFrame <= 240 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <div className="max-w-2xl space-y-3 sm:space-y-4">
+              <span className="text-[9px] sm:text-[10px] font-mono text-[#D4AF37] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#0B0B0E]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/20">03 / PERFECTED SILENCE</span>
+              <h2 className="text-2xl sm:text-5xl font-serif text-white font-normal leading-relaxed">
                 Perfection is not created. <br />
                 <span className="text-[#E8D7A8] italic font-serif">It is uncovered.</span>
               </h2>
@@ -501,24 +520,24 @@ export default function ConsultationPage() {
           </div>
 
           {/* EMOTION OVERLAY: Frames 241 - 300 */}
-          <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 241 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="max-w-3xl space-y-6 pointer-events-auto">
-              <span className="text-[10px] font-mono text-[#D4AF37] uppercase tracking-[0.25em]">04 / THE UNBOXING</span>
-              <h2 className="text-4xl sm:text-6xl md:text-7xl font-serif text-white font-normal leading-tight tracking-apple">
+          <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 241 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <div className="max-w-3xl space-y-4 sm:space-y-6 pointer-events-auto">
+              <span className="text-[9px] sm:text-[10px] font-mono text-[#D4AF37] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#0B0B0E]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/20">04 / THE UNBOXING</span>
+              <h2 className="text-3xl sm:text-6xl md:text-7xl font-serif text-white font-normal leading-tight tracking-apple">
                 Made for one story. <br />
                 <span className="text-shimmer-gold italic">Yours.</span>
               </h2>
-              <p className="text-sm sm:text-base text-white/60 font-light max-w-md mx-auto pt-2">
+              <p className="text-xs sm:text-base text-white/70 font-light max-w-md mx-auto pt-1 sm:pt-2 px-2">
                 No mass inventory. No retail displays. Just a singular piece waiting to carry your milestone.
               </p>
               
-              <div className="pt-6">
+              <div className="pt-3 sm:pt-6">
                 <button 
                   onClick={scrollToConsultation}
-                  className="bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] px-8 py-4 rounded-full text-xs uppercase tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-3 shadow-2xl shadow-[#D4AF37]/20"
+                  className="bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-95 px-6 py-3.5 sm:px-8 sm:py-4 rounded-full text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-2xl shadow-[#D4AF37]/20"
                 >
                   <span>Book Your Private Consultation</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
@@ -528,40 +547,40 @@ export default function ConsultationPage() {
       </div>
 
       {/* GUIDED LUXURY CONSULTATION EXPERIENCE SECTION */}
-      <section id="consultation-experience" className="relative py-32 px-6 md:px-12 bg-[#0B0B0E] border-t border-white/5 z-20">
+      <section id="consultation-experience" className="relative py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 bg-[#0B0B0E] border-t border-white/5 z-20 overflow-x-clip">
         
         {/* Soft Background Illumination */}
         <div className="absolute inset-0 bg-radial from-[#D4AF37]/5 via-transparent to-transparent pointer-events-none" />
 
-        <div className="max-w-4xl mx-auto space-y-16 relative z-10">
+        <div className="max-w-4xl mx-auto space-y-10 sm:space-y-16 relative z-10">
           
-          <div className="text-center space-y-4">
-            <div className="inline-flex items-center gap-2 border border-[#D4AF37]/30 bg-[#050505] px-4 py-1.5 rounded-full">
+          <div className="text-center space-y-3 sm:space-y-4">
+            <div className="inline-flex items-center gap-2 border border-[#D4AF37]/30 bg-[#050505] px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full">
               <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span className="text-[9px] uppercase tracking-[0.25em] text-[#E8D7A8] font-semibold">PRIVATE DESIGN CONCIERGE</span>
+              <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#E8D7A8] font-semibold">PRIVATE DESIGN CONCIERGE</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl md:text-6xl font-serif text-white font-normal leading-tight">
+            <h2 className="text-2.5xl sm:text-5xl md:text-6xl font-serif text-white font-normal leading-tight px-2">
               Let's create something <br />
               <span className="text-shimmer-gold italic">that exists nowhere else.</span>
             </h2>
-            <p className="text-sm text-white/60 max-w-md mx-auto font-light leading-relaxed">
+            <p className="text-xs sm:text-sm text-white/70 max-w-md mx-auto font-light leading-relaxed px-4">
               Answer a few guided questions about your vision. Our design director will personally curate a bespoke sketch proposal.
             </p>
           </div>
 
           {/* Interactive Multi-Step Questionnaire Form Card */}
-          <div className="bg-[#050505] p-8 md:p-12 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+          <div className="bg-[#050505] p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
             
             {/* Step Progress Bar Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-6 mb-8 text-xs font-mono">
-              <span className="text-[#D4AF37] uppercase tracking-[0.2em] font-semibold">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 sm:pb-6 mb-6 sm:mb-8 text-[10px] sm:text-xs font-mono">
+              <span className="text-[#D4AF37] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-semibold">
                 STEP 0{step} OF 05 &middot; {step === 1 ? 'RECIPIENT' : step === 2 ? 'OCCASION' : step === 3 ? 'INSPIRATION' : step === 4 ? 'SCOPE' : 'CONTACT'}
               </span>
-              <div className="flex gap-1.5">
+              <div className="flex gap-1 sm:gap-1.5">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div 
                     key={i} 
-                    className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-[#D4AF37]' : i < step ? 'w-4 bg-[#D4AF37]/40' : 'w-4 bg-white/10'}`} 
+                    className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-6 sm:w-8 bg-[#D4AF37]' : i < step ? 'w-3 sm:w-4 bg-[#D4AF37]/40' : 'w-3 sm:w-4 bg-white/10'}`} 
                   />
                 ))}
               </div>
@@ -569,13 +588,13 @@ export default function ConsultationPage() {
 
             {/* STEP 1: WHO IS THIS RING FOR? */}
             {step === 1 && (
-              <div className="space-y-8 animate-fadeIn">
-                <div className="space-y-2">
-                  <h3 className="text-xl sm:text-2xl font-serif text-white">Who is this ring for?</h3>
+              <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+                <div className="space-y-1 sm:space-y-2">
+                  <h3 className="text-lg sm:text-2xl font-serif text-white">Who is this ring for?</h3>
                   <p className="text-xs text-white/60 font-light">Select who will be wearing this custom creation.</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {[
                     { id: 'partner', label: 'My Partner (Proposal / Secret)', desc: 'Surprise engagement or engagement ring' },
                     { id: 'myself', label: 'For Myself', desc: 'Self-reward or statement heirloom' },
@@ -586,10 +605,10 @@ export default function ConsultationPage() {
                       key={opt.id}
                       type="button"
                       onClick={() => { setRecipient(opt.label); setStep(2); }}
-                      className={`p-5 rounded-2xl text-left border transition-all duration-300 ${recipient === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
+                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${recipient === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
                     >
-                      <p className="font-medium text-sm text-white mb-1">{opt.label}</p>
-                      <p className="text-xs text-white/50 font-light">{opt.desc}</p>
+                      <p className="font-medium text-xs sm:text-sm text-white mb-0.5 sm:mb-1">{opt.label}</p>
+                      <p className="text-[11px] sm:text-xs text-white/50 font-light">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -598,13 +617,13 @@ export default function ConsultationPage() {
 
             {/* STEP 2: OCCASION */}
             {step === 2 && (
-              <div className="space-y-8 animate-fadeIn">
-                <div className="space-y-2">
-                  <h3 className="text-xl sm:text-2xl font-serif text-white">What occasion are you celebrating?</h3>
+              <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+                <div className="space-y-1 sm:space-y-2">
+                  <h3 className="text-lg sm:text-2xl font-serif text-white">What occasion are you celebrating?</h3>
                   <p className="text-xs text-white/60 font-light">Helps us understand the symbolism and design context.</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {[
                     { label: 'Engagement / Proposal', desc: 'The beginning of forever' },
                     { label: 'Wedding Ceremony', desc: 'Nesting or matching wedding bands' },
@@ -615,10 +634,10 @@ export default function ConsultationPage() {
                       key={idx}
                       type="button"
                       onClick={() => { setOccasion(opt.label); setStep(3); }}
-                      className={`p-5 rounded-2xl text-left border transition-all duration-300 ${occasion === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
+                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${occasion === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
                     >
-                      <p className="font-medium text-sm text-white mb-1">{opt.label}</p>
-                      <p className="text-xs text-white/50 font-light">{opt.desc}</p>
+                      <p className="font-medium text-xs sm:text-sm text-white mb-0.5 sm:mb-1">{opt.label}</p>
+                      <p className="text-[11px] sm:text-xs text-white/50 font-light">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -626,7 +645,7 @@ export default function ConsultationPage() {
                 <button 
                   type="button" 
                   onClick={() => setStep(1)} 
-                  className="text-xs text-white/40 hover:text-white font-mono uppercase tracking-widest"
+                  className="text-xs text-white/40 hover:text-white font-mono uppercase tracking-widest active:scale-95 transition-transform"
                 >
                   &larr; Back
                 </button>
@@ -635,13 +654,13 @@ export default function ConsultationPage() {
 
             {/* STEP 3: INSPIRATION */}
             {step === 3 && (
-              <div className="space-y-8 animate-fadeIn">
-                <div className="space-y-2">
-                  <h3 className="text-xl sm:text-2xl font-serif text-white">Do you already have design inspiration?</h3>
+              <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+                <div className="space-y-1 sm:space-y-2">
+                  <h3 className="text-lg sm:text-2xl font-serif text-white">Do you already have design inspiration?</h3>
                   <p className="text-xs text-white/60 font-light">Whether you have sketches or start from scratch, we guide you.</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {[
                     { label: 'I have photos / Pinterest moodboard', desc: 'We will refine details into a unique version' },
                     { label: 'I know the stone shape (Oval, Round, Emerald)', desc: 'We will build setting options around your cut' },
@@ -652,10 +671,10 @@ export default function ConsultationPage() {
                       key={idx}
                       type="button"
                       onClick={() => { setInspiration(opt.label); setStep(4); }}
-                      className={`p-5 rounded-2xl text-left border transition-all duration-300 ${inspiration === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
+                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${inspiration === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
                     >
-                      <p className="font-medium text-sm text-white mb-1">{opt.label}</p>
-                      <p className="text-xs text-white/50 font-light">{opt.desc}</p>
+                      <p className="font-medium text-xs sm:text-sm text-white mb-0.5 sm:mb-1">{opt.label}</p>
+                      <p className="text-[11px] sm:text-xs text-white/50 font-light">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -663,7 +682,7 @@ export default function ConsultationPage() {
                 <button 
                   type="button" 
                   onClick={() => setStep(2)} 
-                  className="text-xs text-white/40 hover:text-white font-mono uppercase tracking-widest"
+                  className="text-xs text-white/40 hover:text-white font-mono uppercase tracking-widest active:scale-95 transition-transform"
                 >
                   &larr; Back
                 </button>
@@ -672,13 +691,13 @@ export default function ConsultationPage() {
 
             {/* STEP 4: CREATION SCOPE */}
             {step === 4 && (
-              <div className="space-y-8 animate-fadeIn">
-                <div className="space-y-2">
-                  <h3 className="text-xl sm:text-2xl font-serif text-white">Select your creation scope</h3>
+              <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+                <div className="space-y-1 sm:space-y-2">
+                  <h3 className="text-lg sm:text-2xl font-serif text-white">Select your creation scope</h3>
                   <p className="text-xs text-white/60 font-light">Are we crafting a new piece or transforming existing gold/gems?</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {[
                     { label: 'Entirely New Custom Piece', desc: 'Crafted from solid gold & certified lab diamonds' },
                     { label: 'Redesign Family Heirloom', desc: 'Reset existing gems into a modern setting' },
@@ -689,10 +708,10 @@ export default function ConsultationPage() {
                       key={idx}
                       type="button"
                       onClick={() => { setCreationScope(opt.label); setStep(5); }}
-                      className={`p-5 rounded-2xl text-left border transition-all duration-300 ${creationScope === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
+                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${creationScope === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
                     >
-                      <p className="font-medium text-sm text-white mb-1">{opt.label}</p>
-                      <p className="text-xs text-white/50 font-light">{opt.desc}</p>
+                      <p className="font-medium text-xs sm:text-sm text-white mb-0.5 sm:mb-1">{opt.label}</p>
+                      <p className="text-[11px] sm:text-xs text-white/50 font-light">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -700,7 +719,7 @@ export default function ConsultationPage() {
                 <button 
                   type="button" 
                   onClick={() => setStep(3)} 
-                  className="text-xs text-white/40 hover:text-white font-mono uppercase tracking-widest"
+                  className="text-xs text-white/40 hover:text-white font-mono uppercase tracking-widest active:scale-95 transition-transform"
                 >
                   &larr; Back
                 </button>
@@ -709,26 +728,26 @@ export default function ConsultationPage() {
 
             {/* STEP 5: CONTACT DETAILS & FINAL SUBMISSION */}
             {step === 5 && (
-              <div className="space-y-8 animate-fadeIn">
+              <div className="space-y-6 sm:space-y-8 animate-fadeIn">
                 {success ? (
-                  <div className="text-center py-12 space-y-6">
-                    <div className="w-16 h-16 bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/40 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                      <CheckCircle2 className="w-9 h-9" />
+                  <div className="text-center py-8 sm:py-12 space-y-4 sm:space-y-6">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/40 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-bounce">
+                      <CheckCircle2 className="w-8 h-8 sm:w-9 sm:h-9" />
                     </div>
-                    <h3 className="text-3xl font-serif text-white">Consultation Reserved</h3>
-                    <p className="text-sm text-white/70 leading-relaxed max-w-md mx-auto font-light">
+                    <h3 className="text-2xl sm:text-3xl font-serif text-white">Consultation Reserved</h3>
+                    <p className="text-xs sm:text-sm text-white/70 leading-relaxed max-w-md mx-auto font-light px-2">
                       Thank you. Your parameters have been received. A dedicated design director will reach out via <span className="text-[#D4AF37] font-medium capitalize">{preferredContact}</span> within 24 hours to present sketch references.
                     </p>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                      <h3 className="text-xl sm:text-2xl font-serif text-white">Where should we share your sketch proposal?</h3>
+                  <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+                    <div className="space-y-1 sm:space-y-2">
+                      <h3 className="text-lg sm:text-2xl font-serif text-white">Where should we share your sketch proposal?</h3>
                       <p className="text-xs text-white/60 font-light">Zero pressure. Confidential consultation with design directors.</p>
                     </div>
 
                     {formError && (
-                      <div className="bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl p-4 text-xs font-mono">
+                      <div className="bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl p-3.5 text-xs font-mono">
                         {formError}
                       </div>
                     )}
@@ -743,7 +762,7 @@ export default function ConsultationPage() {
                             value={firstName}
                             onChange={e => setFirstName(e.target.value)}
                             placeholder="Enter your name"
-                            className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-xs"
+                            className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs"
                             required
                           />
                           <User className="absolute right-3.5 top-3.5 w-4 h-4 text-white/30" />
@@ -759,7 +778,7 @@ export default function ConsultationPage() {
                             value={phone}
                             onChange={e => setPhone(e.target.value)}
                             placeholder="10-digit mobile number"
-                            className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-xs"
+                            className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs"
                             required
                           />
                           <PhoneCall className="absolute right-3.5 top-3.5 w-4 h-4 text-white/30" />
@@ -775,7 +794,7 @@ export default function ConsultationPage() {
                             value={email}
                             onChange={e => setEmail(e.target.value)}
                             placeholder="yourname@domain.com"
-                            className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-xs"
+                            className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs"
                           />
                           <Mail className="absolute right-3.5 top-3.5 w-4 h-4 text-white/30" />
                         </div>
@@ -790,7 +809,7 @@ export default function ConsultationPage() {
                             value={city}
                             onChange={e => setCity(e.target.value)}
                             placeholder="City (e.g. Mumbai, Bangalore)"
-                            className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-xs"
+                            className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs"
                             required
                           />
                           <MapPin className="absolute right-3.5 top-3.5 w-4 h-4 text-white/30" />
@@ -804,7 +823,7 @@ export default function ConsultationPage() {
                       <select
                         value={budget}
                         onChange={e => setBudget(e.target.value)}
-                        className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-xs appearance-none cursor-pointer"
+                        className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs appearance-none cursor-pointer"
                       >
                         <option value="" className="bg-[#050505] text-white">Select budget range</option>
                         <option value="₹75,000 - ₹1,50,000" className="bg-[#050505] text-white">₹75,000 - ₹1,50,000 (Solitaires & Bands)</option>
@@ -817,15 +836,15 @@ export default function ConsultationPage() {
                     {/* Preferred Contact Method */}
                     <div className="space-y-2">
                       <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Preferred Communication Channel</label>
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         {[
                           { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
-                          { id: 'phone', label: 'Phone Call', icon: PhoneCall },
+                          { id: 'phone', label: 'Phone', icon: PhoneCall },
                           { id: 'video', label: 'Video Call', icon: Video }
                         ].map((m) => (
                           <label 
                             key={m.id}
-                            className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center cursor-pointer transition-all duration-300 ${preferredContact === m.id ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 text-white/50'}`}
+                            className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-xl border text-center cursor-pointer active:scale-95 transition-all duration-300 ${preferredContact === m.id ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 text-white/50'}`}
                           >
                             <input
                               type="radio"
@@ -835,18 +854,18 @@ export default function ConsultationPage() {
                               onChange={() => setPreferredContact(m.id)}
                               className="sr-only"
                             />
-                            <m.icon className="w-4 h-4 mb-1.5 text-[#D4AF37]" />
-                            <span className="text-[10px] font-semibold">{m.label}</span>
+                            <m.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-1 text-[#D4AF37]" />
+                            <span className="text-[9px] sm:text-[10px] font-semibold">{m.label}</span>
                           </label>
                         ))}
                       </div>
                     </div>
 
-                    <div className="pt-2 flex flex-col sm:flex-row items-center gap-4">
+                    <div className="pt-2 flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
                       <button
                         type="button"
                         onClick={() => setStep(4)}
-                        className="w-full sm:w-auto text-xs text-white/40 hover:text-white font-mono uppercase tracking-widest px-4 py-3"
+                        className="w-full sm:w-auto text-xs text-white/40 hover:text-white font-mono uppercase tracking-widest px-4 py-2.5 sm:py-3 active:scale-95 transition-transform"
                       >
                         &larr; Back
                       </button>
@@ -854,12 +873,12 @@ export default function ConsultationPage() {
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full sm:flex-1 bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] py-4 rounded-full text-xs uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 shadow-xl shadow-[#D4AF37]/10"
+                        className="w-full sm:flex-1 bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-98 py-3.5 sm:py-4 rounded-full text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 shadow-xl shadow-[#D4AF37]/10"
                       >
                         {submitting ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Reserving Consultation...</span>
+                            <span>Reserving...</span>
                           </>
                         ) : (
                           <>
@@ -870,7 +889,7 @@ export default function ConsultationPage() {
                       </button>
                     </div>
 
-                    <p className="text-[10px] text-white/40 text-center font-light pt-2">
+                    <p className="text-[9.5px] sm:text-[10px] text-white/40 text-center font-light pt-1 sm:pt-2">
                       Strict privacy. Zero obligation. Crafted only after your complete digital CAD approval.
                     </p>
                   </form>
@@ -881,22 +900,22 @@ export default function ConsultationPage() {
           </div>
 
           {/* Guarantees / Trust Badges */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center text-[10px] uppercase font-mono tracking-[0.18em] text-white/60 pt-6">
-            <div className="p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-2">
-              <Shield className="w-4 h-4 text-[#D4AF37]" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 text-center text-[8.5px] sm:text-[10px] uppercase font-mono tracking-[0.15em] sm:tracking-[0.18em] text-white/60 pt-2 sm:pt-6">
+            <div className="p-3 sm:p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-1.5 sm:gap-2">
+              <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37]" />
               <span>IGI & GIA Certified</span>
             </div>
-            <div className="p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-2">
-              <Diamond className="w-4 h-4 text-[#D4AF37]" />
-              <span>BIS 916 Hallmarked Gold</span>
+            <div className="p-3 sm:p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-1.5 sm:gap-2">
+              <Diamond className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37]" />
+              <span>BIS 916 Hallmarked</span>
             </div>
-            <div className="p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+            <div className="p-3 sm:p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-1.5 sm:gap-2">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37]" />
               <span>Unlimited CAD Revisions</span>
             </div>
-            <div className="p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-[#D4AF37]" />
-              <span>Insured Luxury Delivery</span>
+            <div className="p-3 sm:p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-1.5 sm:gap-2">
+              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37]" />
+              <span>Insured Delivery</span>
             </div>
           </div>
 
@@ -904,7 +923,7 @@ export default function ConsultationPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#050505] py-12 text-center text-[10px] text-white/40 border-t border-white/5 uppercase tracking-[0.25em] font-mono">
+      <footer className="bg-[#050505] py-8 sm:py-12 text-center text-[9px] sm:text-[10px] text-white/40 border-t border-white/5 uppercase tracking-[0.2em] sm:tracking-[0.25em] font-mono px-4">
         <p>&copy; {new Date().getFullYear()} SHEWAH. ALL RIGHTS RESERVED. PRIVATE JEWELLERY ATELIER.</p>
       </footer>
 
