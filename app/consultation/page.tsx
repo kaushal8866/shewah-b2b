@@ -93,7 +93,7 @@ export default function ConsultationPage() {
     ctx.fillStyle = '#050505'
     ctx.fillRect(0, 0, width, height)
 
-    // Aspect Ratio Calculations (Contain & Center)
+    // Aspect Ratio Calculations (Full Cover & Center for Portrait & Landscape)
     const imgRatio = img.naturalWidth / img.naturalHeight
     const canvasRatio = width / height
 
@@ -102,13 +102,17 @@ export default function ConsultationPage() {
     let offsetX = 0
     let offsetY = 0
 
-    if (canvasRatio > imgRatio) {
+    if (canvasRatio < imgRatio) {
+      // Tall / Portrait Viewport (Mobile): Fill screen height completely, center width
       drawHeight = height
       drawWidth = height * imgRatio
       offsetX = (width - drawWidth) / 2
+      offsetY = 0
     } else {
+      // Wide / Landscape Viewport (Desktop): Fill screen width completely, center height
       drawWidth = width
       drawHeight = width / imgRatio
+      offsetX = 0
       offsetY = (height - drawHeight) / 2
     }
 
@@ -359,10 +363,13 @@ export default function ConsultationPage() {
           {/* Dynamic Living Ambient Background Glow */}
           <div className={`absolute inset-0 transition-all duration-1000 ${getAmbientGlowClass()}`} />
 
+          {/* Vertical Mobile Dark Scrim Gradient for 100% Uncompromising Text Readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/80 via-[#050505]/35 to-[#050505]/85 pointer-events-none z-[5] sm:hidden" />
+
           {/* HTML5 Canvas Component */}
           <canvas 
             ref={canvasRef} 
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+            className="absolute inset-0 w-full h-full pointer-events-none z-0"
           />
 
           {/* Loading Overlay */}
@@ -374,11 +381,11 @@ export default function ConsultationPage() {
           )}
 
           {/* Frame Progress Indicator (Subtle Luxury Badge at Bottom Left) */}
-          <div className="absolute bottom-5 left-4 sm:bottom-6 sm:left-6 z-20 flex items-center gap-2 sm:gap-3 bg-[#0B0B0E]/80 backdrop-blur-md px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-white/10 text-[8px] sm:text-[9px] font-mono text-white/50">
+          <div className="absolute bottom-5 left-4 sm:bottom-6 sm:left-6 z-20 flex items-center gap-2 sm:gap-3 bg-[#0B0B0E]/90 backdrop-blur-md px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-white/15 text-[8px] sm:text-[9px] font-mono text-white/60 shadow-lg">
             <span className="text-[#D4AF37]">FRAME {String(currentFrame + 1).padStart(3, '0')}</span>
             <span>/</span>
             <span>300</span>
-            <div className="w-8 sm:w-12 h-1 bg-white/10 rounded-full overflow-hidden ml-0.5 sm:ml-1">
+            <div className="w-8 sm:w-12 h-1 bg-white/15 rounded-full overflow-hidden ml-0.5 sm:ml-1">
               <div 
                 className="h-full bg-[#D4AF37] transition-all duration-100" 
                 style={{ width: `${((currentFrame + 1) / TOTAL_FRAMES) * 100}%` }}
@@ -390,25 +397,25 @@ export default function ConsultationPage() {
 
           {/* HERO OVERLAY: Frames 1 - 40 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame <= 40 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
-            <div className="max-w-4xl space-y-4 sm:space-y-6 pointer-events-auto">
-              <div className="inline-flex items-center gap-2 border border-[#D4AF37]/30 bg-[#0B0B0E]/75 backdrop-blur-md px-3 py-1 sm:px-4 sm:py-1.5 rounded-full mb-1 sm:mb-2">
+            <div className="max-w-4xl space-y-4 sm:space-y-6 pointer-events-auto bg-[#0B0B0E]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
+              <div className="inline-flex items-center gap-2 border border-[#D4AF37]/30 bg-[#050505]/90 backdrop-blur-md px-3 py-1 sm:px-4 sm:py-1.5 rounded-full mb-1 sm:mb-2">
                 <Sparkle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D4AF37]" />
                 <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#E8D7A8] font-semibold">SHEWAH PRIVATE COMMISSION</span>
               </div>
               
-              <h1 className="text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-normal font-serif text-white tracking-apple leading-[1.08] sm:leading-[1.05]">
+              <h1 className="text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-normal font-serif text-white tracking-apple leading-[1.08] sm:leading-[1.05] drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                 Designed to be <br />
                 <span className="text-shimmer-gold italic">unforgettable.</span>
               </h1>
               
-              <p className="text-xs sm:text-base md:text-lg text-white/70 font-light max-w-xl mx-auto tracking-wide px-2">
+              <p className="text-xs sm:text-base md:text-lg text-white/90 sm:text-white/70 font-light max-w-xl mx-auto tracking-wide px-2 drop-shadow-md">
                 Every custom ring begins with a story. Yours.
               </p>
 
-              <div className="pt-3 sm:pt-6">
+              <div className="pt-2 sm:pt-6">
                 <button 
                   onClick={scrollToCraftsmanship}
-                  className="bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-95 px-6 py-3 sm:px-8 sm:py-4 rounded-full text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-xl shadow-[#D4AF37]/10"
+                  className="bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-95 px-6 py-3 sm:px-8 sm:py-4 rounded-full text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-xl shadow-[#D4AF37]/20"
                 >
                   <span>Begin Your Story</span>
                   <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -417,9 +424,9 @@ export default function ConsultationPage() {
             </div>
 
             {/* Scroll Indicator Prompt */}
-            <div className="absolute bottom-8 sm:bottom-10 left-1/2 transform -translate-x-1/2 text-center space-y-1.5 sm:space-y-2 opacity-60">
-              <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#E8D7A8]">Scroll to view craftsmanship</p>
-              <div className="w-3.5 h-6 sm:w-4 sm:h-7 border border-white/20 rounded-full mx-auto flex items-start justify-center p-0.5 sm:p-1">
+            <div className="absolute bottom-8 sm:bottom-10 left-1/2 transform -translate-x-1/2 text-center space-y-1.5 sm:space-y-2 opacity-75 sm:opacity-60">
+              <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#E8D7A8] font-mono">Scroll to view craftsmanship</p>
+              <div className="w-3.5 h-6 sm:w-4 sm:h-7 border border-white/30 rounded-full mx-auto flex items-start justify-center p-0.5 sm:p-1">
                 <div className="w-0.5 h-1.5 sm:w-1 sm:h-2 bg-[#D4AF37] rounded-full animate-bounce" />
               </div>
             </div>
@@ -427,15 +434,15 @@ export default function ConsultationPage() {
 
           {/* CRAFTSMANSHIP OVERLAY: Frames 41 - 110 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 41 && currentFrame <= 110 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="max-w-3xl space-y-4 sm:space-y-6">
-              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[#D4AF37] font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#0B0B0E]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/20">
+            <div className="max-w-3xl space-y-4 sm:space-y-6 bg-[#0B0B0E]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[#D4AF37] font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#050505]/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/30">
                 <Flame className="w-3.5 h-3.5 text-[#D4AF37]" />
                 <span>01 / GOLDSMITHING & FIRE</span>
               </div>
-              <h2 className="text-2xl sm:text-5xl md:text-6xl font-serif text-white font-normal leading-tight">
+              <h2 className="text-2.5xl sm:text-5xl md:text-6xl font-serif text-white font-normal leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                 Crafted by hand.
               </h2>
-              <p className="text-xs sm:text-base text-white/70 font-light max-w-lg mx-auto leading-relaxed px-2">
+              <p className="text-xs sm:text-base text-white/90 sm:text-white/70 font-light max-w-lg mx-auto leading-relaxed px-2 drop-shadow-md">
                 Every masterpiece begins long before the diamond shines. Heat, molten gold, and gold artisans shaping precious metal by eye.
               </p>
             </div>
@@ -446,25 +453,25 @@ export default function ConsultationPage() {
             
             {/* Center Story Title */}
             <div className="absolute top-20 sm:top-24 left-1/2 transform -translate-x-1/2 text-center space-y-1.5 sm:space-y-2 w-full px-4">
-              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[#D4AF37] font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#0B0B0E]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/20">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[#D4AF37] font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#050505]/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/30">
                 <Microscope className="w-3.5 h-3.5" />
                 <span>02 / MICRON-LEVEL PRECISION</span>
               </div>
-              <h3 className="text-xl sm:text-4xl font-serif text-white font-normal">
+              <h3 className="text-xl sm:text-4xl font-serif text-white font-normal drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                 Engineered for lifetime wear.
               </h3>
             </div>
 
             {/* Mobile HUD Floating Pill Card (Visible on mobile screens) */}
-            <div className="sm:hidden absolute bottom-16 left-4 right-4 z-20">
-              <div className="tech-badge p-3.5 rounded-2xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-[#D4AF37]/30 space-y-1 text-center shadow-2xl">
+            <div className="sm:hidden absolute bottom-16 left-4 right-4 z-20 pointer-events-auto">
+              <div className="tech-badge p-4 rounded-2xl bg-[#0B0B0E]/95 backdrop-blur-2xl border border-[#D4AF37]/40 space-y-1.5 text-center shadow-2xl">
                 <div className="flex items-center justify-center gap-2">
                   <div className="radar-dot" />
-                  <span className="text-[9px] uppercase tracking-[0.2em] font-mono text-[#D4AF37] font-semibold">
+                  <span className="text-[9.5px] uppercase tracking-[0.2em] font-mono text-[#D4AF37] font-semibold">
                     {currentFrame < 135 ? 'Diamond Setting' : currentFrame < 160 ? 'Micron Accuracy' : 'Hand Finished'}
                   </span>
                 </div>
-                <p className="text-[10.5px] text-white/80 font-light leading-snug">
+                <p className="text-[11px] text-white/90 font-light leading-snug">
                   {currentFrame < 135 
                     ? 'Hand-adjusted claw angles securing brilliant diamonds under 40x optical magnification.' 
                     : currentFrame < 160 
@@ -510,9 +517,9 @@ export default function ConsultationPage() {
 
           {/* COMPLETION OVERLAY: Frames 181 - 240 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 181 && currentFrame <= 240 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="max-w-2xl space-y-3 sm:space-y-4">
-              <span className="text-[9px] sm:text-[10px] font-mono text-[#D4AF37] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#0B0B0E]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/20">03 / PERFECTED SILENCE</span>
-              <h2 className="text-2xl sm:text-5xl font-serif text-white font-normal leading-relaxed">
+            <div className="max-w-2xl space-y-3 sm:space-y-4 bg-[#0B0B0E]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
+              <span className="text-[9px] sm:text-[10px] font-mono text-[#D4AF37] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#050505]/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/30">03 / PERFECTED SILENCE</span>
+              <h2 className="text-2.5xl sm:text-5xl font-serif text-white font-normal leading-relaxed drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                 Perfection is not created. <br />
                 <span className="text-[#E8D7A8] italic font-serif">It is uncovered.</span>
               </h2>
@@ -521,17 +528,17 @@ export default function ConsultationPage() {
 
           {/* EMOTION OVERLAY: Frames 241 - 300 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 241 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="max-w-3xl space-y-4 sm:space-y-6 pointer-events-auto">
-              <span className="text-[9px] sm:text-[10px] font-mono text-[#D4AF37] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#0B0B0E]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/20">04 / THE UNBOXING</span>
-              <h2 className="text-3xl sm:text-6xl md:text-7xl font-serif text-white font-normal leading-tight tracking-apple">
+            <div className="max-w-3xl space-y-4 sm:space-y-6 pointer-events-auto bg-[#0B0B0E]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
+              <span className="text-[9px] sm:text-[10px] font-mono text-[#D4AF37] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#050505]/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/30">04 / THE UNBOXING</span>
+              <h2 className="text-3xl sm:text-6xl md:text-7xl font-serif text-white font-normal leading-tight tracking-apple drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                 Made for one story. <br />
                 <span className="text-shimmer-gold italic">Yours.</span>
               </h2>
-              <p className="text-xs sm:text-base text-white/70 font-light max-w-md mx-auto pt-1 sm:pt-2 px-2">
+              <p className="text-xs sm:text-base text-white/90 sm:text-white/70 font-light max-w-md mx-auto pt-1 sm:pt-2 px-2 drop-shadow-md">
                 No mass inventory. No retail displays. Just a singular piece waiting to carry your milestone.
               </p>
               
-              <div className="pt-3 sm:pt-6">
+              <div className="pt-2 sm:pt-6">
                 <button 
                   onClick={scrollToConsultation}
                   className="bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-95 px-6 py-3.5 sm:px-8 sm:py-4 rounded-full text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-2xl shadow-[#D4AF37]/20"
