@@ -116,7 +116,7 @@ export default function ConsultationPage() {
     ctx.restore()
   }, [getNearestLoadedImage])
 
-  // High-Speed Chunked Preloader Strategy
+  // High-Speed Non-Blocking Preloader Strategy
   useEffect(() => {
     let active = true
 
@@ -144,7 +144,7 @@ export default function ConsultationPage() {
     }
 
     const loadAllFrames = async () => {
-      // Priority 1: Load initial 10 frames
+      // Priority 1: Load initial 10 frames sequentially for instant hero paint
       for (let i = 0; i < 10; i++) {
         await loadSingleFrame(i)
       }
@@ -153,15 +153,11 @@ export default function ConsultationPage() {
         renderFrame(0)
       }
 
-      // Priority 2: Batch load rest of frames in parallel chunks of 15
-      const BATCH_SIZE = 15
-      for (let i = 10; i < TOTAL_FRAMES; i += BATCH_SIZE) {
+      // Priority 2: Load the rest asynchronously in a non-blocking parallel queue
+      // This lets the browser handle standard HTTP request pipelining without blocking
+      for (let i = 10; i < TOTAL_FRAMES; i++) {
         if (!active) break
-        const batch = []
-        for (let j = i; j < Math.min(TOTAL_FRAMES, i + BATCH_SIZE); j++) {
-          batch.push(loadSingleFrame(j))
-        }
-        await Promise.all(batch)
+        loadSingleFrame(i)
       }
     }
 
@@ -355,7 +351,7 @@ export default function ConsultationPage() {
       </a>
 
       {/* PINNED HTML5 CANVAS IMAGE SEQUENCE CONTAINER (550vh Scroll Length) */}
-      <div ref={sequenceContainerRef} className="relative h-[550vh]">
+      <div ref={sequenceContainerRef} className="scroll-sequence-container">
         
         {/* Sticky Canvas & Text Overlays Wrapper */}
         <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">

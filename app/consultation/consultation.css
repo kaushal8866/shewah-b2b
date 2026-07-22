@@ -24,6 +24,11 @@
   -webkit-font-smoothing: antialiased;
 }
 
+.scroll-sequence-container {
+  position: relative !important;
+  height: 550vh !important;
+}
+
 /* Typography styles */
 .consultation-shell h1,
 .consultation-shell h2,
