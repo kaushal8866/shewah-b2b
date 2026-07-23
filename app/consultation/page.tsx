@@ -784,6 +784,8 @@ export default function ConsultationPage() {
                         <div className="relative">
                           <input
                             type="text"
+                            name="fname"
+                            autoComplete="given-name"
                             value={firstName}
                             onChange={e => setFirstName(e.target.value)}
                             placeholder="Enter your name"
@@ -800,6 +802,8 @@ export default function ConsultationPage() {
                         <div className="relative">
                           <input
                             type="tel"
+                            name="phone"
+                            autoComplete="tel"
                             value={phone}
                             onChange={e => setPhone(e.target.value)}
                             placeholder="10-digit mobile number"
@@ -816,6 +820,8 @@ export default function ConsultationPage() {
                         <div className="relative">
                           <input
                             type="email"
+                            name="email"
+                            autoComplete="email"
                             value={email}
                             onChange={e => setEmail(e.target.value)}
                             placeholder="yourname@domain.com"
@@ -831,6 +837,8 @@ export default function ConsultationPage() {
                         <div className="relative">
                           <input
                             type="text"
+                            name="city"
+                            autoComplete="address-level2"
                             value={city}
                             onChange={e => setCity(e.target.value)}
                             placeholder="City (e.g. Mumbai, Bangalore)"
