@@ -766,6 +766,13 @@ export default function ConsultationPage() {
                     <p className="text-xs sm:text-sm text-white/70 leading-relaxed max-w-md mx-auto font-light px-2">
                       Thank you. Your parameters have been received. A dedicated design director will reach out via <span className="text-[#D4AF37] font-medium capitalize">{preferredContact}</span> within 24 hours to present sketch references.
                     </p>
+
+                    {/* Tag Assistant Selection Badges */}
+                    <div className="inline-flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 mx-auto">
+                      <span>Ref ID: <strong id="gtm-tx-id" className="text-[#D4AF37]">SHW-CON-1001</strong></span>
+                      <span>&middot;</span>
+                      <span>Value: <strong id="gtm-tx-val" className="text-white">1.00</strong> <span id="gtm-tx-curr" className="text-[#D4AF37]">INR</span></span>
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
