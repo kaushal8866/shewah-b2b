@@ -303,6 +303,15 @@ export default function ConsultationPage() {
           em: email ? email.trim().toLowerCase() : undefined,
         })
       }
+
+      // Fire Google Ads Conversion Event
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'generate_lead', {
+          send_to: 'AW-18068366696',
+          value: 1.0,
+          currency: 'INR',
+        })
+      }
     } catch (err: any) {
       setFormError('Network connection issue. Please check your connection and try again.')
     } finally {
