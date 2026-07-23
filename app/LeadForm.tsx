@@ -136,6 +136,9 @@ export default function LeadForm({
       setDone(true)
       setF(empty)
       setStep(1)
+      if (typeof window !== 'undefined') {
+        window.location.href = '/consultation/thank-you'
+      }
     } catch (err: any) {
       setError(err?.message || 'Network error. Please try again.')
     } finally {

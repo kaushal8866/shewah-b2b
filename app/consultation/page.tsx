@@ -318,7 +318,7 @@ export default function ConsultationPage() {
 
       setSuccess(true)
       if (typeof window !== 'undefined') {
-        window.history.replaceState(null, '', window.location.pathname + '?status=success')
+        window.location.href = '/consultation/thank-you'
       }
 
       // Fire Pinterest Lead Event on Form Action / Submission Success
