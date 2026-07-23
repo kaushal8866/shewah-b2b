@@ -294,6 +294,9 @@ export default function ConsultationPage() {
       }
 
       setSuccess(true)
+      if (typeof window !== 'undefined') {
+        window.history.pushState({}, '', '?status=success')
+      }
 
       // Fire Pinterest Lead Event on Form Action / Submission Success
       if (typeof window !== 'undefined' && (window as any).pintrk) {
