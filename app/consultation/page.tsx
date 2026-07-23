@@ -221,6 +221,14 @@ export default function ConsultationPage() {
     }
   }, [renderFrame])
 
+  // Auto-detect ?status=success in URL query on load
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('status=success')) {
+      setSuccess(true)
+      setStep(5)
+    }
+  }, [])
+
   // Smooth Scroll Handlers
   const scrollToConsultation = () => {
     const el = document.getElementById('consultation-experience')
