@@ -123,7 +123,7 @@ export default function LeadForm({
       }
       // Fire conversion pixels (best-effort)
       try { (window as any).fbq && (window as any).fbq('track', 'Lead') } catch {}
-      try { (window as any).gtag && (window as any).gtag('event', 'generate_lead', { value: 1 }) } catch {}
+      try { (window as any).gtag && (window as any).gtag('event', 'conversion', { send_to: 'AW-18068366696/1IaCCIqgn9UcEOjKladD', value: 1.0, currency: 'INR' }) } catch {}
       try {
         if ((window as any).pintrk) {
           (window as any).pintrk('track', 'lead', {

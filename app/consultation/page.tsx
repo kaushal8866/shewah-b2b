@@ -306,8 +306,8 @@ export default function ConsultationPage() {
 
       // Fire Google Ads Conversion Event
       if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('event', 'generate_lead', {
-          send_to: 'AW-18068366696',
+        (window as any).gtag('event', 'conversion', {
+          send_to: 'AW-18068366696/1IaCCIqgn9UcEOjKladD',
           value: 1.0,
           currency: 'INR',
         })
