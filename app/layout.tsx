@@ -1,6 +1,8 @@
 import './globals.css'
 import SessionProvider from '@/components/SessionProvider'
 import AppShell from '@/components/AppShell'
+import Script from 'next/script'
+import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Shewah B2B Admin',
@@ -11,8 +13,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* Google Tag Manager */}
-        <script
+        {/* Google Tag Manager - Base Script */}
+        <Script
+          id="gtm-base"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -23,11 +27,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 `,
           }}
         />
-        {/* End Google Tag Manager */}
 
-        {/* Google tag (gtag.js) */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18068366696" />
-        <script
+        {/* Google Tag (gtag.js) - Google Ads AW-18068366696 */}
+        <Script
+          id="gtag-src"
+          strategy="beforeInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=AW-18068366696"
+        />
+        <Script
+          id="gtag-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
   window.dataLayer = window.dataLayer || [];
@@ -38,11 +47,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 `,
           }}
         />
+
         <title>Shewah B2B Admin</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         
         {/* Pinterest Tag Base Code */}
-        <script
+        <Script
+          id="pintrk-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
 !function(e){if(!window.pintrk){window.pintrk = function () {
