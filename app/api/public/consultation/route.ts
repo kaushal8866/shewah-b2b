@@ -109,18 +109,17 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Strict India 10-digit check
-  const validIndian = (raw: string): boolean => {
-    const d10 = raw.replace(/\D/g, '').replace(/^(0|91)/, '')
-    return d10.length === 10 && /^[6-9]/.test(d10)
-  }
-
-  if (!validIndian(whatsappRaw)) {
+  // Flexible International Phone Check (7 to 15 digits)
+  const rawDigits = whatsappRaw.replace(/\D/g, '')
+  if (rawDigits.length < 7 || rawDigits.length > 15) {
     return NextResponse.json(
-      { ok: false, error: 'Please enter a valid 10-digit Indian WhatsApp number.' },
+      { ok: false, error: 'Please enter a valid mobile / WhatsApp number (7 to 15 digits).' },
       { status: 400 },
     )
   }
+
+  // Preserve full E.164 / formatted international number
+  const normalizedWhatsapp = whatsappRaw.includes('+') ? '+' + rawDigits : rawDigits
 
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json(
@@ -129,8 +128,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Normalize WhatsApp to standard 91XXXXXXXXXX
-  const normalizedWhatsapp = '91' + whatsappRaw.replace(/\D/g, '').replace(/^(0|91)/, '')
 
   const preferred_contact = clean(body?.preferred_contact, 20) || 'whatsapp'
   const occasionText = clean(body?.occasion, 50)

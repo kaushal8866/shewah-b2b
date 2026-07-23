@@ -14,6 +14,81 @@ const getFrameUrl = (index: number) => {
   return `/frames/ezgif-frame-${frameNum}.jpg`
 }
 
+const COUNTRY_CODES = [
+  { code: '+1', flag: '🇺🇸', name: 'US / Canada' },
+  { code: '+44', flag: '🇬🇧', name: 'UK' },
+  { code: '+971', flag: '🇦🇪', name: 'UAE' },
+  { code: '+91', flag: '🇮🇳', name: 'India' },
+  { code: '+61', flag: '🇦🇺', name: 'Australia' },
+  { code: '+49', flag: '🇩🇪', name: 'Germany' },
+  { code: '+33', flag: '🇫🇷', name: 'France' },
+  { code: '+65', flag: '🇸🇬', name: 'Singapore' },
+  { code: '+41', flag: '🇨🇭', name: 'Switzerland' },
+]
+
+const CURRENCIES: Record<string, { symbol: string; label: string; ranges: string[] }> = {
+  USD: {
+    symbol: '$',
+    label: 'USD ($)',
+    ranges: [
+      '$1,000 - $2,500 (Solitaires & Fine Jewelry)',
+      '$2,500 - $5,000 (Bespoke Engagement & Necklaces)',
+      '$5,000 - $10,000 (Statement Jewelry & High Carat)',
+      '$10,000+ (Grand Heirloom Commissions)',
+    ],
+  },
+  EUR: {
+    symbol: '€',
+    label: 'EUR (€)',
+    ranges: [
+      '€1,000 - €2,500 (Solitaires & Fine Jewelry)',
+      '€2,500 - €5,000 (Bespoke Engagement & Necklaces)',
+      '€5,000 - €10,000 (Statement Jewelry & High Carat)',
+      '€10,000+ (Grand Heirloom Commissions)',
+    ],
+  },
+  GBP: {
+    symbol: '£',
+    label: 'GBP (£)',
+    ranges: [
+      '£800 - £2,000 (Solitaires & Fine Jewelry)',
+      '£2,000 - £4,500 (Bespoke Engagement & Necklaces)',
+      '£4,500 - £8,500 (Statement Jewelry & High Carat)',
+      '£8,500+ (Grand Heirloom Commissions)',
+    ],
+  },
+  CAD: {
+    symbol: 'CA$',
+    label: 'CAD ($)',
+    ranges: [
+      'CA$1,500 - CA$3,500 (Solitaires & Fine Jewelry)',
+      'CA$3,500 - CA$7,000 (Bespoke Engagement & Necklaces)',
+      'CA$7,000 - CA$14,000 (Statement Jewelry & High Carat)',
+      'CA$14,000+ (Grand Heirloom Commissions)',
+    ],
+  },
+  AUD: {
+    symbol: 'A$',
+    label: 'AUD ($)',
+    ranges: [
+      'A$1,500 - A$3,500 (Solitaires & Fine Jewelry)',
+      'A$3,500 - A$7,500 (Bespoke Engagement & Necklaces)',
+      'A$7,500 - A$15,000 (Statement Jewelry & High Carat)',
+      'A$15,000+ (Grand Heirloom Commissions)',
+    ],
+  },
+  INR: {
+    symbol: '₹',
+    label: 'INR (₹)',
+    ranges: [
+      '₹75,000 - ₹1,50,000 (Solitaires & Bands)',
+      '₹1,50,000 - ₹3,00,000 (Custom Engagement & Fine Pieces)',
+      '₹3,00,000 - ₹5,00,000 (Bridal & High Fine Jewelry Sets)',
+      '₹5,00,000+ (Grand Heirloom Commissions)',
+    ],
+  },
+}
+
 export default function ConsultationPage() {
   // Navigation & Scroll State
   const [showNav, setShowNav] = useState(false)
@@ -29,9 +104,11 @@ export default function ConsultationPage() {
   const [inspiration, setInspiration] = useState('')
   const [creationScope, setCreationScope] = useState('')
   const [firstName, setFirstName] = useState('')
+  const [countryCode, setCountryCode] = useState('+1')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [city, setCity] = useState('')
+  const [currency, setCurrency] = useState('USD')
   const [budget, setBudget] = useState('')
   const [preferredContact, setPreferredContact] = useState('whatsapp')
   
@@ -273,9 +350,9 @@ export default function ConsultationPage() {
       return
     }
 
-    const cleanPhone = phone.replace(/\D/g, '').replace(/^(0|91)/, '')
-    if (cleanPhone.length !== 10 || !/^[6-9]/.test(cleanPhone)) {
-      setFormError('Please enter a valid 10-digit Indian WhatsApp number.')
+    const rawDigits = phone.replace(/\D/g, '')
+    if (rawDigits.length < 7 || rawDigits.length > 15) {
+      setFormError('Please enter a valid mobile / WhatsApp number (7 to 15 digits).')
       return
     }
 
@@ -283,6 +360,8 @@ export default function ConsultationPage() {
       setFormError('Please enter a valid email address.')
       return
     }
+
+    const fullPhone = `${countryCode} ${rawDigits}`
 
     let capturedGclid = null
     if (typeof window !== 'undefined') {
@@ -299,12 +378,13 @@ export default function ConsultationPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           first_name: firstName,
-          whatsapp: cleanPhone,
+          whatsapp: fullPhone,
           email: email || null,
           city,
-          occasion: occasion || recipient || 'Custom Commission',
-          budget: budget || null,
-          jewellery_type: creationScope || 'Custom Ring',
+          occasion: occasion || recipient || 'Bespoke Commission',
+          budget: budget ? `${currency} ${budget}` : null,
+          currency,
+          jewellery_type: creationScope || 'Custom Fine Jewelry',
           preferred_contact: preferredContact,
           gclid: capturedGclid,
         }),
@@ -637,20 +717,20 @@ export default function ConsultationPage() {
               </div>
             </div>
 
-            {/* STEP 1: WHO IS THIS RING FOR? */}
+            {/* STEP 1: WHO IS THIS CREATION FOR? */}
             {step === 1 && (
               <div className="space-y-6 sm:space-y-8 animate-fadeIn">
                 <div className="space-y-1 sm:space-y-2">
-                  <h3 className="text-lg sm:text-2xl font-serif text-white">Who is this ring for?</h3>
-                  <p className="text-xs text-white/60 font-light">Select who will be wearing this custom creation.</p>
+                  <h3 className="text-lg sm:text-2xl font-serif text-white">Who is this bespoke creation for?</h3>
+                  <p className="text-xs text-white/60 font-light">Select who will be wearing this custom fine jewelry piece.</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {[
-                    { id: 'partner', label: 'My Partner (Proposal / Secret)', desc: 'Surprise engagement or engagement ring' },
-                    { id: 'myself', label: 'For Myself', desc: 'Self-reward or statement heirloom' },
-                    { id: 'couple', label: 'For Both of Us (Couples)', desc: 'Matching bridal or wedding set' },
-                    { id: 'family', label: 'Family Member / Push Gift', desc: 'Gift for milestone or arrival' }
+                    { id: 'partner', label: 'My Partner (Gift / Secret)', desc: 'Surprise proposal, ring, necklace, or anniversary gift' },
+                    { id: 'myself', label: 'For Myself', desc: 'Self-reward, milestone statement, or heirloom' },
+                    { id: 'couple', label: 'For Both of Us (Couples)', desc: 'Matching bridal bands or dual custom creations' },
+                    { id: 'family', label: 'Family Member / Milestone Gift', desc: 'Celebratory gift for milestone or arrival' }
                   ].map((opt) => (
                     <button
                       key={opt.id}
@@ -750,10 +830,12 @@ export default function ConsultationPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {[
-                    { label: 'Entirely New Custom Piece', desc: 'Crafted from solid gold & certified lab diamonds' },
-                    { label: 'Redesign Family Heirloom', desc: 'Reset existing gems into a modern setting' },
-                    { label: 'Matching Bridal Set', desc: 'Engagement ring & interlocking wedding band' },
-                    { label: 'Other Custom Fine Jewellery', desc: 'Pendant, bracelet, or earrings' }
+                    { label: '💍 Custom Ring (Solitaire, Toi et Moi, Band)', desc: 'Engagement rings, wedding bands & statement rings' },
+                    { label: '📿 Custom Necklace & Pendant', desc: 'Tennis necklaces, solitaire pendants & chokers' },
+                    { label: '✨ High Fine Earrings & Studs', desc: 'Solitaire studs, drop earrings & huggie hoops' },
+                    { label: '💎 Tennis Bracelet & Solid Gold Bangle', desc: 'Tennis bracelets, cuff bangles & wrist heirlooms' },
+                    { label: '👑 Complete Signature Jewelry Set', desc: 'Matching bridal or gala high jewelry sets' },
+                    { label: '🔨 Redesign Family Heirloom / Reset Gems', desc: 'Transform existing gemstones into modern gold settings' }
                   ].map((opt, idx) => (
                     <button
                       key={idx}
@@ -814,7 +896,7 @@ export default function ConsultationPage() {
                             autoComplete="given-name"
                             value={firstName}
                             onChange={e => setFirstName(e.target.value)}
-                            placeholder="Enter your name"
+                            placeholder="Enter your full name"
                             className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs"
                             required
                           />
@@ -822,21 +904,34 @@ export default function ConsultationPage() {
                         </div>
                       </div>
 
-                      {/* Phone */}
+                      {/* International Phone & Country Code */}
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">WhatsApp Number *</label>
-                        <div className="relative">
-                          <input
-                            type="tel"
-                            name="phone"
-                            autoComplete="tel"
-                            value={phone}
-                            onChange={e => setPhone(e.target.value)}
-                            placeholder="10-digit mobile number"
-                            className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs"
-                            required
-                          />
-                          <PhoneCall className="absolute right-3.5 top-3.5 w-4 h-4 text-white/30" />
+                        <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Mobile / WhatsApp Number *</label>
+                        <div className="flex gap-2">
+                          <select
+                            value={countryCode}
+                            onChange={e => setCountryCode(e.target.value)}
+                            className="luxury-input-dark rounded-xl py-3.5 px-2.5 text-[14px] sm:text-xs bg-[#050505] text-white border border-white/10 shrink-0 cursor-pointer"
+                          >
+                            {COUNTRY_CODES.map((c) => (
+                              <option key={c.code} value={c.code} className="bg-[#050505] text-white">
+                                {c.flag} {c.code}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="relative flex-1">
+                            <input
+                              type="tel"
+                              name="phone"
+                              autoComplete="tel"
+                              value={phone}
+                              onChange={e => setPhone(e.target.value)}
+                              placeholder="Mobile or WhatsApp number"
+                              className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs"
+                              required
+                            />
+                            <PhoneCall className="absolute right-3.5 top-3.5 w-4 h-4 text-white/30" />
+                          </div>
                         </div>
                       </div>
 
@@ -857,9 +952,9 @@ export default function ConsultationPage() {
                         </div>
                       </div>
 
-                      {/* City */}
+                      {/* City / Location */}
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Your City *</label>
+                        <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Your City & Country *</label>
                         <div className="relative">
                           <input
                             type="text"
@@ -867,7 +962,7 @@ export default function ConsultationPage() {
                             autoComplete="address-level2"
                             value={city}
                             onChange={e => setCity(e.target.value)}
-                            placeholder="City (e.g. Mumbai, Bangalore)"
+                            placeholder="City, Country (e.g. London, New York, Dubai)"
                             className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs"
                             required
                           />
@@ -876,19 +971,40 @@ export default function ConsultationPage() {
                       </div>
                     </div>
 
-                    {/* Budget */}
-                    <div className="space-y-1.5">
-                      <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Estimated Investment Target</label>
+                    {/* Multi-Currency & Budget Range Selection */}
+                    <div className="space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                        <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Estimated Investment Target</label>
+                        
+                        {/* Currency Selector Pills */}
+                        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+                          {Object.keys(CURRENCIES).map((cKey) => (
+                            <button
+                              key={cKey}
+                              type="button"
+                              onClick={() => {
+                                setCurrency(cKey)
+                                setBudget('')
+                              }}
+                              className={`text-[10px] font-mono px-2.5 py-1 rounded-md border transition-all ${currency === cKey ? 'bg-[#D4AF37] text-black border-[#D4AF37] font-bold' : 'bg-white/5 text-white/60 border-white/10 hover:text-white'}`}
+                            >
+                              {cKey}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <select
                         value={budget}
                         onChange={e => setBudget(e.target.value)}
                         className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs appearance-none cursor-pointer"
                       >
-                        <option value="" className="bg-[#050505] text-white">Select budget range</option>
-                        <option value="₹75,000 - ₹1,50,000" className="bg-[#050505] text-white">₹75,000 - ₹1,50,000 (Solitaires & Bands)</option>
-                        <option value="₹1,50,000 - ₹3,00,000" className="bg-[#050505] text-white">₹1,50,000 - ₹3,00,000 (Custom Engagement)</option>
-                        <option value="₹3,00,000 - ₹5,00,000" className="bg-[#050505] text-white">₹3,00,000 - ₹5,00,000 (Bridal Sets)</option>
-                        <option value="₹5,00,000+" className="bg-[#050505] text-white">₹5,00,000+ (Grand Heirloom Commissions)</option>
+                        <option value="" className="bg-[#050505] text-white">Select budget range ({currency})</option>
+                        {CURRENCIES[currency]?.ranges.map((r, idx) => (
+                          <option key={idx} value={r} className="bg-[#050505] text-white">
+                            {r}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
