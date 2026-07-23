@@ -294,6 +294,14 @@ export default function ConsultationPage() {
       }
 
       setSuccess(true)
+
+      // Fire Pinterest Enhanced Match Lead Event
+      if (typeof window !== 'undefined' && (window as any).pintrk) {
+        (window as any).pintrk('track', 'lead', {
+          em: email ? email.trim().toLowerCase() : undefined,
+          lead_type: 'Bespoke Consultation',
+        })
+      }
     } catch (err: any) {
       setFormError('Network connection issue. Please check your connection and try again.')
     } finally {
