@@ -221,11 +221,17 @@ export default function ConsultationPage() {
     }
   }, [renderFrame])
 
-  // Auto-detect ?status=success in URL query on load
+  // Auto-detect ?status=success in URL query on load & persist GCLID
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.search.includes('status=success')) {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('status') === 'success') {
       setSuccess(true)
       setStep(5)
+    }
+    const gclid = params.get('gclid')
+    if (gclid) {
+      try { sessionStorage.setItem('shewah_gclid', gclid) } catch {}
     }
   }, [])
 
@@ -278,6 +284,14 @@ export default function ConsultationPage() {
       return
     }
 
+    let capturedGclid = null
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search)
+        capturedGclid = params.get('gclid') || sessionStorage.getItem('shewah_gclid') || null
+      } catch {}
+    }
+
     setSubmitting(true)
     try {
       const res = await fetch('/api/public/consultation', {
@@ -292,6 +306,7 @@ export default function ConsultationPage() {
           budget: budget || null,
           jewellery_type: creationScope || 'Custom Ring',
           preferred_contact: preferredContact,
+          gclid: capturedGclid,
         }),
       })
 
@@ -303,7 +318,7 @@ export default function ConsultationPage() {
 
       setSuccess(true)
       if (typeof window !== 'undefined') {
-        window.history.pushState({}, '', '?status=success')
+        window.history.replaceState(null, '', window.location.pathname + '?status=success')
       }
 
       // Fire Pinterest Lead Event on Form Action / Submission Success

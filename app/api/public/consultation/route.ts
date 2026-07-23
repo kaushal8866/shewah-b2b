@@ -217,6 +217,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Failed to record your consultation request.' }, { status: 500 })
   }
 
+  const gclid = clean(body?.gclid, 150)
+
   // Step 3: Write created activity timeline row
   const { error: activityErr } = await supabaseAdmin
     .from('customer_enquiry_activity')
@@ -224,7 +226,11 @@ export async function POST(req: NextRequest) {
       enquiry_id: enquiry.id,
       actor_id: null,
       type: 'created',
-      payload: { enquiry_number: enquiry.enquiry_number, source: 'D2C Consultation Landing Page' }
+      payload: { 
+        enquiry_number: enquiry.enquiry_number, 
+        source: 'D2C Consultation Landing Page',
+        gclid: gclid || undefined,
+      }
     })
 
   if (activityErr) {
