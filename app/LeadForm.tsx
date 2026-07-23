@@ -124,6 +124,15 @@ export default function LeadForm({
       // Fire conversion pixels (best-effort)
       try { (window as any).fbq && (window as any).fbq('track', 'Lead') } catch {}
       try { (window as any).gtag && (window as any).gtag('event', 'generate_lead', { value: 1 }) } catch {}
+      try {
+        if ((window as any).pintrk) {
+          (window as any).pintrk('track', 'lead', {
+            event_id: `lead_${Date.now()}`,
+            lead_type: f.business_type || 'Custom Ring',
+            em: f.email ? f.email.trim().toLowerCase() : undefined,
+          })
+        }
+      } catch {}
       setDone(true)
       setF(empty)
       setStep(1)

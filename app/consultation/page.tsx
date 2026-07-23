@@ -295,11 +295,12 @@ export default function ConsultationPage() {
 
       setSuccess(true)
 
-      // Fire Pinterest Enhanced Match Lead Event
+      // Fire Pinterest Lead Event on Form Action / Submission Success
       if (typeof window !== 'undefined' && (window as any).pintrk) {
         (window as any).pintrk('track', 'lead', {
+          event_id: `lead_${Date.now()}`,
+          lead_type: creationScope || 'Custom Ring',
           em: email ? email.trim().toLowerCase() : undefined,
-          lead_type: 'Bespoke Consultation',
         })
       }
     } catch (err: any) {
