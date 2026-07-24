@@ -78,21 +78,29 @@ describe('computeQuoteTotals', () => {
   })
 
   it('extracts GST from the total when inclusive', () => {
-    // 100000 − (100000 / 1.03) = 2912.62 → 2913
+    // 100000 / 1.03 = 97087.38 → net 97087, tax 2913, total unchanged.
     const t = computeQuoteTotals(items, 'inclusive', 3)
+    expect(t.subtotal).toBe(97087)
     expect(t.gst_amount).toBe(2913)
     expect(t.grand_total).toBe(100000)
   })
 
-  // KNOWN DEFECT (audit Phase 1.7): in inclusive mode `subtotal` remains the
-  // tax-inclusive sum of line totals while `gst_amount` is extracted from it,
-  // so subtotal + gst != grand_total. Anything consuming both fields — quote
-  // PDFs, the invoice ledger — is internally inconsistent. This test pins the
-  // current behaviour so the fix is a deliberate, visible change.
-  it('inclusive subtotal does not currently net off tax', () => {
-    const t = computeQuoteTotals(items, 'inclusive', 3)
-    expect(t.subtotal).toBe(100000)
-    expect(t.subtotal + t.gst_amount).not.toBe(t.grand_total)
+  // Was a real defect: inclusive mode left `subtotal` tax-inclusive while
+  // extracting `gst_amount` from it, so the two overstated the grand total.
+  it('reconciles subtotal + gst to grand_total in every treatment', () => {
+    for (const mode of ['exclusive', 'inclusive', 'none'] as const) {
+      const t = computeQuoteTotals(items, mode, 3)
+      expect(t.subtotal + t.gst_amount, `mode=${mode}`).toBe(t.grand_total)
+    }
+  })
+
+  it('reconciles across rates and awkward amounts', () => {
+    for (const rate of [0, 1.5, 3, 5, 12, 18]) {
+      for (const amount of [1, 999, 12345, 99999]) {
+        const t = computeQuoteTotals([{ line_total: amount }], 'inclusive', rate)
+        expect(t.subtotal + t.gst_amount, `rate=${rate} amount=${amount}`).toBe(t.grand_total)
+      }
+    }
   })
 
   it('charges nothing when GST treatment is none', () => {

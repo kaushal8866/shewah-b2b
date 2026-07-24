@@ -7,6 +7,13 @@ export interface DiamondSpec {
   color_id: string
   type: 'lgd' | 'natural'
   pieces: number
+  /**
+   * ₹ PER CARAT, despite the name. Line cost is `weight × pieces × rate`, and
+   * the stone-price admin fills this from a "Base rate (₹ per carat)" input.
+   * The key is kept as-is because it is persisted inside the
+   * `quote_items.diamonds` JSONB on every existing quote; renaming it would
+   * need a data migration. The UI labels now say ₹/ct.
+   */
   rate_per_pc: number
   row_total?: number
   igi_charge?: number
@@ -140,26 +147,33 @@ export function computeQuoteTotals(
   const subtotal = items.reduce((sum, item) => sum + (Number(item.line_total) || 0), 0)
   const gstRate = Math.max(Number(gstRatePct) || 0, 0) / 100
 
-  let gstAmount = 0
-  let grandTotal = subtotal
+  let netSubtotal: number
+  let gstAmount: number
+  let grandTotal: number
 
   if (gstTreatment === 'exclusive') {
-    gstAmount = Math.round(subtotal * gstRate)
-    grandTotal = subtotal + gstAmount
+    // Line totals are pre-tax; tax is added on top.
+    netSubtotal = Math.round(subtotal)
+    gstAmount   = Math.round(subtotal * gstRate)
+    grandTotal  = netSubtotal + gstAmount
   } else if (gstTreatment === 'inclusive') {
-    grandTotal = subtotal
-    gstAmount = Math.round(grandTotal - (grandTotal / (1 + gstRate)))
-    // If inclusive, the subtotal stored in DB is typically net of tax
-    // Wait, let's keep subtotal as the sum of line_totals, and show gst_amount.
+    // Line totals already contain the tax. `subtotal` must be reported NET of
+    // it so the three fields reconcile — previously subtotal stayed
+    // tax-inclusive while gst_amount was extracted from it, so
+    // `subtotal + gst_amount` overstated the grand total by the tax amount.
+    // Every PDF and ledger consuming both fields was internally inconsistent.
+    grandTotal  = Math.round(subtotal)
+    netSubtotal = Math.round(subtotal / (1 + gstRate))
+    gstAmount   = grandTotal - netSubtotal   // derived, so the sum always closes
   } else {
-    // none
-    gstAmount = 0
-    grandTotal = subtotal
+    netSubtotal = Math.round(subtotal)
+    gstAmount   = 0
+    grandTotal  = netSubtotal
   }
 
   return {
-    subtotal: Math.round(subtotal),
-    gst_amount: Math.round(gstAmount),
-    grand_total: Math.round(grandTotal),
+    subtotal: netSubtotal,
+    gst_amount: gstAmount,
+    grand_total: grandTotal,
   }
 }

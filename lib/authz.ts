@@ -126,24 +126,26 @@ const ROUTE_MODULES: Array<[string, ModuleId]> = [
  * admin surface this map knows about.
  */
 export function moduleForPath(pathname: string): ModuleId | null {
-  let best: { prefix: string; module: ModuleId } | null = null
-  for (const [prefix, module] of ROUTE_MODULES) {
+  // NB: the local is `moduleId`, not `module` — Next's lint forbids assigning
+  // to `module` because it shadows the CommonJS global.
+  let best: { prefix: string; moduleId: ModuleId } | null = null
+  for (const [prefix, moduleId] of ROUTE_MODULES) {
     const matches = pathname === prefix || pathname.startsWith(prefix + '/')
     if (matches && (!best || prefix.length > best.prefix.length)) {
-      best = { prefix, module }
+      best = { prefix, moduleId }
     }
   }
-  return best ? best.module : null
+  return best ? best.moduleId : null
 }
 
 // ── Core decision ──────────────────────────────────────────────────────────
 
-export function canAccessModule(actor: Actor, module: ModuleId): boolean {
+export function canAccessModule(actor: Actor, moduleId: ModuleId): boolean {
   if (actor.role === 'master') return true
   if (actor.role !== 'sub') return false           // portal roles never reach admin modules
-  if (MASTER_ONLY_MODULES.has(module)) return false
-  if (ALWAYS_ALLOWED_MODULES.has(module)) return true
-  return (actor.permissions || []).includes(module)
+  if (MASTER_ONLY_MODULES.has(moduleId)) return false
+  if (ALWAYS_ALLOWED_MODULES.has(moduleId)) return true
+  return (actor.permissions || []).includes(moduleId)
 }
 
 /**
@@ -154,11 +156,11 @@ export function canAccessModule(actor: Actor, module: ModuleId): boolean {
 export function canAccessPath(
   actor: Actor,
   pathname: string,
-): { allowed: true; module: ModuleId } | { allowed: false; reason: 'unmapped' | 'forbidden' } {
-  const module = moduleForPath(pathname)
-  if (!module) return { allowed: false, reason: 'unmapped' }
-  if (!canAccessModule(actor, module)) return { allowed: false, reason: 'forbidden' }
-  return { allowed: true, module }
+): { allowed: true; moduleId: ModuleId } | { allowed: false; reason: 'unmapped' | 'forbidden' } {
+  const moduleId = moduleForPath(pathname)
+  if (!moduleId) return { allowed: false, reason: 'unmapped' }
+  if (!canAccessModule(actor, moduleId)) return { allowed: false, reason: 'forbidden' }
+  return { allowed: true, moduleId }
 }
 
 // ── Table → module map (for the /api/db proxy) ─────────────────────────────
@@ -271,8 +273,8 @@ export function canAccessTable(
       : { allowed: false, status: 403, message: 'Forbidden' }
   }
 
-  const module = TABLE_MODULES[table]
-  if (!module) {
+  const moduleId = TABLE_MODULES[table]
+  if (!moduleId) {
     return { allowed: false, status: 400, message: `Table "${table}" is not allowed` }
   }
 
@@ -288,7 +290,7 @@ export function canAccessTable(
     return { allowed: true }
   }
 
-  if (!canAccessModule(actor, module)) {
+  if (!canAccessModule(actor, moduleId)) {
     return { allowed: false, status: 403, message: 'Forbidden' }
   }
 

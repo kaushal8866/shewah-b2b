@@ -59,22 +59,50 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
   // 2. Fetch optional logged-in customer session
   const customer = await getStorefrontCustomer()
 
-  // 3. Validate promo code if provided
+  // 3. Claim the promo code atomically, before anything is written.
+  //
+  // This previously only checked is_active and expires_at, so a code could be
+  // reused without limit, by anyone, on any order size. claim_coupon locks the
+  // row, enforces the global cap / per-customer cap / minimum order value, and
+  // records the redemption in one transaction — so two simultaneous checkouts
+  // cannot both consume the last redemption.
   let discountType = 'none'
   let discountValue = 0
   if (promo_code) {
-    const { data: coupon } = await supabaseAdmin
-      .from('reseller_storefront_coupons')
-      .select('*')
+    // Cheap proxy for order value: the reseller floor price of each line.
+    // Enough for the minimum-order-value gate without running the full pricing
+    // pass twice.
+    const productIds = items.map((i: any) => i?.id).filter(Boolean)
+    const { data: floorRows } = await supabaseAdmin
+      .from('reseller_product_prices')
+      .select('product_id, floor_price_paise')
       .eq('reseller_id', resellerId)
-      .eq('code', promo_code.trim().toUpperCase())
-      .eq('is_active', true)
-      .maybeSingle()
+      .in('product_id', productIds)
 
-    if (coupon && (!coupon.expires_at || new Date(coupon.expires_at) > new Date())) {
-      discountType = coupon.discount_type
-      discountValue = Number(coupon.discount_value)
+    const floorByProduct = new Map<string, number>(
+      (floorRows || []).map((r: any) => [r.product_id, Number(r.floor_price_paise) || 0]),
+    )
+    const cartValuePaise = items.reduce(
+      (sum: number, i: any) => sum + (floorByProduct.get(i?.id) ?? 0) * (Number(i?.quantity) || 1),
+      0,
+    )
+
+    const { data: claimed, error: claimErr } = await supabaseAdmin.rpc('claim_coupon', {
+      p_reseller_id:       resellerId,
+      p_code:              String(promo_code).trim(),
+      p_customer_id:       customer?.id ?? null,
+      p_guest_phone:       customer ? null : String(shipping_phone).replace(/\s+/g, ''),
+      p_order_value_paise: cartValuePaise,
+    })
+
+    if (claimErr) {
+      console.error('[storefront.checkout] coupon claim failed:', claimErr.message)
+    } else if (Array.isArray(claimed) && claimed.length > 0) {
+      discountType  = claimed[0].discount_type
+      discountValue = Number(claimed[0].discount_value)
     }
+    // No rows back means a limit was hit or the code is invalid. Checkout
+    // continues at full price rather than failing the order outright.
   }
 
   // 4. Resolve payment hours settings
@@ -111,12 +139,22 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     9:  Number(latestRate.retail_labour_9k)  || 450,
   }
 
-  // 6. Query total count for generating sequential serial numbers
-  const { count } = await supabaseAdmin
-    .from('reseller_orders')
-    .select('*', { count: 'exact', head: true })
+  // 6. Reserve order serials from a Postgres sequence.
+  //
+  // This used to be `count(*) + 10001`. Two checkouts running concurrently
+  // both read the same count and minted the same order number. A sequence is
+  // atomic and never reuses a value.
+  const serials: number[] = []
+  for (let i = 0; i < items.length; i++) {
+    const { data: serial, error: serialErr } = await supabaseAdmin.rpc('next_reseller_order_number')
+    if (serialErr || !serial) {
+      console.error('[storefront.checkout] serial allocation failed:', serialErr?.message)
+      return NextResponse.json({ error: 'Could not create the order. Please try again.' }, { status: 500 })
+    }
+    // 'RSL-SF-10042' → 10042
+    serials.push(Number(String(serial).replace(/\D/g, '')))
+  }
 
-  const baseSerial = (count || 0) + 10001
   const insertedOrders = []
 
   // 7. Process each item in checkout
@@ -209,7 +247,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
         }
 
         const compEarningsPaise = compItemPricePaise - compTotalCostPaise
-        const compOrderNumber = `RSL-SF-${baseSerial + idx}-${compIdx}`
+        const compOrderNumber = `RSL-SF-${serials[idx]}-${compIdx}`
 
         // Insert component order record
         const { data: newCompOrder, error: compOrderErr } = await supabaseAdmin
@@ -324,7 +362,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     }
 
     // Generate serial order number
-    const orderNumber = `RSL-SF-${baseSerial + idx}`
+    const orderNumber = `RSL-SF-${serials[idx]}`
     const earningsPaise = itemPricePaise - totalCostPaise
 
     // Insert order record

@@ -76,8 +76,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Quote must contain at least one item' }, { status: 400 })
   }
 
-  const marginPct = Number(body.margin_pct) ?? DEFAULT_QUOTE_MARGIN_PCT
-  const gstRatePct = Number(body.gst_rate_pct) ?? DEFAULT_QUOTE_GST_RATE_PCT
+  // Coalesce BEFORE converting: Number(undefined) is NaN, not nullish, so
+  // `Number(body.x) ?? DEFAULT` always kept the NaN and never fell back.
+  const marginPct = Number(body.margin_pct ?? DEFAULT_QUOTE_MARGIN_PCT)
+  const gstRatePct = Number(body.gst_rate_pct ?? DEFAULT_QUOTE_GST_RATE_PCT)
   const gstTreatment = body.gst_treatment || 'exclusive'
 
   // Compute calculated values for each item

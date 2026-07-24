@@ -64,7 +64,10 @@ export function getStoneSeatVolume(
   if (!Array.isArray(diamonds)) return 0;
   return diamonds.reduce((sum, d) => {
     const weight = parseFloat(String(d.weight || 0)) || 0;
-    const pieces = parseInt(String(d.pieces || 1), 10) || 1;
+    // `d.pieces || 1` treated an explicit 0 as 1, adding a phantom stone's seat
+    // volume. Only fall back when the value is genuinely absent.
+    const rawPieces = d.pieces === undefined || d.pieces === null || d.pieces === '' ? 1 : d.pieces;
+    const pieces = Math.max(parseInt(String(rawPieces), 10) || 0, 0);
     const setting = d.setting_type || 'prong';
     const factor = SETTING_FACTORS[setting] ?? 0.25;
 
