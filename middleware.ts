@@ -11,6 +11,7 @@ function isPublicMarketing(pathname: string): boolean {
     pathname === '/' ||
     pathname.startsWith('/partner-signup') ||
     pathname.startsWith('/consultation') ||
+    pathname.startsWith('/thank-you') ||
     pathname.startsWith('/frames') ||
     pathname === '/api/public/partner-signup' ||
     pathname === '/api/public/consultation'
@@ -57,7 +58,12 @@ export default withAuth(
       return NextResponse.next()
     }
 
-    if (!token) return NextResponse.redirect(new URL('/login', req.url))
+    // STRICT UNAUTHENTICATED GUARD: redirect any unauthenticated user to /login
+    if (!token) {
+      const loginUrl = new URL('/login', req.url)
+      loginUrl.searchParams.set('callbackUrl', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
 
     const role = token.role as string
 
@@ -159,6 +165,10 @@ export default withAuth(
     return NextResponse.next()
   },
   {
+    secret: process.env.NEXTAUTH_SECRET,
+    pages: {
+      signIn: '/login',
+    },
     callbacks: {
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname

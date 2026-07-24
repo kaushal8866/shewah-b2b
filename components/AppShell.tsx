@@ -141,6 +141,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname === '/login' ||
     pathname.startsWith('/partner-signup') ||
     pathname.startsWith('/consultation') ||
+    pathname.startsWith('/thank-you') ||
     pathname.startsWith('/apply') ||
     pathname.startsWith('/setup') ||
     pathname.startsWith('/showcase') ||
@@ -151,7 +152,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/r/') ||
     pathname.startsWith('/accept-invite/') ||
     pathname.startsWith('/cad-share/')
-  if (isPublic) return <>{children}</>  
+
+  // Client-side authentication guard for private admin pages
+  useEffect(() => {
+    if (status === 'unauthenticated' && !isPublic) {
+      router.replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`)
+    }
+  }, [status, isPublic, router, pathname])
+
+  if (isPublic) return <>{children}</>
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-[#1E3A5F] flex items-center justify-center mb-3">
+          <Diamond className="w-5 h-5 text-white animate-pulse" />
+        </div>
+        <p className="text-xs font-mono text-white/60 uppercase tracking-widest">Verifying Authorization...</p>
+      </div>
+    )
+  }
+
+  if (status === 'unauthenticated') {
+    return null
+  }
 
   const role = session?.user?.role || 'sub'
   const permissions = session?.user?.permissions || []
