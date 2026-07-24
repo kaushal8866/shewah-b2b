@@ -44,10 +44,26 @@ describe('computeQuoteItem', () => {
     expect(result.line_cogs).toBe(48545 * 2)
   })
 
-  // Documents current behaviour: margin is applied ONLY to diamond cost, so a
-  // zero-diamond item earns no margin at all. See Phase 1.6 of the audit.
-  it('earns zero margin on an item with no diamonds', () => {
-    expect(result.unit_trade).toBe(result.unit_cogs)
+  // Margin still applies ONLY to diamond cost — metal and labour are quoted
+  // transparently by design. With no diamonds that would price at exactly
+  // COGS, so the minimum-margin floor now lifts it clear of cost.
+  it('applies the margin floor rather than selling at cost', () => {
+    expect(result.margin_floor_applied).toBe(true)
+    expect(result.unit_trade).toBeGreaterThan(result.unit_cogs)
+    expect(result.unit_trade).toBe(Math.round(result.unit_cogs * 1.1))
+  })
+
+  it('leaves a diamond-bearing item on its normal markup', () => {
+    const withStones = computeQuoteItem({
+      ...input,
+      diamonds: [{ weight: 0.5, pieces: 2, rate_per_pc: 40000 } as any],
+    }, 28)
+    expect(withStones.margin_floor_applied).toBe(false)
+  })
+
+  it('honours an explicit minimum margin', () => {
+    const strict = computeQuoteItem(input, 28, 25)
+    expect(strict.unit_trade).toBe(Math.round(strict.unit_cogs * 1.25))
   })
 })
 

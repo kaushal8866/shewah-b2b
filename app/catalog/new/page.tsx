@@ -37,13 +37,14 @@ type DiamondRow = {
 
 const SHAPES = ['round','oval','pear','cushion','princess','marquise','emerald','radiant','heart','asscher']
 const ROLES = ['center','side','accent','other']
-const KARATS = [
-  { value: '9',  label: '9K  (38%)',   purity: KARAT_FACTORS[9]  },
-  { value: '10', label: '10K (42%)',   purity: KARAT_FACTORS[10] },
-  { value: '14', label: '14K (60%)',   purity: KARAT_FACTORS[14] },
-  { value: '18', label: '18K (75%)',   purity: KARAT_FACTORS[18] },
-  { value: '22', label: '22K (91.6%)', purity: KARAT_FACTORS[22] },
-]
+// Labels derive from KARAT_FACTORS so they cannot drift from the real purity.
+// They were hardcoded as 38% / 42% / 60%, which no longer matched after the
+// table was corrected to BIS hallmark fineness (375 / 417 / 585).
+const KARATS = [9, 10, 14, 18, 22].map(k => ({
+  value: String(k),
+  label: `${k}K (${(KARAT_FACTORS[k] * 100).toFixed(1).replace(/\.0$/, '')}%)`,
+  purity: KARAT_FACTORS[k],
+}))
 
 function newDiamondRow(): DiamondRow {
   return {

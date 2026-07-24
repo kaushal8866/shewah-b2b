@@ -1,4 +1,4 @@
-import { pure24kt, getMetalWeight, pureGoldMass } from './karat'
+import { pure24kt, getMetalWeight, pureGoldMass, DEFAULT_MIN_MARGIN_PCT } from './karat'
 
 export interface DiamondSpec {
   shape_id: string
@@ -34,11 +34,14 @@ export interface ComputedQuoteItem {
   line_cogs: number
   line_trade: number
   line_total: number
+  /** True when the minimum-margin floor had to lift the price above raw COGS. */
+  margin_floor_applied: boolean
 }
 
 export function computeQuoteItem(
   input: QuoteItemInput,
-  marginPct: number = 28
+  marginPct: number = 28,
+  minMarginPct: number = DEFAULT_MIN_MARGIN_PCT,
 ): ComputedQuoteItem {
   const quantity = Math.max(Number(input.quantity) || 1, 1)
   
@@ -100,7 +103,15 @@ export function computeQuoteItem(
   const otherCharges = Math.max(Number(input.other_charges) || 0, 0)
 
   const unitCogs = goldCostPerPc + labourCostPerPc + diamondCostPerPc + makingCharges + hallmarking + otherCharges
-  const unitTrade = goldCostPerPc + labourCostPerPc + Math.round(diamondCostPerPc * (1 + marginPct / 100)) + makingCharges + hallmarking + otherCharges
+
+  // Margin applies only to diamond cost — gold, labour, making, hallmarking and
+  // IGI are quoted transparently. An item with no diamonds would therefore
+  // price at exactly COGS, so a minimum-margin floor keeps it above cost.
+  const rawUnitTrade = goldCostPerPc + labourCostPerPc + Math.round(diamondCostPerPc * (1 + marginPct / 100)) + makingCharges + hallmarking + otherCharges
+  const minMargin = Math.max(minMarginPct, 0) / 100
+  const tradeFloor = Math.round(unitCogs * (1 + minMargin))
+  const marginFloorApplied = tradeFloor > rawUnitTrade
+  const unitTrade = marginFloorApplied ? tradeFloor : rawUnitTrade
 
   return {
     net_24kt_weight_g: net24ktWeight,
@@ -111,6 +122,7 @@ export function computeQuoteItem(
     line_cogs: unitCogs * quantity,
     line_trade: unitTrade * quantity,
     line_total: unitTrade * quantity,
+    margin_floor_applied: marginFloorApplied,
   }
 }
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { KARAT_FACTORS } from '@/lib/karat'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,15 +68,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Karat must be a number' }, { status: 400 })
     }
 
-    const KARAT_FACTORS: Record<number, number> = {
-      24: 1.0,
-      22: 0.916,
-      18: 0.75,
-      14: 0.60,
-      10: 0.42,
-      9: 0.38
-    }
-    const factor = KARAT_FACTORS[karatNum] || 0.75
+    // Was a fourth inline copy of the purity table, carrying the same wrong
+    // values (14K 0.60 / 10K 0.42 / 9K 0.38). Use the canonical one.
+    const factor = KARAT_FACTORS[karatNum] ?? KARAT_FACTORS[18]
     const pureWeight = Number(gross_weight) * factor
 
     const { data, error } = await supabaseAdmin

@@ -3,6 +3,10 @@ import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin'
 import { renderCatalogPdf, CatalogPDFProduct } from '@/lib/catalogPdf'
 import { toResponseBody } from '@/lib/pdfHelpers'
 
+// Reads query params, so it can never be statically rendered. Without this the
+// build probes it, the render throws, and the error is logged on every build.
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams

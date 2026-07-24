@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { computePnL } from '@/lib/pnlEngine'
+import { istToday, istMonthStart } from '@/lib/period'
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -15,8 +16,11 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url)
-  const todayStr = new Date().toLocaleDateString('en-CA')
-  const defaultFrom = todayStr.substring(0, 8) + '01' // first day of month
+  // Must be IST, not server-local. This ran as UTC on Vercel, so for the first
+  // 5½ hours of every IST day "today" was still yesterday — and an operator
+  // asking for today's P&L got "Date range cannot contain future dates".
+  const todayStr = istToday()
+  const defaultFrom = istMonthStart(todayStr)
   const defaultTo = todayStr
 
   const from = searchParams.get('from') || defaultFrom

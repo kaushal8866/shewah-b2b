@@ -93,6 +93,7 @@ const ROUTE_MODULES: Array<[string, ModuleId]> = [
   ['/shared-design',           'catalog'],
 
   // API namespaces
+  ['/api/dashboard',               'dashboard'],
   ['/api/partners',                'partners'],
   ['/api/resellers',               'resellers'],
   ['/api/customers',               'customers'],
