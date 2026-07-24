@@ -46,7 +46,7 @@ function StockIssueInner() {
   useEffect(() => {
     supabase.from('manufacturing_partners')
       .select('id, name').eq('status', 'active').order('name')
-      .then(({ data }) => setPartners(data || []))
+      .then(({ data }: any) => setPartners(data || []))
     fetch('/api/stock/balances').then(r => r.json()).then(d => setBalances(d.balances || []))
     fetch('/api/diamonds/shapes').then(r => r.json()).then(d => setShapes(d.shapes || []))
     fetch('/api/diamonds/sizes').then(r => r.json()).then(d => setSizes(d.sizes || []))
@@ -70,7 +70,7 @@ function StockIssueInner() {
       .in('status', ['issued', 'in_progress', 'pending'])
       .order('created_at', { ascending: false })
       .limit(10)
-      .then(({ data }) => { if (!cancelled) setOpenMfgOrders(data || []) })
+      .then(({ data }: any) => { if (!cancelled) setOpenMfgOrders(data || []) })
     return () => { cancelled = true }
   }, [form.manufacturing_partner_id])
 

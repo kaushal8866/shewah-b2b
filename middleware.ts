@@ -4,6 +4,7 @@ import {
   LANDING_VARIANT_COOKIE, LANDING_VARIANT_COOKIE_MAX_AGE, LANDING_VARIANT_HEADER,
   isLandingVariant, pickRandomVariant, readKillSwitch,
 } from '@/lib/landingVariant'
+import { canAccessPath } from '@/lib/authz'
 
 // Public marketing surfaces — anyone can hit them, logged in or not.
 function isPublicMarketing(pathname: string): boolean {
@@ -110,6 +111,13 @@ export default withAuth(
       return NextResponse.next()
     }
 
+    // The generic DB proxy authorizes itself per table + op against the
+    // caller's permissions (see canAccessTable). A blanket module check here
+    // would be wrong — one endpoint serves every module.
+    if (pathname === '/api/db') {
+      return NextResponse.next()
+    }
+
     // Manufacturers are sandboxed to their portal — block every other admin URL/API.
     if (role === 'manufacturer') {
       if (pathname.startsWith('/api/')) {
@@ -134,17 +142,21 @@ export default withAuth(
       return NextResponse.redirect(new URL('/portal/reseller', req.url))
     }
 
-    // Settings is master-only
-    if (pathname.startsWith('/settings') && role !== 'master') {
-      return NextResponse.redirect(new URL('/', req.url))
-    }
-
-    // Profitability dashboard is master or perms-gated sub admin
-    if (pathname.startsWith('/profitability') && role !== 'master') {
-      const perms = (token.permissions as string[] | undefined) || []
-      if (!perms.includes('profitability')) {
-        return NextResponse.redirect(new URL('/', req.url))
+    // ── Module permission gate (master / sub admins) ────────────────────
+    // Every admin page and API namespace is resolved through the single map in
+    // lib/authz.ts, which the nav also consumes. Fail-closed: a path the map
+    // does not recognise is denied, so a new screen is unreachable until it is
+    // registered. Previously only /settings and /profitability were checked
+    // here and everything else was reachable by typing the URL.
+    const verdict = canAccessPath(
+      { role, permissions: token.permissions as string[] | undefined },
+      pathname,
+    )
+    if (!verdict.allowed) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
+      return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
     // Material ledger / float pages are master-only
@@ -182,6 +194,6 @@ export default withAuth(
 export const config = {
   matcher: [
     // SECURITY: anything matched here is excluded from NextAuth middleware.
-    '/((?!login|partner-signup|consultation|frames/|setup|showcase|track|m/|cad-share/|q/|c/|accept-invite/|r/|api/r/|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|api/cad-share/|api/quotes/share/|api/quotes/test-compute|api/c/|api/public|api/upload|_next|_vercel|favicon\\.ico|opengraph-image|.*\\.).*)',
+    '/((?!login|partner-signup|consultation|frames/|setup|showcase|track|m/|cad-share/|q/|c/|accept-invite/|r/|api/r/|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|api/cad-share/|api/quotes/share/|api/c/|api/public|api/upload|_next|_vercel|favicon\\.ico|opengraph-image|.*\\.).*)',
   ],
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin'
 import { renderCatalogPdf, CatalogPDFProduct } from '@/lib/catalogPdf'
+import { toResponseBody } from '@/lib/pdfHelpers'
 
 export async function GET(req: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
 
     const filename = `Shewah_Catalog_${showPrice ? `with_price_${priceType}` : 'no_price'}.pdf`
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(toResponseBody(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

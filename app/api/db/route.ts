@@ -3,84 +3,15 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { notifyRetailerOrderUpdate } from '@/lib/whatsappNotify'
+import { canAccessTable, type DbOp } from '@/lib/authz'
+import { runInBackground } from '@/lib/backgroundTask'
 
-const ALLOWED_TABLES = new Set([
-  'partners',
-  'visits',
-  'orders',
-  'order_pipeline',
-  'cad_requests',
-  'products',
-  'gold_rates',
-  'vendors',
-  'inventory',
-  'circuits',
-  'manufacturing_partners',
-  'manufacturing_orders',
-  'design_collections',
-  'design_collection_products',
-  'design_interests',
-  'showcase_views',
-  'labour_rates',
-  'settings',
-  'material_float',
-  'material_transactions',
-  'reconciliation_alerts',
-  'order_payments',
-  'stock_movements',
-  'partner_signups',
-  'customers',
-  'customer_addresses',
-  'customer_enquiries',
-  'customer_enquiry_activity',
-  'production_updates',
-  'customer_journey_links',
-  'quotes',
-  'quote_items',
-  'quote_share_links',
-  'partner_diamond_trades',
-  'partner_trade_payments',
-  'gst_invoices',
-  'cash_transactions',
-  'purchase_lots',
-  'lot_issuances',
-  'replenishment_obligations',
-  'replenishment_offsets',
-  'product_categories',
-  'resellers',
-  'cfg_stone_prices',
-  'reseller_invitations',
-  'reseller_product_prices',
-  'reseller_orders',
-  'reseller_sample_ledger',
-  'reseller_payments',
-  'reseller_customers',
-  'reseller_share_links',
-  'reseller_themes',
-  'reseller_storefront_customers',
-  'reseller_storefront_otps',
-  'reseller_storefront_carts',
-  'reseller_messages',
-  'reseller_storefront_reviews',
-  'reseller_storefront_coupons',
-  'reseller_storefront_abandoned_carts',
-  'reseller_notifications',
-])
+// NOTE: this proxy executes caller-supplied queries with the service-role key,
+// so RLS never applies. Table + op authorization therefore lives entirely in
+// lib/authz.ts — see canAccessTable. Historically this file carried a single
+// global allow-list that every `sub` admin could reach in full, regardless of
+// their permissions; that check is now per-permission and fail-closed.
 
-const MASTER_ONLY_TABLES = new Set([
-  'app_users',
-  'material_float',
-  'material_transactions',
-  'reconciliation_alerts',
-  'stock_movements',
-  'partner_diamond_trades',
-  'partner_trade_payments',
-  'gst_invoices',
-])
-
-// Roles allowed to use the generic admin DB proxy at all.
-// Manufacturer / retailer portal users go through dedicated /api/portal/* endpoints.
-const ADMIN_ROLES = new Set(['master', 'sub'])
 
 function applyFilter(q: any, f: any) {
   if (!f || typeof f.col !== 'string') return q
@@ -113,8 +44,12 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // Only admin roles use this proxy at all — manufacturer / retailer /
+  // reseller portal users go through dedicated /api/portal/* endpoints.
+  // canAccessTable re-checks this, but rejecting here avoids parsing a body
+  // for a caller who can never be authorized.
   const role = (session.user as any).role
-  if (!ADMIN_ROLES.has(role)) {
+  if (role !== 'master' && role !== 'sub') {
     return NextResponse.json(
       { data: null, error: { message: 'Forbidden' } },
       { status: 403 }
@@ -154,22 +89,23 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     )
   }
-  if (!ALLOWED_TABLES.has(table) && !MASTER_ONLY_TABLES.has(table)) {
-    return NextResponse.json(
-      { data: null, error: { message: `Table "${table}" is not allowed` } },
-      { status: 400 }
-    )
-  }
-  if (MASTER_ONLY_TABLES.has(table) && role !== 'master') {
-    return NextResponse.json(
-      { data: null, error: { message: 'Forbidden' } },
-      { status: 403 }
-    )
-  }
   if (!['select', 'insert', 'update', 'delete', 'upsert'].includes(op)) {
     return NextResponse.json(
       { data: null, error: { message: `Invalid op "${op}"` } },
       { status: 400 }
+    )
+  }
+
+  // Fail-closed table + op authorization against the caller's own permissions.
+  const verdict = canAccessTable(
+    { role, permissions: (session.user as any).permissions },
+    table,
+    op as DbOp,
+  )
+  if (!verdict.allowed) {
+    return NextResponse.json(
+      { data: null, error: { message: verdict.message } },
+      { status: verdict.status }
     )
   }
 
@@ -236,20 +172,23 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Fire WhatsApp notifications for retailer-facing milestones. Failures are
-  // logged inside notifyRetailerOrderUpdate and never block the admin save.
+  // Fire WhatsApp notifications for retailer-facing milestones. These must not
+  // block the admin save, but they must still be allowed to finish — a bare
+  // detached promise gets killed when the response returns on serverless.
   if (op === 'update' && table === 'orders' && Array.isArray(priorOrderRows) && priorOrderRows.length > 0) {
     const afterValues = (values && typeof values === 'object') ? values : {}
-    for (const prior of priorOrderRows) {
-      // fire-and-forget — do not await
-      notifyRetailerOrderUpdate({
-        orderId: prior.id,
-        before: prior,
-        afterValues,
-      }).catch((err) => {
-        console.error('[whatsappNotify] dispatch error', err?.message || err)
-      })
-    }
+    const rows = priorOrderRows
+    runInBackground('notify.order.update', async () => {
+      for (const prior of rows) {
+        await notifyRetailerOrderUpdate({
+          orderId: prior.id,
+          before: prior,
+          afterValues,
+        }).catch((err) => {
+          console.error('[whatsappNotify] dispatch error', err?.message || err)
+        })
+      }
+    })
   }
 
   return NextResponse.json({ data, error: null, count: returnedCount ?? null })

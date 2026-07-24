@@ -17,6 +17,7 @@ function NewCADRequestForm() {
   const [uploading, setUploading] = useState(false)
   const [referenceImages, setReferenceImages] = useState<string[]>([])
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
+  const [cadParties, setCadParties] = useState<{ id: string; name: string; city?: string }[]>([])
   const [productRef, setProductRef] = useState<{ code: string; name: string; gold_karat?: number; diamond_shape?: string } | null>(null)
   const fromInterest = !!prePartner
 
@@ -29,6 +30,7 @@ function NewCADRequestForm() {
     setting_type: '',
     special_requests: '',
     priority: 'normal',
+    cad_party_id: '',
     due_date: new Date(Date.now() + 48 * 3600000).toISOString().split('T')[0],
   })
 
@@ -49,7 +51,7 @@ function NewCADRequestForm() {
       .select('id, code, name, gold_karat, diamond_shape, diamond_weight, diamond_quality, diamond_color')
       .eq('id', preProduct)
       .single()
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         if (!data) return
         setProductRef(data)
         const dq = (data as any).diamond_weight
@@ -97,6 +99,8 @@ function NewCADRequestForm() {
       ...form,
       request_number: num,
       gold_karat: parseInt(form.gold_karat),
+      // uuid FK — an empty string is not valid input, send null for in-house.
+      cad_party_id: form.cad_party_id || null,
       reference_images: referenceImages,
       received_date: new Date().toISOString().split('T')[0],
     }]).select().single()

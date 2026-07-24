@@ -521,7 +521,7 @@ export default function OrderDetailPage() {
 
     const castingWeight = nV * density
 
-    setForm(prev => {
+    setForm((prev: any) => {
       const weightStr = castingWeight > 0 ? castingWeight.toFixed(4) : ''
       return prev.gold_weight_estimated === weightStr ? prev : { ...prev, gold_weight_estimated: weightStr }
     })
@@ -553,13 +553,13 @@ export default function OrderDetailPage() {
     const category = product.category || ''
 
     if (!form.ring_size) {
-      setForm(prev => prev.gold_weight_estimated === String(baseWeight) ? prev : { ...prev, gold_weight_estimated: String(baseWeight) })
+      setForm((prev: any) => prev.gold_weight_estimated === String(baseWeight) ? prev : { ...prev, gold_weight_estimated: String(baseWeight) })
       return
     }
 
     const scaled = scaleWeightBySize(baseWeight, '', form.ring_size, category)
     const scaledStr = scaled > 0 ? scaled.toFixed(4) : String(baseWeight)
-    setForm(prev => prev.gold_weight_estimated === scaledStr ? prev : { ...prev, gold_weight_estimated: scaledStr })
+    setForm((prev: any) => prev.gold_weight_estimated === scaledStr ? prev : { ...prev, gold_weight_estimated: scaledStr })
   }, [editing, form.ring_size, weightCalcMethod, form.gold_karat, form.gold_color, order])
 
   async function load() {
@@ -580,7 +580,7 @@ export default function OrderDetailPage() {
     setMfgPartners((mp || []) as ManufacturingPartnerLite[])
     if (gr?.[0]) setLatestGoldRate(gr[0].rate_24k)
     if (sd) {
-      const rate = sd.find(s => s.key === 'silver_rate_b2b')?.value
+      const rate = sd.find((s: any) => s.key === 'silver_rate_b2b')?.value
       if (rate) setLatestSilverRate(Number(rate))
     }
 
@@ -1367,7 +1367,7 @@ export default function OrderDetailPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-medium text-stone-900">Pipeline stage</h2>
               {nextStage && !isCancelled && (
-                <button onClick={advanceStage} disabled={advancing}
+                <button onClick={() => advanceStage()} disabled={advancing}
                   className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
                   {advancing ? 'Moving...' : `Move to ${nextStage.label}`}
                   <ChevronRight className="w-3.5 h-3.5" />

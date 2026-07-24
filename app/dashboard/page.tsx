@@ -67,9 +67,9 @@ export default function Dashboard() {
         ])
 
         const allOrders = orders || []
-        const pending = allOrders.filter(o => !['delivered'].includes(o.status))
-        const totalRevenue = allOrders.filter(o => o.status === 'delivered').reduce((s, o) => s + (o.total_amount || 0), 0)
-        const pendingRevenue = pending.reduce((s, o) => s + ((o.total_amount || 0) - (o.advance_paid || 0)), 0)
+        const pending = allOrders.filter((o: any) => !['delivered'].includes(o.status))
+        const totalRevenue = allOrders.filter((o: any) => o.status === 'delivered').reduce((s: any, o: any) => s + (o.total_amount || 0), 0)
+        const pendingRevenue = pending.reduce((s: any, o: any) => s + ((o.total_amount || 0) - (o.advance_paid || 0)), 0)
 
         setStats({
           totalPartners: totalPartners || 0,
@@ -83,7 +83,7 @@ export default function Dashboard() {
           goldRate24k: goldData?.[0]?.rate_24k || 0,
         })
 
-        setRecentOrders(allOrders.slice(0, 8).map(o => ({
+        setRecentOrders(allOrders.slice(0, 8).map((o: any) => ({
           id: o.id,
           order_number: o.order_number,
           status: o.status,

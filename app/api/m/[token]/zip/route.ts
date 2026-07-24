@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import JSZip from 'jszip'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { toResponseBody } from '@/lib/pdfHelpers'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -112,7 +113,7 @@ export async function GET(_: Request, ctx: { params: { token: string } }) {
   }
 
   const filename = `${safeName(order.order_number || 'order', 'order')}.zip`
-  return new NextResponse(blob, {
+  return new NextResponse(toResponseBody(blob), {
     status: 200,
     headers: {
       'Content-Type': 'application/zip',

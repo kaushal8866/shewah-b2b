@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import {
-  AlertTriangle, Plus, Edit2, Trash2, X, Check, Save, ArrowLeft, RefreshCw, AlertOctagon, HelpCircle
+  AlertTriangle, Plus, Edit2, Trash2, X, Check, Save, ArrowLeft, RefreshCw, AlertOctagon, HelpCircle, Info
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/app/components/Toast'

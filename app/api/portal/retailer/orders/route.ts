@@ -169,7 +169,9 @@ export async function POST(req: Request) {
       const compDelivery = comp.delivery_days || 21
       const compExpected = new Date(Date.now() + compDelivery * 86400000).toISOString().slice(0, 10)
 
-      const compInsert = {
+      // order_number is assigned per attempt in the retry loop below, so it
+      // must be part of the literal's inferred shape.
+      const compInsert: Record<string, any> = {
         partner_id: user.partnerId,
         product_id: comp.id,
         type: 'catalog',

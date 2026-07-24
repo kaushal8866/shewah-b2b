@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
   // 1. Resolve reseller storefront details
   const { data: shareLink } = await supabaseAdmin
     .from('reseller_share_links')
-    .select('id, reseller_id, markup_percent')
+    .select('id, reseller_id, markup_percent, order_count')
     .eq('link_token', token)
     .eq('is_active', true)
     .maybeSingle()
@@ -87,15 +87,39 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
   const deadline = new Date()
   deadline.setHours(deadline.getHours() + hours)
 
-  // 5. Query total count for generating sequential serial numbers
+  // 5. Resolve the live gold rate + per-karat retail labour. Every line item
+  //    below is priced off these, so bail out rather than guess if no rate has
+  //    been recorded — a fabricated rate would silently misprice the order.
+  const { data: goldRateRows } = await supabaseAdmin
+    .from('gold_rates')
+    .select('rate_24k, retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
+    .order('recorded_at', { ascending: false })
+    .limit(1)
+  const latestRate = goldRateRows?.[0]
+  if (!latestRate?.rate_24k) {
+    return NextResponse.json(
+      { error: 'Pricing is temporarily unavailable. Please try again shortly.' },
+      { status: 503 },
+    )
+  }
+  const goldRate = Number(latestRate.rate_24k)
+  const retailLabour: Record<number, number> = {
+    22: Number(latestRate.retail_labour_22k) || 450,
+    18: Number(latestRate.retail_labour_18k) || 450,
+    14: Number(latestRate.retail_labour_14k) || 450,
+    10: Number(latestRate.retail_labour_10k) || 450,
+    9:  Number(latestRate.retail_labour_9k)  || 450,
+  }
+
+  // 6. Query total count for generating sequential serial numbers
   const { count } = await supabaseAdmin
     .from('reseller_orders')
     .select('*', { count: 'exact', head: true })
-  
+
   const baseSerial = (count || 0) + 10001
   const insertedOrders = []
 
-  // 6. Process each item in checkout
+  // 7. Process each item in checkout
   for (let idx = 0; idx < items.length; idx++) {
     const item = items[idx]
     const { id: productId, quantity = 1, ring_size, custom_attributes = {} } = item
@@ -381,7 +405,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     } catch {}
   }
 
-  // 7. Clear synced cart in database if customer is logged in
+  // 8. Clear synced cart in database if customer is logged in
   if (customer) {
     await supabaseAdmin
       .from('reseller_storefront_carts')
@@ -389,7 +413,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       .eq('customer_id', customer.id)
   }
 
-  // 8. Update reseller notifications feed
+  // 9. Update reseller notifications feed
   await supabaseAdmin
     .from('reseller_notifications')
     .insert({
@@ -400,7 +424,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       link: `/portal/reseller/orders`
     })
 
-  // 9. Mark abandoned cart entry (if any existed for this phone/customer) as recovered
+  // 10. Mark abandoned cart entry (if any existed for this phone/customer) as recovered
   try {
     const cleanPhone = shipping_phone.replace(/\s+/g, '')
     await supabaseAdmin
@@ -411,7 +435,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       .eq('status', 'active')
   } catch {}
 
-  // 10. Update link statistics
+  // 11. Update link statistics
   await supabaseAdmin
     .from('reseller_share_links')
     .update({

@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Insert items linked to the quote
-  const itemsToInsert = computedItems.map((item) => ({
+  const itemsToInsert = computedItems.map((item: any) => ({
     quote_id: createdQuote.id,
     position: item.position,
     product_id: item.product_id || null,
