@@ -56,7 +56,12 @@ export const orderFlow: ProcessDef = {
       sla: { hours: 72, label: 'partner review' },
     },
     {
-      id: 'cad_approved',
+      // SOP §9.1 calls this CAD_APPROVED. The app has always stored
+      // 'design_approved', and reseller_orders — a SEPARATE table — uses the
+      // same string. Renaming would touch 13 files across two tables with
+      // overlapping status vocabularies for a purely cosmetic gain, so the
+      // stored value stays as it is.
+      id: 'design_approved',
       label: 'Design approved',
       description: 'Partner signed off. Ready to quote.',
       waitingOn: 'us',
@@ -176,7 +181,7 @@ export const orderFlow: ProcessDef = {
     },
 
     {
-      from: 'cad_sent', to: 'cad_approved',
+      from: 'cad_sent', to: 'design_approved',
       label: 'Record partner approval',
       allowedRoles: ADMIN_AND_PARTNER,
       primary: true,
@@ -194,7 +199,7 @@ export const orderFlow: ProcessDef = {
     },
 
     {
-      from: 'cad_approved', to: 'quote_issued',
+      from: 'design_approved', to: 'quote_issued',
       label: 'Issue quote',
       allowedRoles: ADMIN,
       primary: true,
@@ -207,7 +212,7 @@ export const orderFlow: ProcessDef = {
       hint: 'Locks the gold rate for 72 hours.',
     },
     {
-      from: 'cad_approved', to: 'cancelled',
+      from: 'design_approved', to: 'cancelled',
       label: 'Cancel order',
       allowedRoles: ADMIN,
       variant: 'danger',
