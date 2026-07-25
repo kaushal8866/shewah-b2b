@@ -17,11 +17,13 @@ function NewCADRequestForm() {
   const [uploading, setUploading] = useState(false)
   const [referenceImages, setReferenceImages] = useState<string[]>([])
   const [partners, setPartners] = useState<{ id: string; store_name: string; city: string }[]>([])
+  const [cadParties, setCadParties] = useState<{ id: string; name: string; city?: string }[]>([])
   const [productRef, setProductRef] = useState<{ code: string; name: string; gold_karat?: number; diamond_shape?: string } | null>(null)
   const fromInterest = !!prePartner
 
   const [form, setForm] = useState({
     partner_id: prePartner,
+    cad_party_id: '',
     brief_text: '',
     diamond_shape: 'round',
     diamond_weight: '',
@@ -93,10 +95,12 @@ function NewCADRequestForm() {
     const { count } = await supabase.from('cad_requests').select('*', { count: 'exact', head: true })
     const num = `SH-CAD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
 
+    const { cad_party_id, ...insertPayload } = form
+
     const { error } = await supabase.from('cad_requests').insert([{
-      ...form,
+      ...insertPayload,
       request_number: num,
-      gold_karat: parseInt(form.gold_karat),
+      gold_karat: form.gold_karat ? parseInt(form.gold_karat) : 18,
       reference_images: referenceImages,
       received_date: new Date().toISOString().split('T')[0],
     }]).select().single()
