@@ -73,6 +73,9 @@ export default function FounderCopilotFloating() {
           productId,
           cadRequestId,
           customerId,
+          // Without this every message was a cold start — "what about last
+          // month?" had nothing to refer back to. Server caps and validates it.
+          history: conversation.slice(-8).map(m => ({ role: m.role, text: m.text })),
         }),
       })
 
@@ -112,15 +115,18 @@ export default function FounderCopilotFloating() {
       setConversation([
         {
           role: 'assistant',
-          text: `Welcome back, Founder. I am your Chief Intelligence Officer. I am continuously monitoring your operational data and global market intelligence. Currently active on ${contextLabel}.`,
-          insights: [
-            { title: 'Context Resolved', detail: contextLabel, score: 'Active' },
-            { title: 'Workforce Status', detail: '17 AI Agents operational & synchronized', score: '100%' },
-          ],
+          // Was: "Welcome back, Founder. I am your Chief Intelligence Officer…"
+          // plus two status cards, one of which asserted "17 AI Agents
+          // operational & synchronized — 100%". Nothing measured that; the
+          // registry holds specs, not running agents. A greeting that claims a
+          // system state it cannot observe is the first thing that makes the
+          // whole assistant read as theatre.
+          text: `You're on ${contextLabel}. Ask me anything about it, or about the business.`,
+          insights: [],
           suggestedActions: [
-            'Is this design commercially strong?',
-            'What are current Indian bridal solitaire trends?',
-            'Analyze market whitespace opportunities',
+            'What needs my attention today?',
+            'What is outstanding on invoices?',
+            'Which CAD requests are overdue?',
           ],
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },

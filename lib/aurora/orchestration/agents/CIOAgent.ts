@@ -19,6 +19,7 @@ export class CIOAgent {
     cadRequestId?: string
     customerId?: string
     orderId?: string
+    history?: Array<{ role: 'user' | 'assistant'; text: string }>
   }): Promise<{
     answer: string
     confidence: number
@@ -328,6 +329,7 @@ export class CIOAgent {
       routePath: params.routePath,
       dbData,
       scrapedData,
+      history: params.history,
     })
 
     // If a read failed, say so. Answering a financial question from a partial
