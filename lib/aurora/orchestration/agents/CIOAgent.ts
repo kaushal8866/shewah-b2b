@@ -80,10 +80,20 @@ export class CIOAgent {
       q.includes('ready to ship') ||
       q.includes('rts')
 
+    const isInvoicesQuery =
+      q.includes('invoice') ||
+      q.includes('invoices') ||
+      q.includes('unpaid') ||
+      q.includes('payment') ||
+      q.includes('overdue')
+
     // Context resolution: determine target steps based on query intent and active route
     const steps: WorkflowPipelineStep[] = []
 
-    if (isQuotesQuery) {
+    if (isInvoicesQuery) {
+      steps.push({ agentId: 'pricing_intelligence', taskType: 'AUDIT_INVOICES_STATUS' })
+      steps.push({ agentId: 'recommendation', taskType: 'GENERATE_INVOICE_ACTIONS' })
+    } else if (isQuotesQuery) {
       steps.push({ agentId: 'pricing_intelligence', taskType: 'AUDIT_QUOTES_STATUS' })
       steps.push({ agentId: 'recommendation', taskType: 'GENERATE_QUOTE_ACTIONS' })
     } else if (isOrdersQuery) {
@@ -137,7 +147,68 @@ export class CIOAgent {
     const insights: Array<{ title: string; detail: string; score?: string }> = []
     const suggestedActions: string[] = []
 
-    if (isQuotesQuery) {
+    if (isInvoicesQuery) {
+      let totalInvoices = 0
+      let unpaidCount = 0
+      let paidCount = 0
+      let cancelledCount = 0
+      let totalUnpaidAmount = 0
+      let totalInvoicedAmount = 0
+
+      try {
+        const { data: invoiceRows } = await supabaseAdmin
+          .from('gst_invoices')
+          .select('status, payment_status, total_amount, balance_due')
+
+        if (invoiceRows && invoiceRows.length > 0) {
+          totalInvoices = invoiceRows.length
+          cancelledCount = invoiceRows.filter((i: any) => i.status === 'cancelled').length
+          const activeInvoices = invoiceRows.filter((i: any) => i.status !== 'cancelled')
+
+          paidCount = activeInvoices.filter((i: any) => i.payment_status === 'paid').length
+          unpaidCount = activeInvoices.filter((i: any) => i.payment_status === 'unpaid' || i.payment_status === 'partial' || !i.payment_status).length
+
+          totalInvoicedAmount = activeInvoices.reduce((sum: number, i: any) => sum + (Number(i.total_amount) || 0), 0)
+          totalUnpaidAmount = activeInvoices.reduce((sum: number, i: any) => {
+            if (i.payment_status === 'paid') return sum
+            return sum + (Number(i.balance_due) || Number(i.total_amount) || 0)
+          }, 0)
+        }
+      } catch (err) {
+        console.error('Error fetching invoices stats from DB:', err)
+      }
+
+      answer = `You currently have ${unpaidCount} unpaid/outstanding invoices in the system with a total balance due of ₹${Math.round(totalUnpaidAmount).toLocaleString('en-IN')}. Across all ${totalInvoices} generated GST invoices, ${paidCount} are fully settled.`
+
+      insights.push(
+        {
+          title: 'Unpaid & Pending Invoices',
+          detail: `${unpaidCount} invoices currently awaiting payment or partial settlement`,
+          score: `${unpaidCount} Unpaid`,
+        },
+        {
+          title: 'Outstanding Balance Due',
+          detail: `Total unpaid amount pending collection from partners`,
+          score: `₹${Math.round(totalUnpaidAmount).toLocaleString('en-IN')}`,
+        },
+        {
+          title: 'Fully Paid Invoices',
+          detail: `${paidCount} invoices settled and reconciled`,
+          score: `${paidCount} Settled`,
+        },
+        {
+          title: 'Total GST Invoiced Volume',
+          detail: `Cumulative tax invoice value across ${totalInvoices} generated invoices`,
+          score: `₹${Math.round(totalInvoicedAmount).toLocaleString('en-IN')}`,
+        }
+      )
+
+      suggestedActions.push(
+        'View All GST Invoices (/invoices)',
+        'Send Payment Reminder to Partner',
+        'Record Payment Receipt'
+      )
+    } else if (isQuotesQuery) {
       let totalQuotes = 0
       let draftCount = 0
       let sentCount = 0
