@@ -90,6 +90,35 @@ describe('master-only boundaries', () => {
   })
 })
 
+describe('AURORA is master-only', () => {
+  // The copilot answers with consolidated financials read through the
+  // service-role client. Grantable access would let a sub-admin without
+  // `cash` or `profitability` ask a chat box for revenue and get it.
+  const subEverything = { role: 'sub', permissions: [...MODULE_IDS] as string[] }
+
+  it('denies /aurora to a sub-admin holding every permission', () => {
+    expect(canAccessPath(subEverything, '/aurora').allowed).toBe(false)
+    expect(canAccessModule(subEverything, 'aurora')).toBe(false)
+  })
+
+  it('denies the API namespace too, not just the page', () => {
+    expect(canAccessPath(subEverything, '/api/aurora/copilot').allowed).toBe(false)
+    expect(canAccessPath(subEverything, '/api/aurora/insights').allowed).toBe(false)
+  })
+
+  it('allows master', () => {
+    expect(canAccessPath(master, '/aurora').allowed).toBe(true)
+    expect(canAccessPath(master, '/api/aurora/copilot').allowed).toBe(true)
+  })
+
+  it('is registered, so it cannot fail closed by accident', () => {
+    // Without this entry AURORA 403s for everyone the moment this branch
+    // merges, because the map denies anything it does not recognise.
+    expect(moduleForPath('/aurora')).toBe('aurora')
+    expect(moduleForPath('/api/aurora/copilot')).toBe('aurora')
+  })
+})
+
 describe('portal roles are not admins', () => {
   it('denies admin paths and tables to a retailer', () => {
     expect(canAccessPath(retailer, '/orders').allowed).toBe(false)
@@ -119,6 +148,7 @@ describe('route resolution', () => {
     // grantable in Settings) while no route actually resolves to it.
     const representative: Record<string, string> = {
       dashboard: '/dashboard',
+      aurora: '/aurora',
       partners: '/partners',
       resellers: '/resellers',
       customers: '/customers',

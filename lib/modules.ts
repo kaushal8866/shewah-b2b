@@ -31,6 +31,7 @@ const LABELS: Record<ModuleId, string> = {
   profitability:       'Profitability',
   cash:                'Cash Book',
   diamond_procurement: 'Diamond Procurement',
+  aurora:              'AURORA Intelligence',
   settings:            'Settings',
 }
 

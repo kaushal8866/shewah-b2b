@@ -39,6 +39,7 @@ export const MODULE_IDS = [
   'profitability',
   'cash',
   'diamond_procurement',
+  'aurora',
   'settings',
 ] as const
 
@@ -51,8 +52,16 @@ export type Actor = {
   permissions: string[] | null | undefined
 }
 
-/** Modules only the master admin may ever reach, regardless of permissions. */
-export const MASTER_ONLY_MODULES = new Set<ModuleId>(['settings'])
+/**
+ * Modules only the master admin may ever reach, regardless of permissions.
+ *
+ * `aurora` is here because the copilot reads orders, invoices, quotes and
+ * partners through the service-role client and answers with consolidated
+ * financials — the same data /cash/pnl and /profitability already restrict to
+ * master. Leaving it grantable would let a sub-admin without `cash` or
+ * `profitability` ask a chat box for revenue and get it.
+ */
+export const MASTER_ONLY_MODULES = new Set<ModuleId>(['settings', 'aurora'])
 
 /** Every authenticated admin gets the dashboard; it carries no sensitive data. */
 const ALWAYS_ALLOWED_MODULES = new Set<ModuleId>(['dashboard'])
@@ -89,11 +98,13 @@ const ROUTE_MODULES: Array<[string, ModuleId]> = [
   ['/cash',                    'cash'],
   ['/diamond-asks',            'diamond_procurement'],
   ['/settings',                'settings'],
+  ['/aurora',                  'aurora'],
   ['/apply',                   'partners'],
   ['/shared-design',           'catalog'],
 
   // API namespaces
   ['/api/dashboard',               'dashboard'],
+  ['/api/aurora',                  'aurora'],
   ['/api/partners',                'partners'],
   ['/api/resellers',               'resellers'],
   ['/api/customers',               'customers'],
