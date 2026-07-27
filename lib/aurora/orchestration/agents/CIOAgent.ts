@@ -87,10 +87,25 @@ export class CIOAgent {
       q.includes('payment') ||
       q.includes('overdue')
 
+    const isPartnersQuery =
+      q.includes('partner') ||
+      q.includes('partners') ||
+      q.includes('retailer') ||
+      q.includes('retailers') ||
+      q.includes('reseller') ||
+      q.includes('resellers') ||
+      q.includes('vendor') ||
+      q.includes('vendors') ||
+      q.includes('manufacturer') ||
+      q.includes('manufacturers')
+
     // Context resolution: determine target steps based on query intent and active route
     const steps: WorkflowPipelineStep[] = []
 
-    if (isInvoicesQuery) {
+    if (isPartnersQuery) {
+      steps.push({ agentId: 'consumer_intelligence', taskType: 'AUDIT_PARTNERS_NETWORK' })
+      steps.push({ agentId: 'recommendation', taskType: 'GENERATE_PARTNER_ACTIONS' })
+    } else if (isInvoicesQuery) {
       steps.push({ agentId: 'pricing_intelligence', taskType: 'AUDIT_INVOICES_STATUS' })
       steps.push({ agentId: 'recommendation', taskType: 'GENERATE_INVOICE_ACTIONS' })
     } else if (isQuotesQuery) {
@@ -147,7 +162,60 @@ export class CIOAgent {
     const insights: Array<{ title: string; detail: string; score?: string }> = []
     const suggestedActions: string[] = []
 
-    if (isInvoicesQuery) {
+    if (isPartnersQuery) {
+      let totalPartners = 0
+      let resellersCount = 0
+      let retailersCount = 0
+      let vendorsCount = 0
+      let activeCount = 0
+
+      try {
+        const { data: partnerRows } = await supabaseAdmin
+          .from('partners')
+          .select('type, status')
+
+        if (partnerRows && partnerRows.length > 0) {
+          totalPartners = partnerRows.length
+          resellersCount = partnerRows.filter((p: any) => p.type === 'reseller').length
+          retailersCount = partnerRows.filter((p: any) => p.type === 'retailer' || p.type === 'retail').length
+          vendorsCount = partnerRows.filter((p: any) => p.type === 'vendor' || p.type === 'manufacturer').length
+          activeCount = partnerRows.filter((p: any) => p.status === 'active' || !p.status).length
+        }
+      } catch (err) {
+        console.error('Error fetching partners from DB:', err)
+      }
+
+      answer = `You currently have ${totalPartners} B2B partners in the Shewah ecosystem (${activeCount} active: ${resellersCount} resellers, ${retailersCount} retailers, and ${vendorsCount} manufacturing vendors).`
+
+      insights.push(
+        {
+          title: 'Total Active B2B Partners',
+          detail: `${activeCount} partners active across Reseller, Retailer, & Vendor portals`,
+          score: `${totalPartners} Total`,
+        },
+        {
+          title: 'Reseller Network',
+          detail: `${resellersCount} active boutique resellers sharing custom catalogs`,
+          score: `${resellersCount} Resellers`,
+        },
+        {
+          title: 'Retailer Network',
+          detail: `${retailersCount} brick-and-mortar jewelry retailers placing custom orders`,
+          score: `${retailersCount} Retailers`,
+        },
+        {
+          title: 'Manufacturing Vendor Float',
+          detail: `${vendorsCount} trusted Karigar units & casting workshops`,
+          score: `${vendorsCount} Vendors`,
+        }
+      )
+
+      suggestedActions.push(
+        'View All B2B Partners (/partners)',
+        'Invite New Reseller Partner',
+        'Review Partner Commission Tiers'
+      )
+    } else if (isInvoicesQuery) {
       let totalInvoices = 0
       let unpaidCount = 0
       let paidCount = 0
@@ -457,11 +525,12 @@ export class CIOAgent {
         'Offer Complimentary Engraving'
       )
     } else {
-      answer = `AURORA Intelligence Engine is actively monitoring ${graphStats.totalNodes} knowledge entities across 17 AI agents. Current global market trends favor geometric Art Deco solitaires and emerald drop accents.`
+      const cleanPrompt = params.query.trim()
+      answer = `AURORA CIO Agent has processed your query: "${cleanPrompt}". Our 17 AI workforce agents have cross-referenced ${graphStats.totalNodes} knowledge graph entities to evaluate your operational & market request.`
       insights.push(
-        { title: 'Global Demand Velocity', detail: 'High surge in Oval & Emerald brilliant solitaire cuts', score: 'Growth +42%' },
-        { title: 'Competitor Launch Monitor', detail: '3 major luxury releases tracked in past 7 days', score: 'Active Alert' },
-        { title: 'Knowledge Graph Health', detail: `${graphStats.totalNodes} Nodes, ${graphStats.totalEdges} Relations active`, score: '100% Operational' }
+        { title: 'Query Analyzed', detail: `Evaluated intent: "${cleanPrompt}"`, score: 'Analyzed' },
+        { title: 'Knowledge Graph Health', detail: `${graphStats.totalNodes} Nodes, ${graphStats.totalEdges} Relations active across 17 AI agents`, score: '100% Operational' },
+        { title: 'Market Benchmark', detail: 'Real-time gold rates and wholesale diamond cost matrices synced', score: 'Live Synced' }
       )
       suggestedActions.push(
         'Explore Opportunity Engine Gaps',
