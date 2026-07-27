@@ -93,13 +93,8 @@ function ErrorPage({ title, message, contact }: { title: string; message: string
   )
 }
 
-// Each failure kind is its own member. Collapsing them into a single member
-// with a union-typed `kind` prevents TypeScript from eliminating that member
-// after the three guards below, so the `ok` fields never narrowed.
 type LoadResult =
-  | { kind: 'not_found' }
-  | { kind: 'revoked' }
-  | { kind: 'expired' }
+  | { kind: 'not_found' | 'revoked' | 'expired' }
   | {
       kind: 'ok'
       link: LinkRow
@@ -271,8 +266,8 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
     enquiry_received: order?.order_date || undefined,
     quote_shared: undefined,
     design_approved: cad?.approvedAt || undefined,
-    in_production: order?.status === 'production' ? (order?.updated_at || undefined) : undefined,
-    quality_check: order?.status === 'qc' ? (order?.updated_at || undefined) : undefined,
+    in_production: order?.status === 'production' ? order?.updated_at : undefined,
+    quality_check: order?.status === 'qc' ? order?.updated_at : undefined,
     dispatched: order?.dispatch_date || undefined,
     delivered: order?.actual_delivery || undefined,
   }
@@ -314,8 +309,8 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
             Hi {firstName},<br />
             <span className="text-[#A88A4F]">here's your piece.</span>
           </h1>
-          {order?.order_number && (
-            <p className="text-[#5C5347] text-sm mt-3">Order {order.order_number}</p>
+          {order?.orderNumber && (
+            <p className="text-[#5C5347] text-sm mt-3">Order {order.orderNumber}</p>
           )}
         </section>
 
@@ -432,10 +427,10 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
                   <dd className="text-[#2A241B] font-mono text-base">{order.tracking_number}</dd>
                 </div>
               )}
-              {order.expected_delivery && !order.actual_delivery && (
+              {order.expectedDelivery && !order.actual_delivery && (
                 <div>
                   <dt className="text-[10px] tracking-widest uppercase text-[#8C8275] mb-0.5">Expected delivery</dt>
-                  <dd className="text-[#2A241B]">{fmtDate(order.expected_delivery)}</dd>
+                  <dd className="text-[#2A241B]">{fmtDate(order.expectedDelivery)}</dd>
                 </div>
               )}
               {order.actual_delivery && (

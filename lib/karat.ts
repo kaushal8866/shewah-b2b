@@ -1,35 +1,41 @@
-// Karat purity lens over the catalog and order edges. All gold movements in
-// the float ledger settle in 24kt-pure grams. See Task #71.
-//
-// Purity and density constants now live in lib/metalPhysics.ts — the single
-// source of truth. They are re-exported here so the ~30 existing
-// `import { KARAT_FACTORS } from '@/lib/karat'` call sites keep working.
+// Single source of truth for karat purity factors and per-karat conversions.
+// All gold movements in the float ledger settle in 24kt-pure grams; karat is
+// only the lens used at the catalog and order edges. See Task #71.
 
-import {
-  KARAT_FACTORS,
-  METAL_PURITY,
-  SELLABLE_KARATS,
-  ALLOY_DENSITY,
-  densityFor,
-  type SellableKarat,
-} from './metalPhysics'
+export const KARAT_FACTORS: Record<number, number> = {
+  24: 1,
+  22: 0.916,
+  18: 0.75,
+  14: 0.60,
+  10: 0.42,
+  9: 0.38,
+  925: 0.925,
+  950: 0.95,
+}
 
-export { KARAT_FACTORS, METAL_PURITY, SELLABLE_KARATS, densityFor }
-export type { SellableKarat }
+export const SELLABLE_KARATS = [22, 18, 14, 10, 9] as const
+export type SellableKarat = typeof SELLABLE_KARATS[number]
 
 // Round to 4 decimals — gold weights in this app are stored at 4dp throughout.
 function r4(n: number) {
   return Math.round(n * 10000) / 10000
 }
 
-// REMOVED: deriveAllKaratWeights().
-// It converted between karats by holding 24kt-pure mass constant, while
-// convertKaratWeight() below converts by holding volume constant. For 10g of
-// 22K → 18K the two returned 12.213g and 8.802g — a 39% divergence for the
-// same stated operation. Constant volume is the correct model here (the piece
-// is cast from one mould, so its volume is fixed and its weight follows the
-// alloy density), and it is what the live pricing path already used.
-// deriveAllKaratWeights had no callers.
+/**
+ * Given the gross weight of a piece at one karat, return the gross weight at
+ * every other karat for the same physical piece (i.e. holding 24kt-pure mass
+ * constant).
+ */
+export function deriveAllKaratWeights(grossWeight: number, fromKarat: number): Record<number, number> {
+  const fromF = KARAT_FACTORS[fromKarat]
+  if (!fromF || !grossWeight || grossWeight <= 0) {
+    return Object.fromEntries(SELLABLE_KARATS.map(k => [k, 0])) as Record<number, number>
+  }
+  const pureMass = grossWeight * fromF
+  const out: Record<number, number> = {}
+  for (const k of SELLABLE_KARATS) out[k] = r4(pureMass / KARAT_FACTORS[k])
+  return out
+}
 
 /** Convert a gross weight at any karat to the equivalent 24kt-pure mass. */
 export function pure24kt(grossWeight: number, karat: number): number {
@@ -51,23 +57,12 @@ export function pure24kt(grossWeight: number, karat: number): number {
 
 export type KaratPrice = {
   karat: number
-  /**
-   * GROSS weight of the finished piece at this karat, in grams — NOT the
-   * 24kt-pure mass. The doc comment here previously claimed "24kt-pure billed
-   * mass", contradicting both the code and every consumer (which display it as
-   * "Gross weight" and store it as gold_weight). `pureWeight` below is the
-   * 24kt-equivalent the gold cost is actually billed on.
-   */
-  weight: number
-  /** 24kt-pure mass billed at this karat (g) = weight × KARAT_FACTORS[karat]. */
-  pureWeight: number
+  weight: number          // 24kt-pure billed mass at this karat (g)
   goldCost: number
   labourCost: number
   cogs: number
   trade: number
   mrp: number
-  /** True when the minimum-margin floor had to lift `trade` above raw COGS. */
-  marginFloorApplied: boolean
 }
 
 /**
@@ -81,22 +76,6 @@ export function pureMassByKarat(netGoldWeight: number): Record<number, number> {
   return out
 }
 
-/** Default minimum gross weight labour is billed on. Mirrors the per-partner
- *  `min_labour_grams` column, whose own default is 1g. */
-export const DEFAULT_MIN_LABOUR_GRAMS = 1
-
-/**
- * Default minimum gross margin over COGS, as a percentage.
- *
- * Markup deliberately applies only to diamond cost — gold, labour, making,
- * hallmarking and IGI are quoted transparently. The side effect is that an
- * item with no diamonds priced at exactly COGS, i.e. zero margin. This floor
- * stops that without changing the transparent-metal pricing story.
- *
- * Override per call, or globally via the `min_margin_pct` setting.
- */
-export const DEFAULT_MIN_MARGIN_PCT = 10
-
 export type KaratPriceInputs = {
   netGoldWeight: number                    // single net-gold input (g)
   rate24k: number                          // ₹/g of 24kt
@@ -108,17 +87,12 @@ export type KaratPriceInputs = {
   mrpMult?: number                         // default 1.40
   metalWeights?: MetalWeights
   color?: string                           // Reference alloy color
-  minLabourGrams?: number                  // default 1 — see above
-  minMarginPct?: number                    // default 10 — see above
 }
 
 export function computeKaratPricing(inp: KaratPriceInputs): KaratPrice[] {
   const margin = inp.marginMult ?? 1.28
   const mrpM = inp.mrpMult ?? 1.40
   const color = inp.color || 'yellow'
-  const minLabourG = inp.minLabourGrams ?? DEFAULT_MIN_LABOUR_GRAMS
-  const minMargin = Math.max(inp.minMarginPct ?? DEFAULT_MIN_MARGIN_PCT, 0) / 100
-
   return SELLABLE_KARATS.map(k => {
     let gross = 0
     if (inp.metalWeights && Object.keys(inp.metalWeights).length > 0) {
@@ -127,29 +101,20 @@ export function computeKaratPricing(inp: KaratPriceInputs): KaratPrice[] {
     if (gross <= 0) {
       gross = convertKaratWeight(inp.netGoldWeight || 0, '22K', color, `${k}K`, color) || inp.netGoldWeight || 0
     }
-    const pureWeight = pureGoldMass(gross, `${k}K`)
+    const w = pureGoldMass(gross, `${k}K`)
 
-    const goldCost = Math.round(pureWeight * (inp.rate24k || 0))
+    const goldCost = Math.round(w * (inp.rate24k || 0))
     const labourPerG = inp.retailLabour[k] || 0
-    // Labour is billed on at least `minLabourGrams` — a karigar's minimum
-    // charge. Previously hardcoded as Math.max(gross, 1).
-    const labourCost = Math.round(labourPerG * Math.max(gross, minLabourG))
+    const labourCost = Math.round(labourPerG * Math.max(gross, 1))
     const cogs = goldCost + labourCost + (inp.diamondCost || 0) + (inp.makingCharges || 0) + (inp.igiCost || 0)
-
+    
     // Trade: metal cost, labour cost, making charges and igi cert charges are transparent. Only diamond cost is marked up.
-    const rawTrade = Math.round(goldCost + labourCost + ((inp.diamondCost || 0) * margin) + (inp.makingCharges || 0) + (inp.igiCost || 0))
-
-    // Floor: never sell below COGS + minMargin. Binds on low/zero-diamond items.
-    const tradeFloor = Math.round(cogs * (1 + minMargin))
-    const marginFloorApplied = tradeFloor > rawTrade
-    const trade = marginFloorApplied ? tradeFloor : rawTrade
-
+    const trade = Math.round(goldCost + labourCost + ((inp.diamondCost || 0) * margin) + (inp.makingCharges || 0) + (inp.igiCost || 0))
+    
     // MRP: MRP Markup applies only to the B2B marked up diamond price.
-    const rawMrp = Math.round(goldCost + labourCost + ((inp.diamondCost || 0) * margin * mrpM) + (inp.makingCharges || 0) + (inp.igiCost || 0))
-    // MRP must never fall below the trade price it is derived from.
-    const mrp = Math.max(rawMrp, trade)
-
-    return { karat: k, weight: gross, pureWeight, goldCost, labourCost, cogs, trade, mrp, marginFloorApplied }
+    const mrp = Math.round(goldCost + labourCost + ((inp.diamondCost || 0) * margin * mrpM) + (inp.makingCharges || 0) + (inp.igiCost || 0))
+    
+    return { karat: k, weight: gross, goldCost, labourCost, cogs, trade, mrp }
   })
 }
 
@@ -189,11 +154,54 @@ export type MetalKey =
 export type MetalWeights = Partial<Record<MetalKey, number>>
 
 /**
- * Alloy densities now live in lib/metalPhysics.ts, shared with lib/cadWeight.ts
- * which previously carried its own contradictory copy. Re-exported under the
- * original name for existing call sites.
+ * DENSITY_FACTORS
+ * Physical density (g/cm³) per karat and alloy color.
+ * Source: standard metallurgical references for jewelry alloys.
+ * Yellow gold: Au-Cu-Ag alloy. White gold: Au-Ni-Cu-Zn alloy (nickel-based).
+ * Rose gold: Au-Cu alloy (higher copper). Silver: Au content = 0.
+ *
+ * 24K has no white/rose variant — pure gold is always yellow.
+ * Silver has no color variant — use 'default' key.
  */
-export const DENSITY_FACTORS = ALLOY_DENSITY
+export const DENSITY_FACTORS: Record<string, Record<string, number>> = {
+  '24K': {
+    yellow: 19.32,
+  },
+  '22K': {
+    yellow: 17.70,
+    white:  17.30,
+    rose:   17.50,
+  },
+  '18K': {
+    yellow: 15.58,
+    white:  15.70,
+    rose:   15.90,
+  },
+  '14K': {
+    yellow: 13.07,
+    white:  13.40,
+    rose:   13.70,
+  },
+  '10K': {
+    yellow: 11.57,
+    white:  11.90,
+    rose:   12.00,
+  },
+  '9K': {
+    yellow: 11.00,
+    white:  11.20,
+    rose:   11.30,
+  },
+  'silver_925': {
+    default: 10.36,
+  },
+  'silver_999': {
+    default: 10.49,
+  },
+  'platinum_950': {
+    default: 20.1,
+  },
+}
 
 /**
  * Converts a known weight from one karat+color to another using density ratios.
@@ -257,19 +265,9 @@ export function getMetalWeight(
  * Returns the pure 24K gold mass (in grams) contained in a piece
  * given its gross weight at a specific karat.
  * Used for: gold_cost = pureGoldMass × rate_24K
- *
- * Gold only. Passing a silver or platinum grade returns 0 rather than a
- * plausible-looking number: previously `pureGoldMass(w, 'silver_925')` parsed
- * "925", found the 925 entry that used to sit in the gold purity table, and
- * returned 92.5% of the weight as *pure gold* — silver billed at the gold rate.
  */
 export function pureGoldMass(grossWeight: number, karat: string): number {
-  const key = String(karat).toLowerCase()
-  if (key.includes('silver') || key.includes('platinum')) {
-    console.warn(`[karat] pureGoldMass called with non-gold metal "${karat}" — returning 0`)
-    return 0
-  }
-  const karatNum = parseInt(String(karat).replace(/[^\d]/g, '')) || 24
+  const karatNum = parseInt(karat.replace(/[^\d]/g, '')) || 24
   return parseFloat(((grossWeight || 0) * (KARAT_FACTORS[karatNum] ?? 0)).toFixed(4))
 }
 

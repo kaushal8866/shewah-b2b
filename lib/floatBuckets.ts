@@ -1,6 +1,5 @@
 import { supabaseAdmin } from './supabaseAdmin'
 import { KARAT_FACTORS, normalizeGoldMaterialType } from './karat'
-import { fetchAllRows } from './fetchAll'
 
 /**
  * Task 78 read-layer safety net: gold MUST live as `gold_24k` only across
@@ -43,16 +42,12 @@ type Row = {
  * Pending reservations sit on top of physical custody; they don't reduce it.
  */
 export async function getPartnerBuckets(partnerId: string): Promise<Bucket[]> {
-  // Paginated: this replays the karigar's ENTIRE material ledger, and an
-  // unbounded select is capped at 1000 rows by PostgREST without erroring.
-  // Past that, gold custody balances — the figure physical gold is settled
-  // against — were computed from a truncated ledger and silently understated.
-  const data = await fetchAllRows<any>('floatBuckets', (from, to) =>
-    supabaseAdmin
-      .from('material_transactions')
-      .select('transaction_type, quantity, unit, lifecycle, material_float(material_type)')
-      .eq('manufacturing_partner_id', partnerId)
-      .range(from, to))
+  const { data, error } = await supabaseAdmin
+    .from('material_transactions')
+    .select('transaction_type, quantity, unit, lifecycle, material_float(material_type)')
+    .eq('manufacturing_partner_id', partnerId)
+
+  if (error) throw error
 
   const groups = new Map<string, Bucket>()
   const get = (mt: string, unit: string) => {

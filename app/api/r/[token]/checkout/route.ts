@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
   // 1. Resolve reseller storefront details
   const { data: shareLink } = await supabaseAdmin
     .from('reseller_share_links')
-    .select('id, reseller_id, markup_percent, order_count')
+    .select('id, reseller_id, markup_percent')
     .eq('link_token', token)
     .eq('is_active', true)
     .maybeSingle()
@@ -59,50 +59,22 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
   // 2. Fetch optional logged-in customer session
   const customer = await getStorefrontCustomer()
 
-  // 3. Claim the promo code atomically, before anything is written.
-  //
-  // This previously only checked is_active and expires_at, so a code could be
-  // reused without limit, by anyone, on any order size. claim_coupon locks the
-  // row, enforces the global cap / per-customer cap / minimum order value, and
-  // records the redemption in one transaction — so two simultaneous checkouts
-  // cannot both consume the last redemption.
+  // 3. Validate promo code if provided
   let discountType = 'none'
   let discountValue = 0
   if (promo_code) {
-    // Cheap proxy for order value: the reseller floor price of each line.
-    // Enough for the minimum-order-value gate without running the full pricing
-    // pass twice.
-    const productIds = items.map((i: any) => i?.id).filter(Boolean)
-    const { data: floorRows } = await supabaseAdmin
-      .from('reseller_product_prices')
-      .select('product_id, floor_price_paise')
+    const { data: coupon } = await supabaseAdmin
+      .from('reseller_storefront_coupons')
+      .select('*')
       .eq('reseller_id', resellerId)
-      .in('product_id', productIds)
+      .eq('code', promo_code.trim().toUpperCase())
+      .eq('is_active', true)
+      .maybeSingle()
 
-    const floorByProduct = new Map<string, number>(
-      (floorRows || []).map((r: any) => [r.product_id, Number(r.floor_price_paise) || 0]),
-    )
-    const cartValuePaise = items.reduce(
-      (sum: number, i: any) => sum + (floorByProduct.get(i?.id) ?? 0) * (Number(i?.quantity) || 1),
-      0,
-    )
-
-    const { data: claimed, error: claimErr } = await supabaseAdmin.rpc('claim_coupon', {
-      p_reseller_id:       resellerId,
-      p_code:              String(promo_code).trim(),
-      p_customer_id:       customer?.id ?? null,
-      p_guest_phone:       customer ? null : String(shipping_phone).replace(/\s+/g, ''),
-      p_order_value_paise: cartValuePaise,
-    })
-
-    if (claimErr) {
-      console.error('[storefront.checkout] coupon claim failed:', claimErr.message)
-    } else if (Array.isArray(claimed) && claimed.length > 0) {
-      discountType  = claimed[0].discount_type
-      discountValue = Number(claimed[0].discount_value)
+    if (coupon && (!coupon.expires_at || new Date(coupon.expires_at) > new Date())) {
+      discountType = coupon.discount_type
+      discountValue = Number(coupon.discount_value)
     }
-    // No rows back means a limit was hit or the code is invalid. Checkout
-    // continues at full price rather than failing the order outright.
   }
 
   // 4. Resolve payment hours settings
@@ -115,49 +87,15 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
   const deadline = new Date()
   deadline.setHours(deadline.getHours() + hours)
 
-  // 5. Resolve the live gold rate + per-karat retail labour. Every line item
-  //    below is priced off these, so bail out rather than guess if no rate has
-  //    been recorded — a fabricated rate would silently misprice the order.
-  const { data: goldRateRows } = await supabaseAdmin
-    .from('gold_rates')
-    .select('rate_24k, retail_labour_22k, retail_labour_18k, retail_labour_14k, retail_labour_10k, retail_labour_9k')
-    .order('recorded_at', { ascending: false })
-    .limit(1)
-  const latestRate = goldRateRows?.[0]
-  if (!latestRate?.rate_24k) {
-    return NextResponse.json(
-      { error: 'Pricing is temporarily unavailable. Please try again shortly.' },
-      { status: 503 },
-    )
-  }
-  const goldRate = Number(latestRate.rate_24k)
-  const retailLabour: Record<number, number> = {
-    22: Number(latestRate.retail_labour_22k) || 450,
-    18: Number(latestRate.retail_labour_18k) || 450,
-    14: Number(latestRate.retail_labour_14k) || 450,
-    10: Number(latestRate.retail_labour_10k) || 450,
-    9:  Number(latestRate.retail_labour_9k)  || 450,
-  }
-
-  // 6. Reserve order serials from a Postgres sequence.
-  //
-  // This used to be `count(*) + 10001`. Two checkouts running concurrently
-  // both read the same count and minted the same order number. A sequence is
-  // atomic and never reuses a value.
-  const serials: number[] = []
-  for (let i = 0; i < items.length; i++) {
-    const { data: serial, error: serialErr } = await supabaseAdmin.rpc('next_reseller_order_number')
-    if (serialErr || !serial) {
-      console.error('[storefront.checkout] serial allocation failed:', serialErr?.message)
-      return NextResponse.json({ error: 'Could not create the order. Please try again.' }, { status: 500 })
-    }
-    // 'RSL-SF-10042' → 10042
-    serials.push(Number(String(serial).replace(/\D/g, '')))
-  }
-
+  // 5. Query total count for generating sequential serial numbers
+  const { count } = await supabaseAdmin
+    .from('reseller_orders')
+    .select('*', { count: 'exact', head: true })
+  
+  const baseSerial = (count || 0) + 10001
   const insertedOrders = []
 
-  // 7. Process each item in checkout
+  // 6. Process each item in checkout
   for (let idx = 0; idx < items.length; idx++) {
     const item = items[idx]
     const { id: productId, quantity = 1, ring_size, custom_attributes = {} } = item
@@ -247,7 +185,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
         }
 
         const compEarningsPaise = compItemPricePaise - compTotalCostPaise
-        const compOrderNumber = `RSL-SF-${serials[idx]}-${compIdx}`
+        const compOrderNumber = `RSL-SF-${baseSerial + idx}-${compIdx}`
 
         // Insert component order record
         const { data: newCompOrder, error: compOrderErr } = await supabaseAdmin
@@ -362,7 +300,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     }
 
     // Generate serial order number
-    const orderNumber = `RSL-SF-${serials[idx]}`
+    const orderNumber = `RSL-SF-${baseSerial + idx}`
     const earningsPaise = itemPricePaise - totalCostPaise
 
     // Insert order record
@@ -443,7 +381,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     } catch {}
   }
 
-  // 8. Clear synced cart in database if customer is logged in
+  // 7. Clear synced cart in database if customer is logged in
   if (customer) {
     await supabaseAdmin
       .from('reseller_storefront_carts')
@@ -451,7 +389,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       .eq('customer_id', customer.id)
   }
 
-  // 9. Update reseller notifications feed
+  // 8. Update reseller notifications feed
   await supabaseAdmin
     .from('reseller_notifications')
     .insert({
@@ -462,7 +400,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       link: `/portal/reseller/orders`
     })
 
-  // 10. Mark abandoned cart entry (if any existed for this phone/customer) as recovered
+  // 9. Mark abandoned cart entry (if any existed for this phone/customer) as recovered
   try {
     const cleanPhone = shipping_phone.replace(/\s+/g, '')
     await supabaseAdmin
@@ -473,7 +411,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       .eq('status', 'active')
   } catch {}
 
-  // 11. Update link statistics
+  // 10. Update link statistics
   await supabaseAdmin
     .from('reseller_share_links')
     .update({

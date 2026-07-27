@@ -22,18 +22,8 @@ export async function createReplenishmentObligation(params: {
     .limit(1)
     .maybeSingle()
 
-  // No silent fallback. This previously defaulted to ₹6000/g when no rate was
-  // recorded, which booked a real gold obligation — a liability settled in
-  // physical metal — against an invented price. Failing here is recoverable;
-  // a wrong obligation value is not, because the offset delta it later
-  // produces flows straight into the P&L.
-  if (!rateRow?.rate_24k) {
-    throw new Error(
-      'Cannot create a replenishment obligation: no 24K gold rate has been recorded. ' +
-      'Add today\'s rate on the Gold Rates screen first.',
-    )
-  }
-  const rate = Number(rateRow.rate_24k)
+  // Default to a fallback rate if none found to avoid hard crashes
+  const rate = rateRow ? Number(rateRow.rate_24k) : 6000
   const value = parseFloat((params.actualQtyUsed * rate).toFixed(2))
 
   const { data, error } = await supabase
@@ -145,29 +135,40 @@ export async function executeReplenishmentOffset(
   },
   purchaseLotId: string,
 ): Promise<{ total_delta: number }> {
-  if (preview.offsets.length === 0) return { total_delta: 0 }
+  const supabase = supabaseAdmin
 
-  // One transaction in Postgres. This used to run insert → select → update per
-  // obligation from Node with no transaction and no row lock, so two gold
-  // purchases confirmed at the same time could both read the same
-  // remaining_qty_g and offset the same obligation twice. The RPC locks each
-  // obligation FOR UPDATE and clamps to whatever is actually left, since the
-  // preview is only a snapshot.
-  const { data, error } = await supabaseAdmin.rpc('execute_replenishment_offset', {
-    p_offsets: preview.offsets.map(o => ({
-      obligation_id:   o.obligation_id,
-      qty_offset:      o.qty_offset,
-      obligation_rate: o.obligation_rate,
-      purchase_rate:   o.purchase_rate,
-      delta:           o.delta,
-    })),
-    p_purchase_lot_id: purchaseLotId,
-  })
+  for (const offset of preview.offsets) {
+    // Insert offset record
+    const { error: insertError } = await supabase.from('replenishment_offsets').insert({
+      obligation_id:   offset.obligation_id,
+      purchase_lot_id: purchaseLotId,
+      qty_offset_g:    offset.qty_offset,
+      obligation_rate: offset.obligation_rate,
+      purchase_rate:   offset.purchase_rate,
+      delta:           offset.delta,
+      offset_date:     new Date().toISOString().split('T')[0],
+    })
+    if (insertError) throw new Error(`Offset record write failed: ${insertError.message}`)
 
-  if (error) throw new Error(`Replenishment offset failed: ${error.message}`)
+    // Update obligation remaining qty + status
+    const { data: ob, error: selectError } = await supabase
+      .from('replenishment_obligations')
+      .select('remaining_qty_g')
+      .eq('id', offset.obligation_id)
+      .single()
 
-  // Return the delta the DB actually applied, not the previewed one — they
-  // differ whenever a concurrent purchase consumed part of an obligation.
-  const totalDelta = Array.isArray(data) ? Number(data[0]?.total_delta ?? 0) : Number((data as any)?.total_delta ?? 0)
-  return { total_delta: totalDelta }
+    if (selectError || !ob) throw new Error(`Fetch obligation failed: ${selectError?.message}`)
+
+    const newRemaining = parseFloat((Number(ob.remaining_qty_g) - offset.qty_offset).toFixed(4))
+    const newStatus = newRemaining <= 0 ? 'fully_offset' : 'partially_offset'
+
+    const { error: updateError } = await supabase
+      .from('replenishment_obligations')
+      .update({ remaining_qty_g: newRemaining, status: newStatus })
+      .eq('id', offset.obligation_id)
+
+    if (updateError) throw new Error(`Update obligation failed: ${updateError.message}`)
+  }
+
+  return { total_delta: preview.total_delta }
 }

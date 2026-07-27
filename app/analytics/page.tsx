@@ -62,7 +62,7 @@ export default function AnalyticsPage() {
         months.push(key)
         monthMap[key] = { revenue: 0, orders: 0 }
       }
-      allOrders.forEach((o: any) => {
+      allOrders.forEach(o => {
         const key = new Date(o.order_date).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
         if (monthMap[key]) {
           monthMap[key].revenue += o.total_amount || 0
@@ -73,12 +73,12 @@ export default function AnalyticsPage() {
 
       // Partners by stage
       const stageCount: Record<string, number> = {}
-      allPartners.forEach((p: any) => { stageCount[p.stage] = (stageCount[p.stage] || 0) + 1 })
+      allPartners.forEach(p => { stageCount[p.stage] = (stageCount[p.stage] || 0) + 1 })
       const partnersByStage = Object.entries(stageCount).map(([stage, count]) => ({ stage, count }))
 
       // Partners by circuit
       const circuitCount: Record<string, number> = {}
-      allPartners.forEach((p: any) => {
+      allPartners.forEach(p => {
         const c = p.circuit || 'Unassigned'
         circuitCount[c] = (circuitCount[c] || 0) + 1
       })
@@ -86,7 +86,7 @@ export default function AnalyticsPage() {
 
       // Orders by status
       const statusMap: Record<string, { count: number; value: number }> = {}
-      allOrders.forEach((o: any) => {
+      allOrders.forEach(o => {
         if (!statusMap[o.status]) statusMap[o.status] = { count: 0, value: 0 }
         statusMap[o.status].count++
         statusMap[o.status].value += o.total_amount || 0
@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
 
       // Top partners
       const partnerRevMap: Record<string, { store_name: string; city: string; orders: number; revenue: number }> = {}
-      allOrders.forEach((o: any) => {
+      allOrders.forEach(o => {
         if (!o.partner_name) return
         const key = o.partner_name
         if (!partnerRevMap[key]) partnerRevMap[key] = { store_name: o.partner_name, city: o.partner_city, orders: 0, revenue: 0 }
@@ -107,14 +107,14 @@ export default function AnalyticsPage() {
       // Conversion funnel
       const conversionFunnel = {
         visited: allPartners.length,
-        contacted: allPartners.filter((p: any) => ['contacted', 'sample_sent', 'active'].includes(p.stage)).length,
-        sample: allPartners.filter((p: any) => ['sample_sent', 'active'].includes(p.stage)).length,
-        active: allPartners.filter((p: any) => p.stage === 'active').length,
+        contacted: allPartners.filter(p => ['contacted', 'sample_sent', 'active'].includes(p.stage)).length,
+        sample: allPartners.filter(p => ['sample_sent', 'active'].includes(p.stage)).length,
+        active: allPartners.filter(p => p.stage === 'active').length,
       }
 
       // Model split
       const modelMap: Record<string, { count: number; revenue: number }> = {}
-      allOrders.forEach((o: any) => {
+      allOrders.forEach(o => {
         const m = o.model || 'unknown'
         if (!modelMap[m]) modelMap[m] = { count: 0, revenue: 0 }
         modelMap[m].count++
@@ -123,7 +123,7 @@ export default function AnalyticsPage() {
       const modelSplit = Object.entries(modelMap).map(([model, v]) => ({ model, ...v }))
 
       // CAD stats
-      const approved = allCAD.filter((c: any) => c.status === 'approved').length
+      const approved = allCAD.filter(c => c.status === 'approved').length
       const cadStats = {
         total: allCAD.length,
         avgTurnaround: 0,
@@ -132,7 +132,7 @@ export default function AnalyticsPage() {
 
       // Revenue by City
       const cityRevMap: Record<string, number> = {}
-      allOrders.forEach((o: any) => {
+      allOrders.forEach(o => {
         const city = o.partner_city || 'Unknown'
         cityRevMap[city] = (cityRevMap[city] || 0) + (o.total_amount || 0)
       })

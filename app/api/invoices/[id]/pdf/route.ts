@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { renderInvoicePdf } from '@/lib/invoicePdf'
-import { toResponseBody } from '@/lib/pdfHelpers'
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
@@ -46,7 +45,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     const pdfBuffer = await renderInvoicePdf(invoice, bankDetails)
 
     // 4. Return PDF stream response
-    return new Response(toResponseBody(pdfBuffer), {
+    return new Response(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="Invoice_${invoice.invoice_number}.pdf"`,

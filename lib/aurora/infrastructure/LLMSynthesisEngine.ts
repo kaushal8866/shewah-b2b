@@ -94,7 +94,7 @@ export class LLMSynthesisEngine {
 
     if (client) {
       try {
-        const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+        const modelName = process.env.GEMINI_MODEL || 'gemini-3.6-flash'
         const model = client.getGenerativeModel({ model: modelName })
         // Scraped content is attacker-influenceable: anyone who ranks for a
         // search term controls text that lands here. It is fenced and labelled

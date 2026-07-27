@@ -128,9 +128,7 @@ export default function LeadForm({
         if ((window as any).pintrk) {
           (window as any).pintrk('track', 'lead', {
             event_id: `lead_${Date.now()}`,
-            // This form has no business_type input, so the value was always
-            // the fallback. Kept as a constant rather than a phantom field.
-            lead_type: 'Custom Ring',
+            lead_type: f.business_type || 'Custom Ring',
             em: f.email ? f.email.trim().toLowerCase() : undefined,
           })
         }

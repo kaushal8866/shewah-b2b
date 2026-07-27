@@ -62,11 +62,9 @@ class OntologyService {
 
   public standardize(term: string): string {
     const q = term.toLowerCase().trim()
-    // Array.from rather than iterating the Map directly: this tsconfig has no
-    // `downlevelIteration`, so a bare Map iterator does not compile.
-    for (const item of Array.from(this.terms.values())) {
+    for (const item of this.terms.values()) {
       if (item.standardName.toLowerCase() === q) return item.standardName
-      if (item.synonyms.some((s: string) => s.toLowerCase() === q)) return item.standardName
+      if (item.synonyms.some(s => s.toLowerCase() === q)) return item.standardName
     }
     return term // Return original if canonical term not found
   }

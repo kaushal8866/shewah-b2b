@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import { checkRuleViolation } from '@/lib/configuratorRules'
+import { checkRuleViolation } from '../../validate/route'
 
 export const dynamic = 'force-dynamic'
 

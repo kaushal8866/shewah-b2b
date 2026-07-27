@@ -611,7 +611,7 @@ function QuoteBuilderForm() {
           quality_id: qualityBuckets[0]?.label || 'VS',
           color_id: colorBuckets[0]?.label || 'F-G',
           type: 'lgd',
-          rate_per_pc: '',   // ₹/ct — filled by the stone-price matrix lookup
+          rate_per_pc: String(prod.diamond_cost),
           igi_charge: '0'
         }]
       }
@@ -1407,7 +1407,7 @@ function QuoteBuilderForm() {
                           </div>
                           <div>
                             <label className="text-stone-400 mb-0.5 block flex items-center gap-1">
-                              Rate/ct (₹)
+                              Rate/pc (₹)
                               {d.is_suggested && <span className="bg-green-100 text-green-700 font-bold px-1 rounded text-[8px] scale-90 origin-left">Matrix</span>}
                             </label>
                             <input type="number" className={inputClass + ' py-1'} placeholder="2500"

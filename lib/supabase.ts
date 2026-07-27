@@ -168,9 +168,6 @@ export type Partner = {
   assigned_rep_id?: string
   credit_limit_paise?: number
   credit_approval_required?: boolean
-  // Opt-out switch for order milestone WhatsApp messages.
-  // scripts/migrate_task14_whatsapp_notifications.sql
-  notify_whatsapp?: boolean
   deleted_at?: string
   created_by?: string
   updated_by?: string
@@ -249,22 +246,6 @@ export type Product = {
   created_by?: string
   updated_by?: string
   attributes?: Record<string, any>
-  // Reference karat + alloy colour the stored weights were measured at.
-  // scripts/migrate_density_karat_weight.sql
-  ref_karat?: string
-  ref_color?: string
-  // Per karat × colour gross weights derived from density ratios.
-  // scripts/migrate_density_karat_weight.sql
-  metal_weights?: Record<string, number>
-  metal_type?: string
-  // Structured diamond rows used for pricing and production specs.
-  // scripts/migrate_task83_orders_diamond_specs.sql
-  diamond_specs?: any[]
-  // Product sets: how a parent may be sold, and a child's role within it.
-  // scripts/migrate_product_sets.sql
-  sell_mode?: 'single' | 'set_only' | 'individual_only' | 'both' | string
-  component_label?: string
-  parent_product_id?: string
 }
 
 export interface AttributeField {
@@ -760,48 +741,16 @@ export function startsFromKarat(p: Pick<Product, 'karat_pricing' | 'trade_price'
   return rows.reduce((min, r) => (r.trade < min.trade ? r : min))
 }
 
-/**
- * Order statuses for display — labels and filter lists.
- *
- * DO NOT advance an order by walking this array. It used to be the de-facto
- * state machine (`ORDER_STATUSES[currentIdx + 1]`), which is why the money
- * gate never existed: you cannot express "payment must land before production"
- * as an array index. Transitions, guards and SLAs now live in
- * lib/process/orderFlow.ts, derived from SOP.md §9.
- *
- * Kept in the SOP's happy-path order so any list filter reads naturally.
- * Terminal and exception states are listed separately below because they are
- * destinations, not steps.
- */
 export const ORDER_STATUSES = [
-  { value: 'draft',            label: 'Draft' },
   { value: 'brief_received',   label: 'Brief Received' },
   { value: 'cad_in_progress',  label: 'CAD In Progress' },
   { value: 'cad_sent',         label: 'CAD Sent' },
   { value: 'design_approved',  label: 'Design Approved' },
-  { value: 'quote_issued',     label: 'Quote Issued' },
-  { value: 'advance_received', label: 'Advance Received' },
   { value: 'production',       label: 'In Production' },
-  { value: 'hallmarking',      label: 'Hallmarking' },
   { value: 'qc',               label: 'Quality Check' },
-  { value: 'qc_failed',        label: 'QC Failed' },
-  { value: 'qc_passed',        label: 'QC Passed' },
   { value: 'dispatched',       label: 'Dispatched' },
   { value: 'delivered',        label: 'Delivered' },
 ]
-
-/** Ends of the line. An order here needs no further action. */
-export const ORDER_TERMINAL_STATUSES = [
-  { value: 'closed',    label: 'Closed' },
-  { value: 'cancelled', label: 'Cancelled' },
-  { value: 'abandoned', label: 'Abandoned' },
-]
-
-/** Every valid status — mirrors the CHECK constraint on orders.status. */
-export const ALL_ORDER_STATUSES = [...ORDER_STATUSES, ...ORDER_TERMINAL_STATUSES]
-
-export const ORDER_STATUS_LABEL: Record<string, string> =
-  Object.fromEntries(ALL_ORDER_STATUSES.map(s => [s.value, s.label]))
 
 export const PARTNER_STAGES = [
   { value: 'prospect',         label: 'Prospect' },

@@ -4,23 +4,10 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react'
 
 type ToastType = 'success' | 'error' | 'info'
-type ToastItem = { id: number; title?: string; message: string; type: ToastType }
-
-/**
- * Two call styles are supported:
- *   toast('Saved')
- *   toast('Could not save', 'error')
- *   toast({ title: 'Error', message: e.message, type: 'error' })
- *
- * The object form was already in use across the diamond-procurement screens
- * while this hook only accepted a string — so `message` was rendered as a raw
- * object, which React throws on ("Objects are not valid as a React child").
- * Accepting both shapes fixes those call sites and adds the title they wanted.
- */
-type ToastInput = string | { title?: string; message: string; type?: ToastType }
+type ToastItem = { id: number; message: string; type: ToastType }
 
 const ToastContext = createContext<{
-  toast: (input: ToastInput, type?: ToastType) => void
+  toast: (message: string, type?: ToastType) => void
 }>({ toast: () => {} })
 
 export const useToast = () => useContext(ToastContext)
@@ -28,13 +15,9 @@ export const useToast = () => useContext(ToastContext)
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
-  const toast = useCallback((input: ToastInput, type: ToastType = 'success') => {
+  const toast = useCallback((message: string, type: ToastType = 'success') => {
     const id = Date.now() + Math.random()
-    const item: ToastItem =
-      typeof input === 'string'
-        ? { id, message: input, type }
-        : { id, title: input.title, message: input.message, type: input.type ?? type }
-    setToasts(prev => [...prev, item])
+    setToasts(prev => [...prev, { id, message, type }])
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
     }, 3500)
@@ -72,10 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div key={t.id}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm animate-slide-up ${colors[t.type]}`}>
               <Icon className={`w-4 h-4 shrink-0 ${iconColors[t.type]}`} />
-              <div className="flex-1 min-w-0">
-                {t.title && <p className="font-semibold">{t.title}</p>}
-                <p className={t.title ? 'opacity-90' : undefined}>{t.message}</p>
-              </div>
+              <p className="flex-1">{t.message}</p>
               <button onClick={() => dismiss(t.id)} className="shrink-0 opacity-50 hover:opacity-100">
                 <X className="w-3.5 h-3.5" />
               </button>

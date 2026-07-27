@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import {
   Users, ShoppingBag, TrendingUp, IndianRupee,
@@ -49,15 +50,48 @@ export default function Dashboard() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        // Aggregated server-side. This used to pull every order row into the
-        // browser and total it here — which PostgREST silently truncated at
-        // 1000 rows, so the headline figures went wrong without any error.
-        const res = await fetch('/api/dashboard/summary')
-        if (!res.ok) throw new Error(`Dashboard summary failed (${res.status})`)
-        const { stats: s, recentOrders: recent } = await res.json()
+        const [
+          { count: totalPartners },
+          { count: activePartners },
+          { count: hotLeads },
+          { data: orders },
+          { count: activeCad },
+          { data: goldData },
+        ] = await Promise.all([
+          supabase.from('partners').select('*', { count: 'exact', head: true }),
+          supabase.from('partners').select('*', { count: 'exact', head: true }).eq('stage', 'active'),
+          supabase.from('partners').select('*', { count: 'exact', head: true }).eq('status', 'hot'),
+          supabase.from('order_pipeline').select('*').order('order_date', { ascending: false }),
+          supabase.from('cad_requests').select('*', { count: 'exact', head: true }).in('status', ['pending', 'in_progress']),
+          supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1),
+        ])
 
-        setStats(s)
-        setRecentOrders(recent || [])
+        const allOrders = orders || []
+        const pending = allOrders.filter(o => !['delivered'].includes(o.status))
+        const totalRevenue = allOrders.filter(o => o.status === 'delivered').reduce((s, o) => s + (o.total_amount || 0), 0)
+        const pendingRevenue = pending.reduce((s, o) => s + ((o.total_amount || 0) - (o.advance_paid || 0)), 0)
+
+        setStats({
+          totalPartners: totalPartners || 0,
+          activePartners: activePartners || 0,
+          hotLeads: hotLeads || 0,
+          totalOrders: allOrders.length,
+          pendingOrders: pending.length,
+          totalRevenue,
+          pendingRevenue,
+          activeCadRequests: activeCad || 0,
+          goldRate24k: goldData?.[0]?.rate_24k || 0,
+        })
+
+        setRecentOrders(allOrders.slice(0, 8).map(o => ({
+          id: o.id,
+          order_number: o.order_number,
+          status: o.status,
+          total_amount: o.total_amount,
+          order_date: o.order_date,
+          partner_name: o.partner_name || '—',
+          product_name: o.product_name || 'Custom',
+        })))
       } catch (e) {
         console.error(e)
       } finally {

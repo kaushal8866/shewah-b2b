@@ -60,6 +60,8 @@ export default function ResellerOrdersList() {
       .finally(() => setLoading(false))
   }, [])
 
+  if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading orders...</div>
+  if (error) return <div className="p-4 lg:p-7 max-w-4xl mx-auto"><div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div></div>
 
   const groupedOrdersList = useMemo(() => {
     if (!orders) return []
@@ -114,13 +116,6 @@ export default function ResellerOrdersList() {
 
     return [...singles, ...Object.values(groups)].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }, [orders])
-
-  // Guards must come AFTER every hook. They previously sat above the
-  // useMemo, so on a loading render the hook was skipped and React's hook
-  // order changed between renders — the rules-of-hooks violation that
-  // eslint.ignoreDuringBuilds had been hiding.
-  if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading orders...</div>
-  if (error) return <div className="p-4 lg:p-7 max-w-4xl mx-auto"><div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div></div>
 
   const filteredOrders = groupedOrdersList.filter(o => {
     // Search filter

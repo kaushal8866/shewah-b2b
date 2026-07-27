@@ -343,7 +343,7 @@ export default function ConfiguratorStonePricesPage() {
               Configurator Stone Prices
             </h1>
             <p className="text-stone-500 text-sm mt-0.5">
-              Unified rate in ₹ per carat for configurator elements and inventory costs. Edits save automatically.
+              Unified price per piece for configurator elements and inventory costs. Edits save automatically.
             </p>
           </div>
         </div>

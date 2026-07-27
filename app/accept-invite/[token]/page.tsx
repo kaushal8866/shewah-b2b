@@ -83,9 +83,7 @@ export default function AcceptInvitationPage() {
     if (!files || files.length === 0) return
     setUploadingKyc(true)
     try {
-      // No session exists yet during invite acceptance — the invitation code
-      // is what authorises this upload server-side.
-      const url = await uploadToCloudinary(files[0], 'accept-invite.kyc', token)
+      const url = await uploadToCloudinary(files[0])
       setKycUrl(url)
     } catch (err: any) {
       alert('Upload failed: ' + err.message)

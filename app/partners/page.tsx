@@ -37,8 +37,8 @@ export default function PartnersPage() {
     ])
     
     if (pData) {
-      setPartners(pData.filter((p: any) => p.stage !== 'pending_approval'))
-      setPendingApprovals(pData.filter((p: any) => p.stage === 'pending_approval'))
+      setPartners(pData.filter(p => p.stage !== 'pending_approval'))
+      setPendingApprovals(pData.filter(p => p.stage === 'pending_approval'))
     }
     
     setCatalogRequests(reqData || [])

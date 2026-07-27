@@ -1,47 +1,36 @@
-/**
- * Human-readable labels for the permission modules an admin can be granted.
- *
- * Authorization itself lives in lib/authz.ts — this file is presentation only,
- * used by the Settings screen to render the permission picker. It previously
- * also exported a `canAccess()` helper that returned `true` for any route it
- * did not recognise, silently exempting /invoices, /quotes, /stock, /resellers
- * and all of /configurator from permission checks. That helper is gone; use
- * `canAccessPath` / `canAccessModule` from lib/authz.ts, which fail closed.
- */
+export const MODULES = [
+  { id: 'dashboard',       label: 'Dashboard',           href: '/' },
+  { id: 'partners',        label: 'Partners CRM',        href: '/partners' },
+  { id: 'customers',       label: 'Customers (D2C)',     href: '/customers' },
+  { id: 'enquiries',       label: 'Enquiries (D2C)',     href: '/enquiries' },
+  { id: 'orders',          label: 'Orders',              href: '/orders' },
+  { id: 'cad_requests',    label: 'CAD Requests',        href: '/cad-requests' },
+  { id: 'cad_partners',    label: 'CAD Partners',        href: '/cad-partners' },
+  { id: 'manufacturing',   label: 'Manufacturing',       href: '/manufacturing' },
+  { id: 'catalog',         label: 'Catalog',             href: '/catalog' },
+  { id: 'gold_rates',      label: 'Gold Rates',          href: '/gold-rates' },
+  { id: 'gold_rates',      label: 'Purchase Lots',       href: '/purchase-lots' },
+  { id: 'vendors',         label: 'Vendors & Inventory', href: '/vendors' },
+  { id: 'circuits',        label: 'Circuits',            href: '/circuits' },
+  { id: 'analytics',       label: 'Analytics',           href: '/analytics' },
+  { id: 'profitability',   label: 'Profitability',       href: '/profitability' },
+  { id: 'cash',            label: 'Cash Book',           href: '/cash' },
+  { id: 'diamond_procurement', label: 'Diamond Procurement', href: '/diamond-asks' },
+  { id: 'aurora',          label: 'AURORA Intelligence', href: '/aurora' },
+] as const
 
-import { MODULE_IDS, MASTER_ONLY_MODULES, type ModuleId } from './authz'
+export type ModuleId = typeof MODULES[number]['id']
 
-export type { ModuleId }
-
-const LABELS: Record<ModuleId, string> = {
-  dashboard:           'Dashboard',
-  partners:            'Partners CRM',
-  resellers:           'Resellers',
-  customers:           'Customers (D2C)',
-  enquiries:           'Enquiries (D2C)',
-  orders:              'Orders, Quotes & Invoices',
-  cad_requests:        'CAD Requests',
-  cad_partners:        'CAD Partners',
-  manufacturing:       'Manufacturing & Ready to Ship',
-  catalog:             'Catalog & Configurator',
-  gold_rates:          'Gold Rates & Purchase Lots',
-  vendors:             'Vendors, Stock & Diamonds',
-  circuits:            'Circuits',
-  analytics:           'Analytics',
-  profitability:       'Profitability',
-  cash:                'Cash Book',
-  diamond_procurement: 'Diamond Procurement',
-  aurora:              'AURORA Intelligence',
-  settings:            'Settings',
+export function canAccess(
+  role: string,
+  permissions: string[],
+  href: string
+): boolean {
+  if (role === 'master') return true
+  if (href === '/cash/pnl' || href.startsWith('/cash/pnl')) return false
+  const mod = MODULES.find(m =>
+    m.href === href || (m.href !== '/' && href.startsWith(m.href))
+  )
+  if (!mod || mod.id === 'dashboard') return true
+  return permissions.includes(mod.id)
 }
-
-export const MODULES: ReadonlyArray<{ id: ModuleId; label: string }> =
-  MODULE_IDS.map(id => ({ id, label: LABELS[id] }))
-
-/**
- * Modules that can actually be granted to a sub-admin. `dashboard` is implicit
- * for every admin and `settings` is master-only, so neither is assignable —
- * showing them as checkboxes would imply control that does not exist.
- */
-export const ASSIGNABLE_MODULES: ReadonlyArray<{ id: ModuleId; label: string }> =
-  MODULES.filter(m => m.id !== 'dashboard' && !MASTER_ONLY_MODULES.has(m.id))

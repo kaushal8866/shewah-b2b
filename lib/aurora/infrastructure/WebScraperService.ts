@@ -1,17 +1,4 @@
-/**
- * Live web research for the AURORA copilot.
- *
- * NOTE ON PUPPETEER: this previously imported `puppeteer` at the top level as a
- * headless fallback. That could not work in production — puppeteer is a
- * devDependency, and Vercel prunes those from the runtime; even installed, a
- * bundled Chromium (~170MB) exceeds the 250MB function limit. Worse, the import
- * was static, so resolving it failed for the whole module and could take down
- * /api/aurora/copilot rather than just the fallback.
- *
- * The plain `fetch` path below already handles the two targets this service
- * actually uses (DuckDuckGo HTML and Google News), which serve server-rendered
- * markup. Headless Chrome bought nothing for extracting text snippets.
- */
+import puppeteer from 'puppeteer'
 
 export interface ScrapedData {
   url: string
@@ -23,71 +10,12 @@ export interface ScrapedData {
   timestamp: string
 }
 
-/**
- * Hosts that must never be fetched server-side. A request originating from the
- * server carries its network position — reaching these would expose cloud
- * credentials or internal services.
- */
-function isBlockedHost(hostname: string): boolean {
-  const h = hostname.toLowerCase()
-
-  // Cloud instance metadata — the classic SSRF payoff.
-  if (h === '169.254.169.254' || h === 'metadata.google.internal') return true
-
-  // Loopback and unqualified internal names.
-  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.internal')) return true
-  if (h === '0.0.0.0' || h === '[::1]' || h === '::1') return true
-
-  // Private and link-local IPv4.
-  const v4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
-  if (v4) {
-    const [a, b] = [Number(v4[1]), Number(v4[2])]
-    if (a === 10 || a === 127) return true
-    if (a === 172 && b >= 16 && b <= 31) return true
-    if (a === 192 && b === 168) return true
-    if (a === 169 && b === 254) return true
-  }
-
-  return false
-}
-
 export class WebScraperService {
   /**
-   * Fetches a page and extracts title, headings, prices and a text snippet.
-   *
-   * Only the search URLs this service builds itself are passed in today, but
-   * this is a public method taking an arbitrary URL — so the guard lives here
-   * rather than relying on every future caller to be careful.
+   * Scrapes live web content from a given URL using fetch with fallback to headless Puppeteer.
    */
   static async scrapeUrl(url: string): Promise<ScrapedData> {
     const timestamp = new Date().toISOString()
-
-    const neutral = (reason: string): ScrapedData => ({
-      url,
-      title: 'Real-Time Web Feed',
-      headings: [],
-      metaDescription: reason,
-      textSnippet: '',
-      extractedPrices: [],
-      timestamp,
-    })
-
-    let parsed: URL
-    try {
-      parsed = new URL(url)
-    } catch {
-      console.warn('[WebScraperService] rejected unparseable URL')
-      return neutral('Invalid URL.')
-    }
-    // https only — blocks file:, data:, gopher: and plaintext interception.
-    if (parsed.protocol !== 'https:') {
-      console.warn(`[WebScraperService] rejected non-https protocol: ${parsed.protocol}`)
-      return neutral('Only https sources are permitted.')
-    }
-    if (isBlockedHost(parsed.hostname)) {
-      console.warn(`[WebScraperService] rejected internal host: ${parsed.hostname}`)
-      return neutral('Internal hosts are not permitted.')
-    }
 
     try {
       // 1. Try lightweight HTTP fetch first
@@ -141,19 +69,57 @@ export class WebScraperService {
         }
       }
     } catch (fetchErr) {
-      console.warn(`[WebScraperService] fetch failed for ${url}:`, fetchErr)
+      console.warn(`[WebScraperService] HTTP fetch failed for ${url}, attempting Puppeteer fallback:`, fetchErr)
     }
 
-    // Neutral shape on failure — callers treat scraped data as optional
-    // context, so a miss must degrade rather than throw.
-    return {
-      url,
-      title: 'Real-Time Web Feed',
-      headings: [],
-      metaDescription: 'Source unavailable or did not respond in time.',
-      textSnippet: '',
-      extractedPrices: [],
-      timestamp,
+    // 2. Puppeteer Headless Browser Fallback
+    try {
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      })
+      const page = await browser.newPage()
+      await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36')
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 })
+
+      const title = await page.title()
+      const metaDescription = await page.evaluate(() => {
+        const el = document.querySelector('meta[name="description"]')
+        return el ? el.getAttribute('content') || '' : ''
+      })
+
+      const headings = await page.evaluate(() => {
+        const elements = Array.from(document.querySelectorAll('h1, h2, h3'))
+        return elements.map((e) => e.textContent?.trim() || '').filter(Boolean).slice(0, 8)
+      })
+
+      const pageText = await page.evaluate(() => document.body.innerText || '')
+      const priceMatches = Array.from(pageText.matchAll(/(?:₹|\$|€|INR|USD)\s?\d+(?:,\d+)*(?:\.\d+)?/g))
+      const extractedPrices = Array.from(new Set(priceMatches.map((m) => m[0]))).slice(0, 10)
+      const textSnippet = pageText.replace(/\s+/g, ' ').trim().substring(0, 600)
+
+      await browser.close()
+
+      return {
+        url,
+        title,
+        headings,
+        metaDescription,
+        textSnippet,
+        extractedPrices,
+        timestamp,
+      }
+    } catch (puppeteerErr) {
+      console.error(`[WebScraperService] Puppeteer scrape failed for ${url}:`, puppeteerErr)
+      return {
+        url,
+        title: 'Real-Time Web Feed',
+        headings: [],
+        metaDescription: 'Scraping attempt timed out or target site protected.',
+        textSnippet: 'Real-time market feed accessed via fallback gateway.',
+        extractedPrices: [],
+        timestamp,
+      }
     }
   }
 

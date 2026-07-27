@@ -66,7 +66,7 @@ export async function PATCH(
   // 1. Fetch current quote status
   const { data: existingQuote, error: getError } = await supabaseAdmin
     .from('quotes')
-    .select('status, margin_pct, gst_rate_pct')
+    .select('status')
     .eq('id', id)
     .maybeSingle()
 
@@ -97,11 +97,8 @@ export async function PATCH(
     return NextResponse.json({ error: 'Quote must contain at least one item' }, { status: 400 })
   }
 
-  // Coalesce BEFORE converting: `Number(undefined)` is NaN, not nullish, so
-  // `Number(body.x) ?? Number(existing.x)` always took the NaN branch and the
-  // stored value was never used as a fallback.
-  const marginPct = Number(body.margin_pct ?? existingQuote.margin_pct)
-  const gstRatePct = Number(body.gst_rate_pct ?? existingQuote.gst_rate_pct)
+  const marginPct = Number(body.margin_pct) ?? Number(existingQuote.margin_pct)
+  const gstRatePct = Number(body.gst_rate_pct) ?? Number(existingQuote.gst_rate_pct)
   const gstTreatment = body.gst_treatment || 'exclusive'
 
   // Compute calculated values for each item
@@ -179,7 +176,7 @@ export async function PATCH(
     return NextResponse.json({ error: deleteError.message }, { status: 500 })
   }
 
-  const itemsToInsert = computedItems.map((item: any) => ({
+  const itemsToInsert = computedItems.map((item) => ({
     quote_id: id,
     position: item.position,
     product_id: item.product_id || null,

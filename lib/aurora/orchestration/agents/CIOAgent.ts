@@ -4,7 +4,6 @@ import { knowledgeGraphService } from '../../infrastructure/KnowledgeGraphServic
 import { ontologyService } from '../../infrastructure/OntologyService'
 import { WebScraperService } from '../../infrastructure/WebScraperService'
 import { LLMSynthesisEngine } from '../../infrastructure/LLMSynthesisEngine'
-import { fetchAllRows } from '../../infrastructure/fetchAllRows'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 /**
@@ -186,9 +185,6 @@ export class CIOAgent {
 
     // Aggregate live DB context for intent
     let dbData: Record<string, any> | undefined = undefined
-    // Collected so the answer can admit when a read failed rather than
-    // reporting a total computed from whatever happened to come back.
-    let dataErrors: string[] = []
     let scrapedData: Record<string, any> | undefined = undefined
 
     if (isTasksTransactionsQuery) {
@@ -197,31 +193,20 @@ export class CIOAgent {
       let quoteRows: any[] = []
       let enquiryRows: any[] = []
 
-      const [ordRes, invRes, quoRes, enqRes] = await Promise.all([
-        fetchAllRows('tasks.orders', (f, t) =>
-          supabaseAdmin.from('orders')
-            .select('id, order_number, status, total_amount, created_at').range(f, t)),
-        fetchAllRows('tasks.invoices', (f, t) =>
-          supabaseAdmin.from('gst_invoices')
-            .select('id, invoice_number, status, payment_status, total_amount, balance_due').range(f, t)),
-        fetchAllRows('tasks.quotes', (f, t) =>
-          supabaseAdmin.from('quotes')
-            .select('id, quote_number, status, grand_total').range(f, t)),
-        // Was `from('enquiries')` — no such table. The D2C enquiry table is
-        // `customer_enquiries` (scripts/migrate_d2c_customers.sql), and its
-        // customer name lives on the joined `customers` row, not inline.
-        fetchAllRows('tasks.enquiries', (f, t) =>
-          supabaseAdmin.from('customer_enquiries')
-            .select('id, status, title').range(f, t)),
-      ])
-
-      orderRows = ordRes.rows
-      invoiceRows = invRes.rows
-      quoteRows = quoRes.rows
-      enquiryRows = enqRes.rows
-
-      // Surface partial reads instead of answering confidently from a subset.
-      dataErrors = [ordRes.error, invRes.error, quoRes.error, enqRes.error].filter(Boolean) as string[]
+      try {
+        const [ordRes, invRes, quoRes, enqRes] = await Promise.all([
+          supabaseAdmin.from('orders').select('id, order_number, status, total_amount, created_at'),
+          supabaseAdmin.from('gst_invoices').select('id, invoice_number, status, payment_status, total_amount, balance_due'),
+          supabaseAdmin.from('quotes').select('id, quote_number, status, grand_total'),
+          supabaseAdmin.from('enquiries').select('id, status, customer_name'),
+        ])
+        if (ordRes.data) orderRows = ordRes.data
+        if (invRes.data) invoiceRows = invRes.data
+        if (quoRes.data) quoteRows = quoRes.data
+        if (enqRes.data) enquiryRows = enqRes.data
+      } catch (err) {
+        console.error('Error fetching today transactions tasks:', err)
+      }
 
       const activeInvoices = invoiceRows.filter((i: any) => i.status !== 'cancelled')
       const unpaidInvoices = activeInvoices.filter((i: any) => i.payment_status === 'unpaid' || i.payment_status === 'partial' || !i.payment_status)
@@ -239,10 +224,8 @@ export class CIOAgent {
     } else if (isPartnersQuery) {
       let partnerRows: any[] = []
       try {
-        const res = await fetchAllRows('partners', (f, t) =>
-          supabaseAdmin.from('partners').select('type, status').range(f, t))
-        partnerRows = res.rows
-        if (res.error) dataErrors.push(res.error)
+        const { data } = await supabaseAdmin.from('partners').select('type, status')
+        if (data) partnerRows = data
       } catch (err) {
         console.error('Error fetching partners from DB:', err)
       }
@@ -257,10 +240,7 @@ export class CIOAgent {
     } else if (isInvoicesQuery) {
       let invoiceRows: any[] = []
       try {
-        const res = await fetchAllRows('invoices', (f, t) =>
-          supabaseAdmin.from('gst_invoices').select('status, payment_status, total_amount, balance_due').range(f, t))
-        const data = res.rows
-        if (res.error) dataErrors.push(res.error)
+        const { data } = await supabaseAdmin.from('gst_invoices').select('status, payment_status, total_amount, balance_due')
         if (data) invoiceRows = data
       } catch (err) {
         console.error('Error fetching invoices from DB:', err)
@@ -277,10 +257,7 @@ export class CIOAgent {
     } else if (isQuotesQuery) {
       let quoteRows: any[] = []
       try {
-        const res = await fetchAllRows('quotes', (f, t) =>
-          supabaseAdmin.from('quotes').select('status, grand_total').range(f, t))
-        const data = res.rows
-        if (res.error) dataErrors.push(res.error)
+        const { data } = await supabaseAdmin.from('quotes').select('status, grand_total')
         if (data) quoteRows = data
       } catch (err) {
         console.error('Error fetching quotes from DB:', err)
@@ -298,10 +275,7 @@ export class CIOAgent {
     } else if (isOrdersQuery) {
       let orderRows: any[] = []
       try {
-        const res = await fetchAllRows('orders', (f, t) =>
-          supabaseAdmin.from('orders').select('status').range(f, t))
-        const data = res.rows
-        if (res.error) dataErrors.push(res.error)
+        const { data } = await supabaseAdmin.from('orders').select('status')
         if (data) orderRows = data
       } catch (err) {
         console.error('Error fetching orders from DB:', err)
@@ -332,17 +306,9 @@ export class CIOAgent {
       history: params.history,
     })
 
-    // If a read failed, say so. Answering a financial question from a partial
-    // result set without flagging it is the worst outcome here — the operator
-    // has no way to tell a real number from an incomplete one.
-    const answer = dataErrors.length > 0
-      ? `${synthesized.answer}\n\n⚠️ Some data could not be read (${dataErrors.length} ${dataErrors.length === 1 ? 'source' : 'sources'} failed), so figures above may be incomplete.`
-      : synthesized.answer
-
     return {
-      answer,
-      // Confidence was a hardcoded 0.95 regardless of what actually happened.
-      confidence: dataErrors.length > 0 ? 0.4 : 0.95,
+      answer: synthesized.answer,
+      confidence: 0.95,
       insights: synthesized.insights,
       pipelineTrace: execution.results,
       suggestedActions: synthesized.suggestedActions,

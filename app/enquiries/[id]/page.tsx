@@ -10,11 +10,9 @@ import {
   formatINR, displayPhone,
   type CustomerEnquiry, type Customer, type EnquiryActivity,
 } from '@/lib/customers'
-import { useSession } from 'next-auth/react'
 import {
   Loader2, ArrowLeft, MessageCircle, Phone, Mail, MapPin, Calendar,
   ImagePlus, Send, X, Image as ImageIcon, User as UserIcon, Link as LinkIcon, Eye, Copy, Check,
-  Trash2, AlertTriangle,
 } from 'lucide-react'
 
 type Staff = { id: string; display_name: string | null; username: string }
@@ -34,33 +32,6 @@ export default function EnquiryDetailPage() {
   const [busy, setBusy] = useState(false)
   const [noteText, setNoteText] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Delete is master-only and confirmed inline rather than in a popup.
-  const { data: session } = useSession()
-  const isMaster = (session?.user as any)?.role === 'master'
-  const [confirmingDelete, setConfirmingDelete] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
-
-  async function handleDelete() {
-    setDeleting(true)
-    setDeleteError(null)
-    try {
-      const res = await fetch(`/api/enquiries/${id}`, { method: 'DELETE' })
-      const body = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        // Server refusals (e.g. already converted to an order) carry a reason
-        // worth reading, so show it in place instead of a generic failure.
-        setDeleteError(body.error || `Could not delete (${res.status})`)
-        setDeleting(false)
-        return
-      }
-      router.push('/enquiries')
-    } catch (e: any) {
-      setDeleteError(e?.message || 'Network error')
-      setDeleting(false)
-    }
-  }
 
   async function load() {
     setLoading(true); setError(null)
@@ -190,62 +161,8 @@ export default function EnquiryDetailPage() {
             {ENQUIRY_STATUS_LABEL[enquiry.status]}
           </span>
           {busy && <Loader2 className="w-3 h-3 animate-spin text-stone-400" />}
-          {isMaster && !confirmingDelete && (
-            <button
-              type="button"
-              onClick={() => { setConfirmingDelete(true); setDeleteError(null) }}
-              className="inline-flex items-center gap-1.5 text-xs text-stone-400 hover:text-rose-600 transition-colors px-2 py-1 -mr-2 rounded-lg min-h-[32px]"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Delete
-            </button>
-          )}
         </div>
       </div>
-
-      {/* Inline delete confirmation — deliberately in the page flow, not a
-          modal, so it can't be dismissed by a stray tap on a phone. */}
-      {confirmingDelete && (
-        <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-rose-900">
-                Delete {enquiry.enquiry_number}?
-              </p>
-              <p className="text-sm text-rose-800/80 mt-1">
-                This removes the enquiry and its whole timeline. It cannot be undone.
-                To just clear it from the inbox, set the status to <strong>Dropped</strong> instead.
-              </p>
-
-              {deleteError && (
-                <p className="text-sm text-rose-900 bg-rose-100 border border-rose-200 rounded-lg px-3 py-2 mt-3">
-                  {deleteError}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-2 mt-3">
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px]"
-                >
-                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                  {deleting ? 'Deleting…' : 'Yes, delete it'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setConfirmingDelete(false); setDeleteError(null) }}
-                  disabled={deleting}
-                  className="text-sm text-stone-600 hover:text-stone-900 px-4 py-2 rounded-lg min-h-[44px]"
-                >
-                  Keep it
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Main column */}

@@ -149,28 +149,31 @@ export async function executeFifoPlan(
   issuanceType: 'reserved' | 'final',
   createdBy: string,
 ): Promise<{ success: boolean; total_cost: number }> {
-  if (plan.reservations.length === 0) return { success: true, total_cost: 0 }
+  const supabase = supabaseAdmin
 
-  // One transaction in Postgres. This used to loop in Node — insert a
-  // lot_issuance, then decrement the lot, per reservation — so a failure
-  // partway through left lots consumed with no matching issuance and no way to
-  // roll back. The RPC also re-reads each lot under FOR UPDATE, because the
-  // plan from computeFifoPlan is a snapshot: without that re-check two
-  // concurrent orders could both reserve the same stock.
-  const { data, error } = await supabaseAdmin.rpc('execute_fifo_plan', {
-    p_reservations: plan.reservations.map(r => ({
-      lot_id:     r.lot_id,
-      issued_qty: r.issued_qty,
-      unit_cost:  r.unit_cost,
-      total_cost: r.total_cost,
-    })),
-    p_mfg_order_id:  manufacturingOrderId,
-    p_issuance_type: issuanceType,
-    p_created_by:    createdBy,
-  })
+  for (const r of plan.reservations) {
+    // Insert lot_issuance
+    const { error: issuanceError } = await supabase
+      .from('lot_issuances')
+      .insert({
+        lot_id: r.lot_id,
+        manufacturing_order_id: manufacturingOrderId,
+        issued_qty:   r.issued_qty,
+        unit_cost:    r.unit_cost,
+        total_cost:   r.total_cost,
+        issuance_type: issuanceType,
+        finalised_at: issuanceType === 'final' ? new Date().toISOString() : null,
+        created_by: createdBy,
+      })
+    if (issuanceError) throw new Error(`Lot issuance write failed: ${issuanceError.message}`)
 
-  if (error) throw new Error(`FIFO issuance failed: ${error.message}`)
+    // Decrement remaining_qty on lot
+    const { error: lotError } = await supabase.rpc('decrement_lot_qty', {
+      p_lot_id: r.lot_id,
+      p_qty: r.issued_qty,
+    })
+    if (lotError) throw new Error(`Lot qty decrement failed: ${lotError.message}`)
+  }
 
-  const totalCost = Array.isArray(data) ? Number(data[0]?.total_cost ?? 0) : Number((data as any)?.total_cost ?? 0)
-  return { success: true, total_cost: totalCost }
+  return { success: true, total_cost: plan.total_cost }
 }

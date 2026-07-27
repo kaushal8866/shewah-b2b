@@ -1,48 +1,4 @@
 import { supabaseAdmin } from './supabaseAdmin'
-import { istDayStart, istDayEnd } from './period'
-import { fetchAllRows } from './fetchAll'
-
-// ── Revenue recognition ────────────────────────────────────────────────────
-// These sets are the P&L's definition of "earned". They are named constants
-// rather than inline arrays because changing them changes reported profit.
-//
-// Previously the reseller set included `payment_pending` and the pre-payment
-// CAD stages — while app/api/cron/cleanup-unpaid-orders auto-cancels
-// payment_pending orders past their deadline. The P&L was therefore booking
-// revenue on orders the system was about to cancel.
-
-/**
- * Formal orders count once they enter production and money is committed.
- *
- * Now that SOP §9 states exist, `advance_received` is the true recognition
- * point — production cannot start without it. The post-production states are
- * listed explicitly rather than inferred, so adding a state to the flow never
- * silently changes reported revenue.
- *
- * `qc_failed` counts: the piece is still being made, the money is still ours.
- * `cancelled` / `abandoned` / `draft` never count.
- */
-export const RECOGNISED_ORDER_STATUSES = [
-  'advance_received', 'production', 'hallmarking',
-  'qc', 'qc_failed', 'qc_passed',
-  'dispatched', 'delivered', 'closed',
-] as const
-
-/** Reseller orders count only once payment is confirmed. */
-export const RECOGNISED_RESELLER_STATUSES = [
-  'confirmed', 'production', 'qc', 'dispatched', 'delivered',
-] as const
-
-/** Cash categories treated as realised sales revenue. */
-export const CASH_SALE_CATEGORIES = [
-  'jewelry_cash_sale', 'jewelry_upi_sale', 'gold_sale', 'ready_to_ship_sale',
-] as const
-
-/**
- * Money received against an order rather than earned in the period. Excluded
- * from revenue so it is not double counted against the order itself.
- */
-export const ADVANCE_CATEGORIES = ['order_advance', 'balance_collection'] as const
 
 export interface PnLPeriod {
   from: string  // YYYY-MM-DD
@@ -53,12 +9,12 @@ export interface PnLStatement {
   period: PnLPeriod
 
   // ─── REVENUE ───────────────────────────────────────
-  formal_order_revenue: number        // sum(orders.total_amount) for RECOGNISED_ORDER_STATUSES
-  reseller_order_revenue: number      // sum(reseller_orders.reseller_cost_paise / 100) for RECOGNISED_RESELLER_STATUSES
-  cash_sales_income: number           // cash_transactions income in CASH_SALE_CATEGORIES
-  advance_income: number              // received against orders — reported, NOT in gross_revenue
+  formal_order_revenue: number        // sum(orders.total_amount) for completed/dispatched/delivered
+  reseller_order_revenue: number      // sum(reseller_orders.reseller_cost_paise / 100) for confirmed/dispatched/delivered
+  cash_sales_income: number           // cash_transactions income where is_cogs = false and group = 'sales'
+  advance_income: number              // advances received (tracked separately — not real revenue yet)
   other_income: number                // commissions, recoveries, etc.
-  gross_revenue: number               // formal + reseller + cash_sales + other_income (NOT advances)
+  gross_revenue: number               // formal + cash_sales + other_income (NOT advances)
 
   // ─── DIRECT COSTS (COGS) ───────────────────────────
   formal_order_cogs: number           // sum(orders.total_cogs) for same orders
@@ -97,15 +53,13 @@ export interface PnLStatement {
 
 export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
   // 1. Fetch formal order revenue and COGS (including lot_based_cogs)
-  const orderData = await fetchAllRows<any>('pnl.orders', (from, to) =>
-    supabaseAdmin
-      .from('orders')
-      .select('total_amount, total_cogs, lot_based_cogs')
-      .gte('order_date', period.from)
-      .lte('order_date', period.to)
-      .in('status', RECOGNISED_ORDER_STATUSES as unknown as string[])
-      .not('total_amount', 'is', null)
-      .range(from, to))
+  const { data: orderData } = await supabaseAdmin
+    .from('orders')
+    .select('total_amount, total_cogs, lot_based_cogs')
+    .gte('order_date', period.from)
+    .lte('order_date', period.to)
+    .in('status', ['production', 'qc', 'dispatched', 'delivered'])  // exclude cancelled/brief_received
+    .not('total_amount', 'is', null)
 
   const formal_order_revenue = sum(orderData, 'total_amount')
   const formal_order_cogs    = sum(orderData, 'total_cogs')
@@ -118,46 +72,44 @@ export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
   const cogs_variance = lot_based_order_cogs - formal_order_cogs
 
   // Fetch reseller order revenue (sum of reseller_cost_paise / 100 where status is confirmed/dispatched/delivered)
-  // IST day boundaries. `created_at` is a timestamptz, so filtering on
-  // `${to}T23:59:59Z` actually ran the window to 05:29 the next morning IST.
-  const resellerOrderData = await fetchAllRows<any>('pnl.resellerOrders', (from, to) =>
-    supabaseAdmin
-      .from('reseller_orders')
-      .select('reseller_cost_paise')
-      .gte('created_at', istDayStart(period.from))
-      .lte('created_at', istDayEnd(period.to))
-      .in('status', RECOGNISED_RESELLER_STATUSES as unknown as string[])
-      .not('reseller_cost_paise', 'is', null)
-      .range(from, to))
+  const { data: resellerOrderData } = await supabaseAdmin
+    .from('reseller_orders')
+    .select('reseller_cost_paise')
+    .gte('created_at', period.from + 'T00:00:00Z')
+    .lte('created_at', period.to + 'T23:59:59Z')
+    .in('status', [
+      'confirmed', 'dispatched', 'delivered', 'payment_pending', 'brief_received',
+      'cad_in_progress', 'cad_sent', 'design_approved', 'production', 'qc'
+    ])
+    .not('reseller_cost_paise', 'is', null)
 
   const reseller_order_revenue = resellerOrderData
     ? resellerOrderData.reduce((acc, row) => acc + (Number(row.reseller_cost_paise ?? 0) / 100), 0)
     : 0
 
   // 2. Fetch all non-voided cash transactions in period
-  const txns = await fetchAllRows<any>('pnl.cashTxns', (from, to) =>
-    supabaseAdmin
-      .from('cash_transactions')
-      .select('txn_type, category_group, category, amount, is_cogs')
-      .gte('txn_date', period.from)
-      .lte('txn_date', period.to)
-      .eq('is_void', false)
-      .range(from, to))
+  const { data: txns } = await supabaseAdmin
+    .from('cash_transactions')
+    .select('txn_type, category_group, category, amount, is_cogs')
+    .gte('txn_date', period.from)
+    .lte('txn_date', period.to)
+    .eq('is_void', false)
 
   // 3. Split and sum
   const incomes  = txns?.filter(t => t.txn_type === 'income')  ?? []
   const expenses = txns?.filter(t => t.txn_type === 'expense') ?? []
 
-  const isCashSale  = (t: any) => (CASH_SALE_CATEGORIES as readonly string[]).includes(t.category)
-  const isAdvance   = (t: any) => (ADVANCE_CATEGORIES  as readonly string[]).includes(t.category)
-
-  const cash_sales_income = sumWhere(incomes, isCashSale)
-  // Collected against an order, not earned in this period. Reported for cash
-  // visibility but deliberately excluded from gross_revenue — the order itself
-  // is already recognised above, so counting both would double count it.
-  const advance_income = sumWhere(incomes, isAdvance)
+  const cash_sales_income = sumWhere(incomes, t =>
+    ['jewelry_cash_sale','jewelry_upi_sale','gold_sale','ready_to_ship_sale'].includes(t.category)
+  )
+  const advance_income = sumWhere(incomes, t =>
+    ['order_advance','balance_collection'].includes(t.category)
+  )
   const karigar_material_returns = sumWhere(incomes, t => t.is_cogs === true)
-  const other_income = sumWhere(incomes, t => !isCashSale(t) && !isAdvance(t) && !t.is_cogs)
+  const other_income = sumWhere(incomes, t =>
+    !['jewelry_cash_sale','jewelry_upi_sale','gold_sale','ready_to_ship_sale',
+      'order_advance','balance_collection'].includes(t.category) && !t.is_cogs
+  )
 
   const gross_revenue = formal_order_revenue + reseller_order_revenue + cash_sales_income + other_income
 
@@ -182,13 +134,11 @@ export async function computePnL(period: PnLPeriod): Promise<PnLStatement> {
     : 0
 
   // 4. Fetch Gold Replacement Variance (sum(replenishment_offsets.delta))
-  const offsets = await fetchAllRows<any>('pnl.offsets', (from, to) =>
-    supabaseAdmin
-      .from('replenishment_offsets')
-      .select('delta')
-      .gte('offset_date', period.from)
-      .lte('offset_date', period.to)
-      .range(from, to))
+  const { data: offsets } = await supabaseAdmin
+    .from('replenishment_offsets')
+    .select('delta')
+    .gte('offset_date', period.from)
+    .lte('offset_date', period.to)
 
   const gold_replacement_variance = offsets?.reduce((acc, row) => acc + Number(row.delta ?? 0), 0) ?? 0
 

@@ -23,6 +23,7 @@ function NewCADRequestForm() {
 
   const [form, setForm] = useState({
     partner_id: prePartner,
+    cad_party_id: '',
     brief_text: '',
     diamond_shape: 'round',
     diamond_weight: '',
@@ -30,7 +31,6 @@ function NewCADRequestForm() {
     setting_type: '',
     special_requests: '',
     priority: 'normal',
-    cad_party_id: '',
     due_date: new Date(Date.now() + 48 * 3600000).toISOString().split('T')[0],
   })
 
@@ -51,7 +51,7 @@ function NewCADRequestForm() {
       .select('id, code, name, gold_karat, diamond_shape, diamond_weight, diamond_quality, diamond_color')
       .eq('id', preProduct)
       .single()
-      .then(({ data }: any) => {
+      .then(({ data }) => {
         if (!data) return
         setProductRef(data)
         const dq = (data as any).diamond_weight
@@ -95,24 +95,15 @@ function NewCADRequestForm() {
     const { count } = await supabase.from('cad_requests').select('*', { count: 'exact', head: true })
     const num = `SH-CAD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
 
-    // `cad_party_id` is added by scripts/migrate_cad_party_id.sql, which has
-    // not been applied everywhere — production rejects the insert with "Could
-    // not find the 'cad_party_id' column in the schema cache". Omitting the key
-    // when nothing was picked keeps the form working before the migration runs,
-    // and still records the vendor after it does. It is a uuid FK, so an empty
-    // string is never valid input.
-    const { cad_party_id, ...rest } = form
-    const payload: Record<string, any> = {
-      ...rest,
+    const { cad_party_id, ...insertPayload } = form
+
+    const { error } = await supabase.from('cad_requests').insert([{
+      ...insertPayload,
       request_number: num,
-      // Guard against parseInt('') === NaN when the karat select is untouched.
       gold_karat: form.gold_karat ? parseInt(form.gold_karat) : 18,
       reference_images: referenceImages,
       received_date: new Date().toISOString().split('T')[0],
-    }
-    if (cad_party_id) payload.cad_party_id = cad_party_id
-
-    const { error } = await supabase.from('cad_requests').insert([payload]).select().single()
+    }]).select().single()
 
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }

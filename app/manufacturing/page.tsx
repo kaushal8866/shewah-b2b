@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { supabase, type ManufacturingOrder } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import { Plus, Factory, ChevronRight, Phone, Layers, AlertCircle, Bell } from 'lucide-react'
 import Link from 'next/link'

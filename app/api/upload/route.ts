@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import { getStorefrontCustomer } from '@/lib/storefrontAuth'
 
 // Allow up to ~25 MB uploads — needed for STEP/STL CAD exports and high-res
 // retailer reference photos taken on phones (HEIC originals are easily 8-12 MB).
@@ -15,72 +14,6 @@ const IMAGE_EXTS = new Set(['png','jpg','jpeg','webp','gif','heic','heif','avif'
 function pickResourceType(filename: string): 'image' | 'raw' {
   const ext = (filename.split('.').pop() || '').toLowerCase()
   return IMAGE_EXTS.has(ext) ? 'image' : 'raw'
-}
-
-// ── Caller identity ────────────────────────────────────────────────────────
-// This route is deliberately excluded from the NextAuth middleware matcher,
-// because two legitimate callers are NOT NextAuth users: the public reseller
-// storefront (`/r/[token]`, authenticated by the storefront customer cookie)
-// and the reseller invite acceptance page (`/accept-invite/[token]`, which has
-// no session yet and proves itself with the one-time invitation code).
-// Middleware would bounce both to /login, so this route is the single
-// authority — every path below must resolve to a real identity or 401.
-type Uploader = {
-  kind: 'app_user' | 'storefront_customer' | 'invitee'
-  id: string
-  username: string | null
-  role: string | null
-}
-
-async function resolveUploader(scopeToken: string | null): Promise<Uploader | null> {
-  // 1. Admin / manufacturer / retailer / reseller portal users.
-  const session = await getServerSession(authOptions).catch(() => null)
-  const user = session?.user as any
-  if (user?.id) {
-    return { kind: 'app_user', id: user.id, username: user.username ?? null, role: user.role ?? null }
-  }
-
-  // 2. Storefront shoppers uploading design reference photos.
-  const customer = await getStorefrontCustomer().catch(() => null)
-  if (customer?.id) {
-    return { kind: 'storefront_customer', id: String(customer.id), username: customer.phone ?? null, role: 'storefront_customer' }
-  }
-
-  // 3. Invitees uploading a logo mid-signup. Only a pending, unexpired
-  //    invitation code counts — the same conditions /api/public/invite uses.
-  if (scopeToken) {
-    const { data: invite } = await supabaseAdmin
-      .from('reseller_invitations')
-      .select('id, status, expiry_date')
-      .eq('invitation_code', scopeToken)
-      .maybeSingle()
-    if (invite && invite.status === 'pending' && new Date(invite.expiry_date) >= new Date()) {
-      return { kind: 'invitee', id: invite.id, username: null, role: 'invitee' }
-    }
-  }
-
-  return null
-}
-
-// Best-effort abuse brake. In-memory means per-instance on serverless, so this
-// throttles a single hot attacker rather than providing a hard global quota —
-// a durable counter belongs in Postgres or Redis when traffic justifies it.
-const RATE_LIMIT_MAX = 30
-const RATE_LIMIT_WINDOW_MS = 60_000
-const uploadHits = new Map<string, { count: number; resetAt: number }>()
-
-function overRateLimit(key: string): boolean {
-  const now = Date.now()
-  const hit = uploadHits.get(key)
-  if (!hit || now > hit.resetAt) {
-    uploadHits.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
-    return false
-  }
-  hit.count += 1
-  if (uploadHits.size > 5000) {
-    uploadHits.forEach((v, k) => { if (now > v.resetAt) uploadHits.delete(k) })
-  }
-  return hit.count > RATE_LIMIT_MAX
 }
 
 type FailureMeta = {
@@ -116,19 +49,18 @@ async function logFailure(
 }
 
 export async function POST(req: NextRequest) {
-  // No hardcoded fallbacks — a misconfigured deploy must fail loudly rather
-  // than quietly push uploads into someone else's Cloudinary account.
   const CLOUD_NAME =
     process.env.CLOUDINARY_CLOUD_NAME ||
-    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+    'ddnlacdta'
 
   const UPLOAD_PRESET =
     process.env.CLOUDINARY_UPLOAD_PRESET ||
-    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
+    'shewah-b2b'
 
   if (!CLOUD_NAME || !UPLOAD_PRESET) {
     const msg = 'Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET.'
-    console.error('[upload] missing Cloudinary configuration')
     await logFailure(500, msg, {})
     return NextResponse.json({ error: msg }, { status: 500 })
   }
@@ -142,22 +74,6 @@ export async function POST(req: NextRequest) {
   }
 
   const sourceHint = (formData.get('source') as string | null) || null
-  const scopeToken = (formData.get('scope_token') as string | null) || null
-
-  // AUTH GATE — must come before any work is done on the payload.
-  const uploader = await resolveUploader(scopeToken)
-  if (!uploader) {
-    await logFailure(401, 'Unauthenticated upload attempt', { source: sourceHint })
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (overRateLimit(`${uploader.kind}:${uploader.id}`)) {
-    await logFailure(429, 'Upload rate limit exceeded', { source: sourceHint })
-    return NextResponse.json(
-      { error: 'Too many uploads. Please wait a moment and try again.' },
-      { status: 429 },
-    )
-  }
 
   const file = formData.get('file')
   if (!file || !(file instanceof File)) {

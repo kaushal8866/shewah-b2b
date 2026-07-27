@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import { computeKaratPricing, KARAT_FACTORS } from '@/lib/karat'
+import { computeKaratPricing } from '@/lib/karat'
 
 export async function GET(req: NextRequest, { params }: { params: { token: string } }) {
   const token = params.token

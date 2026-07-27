@@ -15,7 +15,6 @@ export default function CADRequestsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [now, setNow] = useState(Date.now())
-  const [loadError, setLoadError] = useState<string | null>(null)
 
   // Live updates: when a retailer approves or asks for a revision, patch the
   // matching row in place and surface a toast. Falls back gracefully when the
@@ -40,23 +39,10 @@ export default function CADRequestsPage() {
 
   async function loadRequests() {
     setLoading(true)
-    setLoadError(null)
-    // The error was previously discarded, so a failed query rendered an empty
-    // list indistinguishable from "no CAD requests yet" — the operator had no
-    // way to tell a broken page from an empty one.
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('cad_requests')
       .select(`*, partners(store_name, city)`)
       .order('received_date', { ascending: false })
-
-    if (error) {
-      console.error('[cad-requests] load failed', error)
-      setLoadError(error.message || 'Could not load CAD requests')
-      setRequests([])
-      setLoading(false)
-      return
-    }
-
     setRequests(
       (data || []).map((r: CADRequest & { partners?: { store_name: string; city: string } | null }) => ({
         ...r,
@@ -75,23 +61,17 @@ export default function CADRequestsPage() {
     loadRequests()
   }
 
-  // Returns null when neither date is usable, so callers render nothing rather
-  // than "NaNh left". An unparseable date used to propagate NaN straight into
-  // the UI.
-  function getHoursLeft(receivedDate?: string | null, dueDate?: string | null): number | null {
-    const due = dueDate ? new Date(dueDate).getTime() : NaN
-    const received = receivedDate ? new Date(receivedDate).getTime() : NaN
-    const base = Number.isFinite(due) ? due
-      : Number.isFinite(received) ? received + 48 * 3600 * 1000
-      : NaN
-    if (!Number.isFinite(base)) return null
-    return (base - now) / 3600000
+  function getHoursLeft(receivedDate: string, dueDate?: string) {
+    const base = dueDate
+      ? new Date(dueDate).getTime()
+      : new Date(receivedDate).getTime() + 48 * 3600 * 1000
+    const diff = (base - now) / 3600000
+    return diff
   }
 
   function HoursChip({ received, due, status }: { received: string; due?: string; status: string }) {
     if (['approved', 'rejected', 'sent'].includes(status)) return null
     const h = getHoursLeft(received, due)
-    if (h === null) return null
     if (h < 0) return (
       <span className="flex items-center gap-1 text-xs text-red-600 font-medium">
         <AlertCircle className="w-3 h-3" /> OVERDUE
@@ -126,11 +106,10 @@ export default function CADRequestsPage() {
     return matchSearch && matchStatus
   })
 
-  const urgentCount = requests.filter(r => {
-    if (['approved', 'rejected', 'sent'].includes(r.status)) return false
-    const h = getHoursLeft(r.received_date, r.due_date)
-    return h !== null && h < 24
-  }).length
+  const urgentCount = requests.filter(r =>
+    !['approved', 'rejected', 'sent'].includes(r.status) &&
+    getHoursLeft(r.received_date, r.due_date) < 24
+  ).length
 
   const statsBar = [
     { label: 'Pending', count: requests.filter(r => r.status === 'pending').length, color: 'text-blue-600' },
@@ -155,23 +134,6 @@ export default function CADRequestsPage() {
           <span className="sm:hidden">New</span>
         </Link>
       </div>
-
-      {/* A failed load must not look like an empty inbox. */}
-      {loadError && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-amber-900">Couldn&apos;t load CAD requests</p>
-            <p className="text-xs text-amber-900/80 mt-0.5 break-words">{loadError}</p>
-            <button
-              onClick={loadRequests}
-              className="mt-2 text-xs font-medium text-amber-900 underline underline-offset-2 min-h-[32px]"
-            >
-              Try again
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Urgent alert */}
       {urgentCount > 0 && (

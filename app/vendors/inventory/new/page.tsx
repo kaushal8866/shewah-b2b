@@ -40,9 +40,9 @@ export default function NewInventoryItemPage() {
   })
 
   useEffect(() => {
-    supabase.from('vendors').select('id, name').order('name').then(({ data }: any) => setVendors(data || []))
+    supabase.from('vendors').select('id, name').order('name').then(({ data }) => setVendors(data || []))
     supabase.from('gold_rates').select('rate_24k').order('recorded_at', { ascending: false }).limit(1)
-      .then(({ data }: any) => {
+      .then(({ data }) => {
         const r = Number(data?.[0]?.rate_24k)
         if (Number.isFinite(r) && r > 0) setLatestRate24k(r)
       })

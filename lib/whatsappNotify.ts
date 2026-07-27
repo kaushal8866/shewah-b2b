@@ -9,34 +9,20 @@ export type OrderNotifyTrigger =
   | 'returned'
   | 'tracking_added'
 
-// Partner-facing wording. Written from their side of the transaction — they
-// care that the piece is moving, not what our internal state is called.
 const STATUS_LABELS: Record<string, string> = {
   cad_sent: 'CAD design sent for your review',
-  design_approved: 'Design approved',
-  quote_issued: 'Quote ready — rate held for 72 hours',
-  advance_received: 'Advance received, thank you',
+  design_approved: 'Design approved — moving into production',
   production: 'In production',
-  hallmarking: 'At hallmarking',
   qc: 'In quality check',
-  qc_passed: 'Passed quality check',
   dispatched: 'Dispatched',
   delivered: 'Delivered',
-  closed: 'Order closed',
   cancelled: 'Cancelled',
-  abandoned: 'Closed — no longer proceeding',
   returned: 'Returned',
 }
 
-// Transitions worth interrupting a partner for. Deliberately NOT every state:
-// hallmarking and qc are internal, and a message per internal step trains
-// people to ignore the channel. SOP §9.4.
 const MILESTONE_STATUSES = new Set([
   'cad_sent',
   'design_approved',
-  'quote_issued',
-  'advance_received',
-  'production',
   'dispatched',
   'delivered',
   'cancelled',

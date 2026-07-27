@@ -24,11 +24,15 @@ export function formatDate(dateStr: string) {
 }
 
 
-// REMOVED: generateOrderNumber / generateCADNumber.
-// Both derived a serial from a row count, which collides under concurrency,
-// and padded to 3 digits so they would have broken at 1000 records. Neither
-// had any callers. Order numbers now come from Postgres sequences — see
-// scripts/migrate_ledger_atomicity_and_coupon_limits.sql.
+export function generateOrderNumber(count: number) {
+  const year = new Date().getFullYear()
+  return `SH-ORD-${year}-${String(count).padStart(3, '0')}`
+}
+
+export function generateCADNumber(count: number) {
+  const year = new Date().getFullYear()
+  return `SH-CAD-${year}-${String(count).padStart(3, '0')}`
+}
 
 export function getDaysUntil(dateStr: string) {
   const today = new Date()

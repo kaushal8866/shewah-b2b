@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { notifyInternalCadAction } from '@/lib/whatsappNotify'
-import { runInBackground } from '@/lib/backgroundTask'
 
 // Retailer-facing CAD action endpoint. Lets the retailer approve the CAD that
 // was sent to them, or request a revision with a short note. We deliberately
@@ -91,11 +90,13 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
 
     // Fire-and-forget internal ping to the design team. Errors are swallowed
     // inside the helper — never block the retailer's success response.
-    runInBackground('notify.cad.approve', () => notifyInternalCadAction({
+    notifyInternalCadAction({
       orderId: order.id,
       action: 'approve',
       feedback: feedback || null,
-    }))
+    }).catch(err => {
+      console.error('[whatsappNotify:internal] dispatch error', err?.message || err)
+    })
 
     return NextResponse.json({ ok: true, status: 'approved' })
   }
@@ -128,11 +129,13 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
 
   // Fire-and-forget internal ping to the design team so they can jump on the
   // revision immediately rather than waiting for a screen refresh.
-  runInBackground('notify.cad.revise', () => notifyInternalCadAction({
+  notifyInternalCadAction({
     orderId: order.id,
     action: 'revise',
     feedback,
-  }))
+  }).catch(err => {
+    console.error('[whatsappNotify:internal] dispatch error', err?.message || err)
+  })
 
   return NextResponse.json({ ok: true, status: 'revision_requested' })
 }

@@ -119,7 +119,7 @@ function NewOrderForm() {
       setMfgPartners(mp || [])
       if (g?.[0]) setGoldRate(g[0].rate_24k)
       if (sd) {
-        const rate = sd.find((s: any) => s.key === 'silver_rate_b2b')?.value
+        const rate = sd.find(s => s.key === 'silver_rate_b2b')?.value
         if (rate) setSilverRate(Number(rate))
       }
       if (preProduct) {
@@ -201,14 +201,6 @@ function NewOrderForm() {
     }
   }
 
-  // Sum row totals for the auto stone_cost mirror + display. Must be declared
-  // before the effect below — the dependency array is evaluated during render,
-  // so a later `const` would be in the temporal dead zone.
-  const totalDiamondCost = diamonds.reduce(
-    (s, d) => s + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1),
-    0
-  )
-
   // Mirror to stone_cost while operator hasn't manually edited that field.
   useEffect(() => {
     if (stoneTouched) return
@@ -271,6 +263,11 @@ function NewOrderForm() {
     } catch { /* silent — auto-fill is best-effort */ }
   }
 
+  // Sum row totals for the auto stone_cost mirror + display.
+  const totalDiamondCost = diamonds.reduce(
+    (s, d) => s + (parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1),
+    0
+  )
   // Pull every catalog field we know about into the order form. Diamond info
   // (carats / shape / quality) lives on the order's special_notes by default
   // so production has it; stone_cost is autofilled from the catalog row.

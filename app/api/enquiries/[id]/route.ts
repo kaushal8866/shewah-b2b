@@ -1,8 +1,7 @@
 /**
- * PATCH   /api/enquiries/[id] — update, with activity logging
- * DELETE  /api/enquiries/[id] — remove an enquiry (master only)
+ * PATCH /api/enquiries/[id]
  *
- * PATCH updates an enquiry and writes meaningful changes (status, assignment,
+ * Updates an enquiry and writes meaningful changes (status, assignment,
  * follow-up, image additions) to customer_enquiry_activity. The body is
  * a partial enquiry; only known columns are written through.
  */
@@ -91,66 +90,4 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   return NextResponse.json({ enquiry: data })
-}
-
-/**
- * DELETE /api/enquiries/[id]
- *
- * Master only — this follows the convention of every other destructive
- * endpoint in the app (invoices, quotes, configurator), and matches the
- * partner-delete precedent in app/partners/[id]/page.tsx which refuses to
- * delete anything that already has downstream records.
- *
- * Related rows are handled by the schema:
- *   • customer_enquiry_activity.enquiry_id  ON DELETE CASCADE  — timeline goes
- *   • customer_journey_links.enquiry_id     ON DELETE SET NULL — link survives
- *
- * The one case the database CANNOT protect is `converted_order_id`: it is a
- * deliberately loose link with no FK (see scripts/migrate_d2c_customers.sql),
- * so deleting a converted enquiry would silently orphan the order's
- * provenance — you would have an order nobody can trace back to its brief.
- * That is refused here rather than left to the operator to remember.
- */
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-  const role = (session?.user as any)?.role
-  if (!session || role !== 'master') {
-    return NextResponse.json(
-      { error: 'Only a master admin can delete an enquiry.' },
-      { status: 403 },
-    )
-  }
-
-  const { data: enquiry, error: findErr } = await supabaseAdmin
-    .from('customer_enquiries')
-    .select('id, enquiry_number, status, converted_order_id')
-    .eq('id', params.id)
-    .maybeSingle()
-
-  if (findErr)  return NextResponse.json({ error: findErr.message }, { status: 500 })
-  if (!enquiry) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
-  if (enquiry.converted_order_id || enquiry.status === 'converted_to_order') {
-    return NextResponse.json(
-      {
-        error:
-          'This enquiry has been converted to an order, so it cannot be deleted — ' +
-          'the order would lose its origin. Mark it "dropped" instead if you want it out of the inbox.',
-      },
-      { status: 409 },
-    )
-  }
-
-  const { error: delErr } = await supabaseAdmin
-    .from('customer_enquiries')
-    .delete()
-    .eq('id', params.id)
-
-  if (delErr) {
-    console.error('[enquiries.delete] failed', delErr)
-    return NextResponse.json({ error: delErr.message }, { status: 500 })
-  }
-
-  console.log(`[enquiries.delete] ${enquiry.enquiry_number} deleted by ${(session.user as any).username}`)
-  return NextResponse.json({ ok: true, deleted: enquiry.enquiry_number })
 }

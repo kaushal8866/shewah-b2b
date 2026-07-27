@@ -1147,7 +1147,7 @@ export default function PurchaseLotsPage() {
 
             <div className="space-y-4">
               <div className="text-sm bg-stone-50 border border-stone-150 rounded-xl p-4 space-y-1.5 text-stone-700">
-                <p>New Purchase Lot: <strong>{offsetPreview.remaining_purchase > 0 ? `${offsetPreview.remaining_purchase}g` : 'Entire quantity'}</strong> costed at <strong>{formatCurrency(Number(form.unit_cost))}/g</strong>.</p>
+                <p>New Purchase Lot: <strong>{offsetPreview.remaining_purchase > 0 ? `${offsetPreview.remaining_purchase}g` : 'Entire quantity'}</strong> costed at <strong>{formatCurrency(form.unit_cost)}/g</strong>.</p>
                 <p>Will be used to offset <strong>{offsetPreview.offsets.length}</strong> oldest pending obligations.</p>
               </div>
 

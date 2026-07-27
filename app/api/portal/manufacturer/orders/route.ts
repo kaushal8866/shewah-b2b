@@ -34,9 +34,7 @@ export async function GET() {
     return NextResponse.json({ error: 'No manufacturing partner linked' }, { status: 400 })
   }
 
-  // Widened deliberately: the fallback below re-queries with a narrower column
-  // list, so the two responses have different row shapes.
-  let resp: { data: any[] | null; error: any } = await supabaseAdmin
+  let resp = await supabaseAdmin
     .from('manufacturing_orders')
     .select(LIST_COLS_FULL)
     .eq('manufacturing_partner_id', user.manufacturingPartnerId)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import {
   Package,
@@ -110,7 +110,6 @@ export default function PublicStorefront() {
   const [customNotes, setCustomNotes] = useState('')
   const [briefImages, setBriefImages] = useState<string[]>([])
   const [uploadingImage, setUploadingImage] = useState(false)
-  const [estimatedPrice, setEstimatedPrice] = useState<number>(0)
   const [priceBreakup, setPriceBreakup] = useState<any>(null)
   const [isBreakupOpen, setIsBreakupOpen] = useState(false)
 
@@ -318,10 +317,10 @@ export default function PublicStorefront() {
       if (data.error) {
         alert(data.error)
       } else {
-        // The code is delivered over WhatsApp and never returned by the API,
-        // so the shopper types it in themselves.
         setAuthStep(2)
-        setAuthCode('')
+        if (data.code) {
+          setAuthCode(data.code)
+        }
       }
     } catch (err: any) {
       alert(err.message)

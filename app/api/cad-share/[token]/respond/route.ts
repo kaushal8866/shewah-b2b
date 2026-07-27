@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { notifyInternalCadPartnerResponse } from '@/lib/cadPartnerShareNotify'
-import { runInBackground } from '@/lib/backgroundTask'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -99,12 +98,12 @@ export async function POST(req: Request, ctx: { params: { token: string } }) {
   await supabaseAdmin.rpc('cad_partner_share_record_visit', { p_token: token })
 
   // -- Fire-and-forget WhatsApp ping to the design team --------------------
-  runInBackground('notify.cadPartner.response', () => notifyInternalCadPartnerResponse({
+  notifyInternalCadPartnerResponse({
     cadRequestId: (cad as any).id,
     decision,
     comment: comment || null,
     partnerName: partnerName || null,
-  }))
+  }).catch(() => { /* swallowed inside */ })
 
   return NextResponse.json({
     ok: true,
