@@ -168,6 +168,9 @@ export type Partner = {
   assigned_rep_id?: string
   credit_limit_paise?: number
   credit_approval_required?: boolean
+  // Opt-out switch for order milestone WhatsApp messages.
+  // scripts/migrate_task14_whatsapp_notifications.sql
+  notify_whatsapp?: boolean
   deleted_at?: string
   created_by?: string
   updated_by?: string
@@ -246,6 +249,22 @@ export type Product = {
   created_by?: string
   updated_by?: string
   attributes?: Record<string, any>
+  // Reference karat + alloy colour the stored weights were measured at.
+  // scripts/migrate_density_karat_weight.sql
+  ref_karat?: string
+  ref_color?: string
+  // Per karat × colour gross weights derived from density ratios.
+  // scripts/migrate_density_karat_weight.sql
+  metal_weights?: Record<string, number>
+  metal_type?: string
+  // Structured diamond rows used for pricing and production specs.
+  // scripts/migrate_task83_orders_diamond_specs.sql
+  diamond_specs?: any[]
+  // Product sets: how a parent may be sold, and a child's role within it.
+  // scripts/migrate_product_sets.sql
+  sell_mode?: 'single' | 'set_only' | 'individual_only' | 'both' | string
+  component_label?: string
+  parent_product_id?: string
 }
 
 export interface AttributeField {

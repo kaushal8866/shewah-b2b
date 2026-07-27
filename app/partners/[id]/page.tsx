@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, type Partner } from '@/lib/supabase'
 import { formatDate, getStatusColor, CIRCUITS } from '@/lib/utils'
 import {
   ArrowLeft, Save, Trash2, Phone, MapPin,

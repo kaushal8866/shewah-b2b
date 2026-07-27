@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabaseAdmin'
+import { runInBackground } from './backgroundTask'
 
 interface NotificationPayload {
   toPhone: string
@@ -18,7 +19,14 @@ async function getAdminNotifyPhone(): Promise<string> {
   }
 }
 
-async function sendWhatsApp({ toPhone, message }: NotificationPayload): Promise<boolean> {
+/** True when a real WhatsApp send is possible. Callers that carry a secret
+ *  (e.g. storefront OTP) must check this rather than trusting the simulated
+ *  `true` that `sendWhatsApp` returns when credentials are absent. */
+export function isWhatsAppConfigured(): boolean {
+  return !!(process.env.META_WHATSAPP_ACCESS_TOKEN && process.env.META_WHATSAPP_PHONE_NUMBER_ID)
+}
+
+export async function sendWhatsApp({ toPhone, message }: NotificationPayload): Promise<boolean> {
   const cleanPhone = toPhone.replace(/\D/g, '')
   if (!cleanPhone) return false
 
@@ -26,10 +34,10 @@ async function sendWhatsApp({ toPhone, message }: NotificationPayload): Promise<
   const phoneId = process.env.META_WHATSAPP_PHONE_NUMBER_ID
 
   console.log(`[WhatsApp Notifications] Sending to: ${cleanPhone}`);
-  console.log(`[WhatsApp Notifications] Message:\n${message}\n`);
 
   if (!token || !phoneId) {
     console.warn('[WhatsApp Notifications] Meta credentials not set. Simulated send only.');
+    console.log(`[WhatsApp Notifications] Message:\n${message}\n`);
     return true
   }
 
@@ -82,8 +90,11 @@ export async function notifyResellerEvent(
   event: ResellerNotificationEvent,
   data: Record<string, any>
 ): Promise<void> {
-  // Fire-and-forget
-  (async () => {
+  // Detached on purpose — callers must never block on a WhatsApp round-trip.
+  // Routed through runInBackground so the platform keeps the invocation alive
+  // until the send settles; a bare detached promise is killed when the
+  // response returns, which silently dropped these messages.
+  runInBackground(`notify.reseller.${event}`, async () => {
     try {
       let message = ''
       let toPhone = data.toPhone || ''
@@ -157,5 +168,5 @@ export async function notifyResellerEvent(
     } catch (e) {
       console.error('[WhatsApp Notifications] Dispatch thread crash:', e)
     }
-  })()
+  })
 }

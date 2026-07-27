@@ -4,14 +4,16 @@ import { useEffect, useState } from 'react'
 import { useToast } from '@/app/components/Toast'
 import { supabase } from '@/lib/supabase'
 import { useSession } from 'next-auth/react'
-import { MODULES } from '@/lib/modules'
+import { ASSIGNABLE_MODULES } from '@/lib/modules'
 import {
   Save, Settings2, Calculator, User, Phone, Users, Plus,
   Edit2, Trash2, X, Check, Shield, ShieldOff, Eye, EyeOff, Lock, MessageCircle,
   AlertTriangle, RefreshCw
 } from 'lucide-react'
 
-const ALL_MODULES = MODULES.filter(m => m.id !== 'dashboard')
+// dashboard is implicit for every admin, settings is master-only — neither is
+// assignable, so ASSIGNABLE_MODULES already excludes them.
+const ALL_MODULES = ASSIGNABLE_MODULES
 
 type AppUser = {
   id: string
@@ -76,9 +78,9 @@ export default function SettingsPage() {
   const [editPassword, setEditPassword] = useState('')
 
   useEffect(() => {
-    supabase.from('settings').select('key, value').then(({ data }) => {
+    supabase.from('settings').select('key, value').then(({ data }: any) => {
       const map: Record<string, string> = {}
-      data?.forEach(row => { map[row.key] = row.value || '' })
+      data?.forEach((row: any) => { map[row.key] = row.value || '' })
       setSettings(map)
     })
   }, [])
@@ -86,10 +88,10 @@ export default function SettingsPage() {
   useEffect(() => {
     if (tab === 'users' && isMaster) {
       loadUsers()
-      supabase.from('manufacturing_partners').select('id, name, city').order('name').then(({ data }) => {
+      supabase.from('manufacturing_partners').select('id, name, city').order('name').then(({ data }: any) => {
         setMfgPartners(data || [])
       })
-      supabase.from('partners').select('id, store_name, city').order('store_name').then(({ data }) => {
+      supabase.from('partners').select('id, store_name, city').order('store_name').then(({ data }: any) => {
         setRetailPartners(data || [])
       })
     }

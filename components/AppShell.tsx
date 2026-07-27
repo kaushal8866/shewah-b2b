@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { cn } from '@/lib/utils'
-import { canAccess } from '@/lib/modules'
+import { canAccessModule, type ModuleId } from '@/lib/authz'
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
@@ -187,12 +187,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const role = session?.user?.role || 'sub'
   const permissions = session?.user?.permissions || []
 
+  // Nav visibility resolves through the same authority the middleware and the
+  // /api/db proxy use, so a link is shown if and only if the server would
+  // actually serve it. This used to be a local re-implementation that
+  // disagreed with lib/modules.ts on several routes.
   function hasAccess(module: string): boolean {
     if (!session) return false
-    if (role === 'master') return true
-    if (module === 'dashboard') return true
-    if (module === 'settings') return false
-    return permissions.includes(module)
+    return canAccessModule({ role, permissions }, module as ModuleId)
   }
 
   const visibleSections = navSections.map(sec => ({

@@ -204,7 +204,7 @@ export default function ManufacturingOrderDetailPage() {
       try {
         await applyMfgStatusChange({
           mfgOrderId: id,
-          prevStatus,
+          prevStatus: prevStatus ?? '',
           newStatus,
           goldWeightRequired: parseFloat(order.gold_weight_required) || null,
           goldWeightActual: parseFloat(form.gold_weight_actual) || null,

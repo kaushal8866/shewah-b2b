@@ -38,7 +38,10 @@ function clientIp(req: NextRequest): string {
 }
 
 function hashIp(ip: string): string {
-  const salt = process.env.NEXTAUTH_SECRET || 'shewah-lead-salt'
+  // No literal fallback: a salt published in the source would let anyone
+  // recompute the hash for a given IP and de-anonymise stored lead records.
+  const salt = process.env.NEXTAUTH_SECRET
+  if (!salt) throw new Error('NEXTAUTH_SECRET is not set — cannot hash lead IPs.')
   return createHash('sha256').update(`${salt}:${ip}`).digest('hex').slice(0, 32)
 }
 

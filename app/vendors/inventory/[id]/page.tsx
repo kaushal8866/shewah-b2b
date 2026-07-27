@@ -78,10 +78,10 @@ export default function InventoryItemPage() {
     setMfgPartners(mp || [])
 
     // Compute stock from transactions
-    const receipts = (txs || []).filter(t => ['receipt', 'return', 'adjustment'].includes(t.transaction_type))
-      .reduce((sum, t) => sum + (t.quantity || 0), 0)
-    const issues = (txs || []).filter(t => t.transaction_type === 'issue')
-      .reduce((sum, t) => sum + (t.quantity || 0), 0)
+    const receipts = (txs || []).filter((t: any) => ['receipt', 'return', 'adjustment'].includes(t.transaction_type))
+      .reduce((sum: any, t: any) => sum + (t.quantity || 0), 0)
+    const issues = (txs || []).filter((t: any) => t.transaction_type === 'issue')
+      .reduce((sum: any, t: any) => sum + (t.quantity || 0), 0)
     setComputedStock(receipts - issues)
 
     if (i) {

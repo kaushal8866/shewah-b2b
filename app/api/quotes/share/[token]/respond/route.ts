@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { notifyInternalQuoteResponse } from '@/lib/quoteShareNotify'
+import { runInBackground } from '@/lib/backgroundTask'
 
 export const dynamic = 'force-dynamic'
 
@@ -107,14 +108,12 @@ export async function POST(
   }
 
   // Fire-and-forget notification dispatch
-  notifyInternalQuoteResponse({
+  runInBackground('notify.quote.response', () => notifyInternalQuoteResponse({
     quoteId: quote.id,
     decision: action === 'accept' ? 'accepted' : 'revision',
     comment: note,
     customerName,
-  }).catch((err) => {
-    console.error('Failed to send internal quote notification:', err)
-  })
+  }))
 
   return NextResponse.json({
     success: true,

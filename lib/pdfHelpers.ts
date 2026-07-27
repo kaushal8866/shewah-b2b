@@ -46,3 +46,19 @@ export async function fetchImage(url: string): Promise<Buffer | null> {
   }
 }
 
+
+/**
+ * Node's `Buffer` is a `Uint8Array` subclass, so it has always worked at
+ * runtime as a Response body — but current @types/node models it as
+ * `Buffer<ArrayBufferLike>`, which is not assignable to `BodyInit`. Return a
+ * plain view over the same memory (no copy) so PDF/ZIP routes type-check
+ * without an `as any` cast.
+ */
+export function toResponseBody(buf: Buffer): Uint8Array<ArrayBuffer> {
+  // A view over `buf.buffer` would inherit `ArrayBufferLike`, which still does
+  // not satisfy BodyInit — and Buffers are pooled, so a view can also expose
+  // neighbouring memory. Copy into an ArrayBuffer this value owns outright.
+  const out = new Uint8Array(buf.byteLength)
+  out.set(buf)
+  return out
+}

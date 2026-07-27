@@ -45,7 +45,7 @@ function PartnerTradeInner() {
     supabase.from('partners')
       .select('id, store_name, owner_name')
       .order('store_name')
-      .then(({ data }) => setPartners(data || []))
+      .then(({ data }: any) => setPartners(data || []))
 
     fetch('/api/diamonds/shapes').then(r => r.json()).then(d => setShapes(d.shapes || []))
     fetch('/api/diamonds/sizes').then(r => r.json()).then(d => setSizes(d.sizes || []))

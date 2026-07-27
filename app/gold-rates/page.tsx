@@ -58,8 +58,8 @@ export default function GoldRatesPage() {
     }
 
     if (resSettings.data) {
-      const b2b = resSettings.data.find(s => s.key === 'silver_rate_b2b')?.value
-      const d2c = resSettings.data.find(s => s.key === 'silver_rate_d2c')?.value
+      const b2b = resSettings.data.find((s: any) => s.key === 'silver_rate_b2b')?.value
+      const d2c = resSettings.data.find((s: any) => s.key === 'silver_rate_d2c')?.value
       if (b2b) setSilverRateB2B(b2b)
       if (d2c) setSilverRateD2C(d2c)
     }

@@ -172,6 +172,3 @@ export async function DELETE(req: Request, ctx: { params: { id: string } }) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
-
-// Unused but kept here as a stable knob.
-export const TTL_MS_DEFAULT = SEVEN_DAYS_MS

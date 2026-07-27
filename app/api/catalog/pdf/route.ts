@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin'
 import { renderCatalogPdf, CatalogPDFProduct } from '@/lib/catalogPdf'
+import { toResponseBody } from '@/lib/pdfHelpers'
+
+// Reads query params, so it can never be statically rendered. Without this the
+// build probes it, the render throws, and the error is logged on every build.
+export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
@@ -45,7 +50,7 @@ export async function GET(req: NextRequest) {
 
     const filename = `Shewah_Catalog_${showPrice ? `with_price_${priceType}` : 'no_price'}.pdf`
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(toResponseBody(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

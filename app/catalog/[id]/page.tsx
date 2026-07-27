@@ -227,7 +227,7 @@ export default function CatalogProductEditPage() {
             .select('*')
             .eq('set_parent_id', data.id)
             .order('component_sort_order', { ascending: true })
-            .then(({ data: kids }) => {
+            .then(({ data: kids }: any) => {
               setComponents(kids || [])
             })
         }
@@ -394,7 +394,7 @@ export default function CatalogProductEditPage() {
 
     // 3. Compute aggregated weights
     const aggregatedWeights: Record<string, number> = {}
-    kids.forEach(comp => {
+    kids.forEach((comp: any) => {
       if (comp.metal_weights) {
         Object.entries(comp.metal_weights).forEach(([key, val]) => {
           const w = parseFloat(val as string) || 0
@@ -417,7 +417,7 @@ export default function CatalogProductEditPage() {
       let tradeSum = 0
       let mrpSum = 0
 
-      kids.forEach(comp => {
+      kids.forEach((comp: any) => {
         const compKaratPricing = comp.karat_pricing || {}
         const match = compKaratPricing[String(k)] || compKaratPricing['Silver']
         if (match) {
@@ -454,15 +454,15 @@ export default function CatalogProductEditPage() {
 
     const combinedPhotos = Array.from(new Set([
       ...(parent.photo_urls || []),
-      ...kids.flatMap(comp => comp.photo_urls || [])
+      ...kids.flatMap((comp: any) => comp.photo_urls || [])
     ]))
 
-    const combinedDiamondSpecs = kids.flatMap(comp => (comp.diamond_specs || []).map((d: any) => ({
+    const combinedDiamondSpecs = kids.flatMap((comp: any) => (comp.diamond_specs || []).map((d: any) => ({
       ...d,
       component_label: comp.component_label
     })))
 
-    const totalParentDiamondCost = combinedDiamondSpecs.reduce((sum, d) => sum + ((parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1)), 0)
+    const totalParentDiamondCost = combinedDiamondSpecs.reduce((sum: any, d: any) => sum + ((parseFloat(d.cost) || 0) * (parseInt(d.pieces) || 1)), 0)
     const firstDiamond = combinedDiamondSpecs[0] || null
 
     const firstComp = kids[0] || null
@@ -494,7 +494,7 @@ export default function CatalogProductEditPage() {
       gold_weight_9k:  parentPricing.find(p => p.karat === 9)?.weight || null,
       metal_weights: aggregatedWeights,
       karat_pricing: parentKaratPricing,
-      igi_cert_cost: kids.reduce((sum, comp) => sum + (parseFloat(comp.igi_cert_cost) || 0), 0),
+      igi_cert_cost: kids.reduce((sum: any, comp: any) => sum + (parseFloat(comp.igi_cert_cost) || 0), 0),
       trade_price: parentTradePrice,
       mrp_suggested: parentMrp,
       photo_urls: combinedPhotos,
@@ -1035,7 +1035,7 @@ export default function CatalogProductEditPage() {
                       <td className="px-3 py-2 text-right text-stone-600">{row.goldCost.toLocaleString('en-IN')}</td>
                       <td className="px-3 py-2 text-right text-stone-600">
                         {row.labourCost.toLocaleString('en-IN')}
-                        {(retailLabour[row.karat] || 0) === 0 && <span className="text-[10px] text-amber-600 ml-1">(no rate)</span>}
+                        {(retailLabour[Number(row.karat)] || 0) === 0 && <span className="text-[10px] text-amber-600 ml-1">(no rate)</span>}
                       </td>
                       <td className="px-3 py-2 text-right text-stone-700">{row.cogs.toLocaleString('en-IN')}</td>
                       <td className="px-3 py-2 text-right font-semibold text-[#1E3A5F]">{row.trade.toLocaleString('en-IN')}</td>
@@ -1092,7 +1092,7 @@ export default function CatalogProductEditPage() {
               <p className="text-xs text-stone-400 mb-4">Read-only overview of current product attributes.</p>
               <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {activeAttributes.map(([key, val]) => {
-                  const field = schema.find(f => f.key === key)
+                  const field = schema.find((f: any) => f.key === key)
                   const label = field ? field.label : key
                   const unit = field?.unit ? ` ${field.unit}` : ''
                   let displayVal = String(val)

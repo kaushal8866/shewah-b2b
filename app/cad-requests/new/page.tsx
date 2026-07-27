@@ -23,7 +23,6 @@ function NewCADRequestForm() {
 
   const [form, setForm] = useState({
     partner_id: prePartner,
-    cad_party_id: '',
     brief_text: '',
     diamond_shape: 'round',
     diamond_weight: '',
@@ -31,6 +30,7 @@ function NewCADRequestForm() {
     setting_type: '',
     special_requests: '',
     priority: 'normal',
+    cad_party_id: '',
     due_date: new Date(Date.now() + 48 * 3600000).toISOString().split('T')[0],
   })
 
@@ -51,7 +51,7 @@ function NewCADRequestForm() {
       .select('id, code, name, gold_karat, diamond_shape, diamond_weight, diamond_quality, diamond_color')
       .eq('id', preProduct)
       .single()
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         if (!data) return
         setProductRef(data)
         const dq = (data as any).diamond_weight
@@ -100,7 +100,15 @@ function NewCADRequestForm() {
     const { error } = await supabase.from('cad_requests').insert([{
       ...insertPayload,
       request_number: num,
+      // Guard against parseInt('') === NaN when the karat select is untouched.
       gold_karat: form.gold_karat ? parseInt(form.gold_karat) : 18,
+      // NOTE: cad_party_id is deliberately destructured out above and never
+      // sent. The column does not exist on production —
+      // supabase/migrations/001_business_logic_v2.sql was never applied — and
+      // including the key makes Postgres reject the whole insert with
+      // "Could not find the 'cad_party_id' column in the schema cache".
+      // scripts/migrate_cad_party_id.sql adds it; once that has run, the
+      // vendor can be recorded conditionally.
       reference_images: referenceImages,
       received_date: new Date().toISOString().split('T')[0],
     }]).select().single()
