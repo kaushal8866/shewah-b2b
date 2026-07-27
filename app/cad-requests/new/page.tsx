@@ -95,12 +95,20 @@ function NewCADRequestForm() {
     const { count } = await supabase.from('cad_requests').select('*', { count: 'exact', head: true })
     const num = `SH-CAD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
 
+    const { cad_party_id, ...insertPayload } = form
+
     const { error } = await supabase.from('cad_requests').insert([{
-      ...form,
+      ...insertPayload,
       request_number: num,
-      gold_karat: parseInt(form.gold_karat),
-      // uuid FK — an empty string is not valid input, send null for in-house.
-      cad_party_id: form.cad_party_id || null,
+      // Guard against parseInt('') === NaN when the karat select is untouched.
+      gold_karat: form.gold_karat ? parseInt(form.gold_karat) : 18,
+      // NOTE: cad_party_id is deliberately destructured out above and never
+      // sent. The column does not exist on production —
+      // supabase/migrations/001_business_logic_v2.sql was never applied — and
+      // including the key makes Postgres reject the whole insert with
+      // "Could not find the 'cad_party_id' column in the schema cache".
+      // scripts/migrate_cad_party_id.sql adds it; once that has run, the
+      // vendor can be recorded conditionally.
       reference_images: referenceImages,
       received_date: new Date().toISOString().split('T')[0],
     }]).select().single()
