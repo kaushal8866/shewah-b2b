@@ -95,17 +95,18 @@ function NewCADRequestForm() {
     const { count } = await supabase.from('cad_requests').select('*', { count: 'exact', head: true })
     const num = `SH-CAD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
 
-    // `cad_party_id` is added by supabase/migrations/001_business_logic_v2.sql,
-    // which has not been applied to every environment — production rejects the
-    // insert with "Could not find the 'cad_party_id' column in the schema
-    // cache". Omitting the key entirely when nothing was picked keeps the form
-    // working before the migration runs, and still records the vendor after it
-    // does. It is a uuid FK, so an empty string is never valid input.
+    // `cad_party_id` is added by scripts/migrate_cad_party_id.sql, which has
+    // not been applied everywhere — production rejects the insert with "Could
+    // not find the 'cad_party_id' column in the schema cache". Omitting the key
+    // when nothing was picked keeps the form working before the migration runs,
+    // and still records the vendor after it does. It is a uuid FK, so an empty
+    // string is never valid input.
     const { cad_party_id, ...rest } = form
     const payload: Record<string, any> = {
       ...rest,
       request_number: num,
-      gold_karat: parseInt(form.gold_karat),
+      // Guard against parseInt('') === NaN when the karat select is untouched.
+      gold_karat: form.gold_karat ? parseInt(form.gold_karat) : 18,
       reference_images: referenceImages,
       received_date: new Date().toISOString().split('T')[0],
     }

@@ -117,10 +117,11 @@ export default function CADRequestsPage() {
   const STATUSES = ['all', 'pending', 'in_progress', 'sent', 'revision_requested', 'approved', 'rejected']
 
   const filtered = requests.filter(r => {
+    const q = search.toLowerCase()
     const matchSearch = !search ||
-      r.request_number?.toLowerCase().includes(search.toLowerCase()) ||
-      r.partner_name?.toLowerCase().includes(search.toLowerCase()) ||
-      r.brief_text?.toLowerCase().includes(search.toLowerCase())
+      (r.request_number || '').toLowerCase().includes(q) ||
+      (r.partner_name || '').toLowerCase().includes(q) ||
+      (r.brief_text || '').toLowerCase().includes(q)
     const matchStatus = statusFilter === 'all' || r.status === statusFilter
     return matchSearch && matchStatus
   })

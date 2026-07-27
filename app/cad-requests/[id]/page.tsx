@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
 import { useCadRequestRealtimeToasts, CadToastStack } from '@/components/CadRealtimeToasts'
 import CadPartnerSharePanel from '@/components/CadPartnerSharePanel'
+import CadIntelligenceWidget from '@/components/aurora/CadIntelligenceWidget'
 
 const CAD_STATUSES = [
   { value: 'brief_received', label: 'Brief Received' },
@@ -253,6 +254,9 @@ export default function CadRequestDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Embedded AURORA CAD Intelligence Widget */}
+      <CadIntelligenceWidget cadRequestId={id} />
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

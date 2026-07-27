@@ -10,6 +10,7 @@ import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import Link from 'next/link'
 import MetalWeightCalculator from '@/components/MetalWeightCalculator'
 import { DynamicField, validateAttributes } from '@/lib/catalogAttributes'
+import ProductIntelligenceWidget from '@/components/aurora/ProductIntelligenceWidget'
 
 type DiamondRow = {
   id: string
@@ -647,6 +648,9 @@ export default function CatalogProductEditPage() {
           </p>
         </div>
       </div>
+
+      {/* Embedded AURORA Product Intelligence Widget */}
+      <ProductIntelligenceWidget productId={id} />
 
       {parentSetId && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex items-center justify-between">
