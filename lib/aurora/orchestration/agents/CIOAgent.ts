@@ -537,7 +537,7 @@ export class CIOAgent {
       }
 
       if (liveScrapeResult && liveScrapeResult.summary) {
-        answer = `AURORA CIO Agent has executed a live real-time web scrape for: "${cleanPrompt}". Scraped Source: ${liveScrapeResult.sourcesScraped[0]}. Live Market Summary: ${liveScrapeResult.summary}`
+        answer = `Live Real-Time Market Intelligence for "${cleanPrompt}":\n\n${liveScrapeResult.summary}\n\nSource Feed: ${liveScrapeResult.sourcesScraped[0]}`
         insights.push(
           { title: 'Live Web Scrape Status', detail: `Scraped live search feed for "${cleanPrompt}" at ${new Date(liveScrapeResult.timestamp).toLocaleTimeString('en-IN')}`, score: 'Live Fetched' },
           { title: 'Knowledge Graph Health', detail: `${graphStats.totalNodes} Nodes, ${graphStats.totalEdges} Relations active across 17 AI agents`, score: '100% Operational' },
