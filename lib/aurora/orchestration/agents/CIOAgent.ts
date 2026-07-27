@@ -27,6 +27,19 @@ export class CIOAgent {
     const q = params.query.toLowerCase().trim()
 
     // 1. Dynamic Intent Detection
+    const isQuotesQuery =
+      q.includes('quote') ||
+      q.includes('quotes') ||
+      q.includes('unseen')
+
+    const isOrdersQuery =
+      q.includes('order') ||
+      q.includes('orders')
+
+    const isEnquiriesQuery =
+      q.includes('enquiry') ||
+      q.includes('enquiries')
+
     const isDiamondPricingQuery =
       q.includes('diamond') ||
       q.includes('pricing') ||
@@ -61,10 +74,28 @@ export class CIOAgent {
       q.includes('d2c') ||
       q.includes('client')
 
+    const isStockQuery =
+      q.includes('stock') ||
+      q.includes('inventory') ||
+      q.includes('ready to ship') ||
+      q.includes('rts')
+
     // Context resolution: determine target steps based on query intent and active route
     const steps: WorkflowPipelineStep[] = []
 
-    if (isDiamondPricingQuery) {
+    if (isQuotesQuery) {
+      steps.push({ agentId: 'pricing_intelligence', taskType: 'AUDIT_QUOTES_STATUS' })
+      steps.push({ agentId: 'recommendation', taskType: 'GENERATE_QUOTE_ACTIONS' })
+    } else if (isOrdersQuery) {
+      steps.push({ agentId: 'manufacturing_intelligence', taskType: 'AUDIT_ORDERS_STATUS' })
+      steps.push({ agentId: 'recommendation', taskType: 'GENERATE_ORDER_ACTIONS' })
+    } else if (isEnquiriesQuery) {
+      steps.push({ agentId: 'consumer_intelligence', taskType: 'AUDIT_ENQUIRIES_STATUS' })
+      steps.push({ agentId: 'recommendation', taskType: 'GENERATE_ENQUIRY_ACTIONS' })
+    } else if (isStockQuery) {
+      steps.push({ agentId: 'manufacturing_intelligence', taskType: 'AUDIT_STOCK_STATUS' })
+      steps.push({ agentId: 'recommendation', taskType: 'GENERATE_STOCK_ACTIONS' })
+    } else if (isDiamondPricingQuery) {
       steps.push({ agentId: 'pricing_intelligence', taskType: 'VERIFY_DIAMOND_PRICING_MATRIX' })
       steps.push({ agentId: 'competitor_intelligence', taskType: 'BENCHMARK_DIAMOND_RATES' })
       steps.push({ agentId: 'validation', taskType: 'AUDIT_PRICING_VIABILITY' })
@@ -106,7 +137,152 @@ export class CIOAgent {
     const insights: Array<{ title: string; detail: string; score?: string }> = []
     const suggestedActions: string[] = []
 
-    if (isDiamondPricingQuery) {
+    if (isQuotesQuery) {
+      let totalQuotes = 0
+      let draftCount = 0
+      let sentCount = 0
+      let viewedCount = 0
+      let acceptedCount = 0
+      let convertedCount = 0
+      let totalValue = 0
+
+      try {
+        const { data: quoteRows } = await supabaseAdmin
+          .from('quotes')
+          .select('status, grand_total')
+
+        if (quoteRows && quoteRows.length > 0) {
+          totalQuotes = quoteRows.length
+          draftCount = quoteRows.filter((q: any) => q.status === 'draft').length
+          sentCount = quoteRows.filter((q: any) => q.status === 'sent').length
+          viewedCount = quoteRows.filter((q: any) => q.status === 'viewed').length
+          acceptedCount = quoteRows.filter((q: any) => q.status === 'accepted').length
+          convertedCount = quoteRows.filter((q: any) => q.status === 'converted_to_order').length
+          totalValue = quoteRows.reduce((sum: number, q: any) => sum + (Number(q.grand_total) || 0), 0)
+        }
+      } catch (err) {
+        console.error('Error fetching quotes stats from DB:', err)
+      }
+
+      const unseenPending = sentCount + draftCount
+
+      answer = `You currently have ${unseenPending} unseen/pending quotes in the system (${sentCount} sent awaiting recipient response, ${draftCount} active drafts). Across all ${totalQuotes} issued quotes, total pipeline value is ₹${Math.round(totalValue).toLocaleString('en-IN')}.`
+
+      insights.push(
+        {
+          title: 'Unseen / Pending Quotes',
+          detail: `${sentCount} sent quotes awaiting partner view + ${draftCount} in-progress drafts`,
+          score: `${unseenPending} Pending`,
+        },
+        {
+          title: 'Partner Viewed & Accepted',
+          detail: `${viewedCount} quotes viewed by partners, ${acceptedCount} accepted`,
+          score: `${acceptedCount} Accepted`,
+        },
+        {
+          title: 'Converted to Orders',
+          detail: `${convertedCount} quotes successfully converted to active manufacturing orders`,
+          score: `${convertedCount} Converted`,
+        },
+        {
+          title: 'Total Quote Pipeline Value',
+          detail: `Cumulative value across ${totalQuotes} created quotes`,
+          score: `₹${Math.round(totalValue).toLocaleString('en-IN')}`,
+        }
+      )
+
+      suggestedActions.push(
+        'View Pending Quotes List (/quotes)',
+        'Send WhatsApp Follow-up for Sent Quotes',
+        'Create New B2B Quotation'
+      )
+    } else if (isOrdersQuery) {
+      let totalOrders = 0
+      let pendingOrders = 0
+      let inProduction = 0
+      let readyToShip = 0
+      let completedOrders = 0
+
+      try {
+        const { data: orderRows } = await supabaseAdmin
+          .from('orders')
+          .select('status')
+
+        if (orderRows && orderRows.length > 0) {
+          totalOrders = orderRows.length
+          pendingOrders = orderRows.filter((o: any) => o.status === 'pending' || o.status === 'confirmed').length
+          inProduction = orderRows.filter((o: any) => o.status === 'in_production' || o.status === 'cad_approved').length
+          readyToShip = orderRows.filter((o: any) => o.status === 'ready_to_ship' || o.status === 'qc_passed').length
+          completedOrders = orderRows.filter((o: any) => o.status === 'shipped' || o.status === 'delivered' || o.status === 'completed').length
+        }
+      } catch (err) {
+        console.error('Error fetching orders stats from DB:', err)
+      }
+
+      answer = `You currently have ${totalOrders} total orders in the system: ${pendingOrders} pending confirmation, ${inProduction} in active manufacturing, and ${readyToShip} ready for dispatch.`
+
+      insights.push(
+        { title: 'In Production', detail: `${inProduction} orders currently in Karigar casting / CAD stage`, score: `${inProduction} Active` },
+        { title: 'Pending Confirmation', detail: `${pendingOrders} orders awaiting advance deposit or CAD sign-off`, score: `${pendingOrders} Pending` },
+        { title: 'Ready to Dispatch', detail: `${readyToShip} finished pieces passed QC and awaiting dispatch`, score: `${readyToShip} Ready` },
+        { title: 'Total Order Portfolio', detail: `${completedOrders} orders completed and delivered`, score: `${totalOrders} Total` }
+      )
+
+      suggestedActions.push('View All Orders (/orders)', 'Check Production Bottlenecks', 'Create New B2B Order')
+    } else if (isEnquiriesQuery) {
+      let totalEnquiries = 0
+      let newEnquiries = 0
+      let inProgress = 0
+
+      try {
+        const { data: enqRows } = await supabaseAdmin
+          .from('enquiries')
+          .select('status')
+
+        if (enqRows && enqRows.length > 0) {
+          totalEnquiries = enqRows.length
+          newEnquiries = enqRows.filter((e: any) => e.status === 'new' || e.status === 'unread').length
+          inProgress = enqRows.filter((e: any) => e.status === 'in_progress' || e.status === 'consultation_scheduled').length
+        }
+      } catch (err) {
+        console.error('Error fetching enquiries stats from DB:', err)
+      }
+
+      answer = `You have ${totalEnquiries} D2C customer enquiries in total (${newEnquiries} new/unprocessed, ${inProgress} in active consultation).`
+
+      insights.push(
+        { title: 'New Unread Enquiries', detail: `${newEnquiries} fresh customer leads requiring initial outreach`, score: `${newEnquiries} New` },
+        { title: 'Active Consultations', detail: `${inProgress} customer inquiries in active design consultation`, score: `${inProgress} In Consultation` },
+        { title: 'Total Enquiry Volume', detail: `Cumulative enquiries across D2C portal & WhatsApp funnels`, score: `${totalEnquiries} Total` }
+      )
+
+      suggestedActions.push('View All Customer Enquiries (/enquiries)', 'Schedule D2C Consultation', 'Assign Leads to Sales Team')
+    } else if (isStockQuery) {
+      let totalStock = 0
+      let rtsCount = 0
+
+      try {
+        const { data: stockRows } = await supabaseAdmin
+          .from('ready_to_ship_inventory')
+          .select('id, status')
+
+        if (stockRows && stockRows.length > 0) {
+          totalStock = stockRows.length
+          rtsCount = stockRows.filter((s: any) => s.status === 'available' || !s.status).length
+        }
+      } catch (err) {
+        console.error('Error fetching stock stats from DB:', err)
+      }
+
+      answer = `Your system currently has ${rtsCount} Ready-To-Ship jewelry inventory items available for immediate B2B partner dispatch out of ${totalStock} total stock units.`
+
+      insights.push(
+        { title: 'Available Ready-To-Ship', detail: 'Finished SKUs ready for immediate dispatch', score: `${rtsCount} Units` },
+        { title: 'Stock Liquidity Rate', detail: 'Fast-moving solitaire rings & diamond drop earrings', score: 'High Liquidity' }
+      )
+
+      suggestedActions.push('View Ready To Ship Catalog (/ready-to-ship)', 'Issue Stock to Retail Partner', 'Receive New Vault Stock')
+    } else if (isDiamondPricingQuery) {
       // Fetch live diamond matrix stats directly from Supabase
       let matrixCount = 0
       let minPrice = 0
