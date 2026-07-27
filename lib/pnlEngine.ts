@@ -11,9 +11,21 @@ import { fetchAllRows } from './fetchAll'
 // payment_pending orders past their deadline. The P&L was therefore booking
 // revenue on orders the system was about to cancel.
 
-/** Formal orders count once they enter production and money is committed. */
+/**
+ * Formal orders count once they enter production and money is committed.
+ *
+ * Now that SOP §9 states exist, `advance_received` is the true recognition
+ * point — production cannot start without it. The post-production states are
+ * listed explicitly rather than inferred, so adding a state to the flow never
+ * silently changes reported revenue.
+ *
+ * `qc_failed` counts: the piece is still being made, the money is still ours.
+ * `cancelled` / `abandoned` / `draft` never count.
+ */
 export const RECOGNISED_ORDER_STATUSES = [
-  'production', 'qc', 'dispatched', 'delivered',
+  'advance_received', 'production', 'hallmarking',
+  'qc', 'qc_failed', 'qc_passed',
+  'dispatched', 'delivered', 'closed',
 ] as const
 
 /** Reseller orders count only once payment is confirmed. */

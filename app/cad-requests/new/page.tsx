@@ -95,23 +95,24 @@ function NewCADRequestForm() {
     const { count } = await supabase.from('cad_requests').select('*', { count: 'exact', head: true })
     const num = `SH-CAD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
 
-    const { cad_party_id, ...insertPayload } = form
-
-    const { error } = await supabase.from('cad_requests').insert([{
-      ...insertPayload,
+    // `cad_party_id` is added by scripts/migrate_cad_party_id.sql, which has
+    // not been applied everywhere — production rejects the insert with "Could
+    // not find the 'cad_party_id' column in the schema cache". Omitting the key
+    // when nothing was picked keeps the form working before the migration runs,
+    // and still records the vendor after it does. It is a uuid FK, so an empty
+    // string is never valid input.
+    const { cad_party_id, ...rest } = form
+    const payload: Record<string, any> = {
+      ...rest,
       request_number: num,
       // Guard against parseInt('') === NaN when the karat select is untouched.
       gold_karat: form.gold_karat ? parseInt(form.gold_karat) : 18,
-      // NOTE: cad_party_id is deliberately destructured out above and never
-      // sent. The column does not exist on production —
-      // supabase/migrations/001_business_logic_v2.sql was never applied — and
-      // including the key makes Postgres reject the whole insert with
-      // "Could not find the 'cad_party_id' column in the schema cache".
-      // scripts/migrate_cad_party_id.sql adds it; once that has run, the
-      // vendor can be recorded conditionally.
       reference_images: referenceImages,
       received_date: new Date().toISOString().split('T')[0],
-    }]).select().single()
+    }
+    if (cad_party_id) payload.cad_party_id = cad_party_id
+
+    const { error } = await supabase.from('cad_requests').insert([payload]).select().single()
 
     setSaving(false)
     if (error) { alert('Error: ' + error.message); return }

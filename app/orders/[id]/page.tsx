@@ -12,6 +12,7 @@ import {
 } from '@/lib/cadWeight'
 import { KARAT_FACTORS, SELLABLE_KARATS, pureMassByKarat, computeKaratPricing, getMetalWeight } from '@/lib/karat'
 import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
+import { nextSteps, orderFlow } from '@/lib/process'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare, CreditCard, Bell, Plus, Download, FileText } from 'lucide-react'
 import Link from 'next/link'
@@ -826,8 +827,39 @@ export default function OrderDetailPage() {
     }
   }
 
+  // Position along the happy path — used ONLY to draw the progress bar.
+  // Never to decide what happens next; see the comment below.
   const currentStageIdx = ORDER_STATUSES.findIndex(s => s.value === order?.status)
-  const nextStage = currentStageIdx < ORDER_STATUSES.length - 1 ? ORDER_STATUSES[currentStageIdx + 1] : null
+
+  // True once the piece has physically shipped. An index comparison was used
+  // here before, which is fragile: inserting a state shifts every threshold.
+  const DISPATCH_REACHED = new Set(['dispatched', 'delivered', 'closed'])
+  const hasShipped = DISPATCH_REACHED.has(order?.status)
+
+  // The next step comes from the process definition (SOP §9), NOT from walking
+  // the ORDER_STATUSES array. The index walk was how the money gate went
+  // missing: "payment must land before production" cannot be expressed as
+  // idx + 1. lib/process/orderFlow.ts owns the transitions and their guards.
+  //
+  // The full NextStepRail replaces this block entirely; this keeps the single
+  // "Move to X" button working — and correctly guarded — in the meantime.
+  const processSteps = order
+    ? nextSteps(orderFlow, order, { role: (session?.user as any)?.role }, {
+        // Resolved synchronously from data already loaded. Material readiness
+        // is checked separately below because it needs a network call.
+        advancePaid: (parseFloat(order.advance_paid) || 0) > 0,
+        hasCadRender: (order.cad_images?.length || 0) > 0,
+        qcChecklistComplete: !!order.qc_checklist,
+        materialReady: true,
+      })
+    : []
+  const primaryStep = processSteps.find(s => s.permitted && s.blockers.length === 0) ?? null
+  const nextStage = primaryStep
+    ? { value: primaryStep.transition.to, label: primaryStep.transition.label }
+    : null
+  // Blockers on the primary path, shown so the operator knows what is missing
+  // rather than just finding the button absent.
+  const stepBlockers = processSteps.find(s => s.permitted && s.blockers.length > 0)?.blockers ?? []
 
   // Integrity rule check — returns null when OK, otherwise an error message.
   // For "dispatched" we also enforce a tracking number + courier so the
@@ -1364,12 +1396,30 @@ export default function OrderDetailPage() {
         <div className="space-y-4">
           {/* Pipeline stepper */}
           <div className="bg-white rounded-xl border border-stone-200 p-5">
+            {/* What's missing, stated inline. Without this the next-step button
+                simply vanishes when a requirement is unmet, which reads as the
+                app being broken rather than as a step being incomplete. */}
+            {!nextStage && stepBlockers.length > 0 && !isCancelled && (
+              <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 p-3">
+                <p className="text-xs font-semibold text-amber-900 mb-1.5">
+                  Needs {stepBlockers.length === 1 ? '1 thing' : `${stepBlockers.length} things`} before this can move on
+                </p>
+                <ul className="space-y-1">
+                  {stepBlockers.map((b, i) => (
+                    <li key={i} className="text-xs text-amber-900/90 flex items-start gap-1.5">
+                      <span className="text-amber-500 mt-0.5">•</span>
+                      <span>{b.message}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-medium text-stone-900">Pipeline stage</h2>
               {nextStage && !isCancelled && (
                 <button onClick={() => advanceStage()} disabled={advancing}
                   className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
-                  {advancing ? 'Moving...' : `Move to ${nextStage.label}`}
+                  {advancing ? 'Moving...' : nextStage.label}
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -1674,7 +1724,7 @@ export default function OrderDetailPage() {
             )}
           </div>
 
-          {(currentStageIdx >= ORDER_STATUSES.findIndex(s => s.value === 'dispatched' || invoices.length > 0)) && (
+          {(hasShipped || invoices.length > 0) && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-medium text-stone-900 flex items-center gap-2">
@@ -1724,7 +1774,7 @@ export default function OrderDetailPage() {
             </div>
           )}
 
-          {(currentStageIdx >= ORDER_STATUSES.findIndex(s => s.value === 'dispatched')) && (
+          {hasShipped && (
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
                 <Package className="w-4 h-4 text-teal-600" /> Dispatch details
