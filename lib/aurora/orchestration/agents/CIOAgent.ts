@@ -28,7 +28,19 @@ export class CIOAgent {
     const traceId = `trace_${Date.now()}`
     const q = params.query.toLowerCase().trim()
 
-    // 1. Dynamic Intent Detection
+    const isTasksTransactionsQuery =
+      q.includes('task') ||
+      q.includes('tasks') ||
+      q.includes('transaction') ||
+      q.includes('transactions') ||
+      q.includes('today') ||
+      q.includes('todo') ||
+      q.includes('action') ||
+      q.includes('actions') ||
+      q.includes('pending') ||
+      q.includes('do today') ||
+      q.includes('work today')
+
     const isQuotesQuery =
       q.includes('quote') ||
       q.includes('quotes') ||
@@ -101,6 +113,17 @@ export class CIOAgent {
       q.includes('manufacturer') ||
       q.includes('manufacturers')
 
+    const isExplicitWebSearch =
+      q.includes('what is') ||
+      q.includes('who is') ||
+      q.includes('news') ||
+      q.includes('market trend') ||
+      q.includes('apify') ||
+      q.includes('competitor') ||
+      q.includes('external') ||
+      q.includes('google') ||
+      q.includes('search')
+
     // Context resolution: determine target steps based on query intent and active route
     const steps: WorkflowPipelineStep[] = []
 
@@ -163,7 +186,41 @@ export class CIOAgent {
     let dbData: Record<string, any> | undefined = undefined
     let scrapedData: Record<string, any> | undefined = undefined
 
-    if (isPartnersQuery) {
+    if (isTasksTransactionsQuery) {
+      let orderRows: any[] = []
+      let invoiceRows: any[] = []
+      let quoteRows: any[] = []
+      let enquiryRows: any[] = []
+
+      try {
+        const [ordRes, invRes, quoRes, enqRes] = await Promise.all([
+          supabaseAdmin.from('orders').select('id, order_number, status, total_amount, created_at'),
+          supabaseAdmin.from('gst_invoices').select('id, invoice_number, status, payment_status, total_amount, balance_due'),
+          supabaseAdmin.from('quotes').select('id, quote_number, status, grand_total'),
+          supabaseAdmin.from('enquiries').select('id, status, customer_name'),
+        ])
+        if (ordRes.data) orderRows = ordRes.data
+        if (invRes.data) invoiceRows = invRes.data
+        if (quoRes.data) quoteRows = quoRes.data
+        if (enqRes.data) enquiryRows = enqRes.data
+      } catch (err) {
+        console.error('Error fetching today transactions tasks:', err)
+      }
+
+      const activeInvoices = invoiceRows.filter((i: any) => i.status !== 'cancelled')
+      const unpaidInvoices = activeInvoices.filter((i: any) => i.payment_status === 'unpaid' || i.payment_status === 'partial' || !i.payment_status)
+
+      dbData = {
+        type: 'tasks_transactions',
+        pendingOrders: orderRows.filter((o: any) => o.status === 'pending' || o.status === 'confirmed'),
+        inProductionOrders: orderRows.filter((o: any) => o.status === 'in_production' || o.status === 'cad_approved'),
+        readyToShipOrders: orderRows.filter((o: any) => o.status === 'ready_to_ship' || o.status === 'qc_passed'),
+        unpaidInvoicesCount: unpaidInvoices.length,
+        unpaidInvoicesAmount: unpaidInvoices.reduce((sum: number, i: any) => sum + (Number(i.balance_due) || Number(i.total_amount) || 0), 0),
+        pendingQuotesCount: quoteRows.filter((q: any) => q.status === 'sent' || q.status === 'draft').length,
+        unreadEnquiriesCount: enquiryRows.filter((e: any) => e.status === 'new' || e.status === 'unread').length,
+      }
+    } else if (isPartnersQuery) {
       let partnerRows: any[] = []
       try {
         const { data } = await supabaseAdmin.from('partners').select('type, status')
@@ -230,8 +287,8 @@ export class CIOAgent {
         readyToShip: orderRows.filter((o: any) => o.status === 'ready_to_ship' || o.status === 'qc_passed').length,
         completedOrders: orderRows.filter((o: any) => o.status === 'shipped' || o.status === 'delivered' || o.status === 'completed').length,
       }
-    } else if (!isDiamondPricingQuery && !isProductQuery && !isCadQuery && !isCustomerQuery) {
-      // Free-form market query: run live web scraper
+    } else if (isExplicitWebSearch) {
+      // Only execute web scraper for explicit external research/news queries
       try {
         scrapedData = await WebScraperService.searchMarketData(params.query)
       } catch (err) {

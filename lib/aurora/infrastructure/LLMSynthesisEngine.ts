@@ -94,6 +94,29 @@ Respond ONLY with valid JSON.
     // 2. If Database operational data exists
     if (dbData) {
       const type = dbData.type
+      if (type === 'tasks_transactions') {
+        const pendingCount = (dbData.pendingOrders?.length || 0) + (dbData.inProductionOrders?.length || 0)
+        return {
+          answer: `Here is your prioritized operational task summary for today across all transactions:
+
+1. **Pending Orders & Production**: ${pendingCount} orders in production or pending CAD confirmation.
+2. **GST Invoices & Payments**: ${dbData.unpaidInvoicesCount} unpaid invoices pending collection (Total Balance Due: ₹${Math.round(dbData.unpaidInvoicesAmount || 0).toLocaleString('en-IN')}).
+3. **Sent Quotes Follow-up**: ${dbData.pendingQuotesCount} quotes awaiting partner review or conversion.
+4. **D2C Customer Enquiries**: ${dbData.unreadEnquiriesCount} new customer enquiries requiring sales outreach.`,
+          insights: [
+            { title: 'Orders Needing Action', detail: `${pendingCount} orders in active production/pending confirmation`, score: `${pendingCount} Active` },
+            { title: 'Unpaid Invoices Due', detail: `₹${Math.round(dbData.unpaidInvoicesAmount || 0).toLocaleString('en-IN')} outstanding collection balance`, score: `${dbData.unpaidInvoicesCount} Unpaid` },
+            { title: 'Pending Quotes', detail: `${dbData.pendingQuotesCount} sent quotes awaiting partner sign-off`, score: `${dbData.pendingQuotesCount} Pending` },
+            { title: 'Unread Customer Leads', detail: `${dbData.unreadEnquiriesCount} new D2C inquiries awaiting follow-up`, score: `${dbData.unreadEnquiriesCount} New` },
+          ],
+          suggestedActions: [
+            'View Orders Pipeline (/orders)',
+            'Review Unpaid GST Invoices (/invoices)',
+            'Follow Up Pending Quotes (/quotes)',
+          ],
+        }
+      }
+
       if (type === 'invoices') {
         return {
           answer: `You currently have ${dbData.unpaidCount} unpaid/outstanding invoices in the system with a total balance due of ₹${Math.round(dbData.totalUnpaidAmount || 0).toLocaleString('en-IN')}. Across all ${dbData.totalInvoices} generated GST invoices, ${dbData.paidCount} are fully settled.`,
