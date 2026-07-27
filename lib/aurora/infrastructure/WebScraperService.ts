@@ -124,7 +124,7 @@ export class WebScraperService {
   }
 
   /**
-   * Performs live real-time market search research for a topic query.
+   * Performs live real-time market search research for a topic query using live DuckDuckGo & Web Search feeds.
    */
   static async searchMarketData(topic: string): Promise<{
     topic: string
@@ -133,19 +133,53 @@ export class WebScraperService {
     timestamp: string
   }> {
     const timestamp = new Date().toISOString()
-    const encodedTopic = encodeURIComponent(topic)
-    const targetUrl = `https://news.google.com/search?q=${encodedTopic}&hl=en-IN&gl=IN&ceid=IN:en`
+    const cleanTopic = topic.replace(/[^a-zA-Z0-9\s]/g, '').trim()
+    const encodedTopic = encodeURIComponent(cleanTopic)
+    const targetUrl = `https://html.duckduckgo.com/html/?q=${encodedTopic}`
 
-    const scraped = await this.scrapeUrl(targetUrl)
+    try {
+      const response = await fetch(targetUrl, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+      })
+
+      if (response.ok) {
+        const html = await response.text()
+        const snippetMatches = Array.from(html.matchAll(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g))
+        const snippets = snippetMatches
+          .map((m) => m[1].replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').trim())
+          .filter((s) => s.length > 20)
+          .slice(0, 3)
+
+        if (snippets.length > 0) {
+          const summary = snippets.join('\n\n• ')
+          return {
+            topic,
+            summary: `• ${summary}`,
+            sourcesScraped: [targetUrl],
+            timestamp,
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[WebScraperService] DuckDuckGo search snippet fetch failed, falling back to page scrape:', err)
+    }
+
+    // Fallback page scrape
+    const fallbackUrl = `https://news.google.com/search?q=${encodedTopic}&hl=en-IN&gl=IN&ceid=IN:en`
+    const scraped = await this.scrapeUrl(fallbackUrl)
 
     const summary = scraped.textSnippet
-      ? `Live Market Research Scrape completed for "${topic}". Scraped page: "${scraped.title}". Extracted key themes: ${scraped.headings.join(' | ') || 'Real-time trends indexed.'}`
-      : `Live Market Research Scrape initialized for "${topic}".`
+      ? `${scraped.title}: ${scraped.textSnippet.substring(0, 300)}...`
+      : `Real-time search feed indexed for "${topic}".`
 
     return {
       topic,
       summary,
-      sourcesScraped: [targetUrl],
+      sourcesScraped: [fallbackUrl],
       timestamp,
     }
   }
