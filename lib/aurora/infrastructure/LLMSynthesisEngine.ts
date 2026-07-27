@@ -34,7 +34,8 @@ export class LLMSynthesisEngine {
 
     if (client) {
       try {
-        const model = client.getGenerativeModel({ model: 'gemini-2.5-flash' })
+        const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+        const model = client.getGenerativeModel({ model: modelName })
         const prompt = `
 You are AURORA CIO, the Chief Executive AI Copilot for Shewah B2B Fine Jewelry Platform.
 User Question: "${input.userQuery}"
