@@ -198,12 +198,19 @@ export class CIOAgent {
       let enquiryRows: any[] = []
 
       const [ordRes, invRes, quoRes, enqRes] = await Promise.all([
+        // balance_due/advance_paid come from orders — see the note below on why
+        // invoices cannot answer "what am I owed".
         fetchAllRows('tasks.orders', (f, t) =>
           supabaseAdmin.from('orders')
-            .select('id, order_number, status, total_amount, created_at').range(f, t)),
+            .select('id, order_number, status, total_amount, advance_paid, balance_due, created_at').range(f, t)),
+        // gst_invoices has no payment tracking at all: no payment_status, no
+        // balance_due, and the total column is `grand_total` not
+        // `total_amount`. Selecting those three non-existent columns is what
+        // made this query fail and report "0 unpaid invoices, ₹0 outstanding"
+        // — a confident, wrong answer about money.
         fetchAllRows('tasks.invoices', (f, t) =>
           supabaseAdmin.from('gst_invoices')
-            .select('id, invoice_number, status, payment_status, total_amount, balance_due').range(f, t)),
+            .select('id, invoice_number, status, grand_total').range(f, t)),
         fetchAllRows('tasks.quotes', (f, t) =>
           supabaseAdmin.from('quotes')
             .select('id, quote_number, status, grand_total').range(f, t)),
@@ -223,16 +230,34 @@ export class CIOAgent {
       // Surface partial reads instead of answering confidently from a subset.
       dataErrors = [ordRes.error, invRes.error, quoRes.error, enqRes.error].filter(Boolean) as string[]
 
+      // Money owed lives on the ORDER, not the invoice — gst_invoices records
+      // what was billed for GST, with no payment state. Orders carry
+      // total_amount / advance_paid / balance_due, which is what "what am I
+      // owed" actually means.
+      const owedOrders = orderRows.filter(
+        (o: any) => Number(o.balance_due) > 0 && o.status !== 'cancelled' && o.status !== 'abandoned',
+      )
       const activeInvoices = invoiceRows.filter((i: any) => i.status !== 'cancelled')
-      const unpaidInvoices = activeInvoices.filter((i: any) => i.payment_status === 'unpaid' || i.payment_status === 'partial' || !i.payment_status)
 
       dbData = {
         type: 'tasks_transactions',
-        pendingOrders: orderRows.filter((o: any) => o.status === 'pending' || o.status === 'confirmed'),
-        inProductionOrders: orderRows.filter((o: any) => o.status === 'in_production' || o.status === 'cad_approved'),
-        readyToShipOrders: orderRows.filter((o: any) => o.status === 'ready_to_ship' || o.status === 'qc_passed'),
-        unpaidInvoicesCount: unpaidInvoices.length,
-        unpaidInvoicesAmount: unpaidInvoices.reduce((sum: number, i: any) => sum + (Number(i.balance_due) || Number(i.total_amount) || 0), 0),
+        // Statuses must match ORDER_STATUSES in lib/supabase.ts. These were
+        // 'pending' / 'confirmed' / 'in_production' / 'cad_approved' /
+        // 'ready_to_ship' — none of which this app ever writes, so every
+        // count was silently zero regardless of how busy the workshop was.
+        pendingOrders: orderRows.filter((o: any) =>
+          ['draft', 'brief_received', 'cad_in_progress', 'cad_sent', 'design_approved', 'quote_issued'].includes(o.status)),
+        inProductionOrders: orderRows.filter((o: any) =>
+          ['advance_received', 'production', 'hallmarking', 'qc', 'qc_failed'].includes(o.status)),
+        readyToShipOrders: orderRows.filter((o: any) => o.status === 'qc_passed'),
+        awaitingDeliveryOrders: orderRows.filter((o: any) => o.status === 'dispatched'),
+
+        ordersAwaitingPaymentCount: owedOrders.length,
+        outstandingAmount: owedOrders.reduce((sum: number, o: any) => sum + (Number(o.balance_due) || 0), 0),
+
+        invoicesRaisedCount: activeInvoices.length,
+        invoicesRaisedValue: activeInvoices.reduce((sum: number, i: any) => sum + (Number(i.grand_total) || 0), 0),
+
         pendingQuotesCount: quoteRows.filter((q: any) => q.status === 'sent' || q.status === 'draft').length,
         unreadEnquiriesCount: enquiryRows.filter((e: any) => e.status === 'new' || e.status === 'unread').length,
       }
@@ -255,24 +280,34 @@ export class CIOAgent {
         activeCount: partnerRows.filter((p: any) => p.status === 'active' || !p.status).length,
       }
     } else if (isInvoicesQuery) {
+      // Same correction as the tasks branch: gst_invoices records what was
+      // billed for GST and has no payment state. Payment lives on the order,
+      // so "unpaid" is answered from orders.balance_due.
       let invoiceRows: any[] = []
-      try {
-        const res = await fetchAllRows('invoices', (f, t) =>
-          supabaseAdmin.from('gst_invoices').select('status, payment_status, total_amount, balance_due').range(f, t))
-        const data = res.rows
-        if (res.error) dataErrors.push(res.error)
-        if (data) invoiceRows = data
-      } catch (err) {
-        console.error('Error fetching invoices from DB:', err)
-      }
+      let orderRows: any[] = []
+      const [invRes, ordRes] = await Promise.all([
+        fetchAllRows('invoices', (f, t) =>
+          supabaseAdmin.from('gst_invoices').select('status, grand_total, order_id').range(f, t)),
+        fetchAllRows('invoices.orders', (f, t) =>
+          supabaseAdmin.from('orders').select('status, total_amount, advance_paid, balance_due').range(f, t)),
+      ])
+      invoiceRows = invRes.rows
+      orderRows = ordRes.rows
+      if (invRes.error) dataErrors.push(invRes.error)
+      if (ordRes.error) dataErrors.push(ordRes.error)
+
       const active = invoiceRows.filter((i: any) => i.status !== 'cancelled')
+      const billable = orderRows.filter((o: any) => o.status !== 'cancelled' && o.status !== 'abandoned')
+      const owed = billable.filter((o: any) => Number(o.balance_due) > 0)
+
       dbData = {
         type: 'invoices',
-        totalInvoices: invoiceRows.length,
-        paidCount: active.filter((i: any) => i.payment_status === 'paid').length,
-        unpaidCount: active.filter((i: any) => i.payment_status === 'unpaid' || i.payment_status === 'partial' || !i.payment_status).length,
-        totalInvoicedAmount: active.reduce((sum: number, i: any) => sum + (Number(i.total_amount) || 0), 0),
-        totalUnpaidAmount: active.reduce((sum: number, i: any) => (i.payment_status === 'paid' ? sum : sum + (Number(i.balance_due) || Number(i.total_amount) || 0)), 0),
+        invoicesRaised: active.length,
+        invoicesRaisedValue: active.reduce((sum: number, i: any) => sum + (Number(i.grand_total) || 0), 0),
+        ordersFullyPaid: billable.filter((o: any) => Number(o.balance_due) === 0 && Number(o.total_amount) > 0).length,
+        ordersAwaitingPayment: owed.length,
+        outstandingAmount: owed.reduce((sum: number, o: any) => sum + (Number(o.balance_due) || 0), 0),
+        collectedAmount: billable.reduce((sum: number, o: any) => sum + (Number(o.advance_paid) || 0), 0),
       }
     } else if (isQuotesQuery) {
       let quoteRows: any[] = []
@@ -306,13 +341,20 @@ export class CIOAgent {
       } catch (err) {
         console.error('Error fetching orders from DB:', err)
       }
+      // Statuses aligned to ORDER_STATUSES (lib/supabase.ts). The previous
+      // values — 'pending', 'confirmed', 'in_production', 'cad_approved',
+      // 'ready_to_ship', 'shipped', 'completed' — are not written anywhere in
+      // this app, so every bucket reported zero no matter the real workload.
+      const inSet = (o: any, set: string[]) => set.includes(o.status)
       dbData = {
         type: 'orders',
         totalOrders: orderRows.length,
-        pendingOrders: orderRows.filter((o: any) => o.status === 'pending' || o.status === 'confirmed').length,
-        inProduction: orderRows.filter((o: any) => o.status === 'in_production' || o.status === 'cad_approved').length,
-        readyToShip: orderRows.filter((o: any) => o.status === 'ready_to_ship' || o.status === 'qc_passed').length,
-        completedOrders: orderRows.filter((o: any) => o.status === 'shipped' || o.status === 'delivered' || o.status === 'completed').length,
+        pendingOrders: orderRows.filter(o => inSet(o, ['draft', 'brief_received', 'cad_in_progress', 'cad_sent', 'design_approved', 'quote_issued'])).length,
+        inProduction: orderRows.filter(o => inSet(o, ['advance_received', 'production', 'hallmarking', 'qc', 'qc_failed'])).length,
+        readyToShip: orderRows.filter(o => o.status === 'qc_passed').length,
+        dispatched: orderRows.filter(o => o.status === 'dispatched').length,
+        completedOrders: orderRows.filter(o => inSet(o, ['delivered', 'closed'])).length,
+        cancelledOrders: orderRows.filter(o => inSet(o, ['cancelled', 'abandoned'])).length,
       }
     } else if (isExplicitWebSearch) {
       // Only execute web scraper for explicit external research/news queries
