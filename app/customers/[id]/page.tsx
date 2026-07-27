@@ -13,6 +13,7 @@ import {
   Loader2, ArrowLeft, MessageCircle, Phone, Mail, MapPin, Plus,
   ArrowUpRight, Pencil, Save, X, Home,
 } from 'lucide-react'
+import CustomerIntelligenceWidget from '@/components/aurora/CustomerIntelligenceWidget'
 
 type EnquirySummary = {
   id: string
@@ -140,6 +141,9 @@ export default function CustomerDetailPage() {
           <Plus className="w-4 h-4" /> New enquiry
         </Link>
       </div>
+
+      {/* Embedded AURORA Customer Intelligence Widget */}
+      <CustomerIntelligenceWidget customerId={id} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">

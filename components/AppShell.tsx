@@ -9,9 +9,10 @@ import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Pen, Map, BarChart2, Settings, Diamond,
   Factory, Store, Menu, X, LogOut, ChevronDown, ChevronRight, Coins, BookUser, MessageSquare, Boxes,
-  Heart, Inbox as InboxIcon, FileText, Wallet, Layers
+  Heart, Inbox as InboxIcon, FileText, Wallet, Layers, Sparkles
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import FounderCopilotFloating from '@/components/aurora/FounderCopilotFloating'
 
 const navSections = [
   {
@@ -64,6 +65,12 @@ const navSections = [
       { href: '/profitability',   icon: Coins,           label: 'Profitability', module: 'profitability' },
       { href: '/cash',            icon: Wallet,          label: 'Cash Book',     module: 'cash'          },
       { href: '/cash/pnl',        icon: BarChart2,       label: 'P&L Statement', module: 'cash', masterOnly: true },
+    ]
+  },
+  {
+    title: 'Intelligence Operating System',
+    items: [
+      { href: '/aurora',          icon: Sparkles,        label: 'AURORA Intelligence', module: 'aurora' },
     ]
   },
   {
@@ -406,6 +413,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </nav>
       </div>
+
+      {/* Global Founder Copilot AI Assistant */}
+      <FounderCopilotFloating />
     </div>
   )
 }
