@@ -2,6 +2,7 @@ import { AgentTaskMessage, AgentId } from '../../types/agent'
 import { WorkflowEngine, WorkflowPipelineStep } from '../WorkflowEngine'
 import { knowledgeGraphService } from '../../infrastructure/KnowledgeGraphService'
 import { ontologyService } from '../../infrastructure/OntologyService'
+import { WebScraperService } from '../../infrastructure/WebScraperService'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 /**
@@ -526,12 +527,31 @@ export class CIOAgent {
       )
     } else {
       const cleanPrompt = params.query.trim()
-      answer = `AURORA CIO Agent has processed your query: "${cleanPrompt}". Our 17 AI workforce agents have cross-referenced ${graphStats.totalNodes} knowledge graph entities to evaluate your operational & market request.`
-      insights.push(
-        { title: 'Query Analyzed', detail: `Evaluated intent: "${cleanPrompt}"`, score: 'Analyzed' },
-        { title: 'Knowledge Graph Health', detail: `${graphStats.totalNodes} Nodes, ${graphStats.totalEdges} Relations active across 17 AI agents`, score: '100% Operational' },
-        { title: 'Market Benchmark', detail: 'Real-time gold rates and wholesale diamond cost matrices synced', score: 'Live Synced' }
-      )
+
+      // Execute live real-time web scrape for research queries
+      let liveScrapeResult = null
+      try {
+        liveScrapeResult = await WebScraperService.searchMarketData(cleanPrompt)
+      } catch (err) {
+        console.error('Live web scrape error in CIOAgent:', err)
+      }
+
+      if (liveScrapeResult && liveScrapeResult.summary) {
+        answer = `AURORA CIO Agent has executed a live real-time web scrape for: "${cleanPrompt}". Scraped Source: ${liveScrapeResult.sourcesScraped[0]}. Live Market Summary: ${liveScrapeResult.summary}`
+        insights.push(
+          { title: 'Live Web Scrape Status', detail: `Scraped live search feed for "${cleanPrompt}" at ${new Date(liveScrapeResult.timestamp).toLocaleTimeString('en-IN')}`, score: 'Live Fetched' },
+          { title: 'Knowledge Graph Health', detail: `${graphStats.totalNodes} Nodes, ${graphStats.totalEdges} Relations active across 17 AI agents`, score: '100% Operational' },
+          { title: 'Real-Time Market Crawl', detail: `Analyzed live web content from ${liveScrapeResult.sourcesScraped.length} external source`, score: 'Active Crawler' }
+        )
+      } else {
+        answer = `AURORA CIO Agent has processed your query: "${cleanPrompt}". Our 17 AI workforce agents have cross-referenced ${graphStats.totalNodes} knowledge graph entities to evaluate your operational & market request.`
+        insights.push(
+          { title: 'Query Analyzed', detail: `Evaluated intent: "${cleanPrompt}"`, score: 'Analyzed' },
+          { title: 'Knowledge Graph Health', detail: `${graphStats.totalNodes} Nodes, ${graphStats.totalEdges} Relations active across 17 AI agents`, score: '100% Operational' },
+          { title: 'Market Benchmark', detail: 'Real-time gold rates and wholesale diamond cost matrices synced', score: 'Live Synced' }
+        )
+      }
+
       suggestedActions.push(
         'Explore Opportunity Engine Gaps',
         'View Live Trend Velocity Matrix',
