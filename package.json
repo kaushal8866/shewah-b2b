@@ -9,7 +9,10 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dip:ingest": "vite-node scripts/dip-ingest.ts",
+    "dip:measure": "vite-node scripts/dip-measure.ts",
+    "dip:health": "vite-node scripts/dip-health.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
