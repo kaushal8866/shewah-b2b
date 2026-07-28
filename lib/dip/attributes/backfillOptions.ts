@@ -18,13 +18,32 @@ const PARSER_KIND = 'structured_parser'
 const PARSER_VERSION = 'shopify-options-v1'
 const CHUNK = 500
 
+export interface BrandCoverage {
+  brand_name: string
+  product_focus: string
+  designs: number
+  with_karat: number
+  with_colour: number
+  karat_pct: number
+}
+
 export interface BackfillResult {
   designs_seen: number
   with_karat: number
   with_colour: number
   with_either: number
   rows_written: number
-  coverage_pct: number
+  /**
+   * Coverage over GOLD designs only.
+   *
+   * Measuring across every brand conflates two different things. A silver
+   * catalogue has no karat, so parsing nothing from it is the correct result,
+   * not a miss — and averaging it in produced 41% and looked like a broken
+   * parser when the gold brands were at 98.5% and 100%.
+   */
+  gold_coverage_pct: number
+  gold_designs: number
+  by_brand: BrandCoverage[]
 }
 
 function chunk<T>(items: T[], size: number): T[][] {
@@ -73,6 +92,25 @@ export async function backfillOptions(dryRun = false): Promise<BackfillResult> {
     }
   }
 
+  // Brand of each design, and whether that brand sells gold at all — needed to
+  // report coverage against the right denominator.
+  const designRes = await fetchAllRows<{ id: string; brand_id: string }>(
+    'backfill.designs',
+    (from, to) => supabaseAdmin.from('dip_designs').select('id, brand_id').range(from, to),
+  )
+  if (designRes.error) throw new Error(`reading designs: ${designRes.error}`)
+  const brandOfDesign = new Map(designRes.rows.map(d => [d.id, d.brand_id]))
+
+  const { data: brandRows, error: brandErr } = await supabaseAdmin
+    .from('dip_brands')
+    .select('id, name, product_focus')
+  if (brandErr) throw new Error(`reading brands: ${brandErr.message}`)
+  const brands = new Map(
+    (brandRows ?? []).map((b: any) => [b.id as string, { name: b.name as string, focus: b.product_focus as string }]),
+  )
+
+  const perBrand = new Map<string, { designs: number; karat: number; colour: number }>()
+
   const rows: Array<Record<string, unknown>> = []
   let withKarat = 0
   let withColour = 0
@@ -85,6 +123,15 @@ export async function backfillOptions(dryRun = false): Promise<BackfillResult> {
     if (hasKarat) withKarat++
     if (hasColour) withColour++
     if (hasKarat || hasColour) withEither++
+
+    const brandId = brandOfDesign.get(designId)
+    if (brandId) {
+      const acc = perBrand.get(brandId) ?? { designs: 0, karat: 0, colour: 0 }
+      acc.designs++
+      if (hasKarat) acc.karat++
+      if (hasColour) acc.colour++
+      perBrand.set(brandId, acc)
+    }
 
     rows.push({
       design_id: designId,
@@ -125,13 +172,35 @@ export async function backfillOptions(dryRun = false): Promise<BackfillResult> {
     }
   }
 
-  const seen = latestByDesign.size
+  const byBrand: BrandCoverage[] = Array.from(perBrand.entries())
+    .map(([brandId, acc]) => {
+      const brand = brands.get(brandId)
+      return {
+        brand_name: brand?.name ?? brandId,
+        product_focus: brand?.focus ?? 'unknown',
+        designs: acc.designs,
+        with_karat: acc.karat,
+        with_colour: acc.colour,
+        karat_pct: acc.designs === 0 ? 0 : Math.round((acc.karat / acc.designs) * 1000) / 10,
+      }
+    })
+    .sort((a, b) => b.designs - a.designs)
+
+  // Silver brands are design REFERENCE under the spec, not product-comparable,
+  // and silver has no karat. Including them in the denominator measures the
+  // catalogue mix rather than the parser.
+  const gold = byBrand.filter(b => b.product_focus !== 'silver')
+  const goldDesigns = gold.reduce((sum, b) => sum + b.designs, 0)
+  const goldKarat = gold.reduce((sum, b) => sum + b.with_karat, 0)
+
   return {
-    designs_seen: seen,
+    designs_seen: latestByDesign.size,
     with_karat: withKarat,
     with_colour: withColour,
     with_either: withEither,
     rows_written: written,
-    coverage_pct: seen === 0 ? 0 : Math.round((withEither / seen) * 1000) / 10,
+    gold_designs: goldDesigns,
+    gold_coverage_pct: goldDesigns === 0 ? 0 : Math.round((goldKarat / goldDesigns) * 1000) / 10,
+    by_brand: byBrand,
   }
 }

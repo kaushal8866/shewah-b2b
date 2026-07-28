@@ -27,20 +27,34 @@ async function main() {
   console.log(`designs with a stored payload  ${r.designs_seen}`)
   console.log(`  karat parsed                 ${r.with_karat}`)
   console.log(`  colour parsed                ${r.with_colour}`)
-  console.log(`  at least one                 ${r.with_either}  (${r.coverage_pct}%)`)
   if (!dryRun) console.log(`rows written                   ${r.rows_written}`)
+
+  console.log('\nby brand:')
+  for (const b of r.by_brand) {
+    const note = b.product_focus === 'silver' ? '  (silver — no karat expected)' : ''
+    console.log(
+      `  ${b.brand_name.padEnd(20)} ${String(b.designs).padStart(5)} designs   ` +
+      `karat ${String(b.with_karat).padStart(5)}  colour ${String(b.with_colour).padStart(5)}   ` +
+      `${String(b.karat_pct).padStart(5)}%${note}`,
+    )
+  }
+
   console.log(`\nfinished in ${((Date.now() - started) / 1000).toFixed(1)}s`)
 
-  if (r.coverage_pct < COVERAGE_TARGET) {
-    // Below target the parse is wrong, not the data — every sampled product on
-    // all three brands carried both a Purity and a Color option.
+  // Measured against GOLD designs only. A silver catalogue has no karat, so
+  // parsing nothing from it is the correct result — including it in the
+  // denominator measures the catalogue mix, not the parser.
+  if (r.gold_coverage_pct < COVERAGE_TARGET) {
     console.error(
-      `\n✗ coverage ${r.coverage_pct}% is below the ${COVERAGE_TARGET}% target. ` +
-      `Inspect the option names actually present before accepting this.`,
+      `\n✗ gold-brand coverage ${r.gold_coverage_pct}% (of ${r.gold_designs}) is below ` +
+      `the ${COVERAGE_TARGET}% target. Inspect the option names actually present.`,
     )
     process.exit(1)
   }
-  console.log(`✓ coverage ${r.coverage_pct}% meets the ${COVERAGE_TARGET}% target.`)
+  console.log(
+    `✓ gold-brand coverage ${r.gold_coverage_pct}% of ${r.gold_designs} designs ` +
+    `meets the ${COVERAGE_TARGET}% target.`,
+  )
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
