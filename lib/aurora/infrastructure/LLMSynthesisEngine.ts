@@ -77,8 +77,18 @@ export class LLMSynthesisEngine {
   private static aiClient: GoogleGenerativeAI | null = null
 
   private static getClient(): GoogleGenerativeAI | null {
-    const apiKey = process.env.GEMINI_API_KEY
-    if (apiKey && !this.aiClient) {
+    // Trimmed: a key pasted into a dashboard picks up a trailing newline or
+    // space more often than you would think, and the resulting 400 looks
+    // identical to a bad key.
+    const apiKey = process.env.GEMINI_API_KEY?.trim()
+    if (!apiKey) {
+      // Previously silent. A missing key and a failed call produced the same
+      // user-facing sentence AND the same (empty) logs, so there was no way to
+      // tell "not configured" from "configured but broken" without guessing.
+      console.warn('[LLMSynthesisEngine] GEMINI_API_KEY is not set in this environment — falling back to raw figures.')
+      return null
+    }
+    if (!this.aiClient) {
       this.aiClient = new GoogleGenerativeAI(apiKey)
     }
     return this.aiClient
@@ -175,12 +185,13 @@ Respond ONLY with valid JSON.
           }
         }
       } catch (err) {
-        console.warn('[LLMSynthesisEngine] Gemini API generation error, falling back to dynamic context synthesis:', err)
+        console.warn(`[LLMSynthesisEngine] Gemini call failed (model=${process.env.GEMINI_MODEL || 'gemini-2.5-flash'}), falling back to raw figures:`, err)
+        return this.fallbackSynthesis(input, 'error')
       }
     }
 
     // Dynamic Context Synthesis Fallback (No API key needed)
-    return this.fallbackSynthesis(input)
+    return this.fallbackSynthesis(input, client ? 'error' : 'no_key')
   }
 
   /**
@@ -194,10 +205,17 @@ Respond ONLY with valid JSON.
    * The honest fallback is to state the figures plainly and say the assistant
    * is degraded, so a templated answer is never mistaken for a considered one.
    */
-  private static fallbackSynthesis(input: SynthesisInput): SynthesisOutput {
+  private static fallbackSynthesis(
+    input: SynthesisInput,
+    reason: 'no_key' | 'error' = 'error',
+  ): SynthesisOutput {
     const { dbData, scrapedData } = input
     const inr = (n: number) => `₹${Math.round(n || 0).toLocaleString('en-IN')}`
-    const note = "(I couldn't reach the language model just now, so this is the raw data rather than a considered answer.)"
+    // Say WHICH failure this is. "Couldn't reach it" sent you looking for an
+    // outage when the actual answer was an unset environment variable.
+    const note = reason === 'no_key'
+      ? '(No language model is configured in this environment — GEMINI_API_KEY is unset — so this is the raw data rather than a considered answer.)'
+      : "(I couldn't reach the language model just now, so this is the raw data rather than a considered answer.)"
 
     if (scrapedData?.summary) {
       return { answer: `${scrapedData.summary}\n\n${note}`, insights: [], suggestedActions: [] }
