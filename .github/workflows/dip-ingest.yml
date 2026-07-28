@@ -1,0 +1,75 @@
+name: DIP weekly ingest
+
+# Runs the competitor corpus snapshot.
+#
+# WHY GITHUB ACTIONS AND NOT VERCEL CRON: Vercel Hobby caps functions at 60s
+# and cron at once-daily, and reading three catalogues takes ~60s today and
+# will take longer as brands are added. Just as important, a scraper fault
+# here can never affect shewah.co, because it does not run in the app's
+# runtime. Slice 2 (Crawlee + Playwright) also needs more than the 250MB
+# function bundle allows.
+#
+# ⚠ GITHUB DISABLES SCHEDULED WORKFLOWS AFTER 60 DAYS OF REPOSITORY
+# INACTIVITY. For a pipeline whose entire value is unbroken weekly cadence
+# that is a silent, total failure. `npm run dip:health` is what catches it —
+# check it monthly if the repo goes quiet.
+
+on:
+  schedule:
+    # Sunday 04:17 UTC = 09:47 IST. Weekly, same slot every week: regularity
+    # beats frequency, because an irregular series cannot be differenced.
+    # The off-round minute reduces queueing delay at the top of the hour.
+    - cron: '17 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      brand:
+        description: 'Ingest a single brand (substring match). Blank = all active.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Fetch and report without writing'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  # Never let a manual run collide with the scheduled one mid-write.
+  group: dip-ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ingest
+        env:
+          # Service role — bypasses RLS. Repository secrets only; never echoed,
+          # never written to the log, never passed on the command line.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          ARGS=""
+          if [ -n "${{ inputs.brand }}" ]; then ARGS="$ARGS --brand=${{ inputs.brand }}"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          npm run dip:ingest -- $ARGS
+
+      - name: Corpus health
+        # Runs even when ingest failed — the health summary is most useful
+        # precisely then. Does not mask the ingest exit code.
+        if: always()
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run dip:health || true
