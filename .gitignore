@@ -20,3 +20,8 @@ scripts/check-db-*.js
 scripts/test-prod-pdf.js
 scripts/test-catalog-pdf.js
 scripts/test-pdf-response.out
+
+# Verification attention-check answers — must not be readable before verifying
+.dip-planted.json
+dip-verify.html
+dip-gold-set.html

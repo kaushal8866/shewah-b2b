@@ -13,7 +13,10 @@
     "dip:ingest": "vite-node scripts/dip-ingest.ts",
     "dip:measure": "vite-node scripts/dip-measure.ts",
     "dip:health": "vite-node scripts/dip-health.ts",
-    "dip:backfill-options": "vite-node scripts/dip-backfill-options.ts"
+    "dip:backfill-options": "vite-node scripts/dip-backfill-options.ts",
+    "dip:goldset": "vite-node scripts/dip-goldset.ts",
+    "dip:extract": "vite-node scripts/dip-extract.ts",
+    "dip:verify": "vite-node scripts/dip-verify.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

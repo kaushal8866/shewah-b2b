@@ -194,6 +194,21 @@ create table if not exists dip_gold_labels (
 
 create index if not exists idx_dip_gold_labels_set on dip_gold_labels (gold_set_id);
 
+-- Multi-image evidence.
+--
+-- Added after building the first sheet, which showed that image[0] is often a
+-- LIFESTYLE shot: a model wearing the ring at a distance where the setting and
+-- stone shape are not visible at all. Filenames give no usable signal
+-- ('Ear_3.png', 'Square_10_1x', 'InfinityRing_1.png'), so picking "the product
+-- shot" heuristically is fragile.
+--
+-- Both the human labeller and the extractor therefore see the same first few
+-- images, and the label is pinned to all of them. The singular image_url /
+-- image_sha256 columns above stay as the primary, since a merchant re-shooting
+-- image[0] is still the strongest change signal.
+alter table dip_gold_labels add column if not exists image_urls text[];
+alter table dip_gold_labels add column if not exists image_shas text[];
+
 -- ---------------------------------------------------------------------
 -- Actions — the label store. Empty for now, and that is the point:
 -- a label not recorded this month cannot be recorded later.
