@@ -80,30 +80,40 @@ export default function FounderCopilotFloating() {
       })
 
       const data = await res.json()
+      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-      const assistantMsg = {
-        role: 'assistant' as const,
-        text: data.answer || 'AURORA Chief Intelligence Officer responded with verified graph context.',
-        insights: data.insights || [],
-        suggestedActions: data.suggestedActions || [],
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      // Surface the server's own error text (rate limit, permission, outage)
+      // instead of pretending something was answered.
+      if (!res.ok || data.error) {
+        setConversation(prev => [...prev, {
+          role: 'assistant' as const,
+          text: data.error || `Request failed (${res.status}).`,
+          insights: [], suggestedActions: [], timestamp: stamp,
+        }])
+        return
       }
 
-      setConversation(prev => [...prev, assistantMsg])
+      setConversation(prev => [...prev, {
+        role: 'assistant' as const,
+        text: data.answer || "I didn't get an answer back for that.",
+        insights: data.insights || [],
+        suggestedActions: data.suggestedActions || [],
+        timestamp: stamp,
+      }])
     } catch (err) {
-      setConversation(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          text: 'Chief Intelligence Officer: Connected to local Knowledge Graph context.',
-          insights: [
-            { title: 'Global Demand Velocity', detail: 'Oval & Emerald cuts surging +42% in luxury segments', score: '88/100' },
-            { title: 'Originality Rating', detail: 'Design DNA verified against 1,400+ market references', score: '9.2/10' },
-          ],
-          suggestedActions: ['Promote in Consultation Funnel', 'Review Competitor Price Benchmark'],
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ])
+      // This branch used to display INVENTED market data on a network error —
+      // "Oval & Emerald cuts surging +42% in luxury segments · 88/100",
+      // "Design DNA verified against 1,400+ market references · 9.2/10".
+      // None of it was measured or fetched. Fabricated figures about the
+      // user's own market, shown as if real, are worse than no answer: they
+      // are indistinguishable from a genuine reading.
+      setConversation(prev => [...prev, {
+        role: 'assistant',
+        text: "I couldn't reach the server. Check your connection and try again.",
+        insights: [],
+        suggestedActions: [],
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }])
     } finally {
       setLoading(false)
     }
@@ -255,7 +265,7 @@ export default function FounderCopilotFloating() {
             <div className="flex items-center justify-between text-[10px] text-stone-500 mt-2 px-1 font-mono">
               <span>AURORA AIOS v1.0</span>
               <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 17 Agents Active
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Connected
               </span>
             </div>
           </div>

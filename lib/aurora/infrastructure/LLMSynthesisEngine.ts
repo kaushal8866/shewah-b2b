@@ -209,12 +209,13 @@ Respond ONLY with valid JSON.
         case 'tasks_transactions':
           facts.push(`${(dbData.pendingOrders?.length || 0) + (dbData.inProductionOrders?.length || 0)} orders pending or in production`)
           facts.push(`${dbData.readyToShipOrders?.length || 0} ready to ship`)
-          facts.push(`${dbData.unpaidInvoicesCount || 0} unpaid invoices, ${inr(dbData.unpaidInvoicesAmount)} outstanding`)
+          facts.push(`${dbData.ordersAwaitingPaymentCount || 0} orders awaiting payment, ${inr(dbData.outstandingAmount)} outstanding`)
           facts.push(`${dbData.pendingQuotesCount || 0} quotes open`)
           facts.push(`${dbData.unreadEnquiriesCount || 0} new enquiries`)
           break
         case 'invoices':
-          facts.push(`${dbData.unpaidCount || 0} unpaid invoices, ${inr(dbData.unpaidAmount)} outstanding`)
+          facts.push(`${dbData.ordersAwaitingPayment || 0} orders awaiting payment, ${inr(dbData.outstandingAmount)} outstanding`)
+          facts.push(`${dbData.invoicesRaised || 0} GST invoices raised, ${inr(dbData.invoicesRaisedValue)} billed`)
           break
         case 'orders':
           facts.push(`${dbData.totalOrders || 0} orders, ${dbData.openOrders || 0} still open`)
