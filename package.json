@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "dip:ingest": "vite-node scripts/dip-ingest.ts",
     "dip:measure": "vite-node scripts/dip-measure.ts",
-    "dip:health": "vite-node scripts/dip-health.ts"
+    "dip:health": "vite-node scripts/dip-health.ts",
+    "dip:backfill-options": "vite-node scripts/dip-backfill-options.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
