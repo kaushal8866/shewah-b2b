@@ -75,7 +75,9 @@ async function main() {
     console.log(`${d.length} designs in ${elapsed}s`)
 
     const priced = d.filter(x => x.price_local !== null)
-    const withGrams = d.filter(x => x.grams !== null)
+    // Not `!== null` — that counted Shopify's default 0 as a published weight
+    // and reported "645/645" for a brand that publishes none at all.
+    const withGrams = d.filter(x => x.grams !== null && x.grams > 0)
     const discounted = d.filter(x => x.compare_at_price !== null)
     const available = d.filter(x => x.available)
     const allImages = d.flatMap(x => x.image_urls)

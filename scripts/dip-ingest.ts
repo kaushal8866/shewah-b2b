@@ -6,14 +6,17 @@
  *   npm run dip:ingest -- --dry-run        fetch and report, write nothing
  *
  * Runs from GitHub Actions on a weekly schedule, and by hand for backfill or
- * debugging. Exits non-zero if any brand failed, so a red CI run means a real
- * hole in the time series rather than something to skim past.
+ * debugging. Exits non-zero if any brand failed, so a red run means a real hole
+ * in the time series rather than something to skim past.
  */
 
-import { ingestAll } from '../lib/dip/ingest'
-import { getAdapter } from '../lib/dip/adapters'
-import { supabaseAdmin } from '../lib/supabaseAdmin'
+import { loadEnv, requireSupabaseEnv } from '../lib/dip/loadEnv'
 import type { DipBrand } from '../lib/dip/types'
+
+// Must run before anything that touches supabaseAdmin — that module builds its
+// client at import time, so a static import would capture an empty env.
+loadEnv()
+requireSupabaseEnv()
 
 function arg(name: string): string | undefined {
   const hit = process.argv.find(a => a.startsWith(`--${name}=`))
@@ -22,6 +25,9 @@ function arg(name: string): string | undefined {
 const hasFlag = (name: string) => process.argv.includes(`--${name}`)
 
 async function dryRun(brandFilter?: string) {
+  const { supabaseAdmin } = await import('../lib/supabaseAdmin')
+  const { getAdapter } = await import('../lib/dip/adapters')
+
   let query = supabaseAdmin.from('dip_brands').select('*').eq('is_active', true)
   if (brandFilter) query = query.ilike('name', `%${brandFilter}%`)
   const { data, error } = await query
@@ -58,6 +64,8 @@ async function main() {
     return
   }
 
+  const { ingestAll } = await import('../lib/dip/ingest')
+
   const started = Date.now()
   const results = await ingestAll(brandFilter)
 
@@ -80,7 +88,7 @@ async function main() {
 
   if (partial.length > 0) {
     // Partial is not success. An unread page looks exactly like a competitor
-    // delisting 250 designs, so it must be visible rather than averaged away.
+    // delisting 250 designs, so it must stay visible.
     console.log(`⚠ ${partial.length} brand(s) read only in part — designs were NOT retired for those.`)
   }
   if (failed.length > 0) {

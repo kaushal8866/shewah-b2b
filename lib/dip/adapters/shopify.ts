@@ -90,7 +90,19 @@ export function normaliseProduct(
   // it as such would produce phantom restock transitions every week.
   const available = variants.some(v => v?.available === true)
 
-  const grams = toNumber(cheapest?.grams)
+  // Shopify DEFAULTS grams to 0 when a merchant never set a weight — it does
+  // not send null. Measured 28 Jul 2026: 100% of Starkle variants, 98% of
+  // GIVA's and 87% of Limelight's are 0. Storing that verbatim would assert
+  // that a gold ring weighs nothing, and any average computed over it — the
+  // gold-weight proxy for the cost teardown — would be silently wrong. Zero
+  // means "not published" here, so it is recorded as absent.
+  //
+  // Taken across all variants rather than the cheapest, because the cheapest
+  // may be one of the unweighed ones while a sibling carries a real figure.
+  const gramsValues = variants
+    .map(v => toNumber(v?.grams))
+    .filter((n): n is number => n !== null && n > 0)
+  const grams = gramsValues.length > 0 ? Math.min(...gramsValues) : null
 
   const tags = Array.isArray(product.tags)
     ? product.tags.filter((t): t is string => typeof t === 'string')
@@ -157,7 +169,8 @@ export function trimRaw(product: ShopifyProduct): Record<string, unknown> {
       price_min: prices.length ? Math.min(...prices) : null,
       price_max: prices.length ? Math.max(...prices) : null,
       grams_min: (() => {
-        const g = list.map(v => toNumber(v?.grams)).filter((n): n is number => n !== null)
+        // Same treatment as above: 0 is Shopify's "unset", not a weight.
+        const g = list.map(v => toNumber(v?.grams)).filter((n): n is number => n !== null && n > 0)
         return g.length ? Math.min(...g) : null
       })(),
     },
@@ -229,11 +242,33 @@ export const shopifyAdapter: BrandAdapter = {
       }
     }
 
-    // A page we could not read is a hole in this week's catalogue. Say so: a
-    // silent gap looks exactly like a competitor delisting 250 designs, which
-    // is precisely the kind of false signal the corpus exists to avoid.
-    if (skippedPages.length > 0 && !truncated) {
-      truncated = `skipped ${skippedPages.length} unreadable page(s): ${skippedPages.join(', ')}`
+    // Second pass over pages that failed, after the rest of the catalogue has
+    // been read. The in-request retries in http.ts span seconds; this spans the
+    // whole run, and Limelight's page-9 fault has been observed to clear over
+    // that longer window. Worth one more attempt: a page lost now is 250
+    // designs missing from this week forever, and weeks cannot be re-fetched.
+    const stillFailed: number[] = []
+    for (const page of skippedPages) {
+      const res = await fetchJson<{ products?: ShopifyProduct[] }>(
+        `${base}/products.json?limit=${PAGE_SIZE}&page=${page}`,
+      )
+      if (!res.ok) {
+        stillFailed.push(page)
+        continue
+      }
+      for (const product of (Array.isArray(res.data?.products) ? res.data!.products! : [])) {
+        const design = normaliseProduct(product, base)
+        if (!design || seen.has(design.external_id)) continue
+        seen.add(design.external_id)
+        designs.push({ ...design, currency })
+      }
+    }
+
+    // A page we still could not read is a hole in this week's catalogue. Say
+    // so: a silent gap looks exactly like a competitor delisting 250 designs,
+    // which is precisely the false signal the corpus exists to avoid.
+    if (stillFailed.length > 0 && !truncated) {
+      truncated = `unreadable page(s) after retry: ${stillFailed.join(', ')}`
     }
 
     return { designs, http_status: httpStatus, truncated_reason: truncated }

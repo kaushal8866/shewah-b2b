@@ -107,6 +107,27 @@ describe('normaliseProduct', () => {
     expect(d.available).toBe(false)
   })
 
+  it('treats grams=0 as unpublished, not as a weight', () => {
+    // Shopify defaults grams to 0 when the merchant never set one — measured
+    // at 100% of Starkle variants and 87% of Limelight's. Storing it verbatim
+    // asserts a gold ring weighs nothing and poisons the cost-teardown proxy.
+    const d = normaliseProduct({
+      ...fixture, variants: [{ price: '100', available: true, grams: 0 }],
+    }, 'https://x.co')!
+    expect(d.grams).toBeNull()
+    expect((d.raw as any).variant_summary.grams_min).toBeNull()
+  })
+
+  it('finds a real weight on a sibling variant when the cheapest has none', () => {
+    const d = normaliseProduct({
+      ...fixture, variants: [
+        { price: '100', available: true, grams: 0 },
+        { price: '900', available: true, grams: 5.5 },
+      ],
+    }, 'https://x.co')!
+    expect(d.grams).toBe(5.5)
+  })
+
   it('parses a comma-separated tag string as well as an array', () => {
     const d = normaliseProduct({ ...fixture, tags: 'Gold, 18K , Bridal' }, 'https://x.co')!
     expect(d.tags).toEqual(['Gold', '18K', 'Bridal'])

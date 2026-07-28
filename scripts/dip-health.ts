@@ -12,11 +12,17 @@
  *   npm run dip:health
  */
 
-import { supabaseAdmin } from '../lib/supabaseAdmin'
+import { loadEnv, requireSupabaseEnv } from '../lib/dip/loadEnv'
+
+// Before importing anything that builds a Supabase client at module scope.
+loadEnv()
+requireSupabaseEnv()
 
 const DAY = 24 * 60 * 60 * 1000
 
 async function main() {
+  const { supabaseAdmin } = await import('../lib/supabaseAdmin')
+
   const { data: brands, error: brandErr } = await supabaseAdmin
     .from('dip_brands')
     .select('id, name, market, platform, is_active')
@@ -43,36 +49,50 @@ async function main() {
     if (error) throw new Error(error.message)
 
     const history = runs ?? []
-    const lastSuccess = history.find((r: any) => r.status === 'success')
 
-    if (!lastSuccess) {
+    // FRESHNESS and COMPLETENESS are different health questions and were
+    // previously conflated: a brand whose reads are always partial was
+    // reported as "NEVER succeeded", which reads as "we have no data" when in
+    // fact thousands of designs were captured. A partial run writes snapshots;
+    // what it does not do is authorise retiring designs.
+    const lastWithData = history.find((r: any) => r.status === 'success' || r.status === 'partial')
+    const lastComplete = history.find((r: any) => r.status === 'success')
+
+    if (!lastWithData) {
       anyRed = true
-      console.log(`✗ ${b.name} — NEVER succeeded (${history.length} run(s) recorded)`)
-      const last = history[0]
-      if (last?.error) console.log(`    last error: ${last.error}`)
+      const runCount = history.length
+      console.log(`✗ ${b.name} — no data ever captured (${runCount} run(s) recorded)`)
+      if (history[0]?.error) console.log(`    last error: ${history[0].error}`)
       continue
     }
 
-    const ageDays = (Date.now() - new Date(lastSuccess.started_at).getTime()) / DAY
+    const ageDays = (Date.now() - new Date(lastWithData.started_at).getTime()) / DAY
     worstAgeDays = Math.max(worstAgeDays, ageDays)
 
     // Weekly cadence: 8 days is a missed run, 15 is two.
-    const mark = ageDays > 15 ? '✗' : ageDays > 8 ? '⚠' : '✓'
-    if (ageDays > 8) anyRed = true
+    const stale = ageDays > 8
+    const mark = ageDays > 15 ? '✗' : stale ? '⚠' : lastComplete ? '✓' : '~'
+    if (stale) anyRed = true
 
-    console.log(`${mark} ${b.name} — last success ${ageDays.toFixed(1)}d ago, ` +
-      `${lastSuccess.designs_seen} designs (${lastSuccess.designs_new} new)`)
+    console.log(`${mark} ${b.name} — last data ${ageDays.toFixed(1)}d ago, ` +
+      `${lastWithData.designs_seen} designs (${lastWithData.designs_new} new)`)
 
-    // Consecutive failures since the last success are the leading indicator.
-    const sinceSuccess = history.slice(0, history.indexOf(lastSuccess))
-    const failures = sinceSuccess.filter((r: any) => r.status === 'failed')
+    // Completeness, reported separately from freshness.
+    const partials = history.filter((r: any) => r.status === 'partial')
+    if (!lastComplete) {
+      console.log(`    ⚠ never read in FULL — every run so far was partial, so no design has`)
+      console.log(`      been retired and listing_survival is not yet measurable for this brand.`)
+      console.log(`      reason: ${lastWithData.truncated_reason ?? 'unknown'}`)
+    } else if (partials.length > 0) {
+      console.log(`    ${partials.length}/${history.length} recent run(s) partial — ${partials[0].truncated_reason}`)
+    }
+
+    // Failures since the last run that produced data are the leading indicator.
+    const sinceData = history.slice(0, history.indexOf(lastWithData))
+    const failures = sinceData.filter((r: any) => r.status === 'failed')
     if (failures.length > 0) {
       anyRed = true
       console.log(`    ${failures.length} failed run(s) since: ${failures[0].error ?? 'no message'}`)
-    }
-    const partials = history.filter((r: any) => r.status === 'partial')
-    if (partials.length > 0) {
-      console.log(`    ${partials.length}/${history.length} recent run(s) partial — ${partials[0].truncated_reason}`)
     }
   }
 
@@ -104,7 +124,7 @@ async function main() {
     console.log('\n⚠ Cadence is broken for at least one brand. Downstream signals are not trustworthy.')
     process.exit(1)
   }
-  console.log('\n✓ All active brands ingested within the last week.')
+  console.log('\n✓ All active brands captured data within the last week.')
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
