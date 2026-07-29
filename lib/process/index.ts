@@ -11,6 +11,7 @@
 
 export * from './types'
 export * from './engine'
+export * from './checks'
 export { orderFlow } from './orderFlow'
 export { cadFlow } from './cadFlow'
 export { mfgFlow } from './mfgFlow'

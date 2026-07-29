@@ -12,7 +12,8 @@ import {
 } from '@/lib/cadWeight'
 import { KARAT_FACTORS, SELLABLE_KARATS, pureMassByKarat, computeKaratPricing, getMetalWeight } from '@/lib/karat'
 import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
-import { nextSteps, orderFlow } from '@/lib/process'
+import { nextSteps, orderFlow, slaStatus, orderChecks, slaTrustworthy } from '@/lib/process'
+import NextStepRail from '@/components/process/NextStepRail'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare, CreditCard, Bell, Plus, Download, FileText } from 'lucide-react'
 import Link from 'next/link'
@@ -416,6 +417,12 @@ export default function OrderDetailPage() {
   }, [order])
   const [mfgPartners, setMfgPartners] = useState<ManufacturingPartnerLite[]>([])
   const [consumptionTxn, setConsumptionTxn] = useState<any | null>(null)
+  // CAD requests linked to this order. Needed because the hasCadRender guard
+  // reads render_images from here — see lib/process/checks.ts.
+  const [orderCadRequests, setOrderCadRequests] = useState<any[]>([])
+  // Null until the async material probe has run. Left null the guard blocks
+  // and says why, which is the honest default.
+  const [materialReadyProbe, setMaterialReadyProbe] = useState<boolean | null>(null)
   // Task #76: live diamond inventory keyed by `${material_type}|${shape_id}|${size_id}`
   // (e.g. `diamond_lgd|<uuid>|<uuid>`). Keying by material type prevents a
   // natural requirement from looking satisfied by LGD stock or vice versa.
@@ -609,6 +616,14 @@ export default function OrderDetailPage() {
       .limit(1)
       .maybeSingle()
     setConsumptionTxn(tx || null)
+
+    // Renders for the hasCadRender guard. The order screen previously looked
+    // for order.cad_images, a column that does not exist.
+    const { data: cadReqs } = await supabase
+      .from('cad_requests')
+      .select('id, status, render_images, cad_files')
+      .eq('order_id', id)
+    setOrderCadRequests(cadReqs || [])
 
     // Task #76: pull live diamond stock so we can show shortage badges
     // beside each diamond on the product. The endpoint is tolerant when
@@ -844,22 +859,30 @@ export default function OrderDetailPage() {
   // The full NextStepRail replaces this block entirely; this keeps the single
   // "Move to X" button working — and correctly guarded — in the meantime.
   const processSteps = order
-    ? nextSteps(orderFlow, order, { role: (session?.user as any)?.role }, {
-        // Resolved synchronously from data already loaded. Material readiness
-        // is checked separately below because it needs a network call.
-        advancePaid: (parseFloat(order.advance_paid) || 0) > 0,
-        hasCadRender: (order.cad_images?.length || 0) > 0,
-        qcChecklistComplete: !!order.qc_checklist,
-        materialReady: true,
-      })
+    ? nextSteps(orderFlow, order, { role: (session?.user as any)?.role },
+        // Checks now come from lib/process/checks.ts. The map that used to be
+        // inline here resolved hasCadRender from `order.cad_images` — a column
+        // that does not exist in any migration, so the expression was always
+        // `undefined > 0`. cad_in_progress -> cad_sent could therefore never be
+        // taken from this screen, and everything downstream of it was
+        // unreachable. Renders live on cad_requests.render_images, which needs
+        // the join now done in load().
+        orderChecks({
+          order,
+          cadRequests: orderCadRequests,
+          hasConsumptionTxn: !!consumptionTxn,
+          // Deliberately omitted until measured — see the note in checks.ts on
+          // why hard-coding this true let pieces enter production unfunded.
+          materialReady: materialReadyProbe ?? undefined,
+        }))
     : []
   const primaryStep = processSteps.find(s => s.permitted && s.blockers.length === 0) ?? null
   const nextStage = primaryStep
     ? { value: primaryStep.transition.to, label: primaryStep.transition.label }
     : null
-  // Blockers on the primary path, shown so the operator knows what is missing
-  // rather than just finding the button absent.
-  const stepBlockers = processSteps.find(s => s.permitted && s.blockers.length > 0)?.blockers ?? []
+  // stepBlockers used to drive an inline amber list here; NextStepRail now
+  // renders blockers per transition, which is more useful — it says which step
+  // each blocker is holding up rather than lumping them together.
 
   // Integrity rule check — returns null when OK, otherwise an error message.
   // For "dispatched" we also enforce a tracking number + courier so the
@@ -982,15 +1005,28 @@ export default function OrderDetailPage() {
     return { ok: true }
   }
 
-  async function advanceStage(opts?: { skipMaterialCheck?: boolean; skipPaymentPrompt?: boolean }) {
-    if (!nextStage) return
-    const err = checkCompletionGuard(nextStage.value)
+  // `toState` lets the rail fire any permitted transition, not only the
+  // primary one — recording a revision or cancelling are real SOP moves that
+  // previously had nowhere to happen and so happened in WhatsApp instead.
+  // Defaults to the primary step so existing callers are unchanged.
+  async function advanceStage(opts?: {
+    toState?: string
+    skipMaterialCheck?: boolean
+    skipPaymentPrompt?: boolean
+  }) {
+    const target = opts?.toState ?? nextStage?.value
+    if (!target) return
+
+    // The completion guard stays. It carries a rule the flow definition does
+    // not: a gold consumption entry must exist when gold_source = 'self'.
+    // Dropping it in favour of orderFlow alone would silently lose that.
+    const err = checkCompletionGuard(target)
     if (err) { setGuardError(err); return }
 
     // Pre-dispatch gate: if there's still a balance owed, force the admin to
     // either log a payment (date + reference number) or schedule a reminder
     // before letting the order ship. Skipped on "confirm" from the modal.
-    if (nextStage.value === 'dispatched' && !opts?.skipPaymentPrompt) {
+    if (target === 'dispatched' && !opts?.skipPaymentPrompt) {
       const balance = (parseFloat(order.balance_due) || (parseFloat(order.total_amount) || 0) - (parseFloat(order.advance_paid) || 0))
       if (balance > 0) {
         setGuardError(null)
@@ -1002,7 +1038,7 @@ export default function OrderDetailPage() {
     // Pre-production gate: if a manufacturer is assigned and they're short on
     // the gold/diamonds this order needs, prompt the admin to issue material
     // (or top up the float) before flipping the order into production.
-    if (nextStage.value === 'production' && !opts?.skipMaterialCheck) {
+    if (target === 'production' && !opts?.skipMaterialCheck) {
       if (!order.assigned_manufacturer_id) {
         setGuardError('Assign a manufacturer first — material has to be issued to someone before production starts.')
         return
@@ -1010,6 +1046,9 @@ export default function OrderDetailPage() {
       setAdvancing(true)
       const check = await checkMaterialReadiness()
       setAdvancing(false)
+      // Record the result so the rail can show the guard honestly rather than
+      // assuming readiness.
+      setMaterialReadyProbe(!check || (check.goldShort <= 0 && check.diamondShort <= 0))
       if (check && (check.goldShort > 0 || check.diamondShort > 0)) {
         setGuardError(null)
         setMaterialPrompt(check)
@@ -1019,11 +1058,11 @@ export default function OrderDetailPage() {
 
     setGuardError(null)
     setAdvancing(true)
-    const update: any = { status: nextStage.value }
-    if (nextStage.value === 'dispatched') {
+    const update: any = { status: target }
+    if (target === 'dispatched') {
       update.dispatch_date = new Date().toISOString().split('T')[0]
     }
-    if (nextStage.value === 'delivered') {
+    if (target === 'delivered') {
       update.actual_delivery = new Date().toISOString().split('T')[0]
     }
     const { error } = await supabase.from('orders').update(update).eq('id', id)
@@ -1394,35 +1433,38 @@ export default function OrderDetailPage() {
 
       {!editing ? (
         <div className="space-y-4">
-          {/* Pipeline stepper */}
+          {/* The next step, stated on the screen. Replaces a single "Move to X"
+              button that vanished whenever a requirement was unmet — which
+              read as the app being broken rather than as work being
+              incomplete. The rail shows blocked steps WITH their reasons. */}
+          {!isCancelled && (
+            <NextStepRail
+              def={orderFlow}
+              entity={order}
+              steps={processSteps}
+              // Suppressed for orders whose clock came from the SOP backfill
+              // rather than from real events — otherwise every historic order
+              // renders as catastrophically breached.
+              sla={slaTrustworthy(order) ? slaStatus(orderFlow, order) : null}
+              busy={advancing}
+              onAdvance={(to) => advanceStage({ toState: to })}
+              onFixField={(field) => {
+                // Open the editor and put the cursor on the thing that is
+                // missing, so "fix this" is one click rather than a hunt.
+                setEditing(true)
+                setTimeout(() => {
+                  const el = document.querySelector<HTMLElement>(`[name="${field}"], #${field}`)
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  el?.focus?.()
+                }, 80)
+              }}
+            />
+          )}
+
+          {/* Pipeline stepper — position only, never the source of what's next */}
           <div className="bg-white rounded-xl border border-stone-200 p-5">
-            {/* What's missing, stated inline. Without this the next-step button
-                simply vanishes when a requirement is unmet, which reads as the
-                app being broken rather than as a step being incomplete. */}
-            {!nextStage && stepBlockers.length > 0 && !isCancelled && (
-              <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 p-3">
-                <p className="text-xs font-semibold text-amber-900 mb-1.5">
-                  Needs {stepBlockers.length === 1 ? '1 thing' : `${stepBlockers.length} things`} before this can move on
-                </p>
-                <ul className="space-y-1">
-                  {stepBlockers.map((b, i) => (
-                    <li key={i} className="text-xs text-amber-900/90 flex items-start gap-1.5">
-                      <span className="text-amber-500 mt-0.5">•</span>
-                      <span>{b.message}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-medium text-stone-900">Pipeline stage</h2>
-              {nextStage && !isCancelled && (
-                <button onClick={() => advanceStage()} disabled={advancing}
-                  className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
-                  {advancing ? 'Moving...' : nextStage.label}
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              )}
               {isDelivered && (
                 <span className="text-xs text-green-600 font-medium bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
                   Order complete
