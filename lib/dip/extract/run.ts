@@ -16,23 +16,30 @@ import { GOLD_FIELDS } from '../attributes/vocabulary'
  */
 
 /**
- * Bumped from v1 when 'none' was added to the setting vocabulary.
- *
- * The prompt text changed, so prompt_hash changes. Keeping the same version
- * string would have UPDATED the v1 row in place, leaving the five rows already
- * extracted under v1 pointing at a description of a prompt that never produced
- * them. That is exactly the provenance failure this schema exists to prevent —
- * a version is the whole extraction behaviour, not a name.
- *
- * The v1 rows stay. They are honest history and comparing v1 to v2 on the same
- * designs is the point of versioning.
+ * Prompt generation. Bumped from v1 when 'none' was added to the setting
+ * vocabulary — the prompt text changed, so its hash changed.
  */
-const EXTRACTOR_VERSION = 'gemini-vision-v2'
+const PROMPT_VERSION = 'v2'
+
+/**
+ * The version string composes the prompt generation WITH the model name.
+ *
+ * This was a manual constant, and it caused the bug twice. Changing the prompt
+ * while keeping the name UPDATES the version row in place, leaving rows already
+ * written pointing at a description of something that never produced them.
+ * Switching model does the same. Both are silent, and both destroy the ability
+ * to compare versions — which is the entire reason the column exists.
+ *
+ * Composing it means a new prompt or a new model automatically becomes a new
+ * version, and the mistake is no longer available to make.
+ */
+function extractorVersion(modelName: string): string {
+  return `vision-${PROMPT_VERSION}@${modelName}`
+}
 const IMAGES_PER_DESIGN = 3
 const IMAGE_WIDTH = 800
-// Reduced from 4 after the first smoke test: 3 of 8 designs failed on
-// rate_limit at concurrency 4. The retries behaved correctly; the quota simply
-// did not clear. Two is slower and finishes.
+// With paceModelCall gating every request, concurrency only overlaps the
+// image downloads — the model calls are serialised by the pacer regardless.
 const CONCURRENCY = 2
 const MAX_ATTEMPTS = 3
 const IMAGE_TIMEOUT_MS = 30_000
@@ -75,6 +82,32 @@ function resized(url: string): string {
 }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
+/**
+ * Minimum gap between model calls, in ms.
+ *
+ * PACE, DO NOT RETRY. The first design of this pilot fired requests
+ * concurrently and backed off only after being rejected. On a free-tier
+ * per-minute cap that is the worst possible pattern: every rejection costs
+ * 20-60s of backoff, and the retries themselves count against the same quota.
+ * Measured result — 28 designs took 9,181 seconds and 19 of them still failed.
+ *
+ * Staying just under the limit instead means requests are never rejected, so
+ * the same 28 designs take about four minutes. Default 6,500ms is ~9.2
+ * requests/minute, under the 10 RPM free tier with headroom. Raise
+ * DIP_RPM_INTERVAL_MS if the key is rate limited harder; lower it (or set it
+ * to 0) on a paid tier.
+ */
+const MODEL_CALL_INTERVAL_MS = Number(process.env.DIP_RPM_INTERVAL_MS ?? 6500)
+
+let nextCallAt = 0
+/** Serialises and paces every model call across all workers. */
+async function paceModelCall(): Promise<void> {
+  const now = Date.now()
+  const wait = Math.max(0, nextCallAt - now)
+  nextCallAt = Math.max(now, nextCallAt) + MODEL_CALL_INTERVAL_MS
+  if (wait > 0) await sleep(wait)
+}
 
 async function fetchImage(url: string): Promise<{ mimeType: string; data: string } | null> {
   const controller = new AbortController()
@@ -171,7 +204,7 @@ async function selectTargets(modelVersionId: string, opts: ExtractOptions): Prom
 async function ensureVersion(modelName: string): Promise<string> {
   const payload = {
     kind: 'vision_model',
-    version: EXTRACTOR_VERSION,
+    version: extractorVersion(modelName),
     provider: 'google',
     model_name: modelName,
     temperature: 0,
@@ -244,6 +277,8 @@ export async function runExtraction(opts: ExtractOptions): Promise<ExtractSummar
           p,
           new Promise<never>((_, rej) => setTimeout(() => rej(new Error('model_timeout')), MODEL_TIMEOUT_MS)),
         ])
+        // Wait for our slot before calling, rather than being told off after.
+        await paceModelCall()
         const result = await withTimeout(model.generateContent([prompt, ...images]))
 
         const usage = (result.response as any).usageMetadata
@@ -293,7 +328,7 @@ export async function runExtraction(opts: ExtractOptions): Promise<ExtractSummar
           : 'model_error'
         if (attempt < MAX_ATTEMPTS) {
           // 2s, 4s, 8s. Rate limits get longer.
-          await sleep(failureReason === 'rate_limit' ? 20_000 * attempt : 2_000 * Math.pow(2, attempt - 1))
+          await sleep(failureReason === 'rate_limit' ? 15_000 * attempt : 2_000 * Math.pow(2, attempt - 1))
         }
       }
     }
