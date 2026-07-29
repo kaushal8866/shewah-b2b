@@ -110,8 +110,13 @@ export function renderVerifySheet(rows: VerifyRow[], setVersion: string): string
  .ans .fix{display:none;padding-top:5px}.ans.wrong .fix{display:block}
  .ans .fix select{font:inherit;font-size:12.5px;padding:4px 6px;width:100%;border-radius:6px;
                   border:1px solid var(--line);background:var(--bg);color:var(--fg)}
- .ans .help{display:none;margin:4px 0 0;font-size:11.5px;color:var(--muted)}
- .card.showhelp .ans .help{display:block}
+ /* Definitions are visible BY DEFAULT.
+    The first run hid them behind a button and nothing was caught: a
+    verifier who does not know the vocabulary cannot judge "prong4" against
+    a photograph, and a hidden definition is a definition that does not
+    exist. The toggle now hides them for anyone who does not want them. */
+ .ans .help{display:block;margin:4px 0 0;font-size:11.5px;color:var(--muted)}
+ .card.hidehelp .ans .help{display:none}
  .mnotes{margin:0;padding:4px 10px;font-size:11.5px;color:var(--muted);font-style:italic}
  .verdict{display:flex;gap:6px;align-items:center;padding:8px 10px 12px;border-top:1px solid var(--line)}
  .verdict .state{margin-left:auto;font-size:12px;color:var(--muted)}
@@ -122,7 +127,7 @@ export function renderVerifySheet(rows: VerifyRow[], setVersion: string): string
   <h1>Verify — ${setVersion}</h1>
   <span class="prog"><strong id="done">0</strong> / ${rows.length} checked</span>
   <span style="flex:1"></span>
-  <button id="help">Show definitions</button>
+  <button id="help">Hide definitions</button>
   <button id="clear">Clear</button>
   <button id="export" class="primary" disabled>Export JSON</button>
 </header>
@@ -130,8 +135,8 @@ export function renderVerifySheet(rows: VerifyRow[], setVersion: string): string
 <details class="intro" open>
   <summary>How this works — 2 minutes</summary>
   <p>The AI has already answered. You are only checking whether its answers match the photographs.
-  <strong>You do not need to know any of these terms</strong> — press <em>Show definitions</em> and
-  each one is explained under the answer.</p>
+  <strong>You do not need to know any of these terms</strong> — each one is explained in grey
+  directly under the answer. Read the definition, then look at the photo and decide whether it fits.</p>
   <ul>
     <li>If all four answers look right → <strong>All four correct</strong>.</li>
     <li>If one is wrong → click the <strong>✕</strong> beside it. Optionally pick what it should be.
@@ -140,10 +145,13 @@ export function renderVerifySheet(rows: VerifyRow[], setVersion: string): string
   </ul>
   <p>Click the small thumbnails to change the main photo — the first is often a model wearing
   the piece, where fine detail isn't visible.</p>
-  <p><strong>Please look properly rather than clicking through.</strong> A few cards have had an
-  answer deliberately changed to a wrong one. If those come back marked correct, we learn the
-  check wasn't discriminating and the results get discounted — which is worth knowing, but only
-  if you didn't know which ones they were.</p>
+  <p><strong>Please look properly rather than clicking through.</strong> Several cards have had an
+  answer deliberately changed to a wrong one. On the last attempt none were caught, so the whole
+  exercise measured nothing — that was partly because the definitions were hidden, which is now
+  fixed. If they are missed again the results get discounted rather than reported.</p>
+  <p>The commonest trap: a <em>plain band with no stones</em> should read
+  <b>stone shape: none</b> and <b>setting: none</b>. If it claims a stone shape or a prong or
+  bezel setting and you cannot see any stone, that answer is wrong.</p>
 </details>
 
 <main id="grid">${cards}</main>
@@ -213,7 +221,9 @@ export function renderVerifySheet(rows: VerifyRow[], setVersion: string): string
  });
 
  document.getElementById('help').addEventListener('click',function(){
-   grid.querySelectorAll('.card').forEach(function(c){c.classList.toggle('showhelp')});
+   grid.querySelectorAll('.card').forEach(function(c){c.classList.toggle('hidehelp')});
+   this.textContent = grid.querySelector('.card').classList.contains('hidehelp')
+     ? 'Show definitions' : 'Hide definitions';
  });
  document.getElementById('clear').addEventListener('click',function(){
    if(!confirm('Clear every verdict?'))return;

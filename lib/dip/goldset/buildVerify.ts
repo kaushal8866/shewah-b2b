@@ -22,7 +22,7 @@ import { sizedImageUrl } from '../images'
  * 3 of 3 is decent evidence of attention; catching 0 of 3 is clear evidence of
  * none. Anything between is not conclusive at this size.
  */
-const PLANT_RATE = 5
+const PLANT_RATE = 3
 
 async function toDataUri(url: string): Promise<{ uri: string; sha: string } | null> {
   try {
