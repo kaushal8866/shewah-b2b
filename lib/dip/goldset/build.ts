@@ -4,6 +4,7 @@ import { fetchAllRows } from '../../aurora/infrastructure/fetchAllRows'
 import { DIP_USER_AGENT } from '../http'
 import { isRing, stratify, type Candidate } from './select'
 import { VOCAB_VERSION, GOLD_FIELDS } from '../attributes/vocabulary'
+import { sizedImageUrl } from '../images'
 
 /**
  * Build a frozen evaluation set and the blind labelling sheet.
@@ -16,7 +17,6 @@ import { VOCAB_VERSION, GOLD_FIELDS } from '../attributes/vocabulary'
  */
 
 const SET_VERSION = 'gold_set_v1'
-const IMAGE_WIDTH = 800
 
 /**
  * How many images the labeller and the extractor both see.
@@ -46,15 +46,10 @@ export interface BuiltRow extends Candidate {
   bytes: number               // total across all images
 }
 
-/** Shopify CDN resize. Cuts a 900KB Starkle photo to something embeddable. */
-function resized(url: string): string {
-  if (!url.includes('cdn.shopify.com')) return url
-  return url.includes('?') ? `${url}&width=${IMAGE_WIDTH}` : `${url}?width=${IMAGE_WIDTH}`
-}
-
+/** Download, hash and inline. Sizing is shared via lib/dip/images.ts. */
 async function downloadImage(url: string): Promise<{ sha256: string; dataUri: string; bytes: number } | null> {
   try {
-    const res = await fetch(resized(url), { headers: { 'User-Agent': DIP_USER_AGENT } })
+    const res = await fetch(sizedImageUrl(url), { headers: { 'User-Agent': DIP_USER_AGENT } })
     if (!res.ok) return null
     const buf = Buffer.from(await res.arrayBuffer())
     if (buf.length === 0) return null

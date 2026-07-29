@@ -4,6 +4,7 @@ import { fetchAllRows } from '../../aurora/infrastructure/fetchAllRows'
 import { DIP_USER_AGENT } from '../http'
 import { VOCAB, GOLD_FIELDS } from '../attributes/vocabulary'
 import type { VerifyRow } from './verify'
+import { sizedImageUrl } from '../images'
 
 /**
  * Assemble the verification sheet from rows the extractor has already written.
@@ -14,18 +15,18 @@ import type { VerifyRow } from './verify'
  * needs no vocabulary while recall does.
  */
 
-const IMAGE_WIDTH = 800
-/** Roughly one in six, so a distracted pass is detectable but the set stays useful. */
-const PLANT_RATE = 6
-
-function resized(url: string): string {
-  if (!url.includes('cdn.shopify.com')) return url
-  return url.includes('?') ? `${url}&width=${IMAGE_WIDTH}` : `${url}?width=${IMAGE_WIDTH}`
-}
+/**
+ * One card in five carries a planted wrong answer.
+ *
+ * At n=15 that is only ~3 checks — thin, and the report must say so. Catching
+ * 3 of 3 is decent evidence of attention; catching 0 of 3 is clear evidence of
+ * none. Anything between is not conclusive at this size.
+ */
+const PLANT_RATE = 5
 
 async function toDataUri(url: string): Promise<{ uri: string; sha: string } | null> {
   try {
-    const res = await fetch(resized(url), { headers: { 'User-Agent': DIP_USER_AGENT } })
+    const res = await fetch(sizedImageUrl(url), { headers: { 'User-Agent': DIP_USER_AGENT } })
     if (!res.ok) return null
     const buf = Buffer.from(await res.arrayBuffer())
     if (buf.length === 0) return null
@@ -58,15 +59,27 @@ export interface VerifyBuild {
 }
 
 export async function buildVerifySheet(size: number): Promise<VerifyBuild> {
-  // Latest extractor version only — verifying an older version's answers would
-  // measure a prompt that is no longer in use.
-  const { data: version, error: vErr } = await supabaseAdmin
+  // The version with the MOST extracted rows, not the newest.
+  //
+  // Newest was the obvious choice and the wrong one: free-tier daily quotas
+  // meant runs kept switching model, so the newest version is often the one
+  // that got three designs in before the quota ran out. Verifying that would
+  // measure almost nothing.
+  const { data: versions, error: vErr } = await supabaseAdmin
     .from('dip_model_versions')
     .select('id, version')
     .eq('kind', 'vision_model')
-    .order('created_at', { ascending: false })
-    .limit(1).single()
-  if (vErr || !version) throw new Error('no vision extractor version found — run dip:extract first')
+  if (vErr || !versions?.length) throw new Error('no vision extractor version found — run dip:extract first')
+
+  let version = versions[0]
+  let best = -1
+  for (const v of versions) {
+    const { count } = await supabaseAdmin
+      .from('dip_attributes').select('*', { count: 'exact', head: true })
+      .eq('model_version_id', v.id).eq('status', 'extracted').not('category', 'is', null)
+    if ((count ?? 0) > best) { best = count ?? 0; version = v }
+  }
+  if (best === 0) throw new Error('no extracted rows on any version — run dip:extract first')
 
   const attrRes = await fetchAllRows<any>(
     'verify.attrs',

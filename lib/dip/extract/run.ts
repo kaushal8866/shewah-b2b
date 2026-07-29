@@ -5,6 +5,7 @@ import { fetchAllRows } from '../../aurora/infrastructure/fetchAllRows'
 import { DIP_USER_AGENT } from '../http'
 import { buildPrompt, promptHash, normaliseOutput, colourCheck, PROMPT_SCHEMA_VERSION } from './prompt'
 import { GOLD_FIELDS } from '../attributes/vocabulary'
+import { sizedImageUrl, IMAGE_VARIANT } from '../images'
 
 /**
  * Gemini vision extraction.
@@ -37,7 +38,6 @@ function extractorVersion(modelName: string): string {
   return `vision-${PROMPT_VERSION}@${modelName}`
 }
 const IMAGES_PER_DESIGN = 3
-const IMAGE_WIDTH = 800
 // With paceModelCall gating every request, concurrency only overlaps the
 // image downloads — the model calls are serialised by the pacer regardless.
 const CONCURRENCY = 2
@@ -76,11 +76,6 @@ interface Target {
   colour_options: string[] | null
 }
 
-function resized(url: string): string {
-  if (!url.includes('cdn.shopify.com')) return url
-  return url.includes('?') ? `${url}&width=${IMAGE_WIDTH}` : `${url}?width=${IMAGE_WIDTH}`
-}
-
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 /**
@@ -113,7 +108,7 @@ async function fetchImage(url: string): Promise<{ mimeType: string; data: string
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS)
   try {
-    const res = await fetch(resized(url), {
+    const res = await fetch(sizedImageUrl(url), {
       signal: controller.signal,
       headers: { 'User-Agent': DIP_USER_AGENT },
     })
@@ -213,7 +208,7 @@ async function ensureVersion(modelName: string): Promise<string> {
     schema_version: PROMPT_SCHEMA_VERSION,
     normalizer_version: 'norm-v1',
     git_commit: process.env.GIT_COMMIT ?? null,
-    config: { images_per_design: IMAGES_PER_DESIGN, image_width: IMAGE_WIDTH },
+    config: { images_per_design: IMAGES_PER_DESIGN, image_variant: IMAGE_VARIANT },
     notes: 'Closed-vocabulary attribute extraction from up to 3 product images.',
   }
   const { data, error } = await supabaseAdmin
@@ -244,7 +239,7 @@ export async function runExtraction(opts: ExtractOptions): Promise<ExtractSummar
       market: 'IN', category: 'ring',
       selection_query: `rings, gold brands${opts.goldSetOnly ? ', gold_set_v1 only' : ''}, limit ${opts.limit}`,
       design_ids: targets.map(t => t.design_id),
-      image_variant: `first${IMAGES_PER_DESIGN}@width=${IMAGE_WIDTH}`,
+      image_variant: `first${IMAGES_PER_DESIGN}@${IMAGE_VARIANT}`,
       model_name: modelName, prompt_hash: promptHash(), git_commit: process.env.GIT_COMMIT ?? null,
       model_config: { temperature: 0, images_per_design: IMAGES_PER_DESIGN },
     })
