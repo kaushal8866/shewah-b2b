@@ -229,7 +229,7 @@ export default function RetailerCustomOrderPage() {
     router.push(`/portal/retailer/orders/${data.order.id}`)
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   const sizesForShape = (shape_id: string) => sizes.filter(s => s.shape_id === shape_id)
@@ -241,7 +241,7 @@ export default function RetailerCustomOrderPage() {
       </Link>
 
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/15 text-[#1E3A5F] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-stone-800/15 text-stone-800 flex items-center justify-center">
           <Sparkles className="w-5 h-5" />
         </div>
         <div>
@@ -306,7 +306,7 @@ export default function RetailerCustomOrderPage() {
           <button type="button" onClick={() => setCompareOpen(o => !o)}
             className="w-full flex items-center justify-between px-4 py-3 bg-stone-50 hover:bg-stone-100 text-left">
             <div className="flex items-center gap-2.5">
-              <Calculator className="w-4 h-4 text-[#1E3A5F]" />
+              <Calculator className="w-4 h-4 text-stone-800" />
               <div>
                 <p className="text-sm font-medium text-stone-900">Already have a piece? Get a Shewah comparison quote</p>
                 <p className="text-[11px] text-stone-500">Enter the gold weight, karat and diamonds and see what Shewah would charge.</p>
@@ -335,7 +335,7 @@ export default function RetailerCustomOrderPage() {
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-stone-500">Diamonds</p>
                   <button type="button" onClick={addDiamond}
-                    className="text-xs text-[#1E3A5F] hover:underline inline-flex items-center gap-1">
+                    className="text-xs text-stone-800 hover:underline inline-flex items-center gap-1">
                     <Plus className="w-3 h-3" /> Add row
                   </button>
                 </div>
@@ -405,8 +405,8 @@ export default function RetailerCustomOrderPage() {
                              <button key={i} type="button"
                                onClick={() => updateDiamond(d.id, { cost: String(pcCost) })}
                                className={'text-[11px] px-2 py-0.5 rounded border ' +
-                                 (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
-                                         : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}
+                                 (active ? 'border-stone-800 bg-stone-800/5 text-stone-800'
+                                         : 'border-stone-200 bg-white text-stone-600 hover:border-stone-800/40')}
                                title={`Matrix · ${m.quality_label} · ${m.color_label} · Rate: ₹${m.price.toLocaleString('en-IN')}/ct`}>
                                <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
                                ₹{pcCost.toLocaleString('en-IN')}
@@ -432,7 +432,7 @@ export default function RetailerCustomOrderPage() {
               </div>
 
               {/* Quote read-out */}
-              <div className="bg-[#1E3A5F]/5 border border-[#1E3A5F]/15 rounded-lg p-3.5">
+              <div className="bg-stone-800/5 border border-stone-800/15 rounded-lg p-3.5">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-medium text-stone-600">
                     Shewah quote {quote ? `at ${quote.karat}kt` : ''}
@@ -448,7 +448,7 @@ export default function RetailerCustomOrderPage() {
                     <Row label={`Gold (${quote.quote.weight.toFixed(3)} g · 24kt-pure @ ₹${quote.rate_24k.toLocaleString('en-IN')}/g)`} value={quote.quote.goldCost} />
                     <Row label="Labour" value={quote.quote.labourCost} />
                     <Row label="Diamonds" value={quote.diamond_cost_total} />
-                    <div className="border-t border-[#1E3A5F]/15 pt-1.5 mt-1.5">
+                    <div className="border-t border-stone-800/15 pt-1.5 mt-1.5">
                       <Row label="COGS" value={quote.quote.cogs} bold />
                       <Row label="Trade price" value={quote.quote.trade} bold accent />
                     </div>
@@ -466,7 +466,7 @@ export default function RetailerCustomOrderPage() {
 
         <div className="flex justify-end">
           <button onClick={submit} disabled={submitting || uploading}
-            className="flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">
+            className="flex items-center gap-2 bg-stone-800 hover:bg-stone-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">
             <Sparkles className="w-4 h-4" />
             {submitting ? 'Submitting...' : 'Submit custom request'}
           </button>
@@ -483,7 +483,7 @@ function Row({ label, value, bold, accent }: { label: string; value: number; bol
   return (
     <div className="flex justify-between">
       <span className={'text-stone-600 ' + (bold ? 'font-medium' : '')}>{label}</span>
-      <span className={(accent ? 'text-[#1E3A5F] ' : 'text-stone-900 ') + (bold ? 'font-semibold' : '')}>
+      <span className={(accent ? 'text-stone-800 ' : 'text-stone-900 ') + (bold ? 'font-semibold' : '')}>
         ₹{(value || 0).toLocaleString('en-IN')}
       </span>
     </div>

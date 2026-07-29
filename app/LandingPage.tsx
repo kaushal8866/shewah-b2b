@@ -150,7 +150,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-slate-900 selection:bg-[#1E3A5F] selection:text-white pb-24 md:pb-0">
+    <div className="min-h-screen bg-white text-slate-900 selection:bg-stone-800 selection:text-white pb-24 md:pb-0">
       {/* Analytics */}
       {pixelId && (
         <>
@@ -192,7 +192,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-[#1E3A5F] flex items-center justify-center">
+            <div className="w-8 h-8 rounded bg-stone-800 flex items-center justify-center">
               <Diamond className="w-4 h-4 text-white" />
             </div>
             <span className="font-semibold text-lg tracking-tight">{BRAND.name}</span>
@@ -205,17 +205,17 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
                   key={l.href}
                   href={l.href}
                   aria-current={isActive ? 'true' : undefined}
-                  className={`relative transition-colors hover:text-[#1E3A5F] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:bg-[#1E3A5F] after:transition-all after:duration-300 ${isActive ? 'text-[#1E3A5F] after:w-full' : 'after:w-0'}`}
+                  className={`relative transition-colors hover:text-stone-800 after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:bg-stone-800 after:transition-all after:duration-300 ${isActive ? 'text-stone-800 after:w-full' : 'after:w-0'}`}
                 >
                   {l.label}
                 </a>
               )
             })}
-            <Link href="/login" className="hover:text-[#1E3A5F] transition-colors">{NAV.partnerSignIn}</Link>
+            <Link href="/login" className="hover:text-stone-800 transition-colors">{NAV.partnerSignIn}</Link>
             <a
               href={waChatHref}
               target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-[#1E3A5F] bg-[#1E3A5F]/10 px-4 py-2 rounded-full hover:bg-[#1E3A5F]/20 transition-colors">
+              className="flex items-center gap-2 text-stone-800 bg-stone-800/10 px-4 py-2 rounded-full hover:bg-stone-800/20 transition-colors">
               <MessageCircle className="w-4 h-4" />
               {NAV.whatsappCta}
             </a>
@@ -260,11 +260,11 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
                       href={l.href}
                       onClick={() => setMobileMenuOpen(false)}
                       aria-current={isActive ? 'true' : undefined}
-                      className={`py-3 text-base font-medium border-b border-slate-100 transition-colors flex items-center gap-3 ${isActive ? 'text-[#1E3A5F]' : 'text-slate-700 hover:text-[#1E3A5F]'}`}
+                      className={`py-3 text-base font-medium border-b border-slate-100 transition-colors flex items-center gap-3 ${isActive ? 'text-stone-800' : 'text-slate-700 hover:text-stone-800'}`}
                     >
                       <span
                         aria-hidden
-                        className={`inline-block w-1 self-stretch rounded-full transition-colors ${isActive ? 'bg-[#1E3A5F]' : 'bg-transparent'}`}
+                        className={`inline-block w-1 self-stretch rounded-full transition-colors ${isActive ? 'bg-stone-800' : 'bg-transparent'}`}
                       />
                       {l.label}
                     </a>
@@ -273,7 +273,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
                 <Link
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="py-3 text-base font-medium text-slate-700 hover:text-[#1E3A5F] border-b border-slate-100"
+                  className="py-3 text-base font-medium text-slate-700 hover:text-stone-800 border-b border-slate-100"
                 >
                   {NAV.partnerSignIn}
                 </Link>
@@ -281,7 +281,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
                   href={waChatHref}
                   target="_blank" rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="mt-4 inline-flex items-center justify-center gap-2 text-[#1E3A5F] bg-[#1E3A5F]/10 px-4 py-3 rounded-full font-medium hover:bg-[#1E3A5F]/20 transition-colors"
+                  className="mt-4 inline-flex items-center justify-center gap-2 text-stone-800 bg-stone-800/10 px-4 py-3 rounded-full font-medium hover:bg-stone-800/20 transition-colors"
                 >
                   <MessageCircle className="w-4 h-4" />
                   {NAV.whatsappCta}
@@ -297,7 +297,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-100 via-white to-white -z-10" aria-hidden />
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_420px] gap-8 md:gap-12 lg:gap-16 items-start">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[#1E3A5F] text-[11px] sm:text-xs font-semibold uppercase tracking-widest mb-5 md:mb-7">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-stone-800 text-[11px] sm:text-xs font-semibold uppercase tracking-widest mb-5 md:mb-7">
               <ShieldCheck className="w-4 h-4" />
               {HERO.eyebrow}
             </div>
@@ -313,7 +313,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-5 sm:gap-6 border-y border-slate-200 py-6 md:py-8 mt-8 md:mt-10">
               {STATS.map((s) => (
                 <div key={s.label} className="flex flex-col min-w-0">
-                  <span className="text-xl sm:text-2xl md:text-3xl font-serif text-[#1E3A5F] mb-1 whitespace-nowrap">{s.value}</span>
+                  <span className="text-xl sm:text-2xl md:text-3xl font-serif text-stone-800 mb-1 whitespace-nowrap">{s.value}</span>
                   <span className="text-[11px] sm:text-xs font-medium text-slate-500 uppercase tracking-wider leading-tight">{s.label}</span>
                 </div>
               ))}
@@ -324,7 +324,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
 
           {/* Lead form (preserves existing LeadForm behaviour) */}
           <div id="signup" className="bg-white p-6 sm:p-7 md:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 relative scroll-mt-20">
-            <div className="absolute top-0 left-0 w-full h-1 bg-[#1E3A5F] rounded-t-2xl" aria-hidden />
+            <div className="absolute top-0 left-0 w-full h-1 bg-stone-800 rounded-t-2xl" aria-hidden />
             <h2 className="text-2xl font-serif font-medium mb-2">{FORM_PANEL.title}</h2>
             <p className="text-slate-500 text-sm mb-6">{FORM_PANEL.subtitle}</p>
             <LeadForm compact multiStep={isPhone} whatsappE164={wa} />
@@ -336,7 +336,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       <section id="what-you-get" className="py-20 md:py-24 px-6 bg-slate-50 border-y border-slate-200">
         <div className="max-w-6xl mx-auto">
           <div className="mb-14 max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">{SECTIONS.whatYouGet.eyebrow}</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-stone-800 font-semibold mb-3">{SECTIONS.whatYouGet.eyebrow}</p>
             <h2 className="text-3xl md:text-4xl font-serif leading-tight">{SECTIONS.whatYouGet.heading}</h2>
             <p className="mt-4 text-lg text-slate-600">{SECTIONS.whatYouGet.body}</p>
           </div>
@@ -345,7 +345,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
             {VALUE_PROPS.map((v) => (
               <div key={v.title} className="bg-white p-7 rounded-xl border border-slate-200 shadow-sm flex flex-col h-full hover:shadow-md transition-shadow">
                 {v.metric && (
-                  <div className="text-xs font-bold text-[#1E3A5F] uppercase tracking-widest mb-4 pb-4 border-b border-slate-100">
+                  <div className="text-xs font-bold text-stone-800 uppercase tracking-widest mb-4 pb-4 border-b border-slate-100">
                     {v.metric}
                   </div>
                 )}
@@ -361,7 +361,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       <section id="how-it-works" className="py-20 md:py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-14">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">{SECTIONS.howItWorks.eyebrow}</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-stone-800 font-semibold mb-3">{SECTIONS.howItWorks.eyebrow}</p>
             <h2 className="text-3xl md:text-4xl font-serif leading-tight">{SECTIONS.howItWorks.heading}</h2>
           </div>
           <div className="grid md:grid-cols-4 gap-8">
@@ -383,7 +383,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       {/* Hidden entirely until at least one real, consented testimonial has
           been added to TESTIMONIALS in lib/landingCopy.ts. */}
       {TESTIMONIALS.length > 0 && (
-        <section className="py-20 md:py-24 px-6 bg-[#1E3A5F] text-white">
+        <section className="py-20 md:py-24 px-6 bg-stone-800 text-white">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-serif mb-12 text-center text-white">{SECTIONS.socialProof.heading}</h2>
             <div className="grid md:grid-cols-2 gap-8">
@@ -427,7 +427,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
         <section className="py-16 md:py-20 px-6 bg-white border-y border-slate-200">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-10">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">{PARTNER_BAND.eyebrow}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-stone-800 font-semibold mb-3">{PARTNER_BAND.eyebrow}</p>
               <h2 className="text-2xl md:text-3xl font-serif leading-tight">{PARTNER_BAND.heading}</h2>
             </div>
             <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
@@ -443,7 +443,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
                         className="h-12 w-auto object-contain grayscale opacity-80 hover:opacity-100 hover:grayscale-0 transition"
                       />
                     ) : (
-                      <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-semibold text-[#1E3A5F]">
+                      <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-semibold text-stone-800">
                         {initials}
                       </div>
                     )}
@@ -489,7 +489,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       <section id="faq" className="py-20 md:py-24 px-6">
         <div className="max-w-3xl mx-auto">
           <div className="mb-12">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">{SECTIONS.faq.eyebrow}</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-stone-800 font-semibold mb-3">{SECTIONS.faq.eyebrow}</p>
             <h2 className="text-3xl md:text-4xl font-serif leading-tight">{SECTIONS.faq.heading}</h2>
           </div>
           <div className="space-y-4">
@@ -522,7 +522,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
           <h2 className="text-2xl md:text-4xl font-serif leading-tight">{FINAL_CTA.heading}</h2>
           <p className="mt-4 text-slate-600">{FINAL_CTA.body}</p>
           <a href="#signup"
-            className="mt-7 inline-flex items-center gap-1.5 bg-[#1E3A5F] text-white px-6 py-3 rounded-xl font-medium hover:bg-[#152943]">
+            className="mt-7 inline-flex items-center gap-1.5 bg-stone-800 text-white px-6 py-3 rounded-xl font-medium hover:bg-stone-900">
             {HERO.primaryCta} <ArrowRight className="w-4 h-4" />
           </a>
         </div>
@@ -562,7 +562,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       >
         <a
           href="#signup"
-          className="flex-1 min-w-0 bg-[#1E3A5F] text-white py-3 rounded-lg font-medium text-center text-sm sm:text-base truncate"
+          className="flex-1 min-w-0 bg-stone-800 text-white py-3 rounded-lg font-medium text-center text-sm sm:text-base truncate"
         >
           {MOBILE_BAR.primaryCta}
         </a>

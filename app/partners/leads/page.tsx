@@ -208,7 +208,7 @@ export default function PartnerLeadsPage() {
       {hasAnyVariantData && (
         <div className="mb-5 rounded-xl border border-stone-200 bg-white p-4">
           <div className="flex items-center gap-2 mb-3">
-            <FlaskConical className="w-4 h-4 text-[#1E3A5F]" />
+            <FlaskConical className="w-4 h-4 text-stone-800" />
             <p className="text-sm font-semibold text-stone-800">Landing-page A/B test</p>
             <span className="text-[11px] text-stone-500">
               counts reflect leads currently in view{filter !== 'all' ? ` (filtered: ${filter})` : ''}
@@ -239,7 +239,7 @@ export default function PartnerLeadsPage() {
         <Filter className="w-4 h-4 text-stone-400" />
         {(['all', ...STATUSES] as const).map(k => (
           <button key={k} onClick={() => setFilter(k as any)}
-            className={`text-xs px-3 py-1.5 rounded-full border ${filter === k ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300'}`}>
+            className={`text-xs px-3 py-1.5 rounded-full border ${filter === k ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300'}`}>
             {k === 'all' ? 'All' : k.charAt(0).toUpperCase() + k.slice(1)}
             <span className="ml-1.5 text-[10px] opacity-70">{counts[k] || 0}</span>
           </button>
@@ -345,7 +345,7 @@ export default function PartnerLeadsPage() {
                       </Link>
                     ) : (
                       <Link href={convertHref(l)}
-                        className="inline-flex items-center gap-1 text-xs text-[#1E3A5F] hover:text-[#172d49] font-medium">
+                        className="inline-flex items-center gap-1 text-xs text-stone-800 hover:text-stone-900 font-medium">
                         Convert to partner <ArrowUpRight className="w-3 h-3" />
                       </Link>
                     )}

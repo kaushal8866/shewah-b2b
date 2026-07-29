@@ -99,7 +99,7 @@ export default function PartnerOrders() {
                           <div key={stage.step} className="flex md:flex-col items-center gap-4 md:gap-3 flex-1 text-center">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] uppercase font-bold shrink-0 transition-colors duration-500 shadow-sm
                               ${currentStage > stage.step ? 'bg-primary text-surface-lowest border-primary' : 
-                                currentStage === stage.step ? 'bg-[#c49c64] text-surface-lowest shadow-[#c49c64]/30' : 
+                                currentStage === stage.step ? 'bg-accent text-surface-lowest shadow-accent/30' : 
                                 'bg-surface-lowest border border-outline-variant/40 text-outline-variant'}`}>
                               {stage.step}
                             </div>

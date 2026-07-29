@@ -942,7 +942,7 @@ export default function PublicStorefront() {
           <button
             onClick={() => setActiveTab('catalog')}
             className={`px-5 py-3 text-xxs font-extrabold uppercase tracking-widest border-b-2 transition-all ${
-              activeTab === 'catalog' ? 'text-[#1E3A5F]' : 'border-transparent text-stone-400'
+              activeTab === 'catalog' ? 'text-stone-800' : 'border-transparent text-stone-400'
             }`}
             style={{ borderBottomColor: activeTab === 'catalog' ? c.primary : 'transparent', color: activeTab === 'catalog' ? c.primary : undefined }}
           >
@@ -951,7 +951,7 @@ export default function PublicStorefront() {
           <button
             onClick={() => setActiveTab('profile')}
             className={`px-5 py-3 text-xxs font-extrabold uppercase tracking-widest border-b-2 transition-all ${
-              activeTab === 'profile' ? 'text-[#1E3A5F]' : 'border-transparent text-stone-400'
+              activeTab === 'profile' ? 'text-stone-800' : 'border-transparent text-stone-400'
             }`}
             style={{ borderBottomColor: activeTab === 'profile' ? c.primary : 'transparent', color: activeTab === 'profile' ? c.primary : undefined }}
           >
@@ -1893,7 +1893,7 @@ export default function PublicStorefront() {
                                 return next
                               })
                             }}
-                            className="rounded text-[#1E3A5F] focus:ring-[#1E3A5F] w-4 h-4"
+                            className="rounded text-stone-800 focus:ring-stone-800 w-4 h-4"
                             style={{ borderColor: c.borders }}
                           />
                           <div className="flex-1 min-w-0">
@@ -2086,7 +2086,7 @@ export default function PublicStorefront() {
               <div className="space-y-4 pt-4 border-t" style={{ borderColor: c.borders }}>
                 <div className="flex justify-between items-center">
                   <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">Customer reviews ({reviews.length})</p>
-                  <button onClick={() => setShowReviewForm(!showReviewForm)} className="text-[9px] font-bold uppercase text-[#1E3A5F]" style={{ color: c.primary }}>
+                  <button onClick={() => setShowReviewForm(!showReviewForm)} className="text-[9px] font-bold uppercase text-stone-800" style={{ color: c.primary }}>
                     {showReviewForm ? 'Cancel' : 'Write Review'}
                   </button>
                 </div>

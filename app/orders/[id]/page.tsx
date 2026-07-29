@@ -102,14 +102,14 @@ function OrderChangeRequestsPanel({ orderId, onApplied }: { orderId: string, onA
               <div className="space-y-2">
                 <textarea value={reviewNote} onChange={e => setReviewNote(e.target.value)} rows={2}
                   placeholder="Optional reply to the retailer"
-                  className="w-full text-sm border border-stone-200 rounded-md px-2 py-1.5 outline-none focus:border-[#1E3A5F] resize-none" />
+                  className="w-full text-sm border border-stone-200 rounded-md px-2 py-1.5 outline-none focus:border-stone-800 resize-none" />
                 <div className="flex gap-2">
                   <button disabled={busyId === r.id} onClick={() => review(r.id, 'reject')}
                     className="text-sm px-3 py-1.5 rounded-md border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
                     Reject
                   </button>
                   <button disabled={busyId === r.id} onClick={() => review(r.id, 'approve')}
-                    className="text-sm px-3 py-1.5 rounded-md bg-[#1E3A5F] text-white hover:bg-[#16304F] disabled:opacity-50">
+                    className="text-sm px-3 py-1.5 rounded-md bg-stone-800 text-white hover:bg-stone-800 disabled:opacity-50">
                     {busyId === r.id ? 'Saving...' : 'Approve & apply'}
                   </button>
                   <button onClick={() => { setActiveId(null); setReviewNote('') }}
@@ -118,7 +118,7 @@ function OrderChangeRequestsPanel({ orderId, onApplied }: { orderId: string, onA
               </div>
             ) : (
               <button onClick={() => setActiveId(r.id)}
-                className="text-sm bg-[#1E3A5F] text-white px-3 py-1.5 rounded-md hover:bg-[#16304F]">
+                className="text-sm bg-stone-800 text-white px-3 py-1.5 rounded-md hover:bg-stone-800">
                 Review
               </button>
             )}
@@ -173,7 +173,7 @@ function PaymentModal({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   async function handleLog() {
@@ -208,7 +208,7 @@ function PaymentModal({
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl p-6 max-w-md w-full">
         <div className="flex items-start gap-3 mb-3">
-          <CreditCard className="w-5 h-5 text-[#1E3A5F] mt-0.5 shrink-0" />
+          <CreditCard className="w-5 h-5 text-stone-800 mt-0.5 shrink-0" />
           <div className="min-w-0">
             <h3 className="font-semibold text-stone-900">
               {mode === 'dispatch' ? 'Confirm payment before dispatch' : 'Log payment'}
@@ -291,12 +291,12 @@ function PaymentModal({
           </button>
           {(mode === 'standalone' || tab === 'log') ? (
             <button onClick={handleLog} disabled={busy}
-              className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+              className="flex-1 bg-stone-800 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
               {busy ? 'Saving...' : (mode === 'dispatch' && parseFloat(amount) >= balanceDue ? 'Log & dispatch' : 'Log payment')}
             </button>
           ) : (
             <button onClick={handleSchedule} disabled={busy}
-              className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+              className="flex-1 bg-stone-800 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
               {busy ? 'Saving...' : 'Schedule & dispatch'}
             </button>
           )}
@@ -325,13 +325,13 @@ function PaymentRescheduleModal({
   const parsed = parseInt(days)
   const valid = !!days && Number.isFinite(parsed) && parsed >= 1
   const canSave = valid && confirmed && !busy
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
         <div className="flex items-start gap-3 mb-3">
-          <Bell className="w-5 h-5 text-[#1E3A5F] mt-0.5 shrink-0" />
+          <Bell className="w-5 h-5 text-stone-800 mt-0.5 shrink-0" />
           <div>
             <h3 className="font-semibold text-stone-900">Reschedule payment reminder</h3>
             <p className="text-sm text-stone-500 mt-1">
@@ -363,7 +363,7 @@ function PaymentRescheduleModal({
             Cancel
           </button>
           <button onClick={async () => { setBusy(true); await onSave(parsed); setBusy(false) }} disabled={!canSave}
-            className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 disabled:cursor-not-allowed">
+            className="flex-1 bg-stone-800 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 disabled:opacity-50 disabled:cursor-not-allowed">
             {busy ? 'Saving...' : 'Save reminder'}
           </button>
         </div>
@@ -1141,7 +1141,7 @@ export default function OrderDetailPage() {
     router.push('/orders')
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
@@ -1203,7 +1203,7 @@ export default function OrderDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
@@ -1254,7 +1254,7 @@ export default function OrderDetailPage() {
                         Need {materialPrompt.goldNeeded.toFixed(3)}{goldUnit} · have {materialPrompt.goldHave.toFixed(3)}{goldUnit}
                       </p>
                     </div>
-                    <Link href={goldDeposit} className="text-xs font-medium text-[#1E3A5F] bg-[#1E3A5F]/5 hover:bg-[#1E3A5F]/10 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                    <Link href={goldDeposit} className="text-xs font-medium text-stone-800 bg-stone-800/5 hover:bg-stone-800/10 px-3 py-1.5 rounded-lg whitespace-nowrap">
                       Issue {materialPrompt.goldShort.toFixed(3)}{goldUnit}
                     </Link>
                   </div>
@@ -1267,7 +1267,7 @@ export default function OrderDetailPage() {
                         Need {materialPrompt.diamondNeeded.toFixed(3)}{diaUnit} · have {materialPrompt.diamondHave.toFixed(3)}{diaUnit}
                       </p>
                     </div>
-                    <Link href={diaDeposit} className="text-xs font-medium text-[#1E3A5F] bg-[#1E3A5F]/5 hover:bg-[#1E3A5F]/10 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                    <Link href={diaDeposit} className="text-xs font-medium text-stone-800 bg-stone-800/5 hover:bg-stone-800/10 px-3 py-1.5 rounded-lg whitespace-nowrap">
                       Issue {materialPrompt.diamondShort.toFixed(3)}{diaUnit}
                     </Link>
                   </div>
@@ -1368,7 +1368,7 @@ export default function OrderDetailPage() {
               <h2 className="font-medium text-stone-900">Pipeline stage</h2>
               {nextStage && !isCancelled && (
                 <button onClick={advanceStage} disabled={advancing}
-                  className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
+                  className="flex items-center gap-1.5 bg-stone-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
                   {advancing ? 'Moving...' : `Move to ${nextStage.label}`}
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -1389,21 +1389,21 @@ export default function OrderDetailPage() {
                   <div key={stage.value} className="flex items-center flex-1 min-w-0">
                     <div className="flex flex-col items-center flex-1 min-w-0">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 border-2 transition-colors ${
-                        isDone ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white'
-                        : isActive ? 'bg-white border-[#1E3A5F] text-[#1E3A5F]'
+                        isDone ? 'bg-stone-800 border-stone-800 text-white'
+                        : isActive ? 'bg-white border-stone-800 text-stone-800'
                         : 'bg-white border-stone-200 text-stone-300'
                       }`}>
                         {isDone ? <Check className="w-3 h-3" /> : idx + 1}
                       </div>
                       <p className={`text-center mt-1 leading-tight text-[10px] hidden sm:block truncate max-w-full px-0.5 ${
-                        isActive ? 'text-[#1E3A5F] font-semibold'
+                        isActive ? 'text-stone-800 font-semibold'
                         : isDone ? 'text-stone-400'
                         : 'text-stone-300'
                       }`}>{stage.label}</p>
                     </div>
                     {!isLast && (
                       <div className={`h-0.5 flex-shrink-0 w-full max-w-6 mt-0 mb-4 sm:mb-5 transition-colors ${
-                        isDone ? 'bg-[#1E3A5F]' : 'bg-stone-200'
+                        isDone ? 'bg-stone-800' : 'bg-stone-200'
                       }`} />
                     )}
                   </div>
@@ -1479,7 +1479,7 @@ export default function OrderDetailPage() {
                           <Link
                             href={requestHref}
                             title="Opens the receive form pre-filled — log a vendor purchase or adjustment to clear this shortage."
-                            className="text-xs px-2 py-1 rounded-lg border border-[#1E3A5F] text-[#1E3A5F] hover:bg-yellow-50">
+                            className="text-xs px-2 py-1 rounded-lg border border-stone-800 text-stone-800 hover:bg-yellow-50">
                             Log new stock
                           </Link>
                         )}
@@ -1566,7 +1566,7 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="flex justify-between font-semibold text-stone-900 border-t border-stone-200 pt-1">
                   <span>Total COGS</span>
-                  <span className="text-[#1E3A5F]">₹{Math.round(savedCogs.total_cogs).toLocaleString('en-IN')}</span>
+                  <span className="text-stone-800">₹{Math.round(savedCogs.total_cogs).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between font-medium">
                   <span>Margin vs selling price</span>
@@ -1583,7 +1583,7 @@ export default function OrderDetailPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-medium text-stone-900">Pricing &amp; payment</h2>
               <button onClick={() => setPaymentModal({ mode: 'standalone' })}
-                className="flex items-center gap-1.5 text-xs font-medium text-[#1E3A5F] bg-[#1E3A5F]/5 hover:bg-[#1E3A5F]/10 px-3 py-1.5 rounded-lg">
+                className="flex items-center gap-1.5 text-xs font-medium text-stone-800 bg-stone-800/5 hover:bg-stone-800/10 px-3 py-1.5 rounded-lg">
                 <Plus className="w-3.5 h-3.5" /> Log payment
               </button>
             </div>
@@ -1678,11 +1678,11 @@ export default function OrderDetailPage() {
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-medium text-stone-900 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#1E3A5F]" /> GST Tax Invoices
+                  <FileText className="w-4 h-4 text-stone-800" /> GST Tax Invoices
                 </h2>
                 {isMaster && !invoices.some(inv => inv.status === 'active') && !isCancelled && (
                   <button onClick={() => setGenerateInvoiceOpen(true)}
-                    className="flex items-center gap-1 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] transition-colors">
+                    className="flex items-center gap-1 bg-stone-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-stone-900 transition-colors">
                     <Plus className="w-3.5 h-3.5" /> Generate Invoice
                   </button>
                 )}
@@ -1819,11 +1819,11 @@ export default function OrderDetailPage() {
                 <label className={lbl}>Weight Calculation Method</label>
                 <div className="flex gap-6 mt-1">
                   <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
-                    <input type="radio" name="weightCalcMethodEdit" value="manual" checked={weightCalcMethod === 'manual'} onChange={() => setWeightCalcMethod('manual')} className="text-[#1E3A5F] focus:ring-[#1E3A5F]" />
+                    <input type="radio" name="weightCalcMethodEdit" value="manual" checked={weightCalcMethod === 'manual'} onChange={() => setWeightCalcMethod('manual')} className="text-stone-800 focus:ring-stone-800" />
                     <span>Manual / Sizing Scale</span>
                   </label>
                   <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
-                    <input type="radio" name="weightCalcMethodEdit" value="cad" checked={weightCalcMethod === 'cad'} onChange={() => setWeightCalcMethod('cad')} className="text-[#1E3A5F] focus:ring-[#1E3A5F]" />
+                    <input type="radio" name="weightCalcMethodEdit" value="cad" checked={weightCalcMethod === 'cad'} onChange={() => setWeightCalcMethod('cad')} className="text-stone-800 focus:ring-stone-800" />
                     <span>CAD Alloy-Density Engine</span>
                   </label>
                 </div>
@@ -1937,8 +1937,8 @@ export default function OrderDetailPage() {
                         {getAlloyDensity(form.gold_karat, form.metal_tone || 'yellow').toFixed(2)} g/cm³
                       </div>
 
-                      <div className="border-t border-stone-200 pt-1 font-semibold text-[#1E3A5F]">Casting Weight (Estimated Gross):</div>
-                      <div className="border-t border-stone-200 pt-1 font-semibold text-right text-[#1E3A5F]">
+                      <div className="border-t border-stone-200 pt-1 font-semibold text-stone-800">Casting Weight (Estimated Gross):</div>
+                      <div className="border-t border-stone-200 pt-1 font-semibold text-right text-stone-800">
                         {parseFloat(form.gold_weight_estimated) ? `${parseFloat(form.gold_weight_estimated).toFixed(4)}g` : '—'}
                       </div>
 
@@ -2002,7 +2002,7 @@ export default function OrderDetailPage() {
           <div className="bg-white rounded-2xl border border-stone-200 p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div>
               <h3 className="font-semibold text-stone-900 text-lg flex items-center gap-2">
-                <FileText className="w-5 h-5 text-[#1E3A5F]" />
+                <FileText className="w-5 h-5 text-stone-800" />
                 Generate GST Tax Invoice
               </h3>
               <p className="text-xs text-stone-500 mt-1">
@@ -2104,7 +2104,7 @@ export default function OrderDetailPage() {
                   </div>
                   <div className="flex justify-between font-bold text-stone-900 border-t border-stone-200 pt-1 text-sm">
                     <span>Grand Total:</span>
-                    <span className="text-[#1E3A5F]">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-stone-800">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               )
@@ -2118,7 +2118,7 @@ export default function OrderDetailPage() {
                 Cancel
               </button>
               <button onClick={handleGenerateInvoice} disabled={generatingInvoice}
-                className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-[#162B47] disabled:opacity-50">
+                className="flex-1 bg-stone-800 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-stone-900 disabled:opacity-50">
                 {generatingInvoice ? 'Generating...' : 'Confirm & Generate'}
               </button>
             </div>

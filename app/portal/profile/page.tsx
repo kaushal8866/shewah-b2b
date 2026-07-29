@@ -96,7 +96,7 @@ export default function PartnerProfile() {
         <div>
           <form onSubmit={handleSave} className="space-y-10">
             {message && (
-              <div className={`p-4 border ${message.includes('Failed') ? 'border-[#515255] bg-[#3a3b3e] text-white' : 'border-[#c49c64]/30 bg-[#f7f2ea] text-[#9B7A40]'} text-xs font-medium tracking-widest uppercase`}>
+              <div className={`p-4 border ${message.includes('Failed') ? 'border-stone-600 bg-stone-700 text-white' : 'border-accent/30 bg-stone-50 text-accent-deep'} text-xs font-medium tracking-widest uppercase`}>
                 {message}
               </div>
             )}

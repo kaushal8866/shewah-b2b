@@ -16,7 +16,7 @@ export default function PartnerSignupPage() {
       <header className="bg-white border-b border-stone-100">
         <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-stone-800 flex items-center justify-center">
               <Diamond className="w-4 h-4 text-white" />
             </div>
             <p className="font-semibold text-[15px]">{BRAND.name}</p>
@@ -27,7 +27,7 @@ export default function PartnerSignupPage() {
         </div>
       </header>
       <main className="max-w-2xl mx-auto px-5 py-12 md:py-20">
-        <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">{HERO.eyebrow}</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-stone-800 font-semibold mb-3">{HERO.eyebrow}</p>
         <h1 className="text-3xl md:text-4xl font-serif leading-tight">Apply to become a Shewah partner.</h1>
         <p className="mt-3 text-stone-600">
           Tell us a bit about your store. Your assigned partner manager will reach out on WhatsApp within one business day.
@@ -36,7 +36,7 @@ export default function PartnerSignupPage() {
           <LeadForm multiStep />
         </div>
         <p className="mt-6 text-xs text-stone-500 text-center">
-          Already a partner? <Link href="/login" className="text-[#1E3A5F] underline">Sign in</Link> instead.
+          Already a partner? <Link href="/login" className="text-stone-800 underline">Sign in</Link> instead.
         </p>
       </main>
     </div>

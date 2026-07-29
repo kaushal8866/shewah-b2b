@@ -108,7 +108,7 @@ export default function ManufacturerOrderDetail() {
 
   if (!order) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -208,7 +208,7 @@ export default function ManufacturerOrderDetail() {
           </div>
           <div className="flex items-center gap-3 mt-4">
             <button onClick={handleSave} disabled={saving}
-              className="flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">
+              className="flex items-center gap-2 bg-stone-800 hover:bg-stone-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">
               <Save className="w-4 h-4" />
               {saving ? 'Saving...' : 'Save update'}
             </button>

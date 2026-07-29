@@ -139,7 +139,7 @@ export function CadToastStack({
               <p className="text-xs text-stone-600 mt-0.5">{t.message}</p>
               <Link
                 href={`/cad-requests/${t.cadId}`}
-                className="inline-block text-xs font-medium text-[#1E3A5F] hover:underline mt-1.5"
+                className="inline-block text-xs font-medium text-stone-800 hover:underline mt-1.5"
                 onClick={() => onDismiss(t.key)}
               >
                 View request →

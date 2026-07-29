@@ -453,7 +453,7 @@ export default function MaterialsPage() {
                               <span className="text-[10px] bg-red-50 text-red-500 px-1.5 py-0.5 rounded font-medium">INACTIVE</span>
                             )}
                           </h3>
-                          <p className="text-xs text-[#1E3A5F] font-medium mt-0.5">
+                          <p className="text-xs text-stone-800 font-medium mt-0.5">
                             Labour surcharge: +{finish.labour_surcharge_percent}%
                           </p>
                         </div>
@@ -480,7 +480,7 @@ export default function MaterialsPage() {
                             finish.compatibilities.map((c, i) => {
                               const met = metals.find(m => m.id === c.metal_id)
                               return (
-                                <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-[#1E3A5F]/5 text-[#1E3A5F] border border-[#1E3A5F]/10 font-medium">
+                                <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-stone-800/5 text-stone-800 border border-stone-800/10 font-medium">
                                   {met?.name || 'Unknown Metal'} {c.karat ? `(${c.karat}K)` : '(All)'}
                                 </span>
                               )
@@ -549,7 +549,7 @@ export default function MaterialsPage() {
             </div>
             <div className="flex items-center mt-6">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 accent-[#1E3A5F]"
+                <input type="checkbox" className="w-4 h-4 accent-stone-800"
                   checked={metalForm.is_active} onChange={e => setMetalForm(p => ({ ...p, is_active: e.target.checked }))} />
                 <span className="text-sm font-medium text-stone-700">Active and Configurable</span>
               </label>
@@ -584,7 +584,7 @@ export default function MaterialsPage() {
                     <Input type="number" value={k.sort_order} onChange={e => updateKaratRow(i, 'sort_order', Number(e.target.value))} />
                   </div>
                   <div className="flex items-center self-end mb-2.5">
-                    <input type="checkbox" className="w-4 h-4 accent-[#1E3A5F]"
+                    <input type="checkbox" className="w-4 h-4 accent-stone-800"
                       checked={k.is_active} onChange={e => updateKaratRow(i, 'is_active', e.target.checked)} />
                   </div>
                   <button type="button" onClick={() => removeKaratRow(i)} className="self-end mb-1.5 p-1.5 text-stone-400 hover:text-red-650 hover:bg-stone-100 rounded-lg">
@@ -639,7 +639,7 @@ export default function MaterialsPage() {
             </div>
             <div className="flex items-center">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 accent-[#1E3A5F]"
+                <input type="checkbox" className="w-4 h-4 accent-stone-800"
                   checked={finishForm.is_active} onChange={e => setFinishForm(p => ({ ...p, is_active: e.target.checked }))} />
                 <span className="text-sm font-medium text-stone-700">Active and Configurable</span>
               </label>
@@ -658,14 +658,14 @@ export default function MaterialsPage() {
                   <p className="text-xs font-bold text-stone-800 mb-1.5">{m.name}</p>
                   <div className="space-y-1.5">
                     <label className="flex items-center gap-2 text-xs text-stone-600 cursor-pointer">
-                      <input type="checkbox" className="w-3.5 h-3.5 accent-[#1E3A5F]"
+                      <input type="checkbox" className="w-3.5 h-3.5 accent-stone-800"
                         checked={finishForm.compatibilities.some(c => c.metal_id === m.id && c.karat === null)}
                         onChange={() => toggleFinishCompat(m.id, null)} />
                       <span>All {m.name}</span>
                     </label>
                     {m.karats?.map(k => (
                       <label key={k.id} className="flex items-center gap-2 text-xs text-stone-600 pl-4 cursor-pointer">
-                        <input type="checkbox" className="w-3.5 h-3.5 accent-[#1E3A5F]"
+                        <input type="checkbox" className="w-3.5 h-3.5 accent-stone-800"
                           disabled={finishForm.compatibilities.some(c => c.metal_id === m.id && c.karat === null)}
                           checked={finishForm.compatibilities.some(c => c.metal_id === m.id && c.karat === k.karat)}
                           onChange={() => toggleFinishCompat(m.id, k.karat)} />

@@ -127,7 +127,7 @@ export default function ManufacturingPartnerDetailPage() {
     router.push('/manufacturing')
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
@@ -176,7 +176,7 @@ export default function ManufacturingPartnerDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
@@ -215,7 +215,7 @@ export default function ManufacturingPartnerDetailPage() {
               </a>
             )}
             <Link href={`/manufacturing/orders/new?partner=${id}`}
-              className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#162B47]">
+              className="flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-xl text-sm hover:bg-stone-900">
               <Package className="w-4 h-4" /> New order
             </Link>
             {isMaster && (
@@ -282,7 +282,7 @@ export default function ManufacturingPartnerDetailPage() {
             <div className="bg-white rounded-xl border border-stone-200 p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-medium text-stone-900">Material float balance</h2>
-                <Link href={`/manufacturing/partners/${id}/float`} className="text-xs text-[#1E3A5F] hover:underline">Manage</Link>
+                <Link href={`/manufacturing/partners/${id}/float`} className="text-xs text-stone-800 hover:underline">Manage</Link>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {floats.map(f => (

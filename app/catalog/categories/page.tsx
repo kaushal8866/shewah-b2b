@@ -75,7 +75,7 @@ export default function CategoriesDashboardPage() {
 
         <Link
           href="/catalog/categories/new"
-          className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] transition-all shadow-sm self-start sm:self-center"
+          className="flex items-center gap-2 bg-stone-800 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 transition-all shadow-sm self-start sm:self-center"
         >
           <Plus className="w-4 h-4" />
           Add Category
@@ -99,7 +99,7 @@ export default function CategoriesDashboardPage() {
           </p>
           <Link
             href="/catalog/categories/new"
-            className="inline-flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] transition-all"
+            className="inline-flex items-center gap-2 bg-stone-800 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 transition-all"
           >
             <Plus className="w-4 h-4" />
             Create Category
@@ -155,7 +155,7 @@ export default function CategoriesDashboardPage() {
                       <td className="px-5 py-4 text-right">
                         <Link
                           href={`/catalog/categories/${cat.id}`}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1E3A5F] hover:text-[#162B47] bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-lg transition-all"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-800 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-lg transition-all"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                           Edit Schema

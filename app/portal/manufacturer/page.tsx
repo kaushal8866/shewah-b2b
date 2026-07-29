@@ -48,7 +48,7 @@ export default function ManufacturerPortalHome() {
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/15 text-[#1E3A5F] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-stone-800/15 text-stone-800 flex items-center justify-center">
           <Factory className="w-5 h-5" />
         </div>
         <div>
@@ -88,7 +88,7 @@ export default function ManufacturerPortalHome() {
         <div className="space-y-2">
           {filtered.map(o => (
             <Link key={o.id} href={`/portal/manufacturer/orders/${o.id}`}
-              className="block bg-white border border-stone-200 hover:border-[#1E3A5F] rounded-xl px-4 py-3.5 transition-colors">
+              className="block bg-white border border-stone-200 hover:border-stone-800 rounded-xl px-4 py-3.5 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">

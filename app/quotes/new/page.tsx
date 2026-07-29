@@ -1010,7 +1010,7 @@ function QuoteBuilderForm() {
   }
 
   const labelClass = 'block text-xs font-semibold text-stone-500 mb-1'
-  const inputClass = 'w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white transition-colors'
+  const inputClass = 'w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white transition-colors'
 
   return (
     <div className="p-4 lg:p-7 max-w-7xl mx-auto pb-24">
@@ -1040,15 +1040,15 @@ function QuoteBuilderForm() {
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <label className="text-xs font-medium text-stone-500">Customer Type:</label>
               <button type="button" onClick={() => handleSetCustomerMode('partner')}
-                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${customerMode === 'partner' ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
+                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${customerMode === 'partner' ? 'bg-stone-800 border-stone-800 text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
                 Registered Partner
               </button>
               <button type="button" onClick={() => handleSetCustomerMode('d2c')}
-                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${customerMode === 'd2c' ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
+                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${customerMode === 'd2c' ? 'bg-stone-800 border-stone-800 text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
                 D2C Customer
               </button>
               <button type="button" onClick={() => handleSetCustomerMode('walk_in')}
-                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${customerMode === 'walk_in' ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
+                className={`text-xs px-2.5 py-1 rounded-md border font-medium ${customerMode === 'walk_in' ? 'bg-stone-800 border-stone-800 text-white' : 'bg-white border-stone-200 text-stone-600'}`}>
                 Walk-in customer
               </button>
             </div>
@@ -1097,7 +1097,7 @@ function QuoteBuilderForm() {
                   <button
                     type="button"
                     onClick={() => setShowCreateD2c(true)}
-                    className="bg-[#1E3A5F] hover:bg-[#162B47] text-white text-xs font-semibold px-3 py-2.5 rounded-lg flex items-center gap-1.5 h-[38px] transition-colors"
+                    className="bg-stone-800 hover:bg-stone-900 text-white text-xs font-semibold px-3 py-2.5 rounded-lg flex items-center gap-1.5 h-[38px] transition-colors"
                   >
                     <span>+ New</span>
                   </button>
@@ -1153,7 +1153,7 @@ function QuoteBuilderForm() {
                         type="button" 
                         disabled={creatingD2c} 
                         onClick={handleCreateD2cCustomer} 
-                        className="bg-[#1E3A5F] text-white text-xs font-semibold px-3 py-1 rounded hover:bg-[#162B47] disabled:opacity-50"
+                        className="bg-stone-800 text-white text-xs font-semibold px-3 py-1 rounded hover:bg-stone-900 disabled:opacity-50"
                       >
                         {creatingD2c ? 'Saving...' : 'Register'}
                       </button>
@@ -1215,7 +1215,7 @@ function QuoteBuilderForm() {
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-stone-900 text-sm">Line Items ({items.length})</h2>
               <button type="button" onClick={handleAddItem}
-                className="flex items-center gap-1.5 text-xs text-[#1E3A5F] border border-[#1E3A5F] px-3 py-1.5 rounded-lg hover:bg-stone-50 font-medium">
+                className="flex items-center gap-1.5 text-xs text-stone-800 border border-stone-800 px-3 py-1.5 rounded-lg hover:bg-stone-50 font-medium">
                 <Plus className="w-3.5 h-3.5" /> Add line item
               </button>
             </div>
@@ -1237,7 +1237,7 @@ function QuoteBuilderForm() {
                 {/* Catalog Puller */}
                 <div>
                   <label className="block text-[11px] font-semibold text-stone-400 mb-1">PULL FROM CATALOG (PRESET)</label>
-                  <select className={inputClass + ' border-dashed border-[#1E3A5F]/40'}
+                  <select className={inputClass + ' border-dashed border-stone-800/40'}
                     value={item.product_id || ''} onChange={e => handlePullFromCatalog(item.id, e.target.value)}>
                     <option value="">Choose a catalog design...</option>
                     {products.map(p => (
@@ -1327,7 +1327,7 @@ function QuoteBuilderForm() {
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold text-stone-500">Diamond / Stone Specifications</span>
                     <button type="button" onClick={() => handleAddDiamond(item.id)}
-                      className="flex items-center gap-1 text-[11px] text-[#1E3A5F] border border-[#1E3A5F]/40 px-2.5 py-1 rounded bg-white font-medium hover:bg-stone-50">
+                      className="flex items-center gap-1 text-[11px] text-stone-800 border border-stone-800/40 px-2.5 py-1 rounded bg-white font-medium hover:bg-stone-50">
                       <Plus className="w-3 h-3" /> Add stone row
                     </button>
                   </div>
@@ -1511,13 +1511,13 @@ function QuoteBuilderForm() {
 
             <div className="flex flex-wrap gap-4 py-2 border-t border-b border-stone-50">
               <label className="flex items-center gap-2 text-xs font-semibold text-stone-600 cursor-pointer select-none">
-                <input type="checkbox" className="rounded text-[#1E3A5F] focus:ring-[#1E3A5F] w-4 h-4 border-stone-300"
+                <input type="checkbox" className="rounded text-stone-800 focus:ring-stone-800 w-4 h-4 border-stone-300"
                   checked={showBreakup} onChange={e => setShowBreakup(e.target.checked)} />
                 <span>Show pricing breakup on client PDF</span>
               </label>
 
               <label className="flex items-center gap-2 text-xs font-semibold text-stone-600 cursor-pointer select-none">
-                <input type="checkbox" className="rounded text-[#1E3A5F] focus:ring-[#1E3A5F] w-4 h-4 border-stone-300"
+                <input type="checkbox" className="rounded text-stone-800 focus:ring-stone-800 w-4 h-4 border-stone-300"
                   checked={show24ktColumn} onChange={e => setShow24ktColumn(e.target.checked)} />
                 <span>Show 24kt pure equivalent weight column</span>
               </label>
@@ -1542,7 +1542,7 @@ function QuoteBuilderForm() {
           <div className="sticky top-6 space-y-4">
             
             {/* Live Breakup Summary Card */}
-            <div className="bg-[#1A202C] text-white rounded-xl border border-stone-800 p-5 shadow-lg space-y-4">
+            <div className="bg-stone-900 text-white rounded-xl border border-stone-800 p-5 shadow-lg space-y-4">
               <div className="flex items-center justify-between border-b border-stone-800 pb-2">
                 <h3 className="font-bold text-xs uppercase tracking-wider text-stone-400">Live Breakdown</h3>
                 <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-medium">
@@ -1577,7 +1577,7 @@ function QuoteBuilderForm() {
                 <button
                   type="button"
                   onClick={() => setIsBreakupOpen(true)}
-                  className="w-full mt-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white text-xs font-semibold py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors border border-stone-700"
+                  className="w-full mt-2 bg-stone-800 hover:bg-stone-900 text-white text-xs font-semibold py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors border border-stone-700"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   <span>View Detailed Breakup</span>
@@ -1633,11 +1633,11 @@ function QuoteBuilderForm() {
             <Save className="w-4 h-4" /> Save Draft
           </button>
           <button onClick={handleSaveAndPreview} disabled={saving}
-            className="flex items-center gap-1.5 bg-[#1E3A5F]/10 text-[#1E3A5F] border border-[#1E3A5F]/20 px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#1E3A5F]/20 transition-colors disabled:opacity-50">
+            className="flex items-center gap-1.5 bg-stone-800/10 text-stone-800 border border-stone-800/20 px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-800/20 transition-colors disabled:opacity-50">
             <FileText className="w-4 h-4" /> Save &amp; PDF
           </button>
           <button onClick={handleSaveAndSend} disabled={saving}
-            className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors disabled:opacity-50">
+            className="flex items-center gap-1.5 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 transition-colors disabled:opacity-50">
             <Share2 className="w-4 h-4" /> Save &amp; Send
           </button>
         </div>

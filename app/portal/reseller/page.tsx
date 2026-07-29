@@ -197,7 +197,7 @@ export default function ResellerDashboard() {
         </div>
 
         {/* In Progress Orders */}
-        <div className="bg-[#1E3A5F] text-white p-4 rounded-xl shadow-sm flex flex-col justify-between">
+        <div className="bg-stone-800 text-white p-4 rounded-xl shadow-sm flex flex-col justify-between">
           <div>
             <p className="text-[10px] text-white/60 font-bold uppercase tracking-wider">Active Orders</p>
             <p className="text-3xl font-extrabold mt-1">{activeOrdersCount}</p>

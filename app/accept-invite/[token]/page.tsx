@@ -139,7 +139,7 @@ export default function AcceptInvitationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#111319] flex items-center justify-center text-white p-4">
+      <div className="min-h-screen bg-stone-900 flex items-center justify-center text-white p-4">
         <div className="text-center space-y-3">
           <Diamond className="w-10 h-10 text-amber-500 animate-pulse mx-auto" />
           <p className="text-stone-400 text-sm font-semibold">Verifying your invitation credentials...</p>
@@ -150,8 +150,8 @@ export default function AcceptInvitationPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#111319] flex items-center justify-center p-4">
-        <div className="bg-[#1A1D26] border border-stone-800 rounded-3xl p-8 max-w-md w-full text-center space-y-4 shadow-2xl">
+      <div className="min-h-screen bg-stone-900 flex items-center justify-center p-4">
+        <div className="bg-stone-900 border border-stone-800 rounded-3xl p-8 max-w-md w-full text-center space-y-4 shadow-2xl">
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto" />
           <h2 className="text-white text-lg font-bold">Invitation Error</h2>
           <p className="text-stone-400 text-sm leading-relaxed">{error}</p>
@@ -169,7 +169,7 @@ export default function AcceptInvitationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#111319] flex flex-col justify-center py-12 sm:px-6 lg:px-8 p-4">
+    <div className="min-h-screen bg-stone-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 p-4">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
         <div className="w-12 h-12 rounded-2xl bg-amber-600 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/10">
           <Diamond className="w-6 h-6 text-white" />
@@ -183,7 +183,7 @@ export default function AcceptInvitationPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg">
-        <div className="bg-[#1A1D26] py-8 px-4 border border-stone-800 rounded-3xl shadow-2xl sm:px-10 space-y-6">
+        <div className="bg-stone-900 py-8 px-4 border border-stone-800 rounded-3xl shadow-2xl sm:px-10 space-y-6">
           {/* Progress tracker */}
           {step < 4 && (
             <div className="flex items-center gap-2 pb-2">

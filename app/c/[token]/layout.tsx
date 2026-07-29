@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function ConsumerLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${serif.variable} ${sans.variable} consumer-shell min-h-screen bg-[#FBF7F0] text-[#2A241B]`}>
+    <div className={`${serif.variable} ${sans.variable} consumer-shell min-h-screen bg-white text-stone-800`}>
       {children}
     </div>
   )

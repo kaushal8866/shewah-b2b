@@ -192,7 +192,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 bg-white rounded-xl border border-stone-200">
           <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
             <h2 className="font-medium text-stone-900">Order pipeline</h2>
-            <Link href="/orders" className="text-xs text-[#1E3A5F] hover:underline">View all</Link>
+            <Link href="/orders" className="text-xs text-stone-800 hover:underline">View all</Link>
           </div>
 
           {/* Pipeline funnel */}
@@ -202,7 +202,7 @@ export default function Dashboard() {
                 const count = recentOrders.filter(o => o.status === stage.status).length
                 return (
                   <div key={stage.status} className="flex-1 text-center">
-                    <div className={`rounded py-1.5 text-xs font-medium ${count > 0 ? 'bg-[#1E3A5F] text-white' : 'bg-stone-100 text-stone-400'}`}>
+                    <div className={`rounded py-1.5 text-xs font-medium ${count > 0 ? 'bg-stone-800 text-white' : 'bg-stone-100 text-stone-400'}`}>
                       {count}
                     </div>
                     <p className="text-xs text-stone-400 mt-1 truncate">{stage.label}</p>
@@ -219,7 +219,7 @@ export default function Dashboard() {
             ) : recentOrders.length === 0 ? (
               <div className="px-5 py-8 text-center text-stone-400 text-sm">
                 No orders yet.{' '}
-                <Link href="/orders" className="text-[#1E3A5F] hover:underline">Create first order</Link>
+                <Link href="/orders" className="text-stone-800 hover:underline">Create first order</Link>
               </div>
             ) : (
               recentOrders.map((order) => (
@@ -257,7 +257,7 @@ export default function Dashboard() {
               ].map(({ href, label, icon: Icon }) => (
                 <Link key={href} href={href}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-700 hover:bg-stone-50 hover:text-stone-900 transition-colors">
-                  <Icon className="w-4 h-4 text-[#1E3A5F]" />
+                  <Icon className="w-4 h-4 text-stone-800" />
                   {label}
                 </Link>
               ))}

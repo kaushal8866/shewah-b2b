@@ -78,7 +78,7 @@ export default function ConfiguratorDashboard() {
       description: 'Manage metal alloys (Yellow Gold, Platinum, etc.), karat configurations, and surface textures.',
       href: '/configurator/materials',
       icon: Layers,
-      color: 'bg-[#1E3A5F]/10 text-[#1E3A5F]',
+      color: 'bg-stone-800/10 text-stone-800',
       stat: loading ? '...' : `${metrics.metalsCount} Metals · ${metrics.finishesCount} Finishes`
     },
     {
@@ -135,7 +135,7 @@ export default function ConfiguratorDashboard() {
     <div className="p-4 lg:p-7 max-w-7xl mx-auto">
       <div className="mb-6 lg:mb-8">
         <h1 className="text-2xl lg:text-3xl font-semibold text-stone-900 flex items-center gap-2">
-          <Activity className="w-7 h-7 text-[#1E3A5F]" />
+          <Activity className="w-7 h-7 text-stone-800" />
           Configurator Engine
         </h1>
         <p className="text-stone-500 text-sm mt-1">
@@ -148,14 +148,14 @@ export default function ConfiguratorDashboard() {
           const Icon = section.icon
           return (
             <Link key={idx} href={section.href} className="group">
-              <Card className="h-full border border-stone-200 hover:border-[#1E3A5F]/40 hover:shadow-md transition-all duration-250 cursor-pointer overflow-hidden flex flex-col justify-between">
+              <Card className="h-full border border-stone-200 hover:border-stone-800/40 hover:shadow-md transition-all duration-250 cursor-pointer overflow-hidden flex flex-col justify-between">
                 <div>
                   <CardHeader className="p-5 pb-3">
                     <div className="flex items-center gap-3">
                       <div className={`p-2.5 rounded-xl ${section.color} shrink-0`}>
                         <Icon className="w-5 h-5" />
                       </div>
-                      <CardTitle className="text-base font-semibold text-stone-900 group-hover:text-[#1E3A5F] transition-colors">
+                      <CardTitle className="text-base font-semibold text-stone-900 group-hover:text-stone-800 transition-colors">
                         {section.title}
                       </CardTitle>
                     </div>
@@ -169,7 +169,7 @@ export default function ConfiguratorDashboard() {
                   <span className="text-[10px] uppercase tracking-wider font-semibold text-stone-400">
                     {section.stat}
                   </span>
-                  <span className="flex items-center gap-1 text-xs font-medium text-[#1E3A5F] group-hover:translate-x-1 transition-transform">
+                  <span className="flex items-center gap-1 text-xs font-medium text-stone-800 group-hover:translate-x-1 transition-transform">
                     Manage <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>

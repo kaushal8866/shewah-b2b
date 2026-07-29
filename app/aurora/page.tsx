@@ -33,9 +33,9 @@ export default function AuroraHubPage() {
   }, [])
 
   return (
-    <div className="p-4 lg:p-8 bg-[#0B0F17] min-h-screen text-stone-100 font-sans">
+    <div className="p-4 lg:p-8 bg-stone-950 min-h-screen text-stone-100 font-sans">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] rounded-3xl p-6 lg:p-8 border border-stone-800 shadow-2xl mb-8 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 rounded-3xl p-6 lg:p-8 border border-stone-800 shadow-2xl mb-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono mb-3">
@@ -92,7 +92,7 @@ export default function AuroraHubPage() {
               <Link
                 key={ws.id}
                 href={`/aurora/${ws.id}`}
-                className="bg-[#161F30] hover:bg-[#1E293B] p-5 rounded-2xl border border-stone-800 hover:border-stone-700 transition-all group flex flex-col justify-between"
+                className="bg-stone-900 hover:bg-stone-800 p-5 rounded-2xl border border-stone-800 hover:border-stone-700 transition-all group flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">

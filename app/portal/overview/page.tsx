@@ -67,11 +67,11 @@ export default function PartnerOverview() {
             <p className="text-4xl font-serif">{activeCads.length}</p>
           </div>
         </div>
-        <div className="bg-[#f2e8d5]/40 p-8 border hover:border-[#c49c64]/30 transition-colors border-[#c49c64]/20 shadow-ambient flex flex-col justify-between h-48">
-          <ShieldCheck className="w-6 h-6 text-[#9B7A40] mb-4" />
+        <div className="bg-stone-50/40 p-8 border hover:border-accent/30 transition-colors border-accent/20 shadow-ambient flex flex-col justify-between h-48">
+          <ShieldCheck className="w-6 h-6 text-accent-deep mb-4" />
           <div>
-            <h3 className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#9B7A40] mb-1">System Status</h3>
-            <p className="text-lg font-serif text-[#C49C64] mt-2 leading-none">Optimal</p>
+            <h3 className="text-[10px] uppercase tracking-[0.2em] font-bold text-accent-deep mb-1">System Status</h3>
+            <p className="text-lg font-serif text-accent mt-2 leading-none">Optimal</p>
           </div>
         </div>
       </div>
@@ -118,7 +118,7 @@ export default function PartnerOverview() {
                 <div key={cad.id} className="bg-surface-lowest p-5 border border-outline-variant/20">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-semibold text-primary">{cad.request_number}</span>
-                    <span className={`text-[9px] uppercase tracking-widest px-2 py-1 ${cad.status === 'pending' ? 'bg-surface-low text-secondary' : 'bg-[#e2e2e5] text-primary'}`}>
+                    <span className={`text-[9px] uppercase tracking-widest px-2 py-1 ${cad.status === 'pending' ? 'bg-surface-low text-secondary' : 'bg-stone-200 text-primary'}`}>
                       {cad.status.replace(/_/g, ' ')}
                     </span>
                   </div>

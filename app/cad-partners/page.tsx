@@ -171,7 +171,7 @@ export default function CadPartnersPage() {
     load()
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   const activePartners = partners.filter(p => p.is_active)
@@ -182,7 +182,7 @@ export default function CadPartnersPage() {
       <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold text-stone-900 flex items-center gap-2">
-            <BookUser className="w-6 h-6 text-[#1E3A5F]" /> CAD partners
+            <BookUser className="w-6 h-6 text-stone-800" /> CAD partners
           </h1>
           <p className="text-stone-500 text-sm mt-0.5">
             Directory of recurring CAD vendors. Pick them from a dropdown when generating a share link instead of retyping name and number.
@@ -190,7 +190,7 @@ export default function CadPartnersPage() {
         </div>
         <button
           onClick={() => { setShowNew(true); setError(null) }}
-          className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47]"
+          className="flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900"
         >
           <Plus className="w-4 h-4" /> Add CAD partner
         </button>
@@ -238,7 +238,7 @@ export default function CadPartnersPage() {
                 <button
                   onClick={() => adoptSuggestion(s)}
                   disabled={adoptingKey === s.key}
-                  className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] disabled:opacity-50 shrink-0"
+                  className="flex items-center gap-1.5 bg-stone-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-stone-900 disabled:opacity-50 shrink-0"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   {adoptingKey === s.key ? 'Adding…' : 'Add to directory'}
@@ -288,7 +288,7 @@ export default function CadPartnersPage() {
           </div>
           <div className="flex gap-2">
             <button onClick={createPartner} disabled={busy}
-              className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+              className="flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
               <Save className="w-4 h-4" /> {busy ? 'Saving…' : 'Save partner'}
             </button>
             <button onClick={() => { setShowNew(false); setDraft(blank); setError(null) }}
@@ -310,7 +310,7 @@ export default function CadPartnersPage() {
           </p>
           <button
             onClick={() => setShowNew(true)}
-            className="inline-flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47]"
+            className="inline-flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900"
           >
             <Plus className="w-4 h-4" /> Add your first CAD partner
           </button>
@@ -375,7 +375,7 @@ function PartnerCard({
   onDelete: () => void
   busy: boolean
 }) {
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -410,7 +410,7 @@ function PartnerCard({
           </div>
           <div className="flex gap-2">
             <button onClick={onSaveEdit} disabled={busy}
-              className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+              className="flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
               <Save className="w-4 h-4" /> {busy ? 'Saving…' : 'Save changes'}
             </button>
             <button onClick={onCancelEdit}
@@ -483,7 +483,7 @@ function PartnerCard({
                         : ' · not yet opened'}
                     </span>
                     <Link href={`/cad-requests/${l.cad_request_id}`}
-                      className="flex items-center gap-1 text-[#1E3A5F] hover:underline shrink-0">
+                      className="flex items-center gap-1 text-stone-800 hover:underline shrink-0">
                       <ExternalLink className="w-3 h-3" /> Open CAD request
                     </Link>
                   </li>
@@ -509,7 +509,7 @@ function PartnerCard({
                           </span>
                           <span className="text-stone-400"> · {formatDate(r.responded_at)}</span>
                           {' · '}
-                          <Link href={`/cad-requests/${r.cad_request_id}`} className="text-[#1E3A5F] hover:underline">
+                          <Link href={`/cad-requests/${r.cad_request_id}`} className="text-stone-800 hover:underline">
                             view CAD
                           </Link>
                         </p>

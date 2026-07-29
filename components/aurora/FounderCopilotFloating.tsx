@@ -139,7 +139,7 @@ export default function FounderCopilotFloating() {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#0F172A] text-white px-4 py-3 rounded-full shadow-2xl border border-amber-500/40 hover:border-amber-400 hover:scale-105 transition-all group"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-stone-900 text-white px-4 py-3 rounded-full shadow-2xl border border-amber-500/40 hover:border-amber-400 hover:scale-105 transition-all group"
       >
         <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center text-stone-950 font-bold shadow-sm">
           <Sparkles className="w-4 h-4 text-stone-950 animate-pulse" />
@@ -150,9 +150,9 @@ export default function FounderCopilotFloating() {
 
       {/* Drawer Overlay */}
       {isOpen && (
-        <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[450px] bg-[#0F172A] text-stone-100 shadow-2xl border-l border-stone-800 flex flex-col justify-between animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[450px] bg-stone-900 text-stone-100 shadow-2xl border-l border-stone-800 flex flex-col justify-between animate-in slide-in-from-right duration-200">
           {/* Header */}
-          <div className="p-4 border-b border-stone-800 bg-[#1E293B] flex items-center justify-between">
+          <div className="p-4 border-b border-stone-800 bg-stone-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-stone-950 font-bold">
                 <BrainCircuit className="w-5 h-5 text-stone-950" />
@@ -180,8 +180,8 @@ export default function FounderCopilotFloating() {
                 <div
                   className={`max-w-[90%] p-3.5 rounded-2xl ${
                     msg.role === 'user'
-                      ? 'bg-[#1E3A5F] text-white rounded-br-none'
-                      : 'bg-[#1E293B] text-stone-200 border border-stone-800 rounded-bl-none'
+                      ? 'bg-stone-800 text-white rounded-br-none'
+                      : 'bg-stone-800 text-stone-200 border border-stone-800 rounded-bl-none'
                   }`}
                 >
                   <p className="leading-relaxed whitespace-pre-line">{msg.text}</p>
@@ -226,7 +226,7 @@ export default function FounderCopilotFloating() {
             ))}
 
             {loading && (
-              <div className="flex items-center gap-2 text-stone-400 bg-[#1E293B] p-3 rounded-2xl border border-stone-800 max-w-[80%]">
+              <div className="flex items-center gap-2 text-stone-400 bg-stone-800 p-3 rounded-2xl border border-stone-800 max-w-[80%]">
                 <Cpu className="w-4 h-4 text-amber-400 animate-spin" />
                 <span className="text-xs font-mono">CIO Orchestrating 17 AI Agents...</span>
               </div>
@@ -234,7 +234,7 @@ export default function FounderCopilotFloating() {
           </div>
 
           {/* Input Footer */}
-          <div className="p-3 border-t border-stone-800 bg-[#1E293B]">
+          <div className="p-3 border-t border-stone-800 bg-stone-800">
             <div className="flex items-center gap-2 bg-stone-900 border border-stone-700 rounded-xl px-3 py-2">
               <input
                 type="text"

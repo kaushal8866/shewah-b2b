@@ -1,104 +1,213 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Shewah Design System — tokens
+   Measured values. Greys are pure (no hue bias); that neutrality
+   is what lets a single accent read as the only color in the app.
+   ============================================================ */
 :root {
-  --primary:        #1E3A5F;
-  --primary-strong: #162B47;
-  --surface-base:   #F5F6F8;
-  --surface-low:    #EEF0F4;
+  --ground:        #FFFFFF;
+  --surface:       #F5F5F5;
+  --inverse:       #222222;
+
+  --ink:           #222222;
+  --ink-strong:    #111111;
+  --ink-muted:     #666666;
+  --ink-meta:      #7D7D7D;   /* 4.12:1 — metadata only, never body text */
+  --ink-inverse:   #FFFFFF;
+
+  --rule:          #E6E6E6;
+  --rule-quiet:    #CCCCCC;
+  --rule-strong:   #111111;
+
+  --accent:        #788C40;
+  --accent-deep:   #5F7033;
+
+  --sem-issue:     #8C3A32;
+  --sem-good:      #4A6B32;
+  --sem-warn:      #8A6410;
+
+  --ease:          cubic-bezier(0.4, 0, 0.2, 1);
+  --dur:           240ms;
+
+  /* Legacy aliases — kept so any stray var() reference still resolves. */
+  --primary:        #222222;
+  --primary-strong: #111111;
+  --surface-base:   #FFFFFF;
+  --surface-low:    #F5F5F5;
   --surface-lowest: #FFFFFF;
-  --surface-high:   #1C2333;
-  --on-surface:     #1A1F2E;
-  --on-surface-mut: #5C6478;
-  --outline-variant:#E5E8EE;
+  --surface-high:   #222222;
+  --on-surface:     #222222;
+  --on-surface-mut: #666666;
+  --outline-variant:#E6E6E6;
 }
 
 html, body {
-  background-color: var(--surface-base);
-  color: var(--on-surface);
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--ground);
+  color: var(--ink);
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
-h1, h2, h3, h4, h5, h6, .font-display {
-  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.01em;
+/* The serif is reserved for editorial headlines and the names of pieces —
+   it is opted into with `font-serif`, never applied to headings wholesale. */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  letter-spacing: normal;
 }
 
-/* Numeric / metric values */
-.font-metric, .metric-value {
-  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: 'tnum';
-  letter-spacing: -0.02em;
+.font-display, .display {
+  font-family: 'Cormorant Garamond', 'Hoefler Text', Baskerville, Georgia, serif;
+  font-weight: 400;
 }
 
-/* Smooth in-page anchor scrolling, disabled for users who prefer reduced motion */
-@media (prefers-reduced-motion: no-preference) {
-  html { scroll-behavior: smooth; }
+/* ============================================================
+   Emphasis comes from tracking, not weight
+   ============================================================ */
+.eyebrow { font-size: 16px; line-height: 24px; text-transform: uppercase; letter-spacing: 1.9px; }
+.label-cta { font-size: 13px; line-height: 20px; text-transform: uppercase; letter-spacing: 1.5px; }
+.label-nav { font-size: 13px; line-height: 19.5px; text-transform: uppercase; letter-spacing: 1.43px; }
+.label-micro { font-size: 10px; line-height: 16px; text-transform: uppercase; letter-spacing: 1.2px; }
+
+/* The signature component: tracked uppercase over a hairline. No fill, no box. */
+.cta {
+  display: inline-block;
+  font-size: 13px;
+  line-height: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule-strong);
+  color: var(--ink);
+  background: none;
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.cta:hover { border-bottom-color: var(--accent); color: var(--ink-strong); }
+.cta--quiet { border-bottom-color: var(--rule-quiet); color: var(--ink-muted); }
+.cta--quiet:hover { border-bottom-color: var(--accent); color: var(--ink); }
+
+/* ============================================================
+   FUNCTIONAL TIER
+   The system's answer to dense data. Same palette, same family, same
+   zero radius as the editorial tier — but weight 500/600 and tabular
+   figures are permitted here, because a 200-row table has to stay
+   scannable and 400-weight low-contrast grey does not survive that.
+   Use ONLY on operational screens (tables, dashboards, ledgers).
+   ============================================================ */
+.font-metric, .metric-value, .num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+}
+
+.data-table { width: 100%; font-variant-numeric: tabular-nums; }
+.data-table th {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--ink-muted);
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+.data-table td {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rule);
+}
+.data-table tbody tr:hover { background: var(--surface); }
+.data-table .cell-num { text-align: right; font-variant-numeric: tabular-nums; }
+.data-table .cell-strong { font-weight: 500; color: var(--ink-strong); }
+
+/* Wide data must scroll in its own container, never the page body. */
+.scroller { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ============================================================
+   Surfaces — elevation is a ground change plus a rule, not depth
+   ============================================================ */
+.card {
+  @apply bg-white p-5;
+  border: 1px solid var(--rule);
+}
+.metric-card {
+  @apply bg-white p-5 flex flex-col gap-1;
+  border: 1px solid var(--rule);
+}
+.feature-card {
+  @apply bg-white p-5 relative overflow-hidden;
+  border: 1px solid var(--rule);
+}
+.feature-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; bottom: 0;
+  width: 2px;
+  background: var(--accent);
+}
+
+/* Rectangular. Wording carries the state; color only reinforces it. */
+.status-pill {
+  @apply inline-flex items-center px-2.5 py-1 text-[10px] uppercase;
+  letter-spacing: 1.2px;
+  border: 1px solid currentColor;
+}
+
+/* Flat, not gradient. */
+.btn-primary-grad {
+  background: var(--inverse);
+  color: var(--ink-inverse);
+  border: 1px solid var(--inverse);
+}
+.btn-primary-grad:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #FFFFFF;
+}
+
+/* `glass` is retained as a flat opaque surface so the floating bars that
+   still reference it keep working; backdrop blur has no place in the system. */
+.glass {
+  background: var(--ground);
+  border-bottom: 1px solid var(--rule);
+}
+.glass-dark {
+  background: var(--inverse);
+  color: var(--ink-inverse);
+}
+
+/* ============================================================
+   Focus — a visible accent ring, not a soft halo
+   ============================================================ */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  html { scroll-behavior: auto; }
 }
 
 /* Calmer scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D5D9E2; border-radius: 6px; }
-::-webkit-scrollbar-thumb:hover { background: #B7BEC9; }
-
-/* Ghost focus ring — soft navy halo, no hard outline */
-input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.16);
-  border-color: #1E3A5F;
-}
-
-/* Status pill base */
-.status-pill {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium;
-}
-
-/* Card — surface-lowest sitting on surface-low, no border */
-.card {
-  @apply bg-white rounded-xl p-5;
-}
-.metric-card {
-  @apply bg-white rounded-xl p-5 flex flex-col gap-1;
-}
-
-/* Data Feature Card — optional 4px primary accent bar on the left */
-.feature-card {
-  @apply bg-white rounded-xl p-5 relative overflow-hidden;
-}
-.feature-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; bottom: 0;
-  width: 4px;
-  background: linear-gradient(180deg, #2C5180 0%, #1E3A5F 100%);
-  border-radius: 4px 0 0 4px;
-}
-
-/* Glassmorphism — used on the floating top/bottom bars */
-.glass {
-  background: linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.62) 100%);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-}
-.glass-dark {
-  background: linear-gradient(180deg, rgba(28,35,51,0.85) 0%, rgba(15,22,38,0.7) 100%);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-}
-
-/* Primary button gradient utility */
-.btn-primary-grad {
-  background-image: linear-gradient(135deg, #2C5180 0%, #1E3A5F 100%);
-  color: white;
-}
-.btn-primary-grad:hover {
-  background-image: linear-gradient(135deg, #1E3A5F 0%, #162B47 100%);
-}
+::-webkit-scrollbar-thumb { background: var(--rule-quiet); }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-meta); }
 
 /* Mobile touch improvements */
 @media (max-width: 1023px) {
@@ -106,23 +215,22 @@ input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible
   input, select, textarea { font-size: 16px !important; }
 }
 
-/* Safe area for iPhone notch */
 .safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0); }
 
-/* Print styles */
 @media print {
   nav, header, aside, .print\:hidden { display: none !important; }
   body { background: white; }
   .print\:block { display: block !important; }
 }
 
-/* Touch-friendly tap targets */
 @media (max-width: 1023px) {
   a, button { min-height: 44px; }
-  .status-pill { padding: 4px 10px; font-size: 12px; min-height: 0; }
+  .status-pill { padding: 4px 10px; font-size: 10px; min-height: 0; }
 }
 
-/* Price Breakup Drawer (rkkpb) Styles */
+/* ============================================================
+   Price Breakup Drawer (rkkpb) — retargeted onto the tokens
+   ============================================================ */
 .rkkpb-drawer {
   position: fixed;
   top: 0;
@@ -130,12 +238,12 @@ input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible
   bottom: 0;
   width: 100%;
   max-width: 440px;
-  background: #ffffff;
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  background: var(--ground);
+  border-left: 1px solid var(--rule);
   z-index: 100;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.3s var(--ease);
   transform: translateX(100%);
 }
 .rkkpb-drawer[aria-hidden="false"] {
@@ -145,11 +253,10 @@ input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible
 .rkkpb-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(17, 17, 17, 0.4);
   z-index: 99;
   opacity: 0;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.25s var(--ease);
   pointer-events: none;
 }
 .rkkpb-overlay.active {
@@ -162,39 +269,36 @@ input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #f3f4f6;
-  background: #ffffff;
+  border-bottom: 1px solid var(--rule);
+  background: var(--ground);
 }
 
 .rkkpb-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1a1f2e;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 400;
+  color: var(--ink);
   margin: 0;
-  font-family: 'Manrope', sans-serif;
 }
 
 .rkkpb-close {
   width: 2rem;
   height: 2rem;
-  border-radius: 50%;
-  background: #000000;
-  color: #ffffff;
-  border: none;
-  font-size: 1.5rem;
-  font-weight: 300;
+  background: none;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  font-size: 1.25rem;
+  font-weight: 400;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   line-height: 1;
-  transition: background-color 0.2s;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
   padding: 0;
-  margin-top: -2px;
 }
-.rkkpb-close:hover {
-  background: #27272a;
-}
+.rkkpb-close:hover { background: var(--inverse); color: var(--ink-inverse); }
 
 .rkkpb-content {
   flex: 1;
@@ -212,40 +316,32 @@ input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible
 }
 
 .rkkpb-heading {
-  font-size: 0.85rem;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-family: 'Manrope', sans-serif;
+  letter-spacing: 1.2px;
+  color: var(--ink-muted);
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 .rkkpb-heading--gold {
-  color: #B48E33;
+  color: var(--accent);
 }
 .rkkpb-heading--gold::before {
   content: '';
   display: inline-block;
-  width: 3px;
+  width: 2px;
   height: 1rem;
-  background-color: #B48E33;
-  border-radius: 2px;
+  background-color: var(--accent);
 }
 
-.rkkpb-heading-clean {
-  justify-content: space-between;
-}
-.rkkpb-arrow-btn {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
+.rkkpb-heading-clean { justify-content: space-between; }
+.rkkpb-arrow-btn { font-size: 1rem; font-weight: 400; }
 
 .rkkpb-table {
-  border: 1px solid #e5e7eb;
-  border-radius: 1rem;
-  overflow: hidden;
-  background: #ffffff;
+  border: 1px solid var(--rule);
+  background: var(--ground);
   display: flex;
   flex-direction: column;
 }
@@ -253,112 +349,97 @@ input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible
 .rkkpb-row {
   display: grid;
   grid-template-columns: 2.2fr 1fr 1fr 1.2fr;
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 0.85rem;
-  color: #374151;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+  color: var(--ink);
   align-items: center;
+  font-variant-numeric: tabular-nums;
 }
-.rkkpb-row:last-child {
-  border-bottom: none;
-}
+.rkkpb-row:last-child { border-bottom: none; }
 
 .rkkpb-row--head {
-  background: #f9fafb;
-  font-weight: 700;
-  color: #1f2937;
-  font-size: 0.8rem;
+  background: var(--surface);
+  font-weight: 500;
+  color: var(--ink-muted);
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  border-bottom: 1px solid #e5e7eb;
+  letter-spacing: 1.2px;
+  border-bottom: 1px solid var(--rule);
 }
 
-.rkkpb-row div:not(:first-child) {
-  text-align: right;
-}
+.rkkpb-row div:not(:first-child) { text-align: right; }
 
-/* Totals table styling */
 .rkkpb-table--totals {
-  border-color: #e5e7eb;
-  background: #ffffff;
+  border-color: var(--rule);
+  background: var(--ground);
   padding: 0.25rem 0;
   gap: 0;
 }
 .rkkpb-table--totals .rkkpb-row {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--rule);
   padding: 0.75rem 1rem;
-  color: #4b5563;
-  font-size: 0.88rem;
+  color: var(--ink-muted);
+  font-size: 13px;
 }
 .rkkpb-table--totals .rkkpb-row div:not(:first-child) {
-  font-weight: 600;
-  color: #1f2937;
+  font-weight: 500;
+  color: var(--ink);
 }
 
-/* Specific rows in totals */
 .rkkpb-table--totals .rkkpb-row [data-field="rkk_discount"] {
-  color: #16a34a !important;
+  color: var(--sem-good) !important;
 }
 .rkkpb-table--totals .rkkpb-row:has([data-field="rkk_discount"]) {
-  border: 1px solid #bdf0d4;
-  background-color: #f0fdf4;
-  border-radius: 0.5rem;
+  border: 1px solid var(--rule);
+  background-color: var(--surface);
   margin: 0.25rem 0.5rem;
   padding: 0.625rem 0.75rem;
 }
 .rkkpb-row--final {
-  background: #f3f4f6;
-  font-weight: 800 !important;
-  color: #111827 !important;
-  border-top: 1px solid #e5e7eb;
+  background: var(--surface);
+  font-weight: 500 !important;
+  color: var(--ink-strong) !important;
+  border-top: 1px solid var(--rule);
   margin-top: 0.25rem;
   border-bottom: none !important;
 }
-.rkkpb-row--final div:first-child {
-  font-weight: 800;
-}
+.rkkpb-row--final div:first-child { font-weight: 500; }
 .rkkpb-row--final div:last-child {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #111827;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-strong);
 }
 
-/* Diamond scrollable table */
 .rkkpb-diamond-scroll {
   overflow-x: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 1rem;
-  background: #ffffff;
+  border: 1px solid var(--rule);
+  background: var(--ground);
 }
 
 .rkkpb-table--diamond {
   min-width: 500px;
   border: none;
-  border-radius: 0;
 }
 
 .rkkpb-row--dia {
   grid-template-columns: repeat(7, 1fr) !important;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--rule);
 }
-.rkkpb-row--dia:last-child {
-  border-bottom: none;
-}
-.rkkpb-row--dia div {
-  text-align: left !important;
-}
+.rkkpb-row--dia:last-child { border-bottom: none; }
+.rkkpb-row--dia div { text-align: left !important; }
 
 .rkkpb-row--total {
-  background: #f9fafb;
-  font-weight: 700;
-  color: #111827;
-  border-top: 1px solid #e5e7eb;
+  background: var(--surface);
+  font-weight: 500;
+  color: var(--ink-strong);
+  border-top: 1px solid var(--rule);
 }
 
 .rkkpb-disclaimer {
-  font-size: 0.78rem;
-  color: #6b7280;
+  font-size: 12px;
+  color: var(--ink-meta);
   line-height: 1.4;
 }

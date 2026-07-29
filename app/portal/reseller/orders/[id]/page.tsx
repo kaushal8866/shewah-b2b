@@ -550,7 +550,7 @@ export default function ResellerOrderDetail() {
                 <button
                   type="button"
                   onClick={() => setShowQR(!showQR)}
-                  className="w-full bg-[#1E3A5F] hover:bg-[#162B47] text-white text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1"
+                  className="w-full bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1"
                 >
                   <CreditCard className="w-3.5 h-3.5" /> {showQR ? 'Hide UPI QR Code' : 'Display UPI QR Code'}
                 </button>

@@ -352,7 +352,7 @@ export default function ResellerShareLinks() {
                             href={storefrontUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="p-1 hover:bg-stone-100 rounded text-stone-500 hover:text-[#1E3A5F]"
+                            className="p-1 hover:bg-stone-100 rounded text-stone-500 hover:text-stone-800"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>

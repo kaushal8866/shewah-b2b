@@ -116,7 +116,7 @@ export default function CustomerJourneyPanel({ orderId, customerId }: { orderId:
           <button
             disabled={busy || !customerId}
             onClick={create}
-            className="bg-[#1E3A5F] hover:bg-[#162B47] text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-40">
+            className="bg-stone-800 hover:bg-stone-900 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-40">
             {busy ? 'Creating...' : 'Create journey link'}
           </button>
           {!customerId && (
@@ -165,7 +165,7 @@ export default function CustomerJourneyPanel({ orderId, customerId }: { orderId:
                 className="w-20 border border-stone-200 rounded-md px-2 py-1.5 text-sm" />
               <span className="text-xs text-stone-500">more days</span>
               <button onClick={extend} disabled={busy}
-                className="bg-[#1E3A5F] text-white text-xs font-medium px-3 py-1.5 rounded-md hover:bg-[#162B47] disabled:opacity-40">
+                className="bg-stone-800 text-white text-xs font-medium px-3 py-1.5 rounded-md hover:bg-stone-900 disabled:opacity-40">
                 {busy ? 'Saving...' : 'Save'}
               </button>
               <button onClick={() => setShowExtend(false)}

@@ -59,7 +59,7 @@ export default function RetailerReadyToShipPage() {
   return (
     <div className="p-4 lg:p-7 max-w-6xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/15 text-[#1E3A5F] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-stone-800/15 text-stone-800 flex items-center justify-center">
           <Package className="w-5 h-5" />
         </div>
         <div>
@@ -96,7 +96,7 @@ export default function RetailerReadyToShipPage() {
                   <p className="text-xs text-stone-400">{it.product?.code || 'Ready piece'}</p>
                   <p className="text-sm font-medium text-stone-800 truncate">{it.product?.name || `${it.karat}kt piece`}</p>
                   <p className="text-xs text-stone-500 mt-0.5">{it.karat}kt · {Number(it.gross_weight).toFixed(2)}g</p>
-                  <p className="text-sm font-semibold text-[#1E3A5F] mt-1 flex items-center gap-1">
+                  <p className="text-sm font-semibold text-stone-800 mt-1 flex items-center gap-1">
                     <Tag className="w-3 h-3" /> ₹{Number(it.list_price).toLocaleString('en-IN')}
                   </p>
                   {myStatus && (
@@ -111,7 +111,7 @@ export default function RetailerReadyToShipPage() {
                     </p>
                   )}
                   <button onClick={() => { setOpenItem(it); setOfferPrice(String(it.list_price)); setOfferNote('') }}
-                    className="w-full mt-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white text-xs font-medium py-2 rounded-lg flex items-center justify-center gap-1">
+                    className="w-full mt-2 bg-stone-800 hover:bg-stone-900 text-white text-xs font-medium py-2 rounded-lg flex items-center justify-center gap-1">
                     <Send className="w-3 h-3" /> {myStatus ? 'Revise offer' : 'Make an offer'}
                   </button>
                 </div>
@@ -137,7 +137,7 @@ export default function RetailerReadyToShipPage() {
               <button onClick={() => setOpenItem(null)}
                 className="flex-1 border border-stone-200 text-stone-600 py-2.5 rounded-xl text-sm">Cancel</button>
               <button onClick={submitOffer} disabled={submitting}
-                className="flex-1 bg-[#1E3A5F] hover:bg-[#162B47] text-white py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                className="flex-1 bg-stone-800 hover:bg-stone-900 text-white py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
                 {submitting ? 'Sending...' : 'Submit offer'}
               </button>
             </div>

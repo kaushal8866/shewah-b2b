@@ -373,7 +373,7 @@ export default function ResellerMessagesPage() {
                       className={`p-3 rounded-2xl text-xs border leading-relaxed shadow-sm ${
                         isAdmin
                           ? 'bg-white border-stone-200 text-stone-850 rounded-tl-none'
-                          : 'bg-[#1E3A5F] border-transparent text-white rounded-tr-none'
+                          : 'bg-stone-800 border-transparent text-white rounded-tr-none'
                       }`}
                     >
                       <p className="whitespace-pre-line font-medium">{m.body}</p>

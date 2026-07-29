@@ -238,7 +238,7 @@ export default function CashBookPage() {
   const categoriesOfCurrentType = getCategoriesByType(txnType)
   const pinnedIds = txnType === 'income' ? PINNED_INCOME_CATEGORIES : PINNED_EXPENSE_CATEGORIES
 
-  const inputStyle = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] outline-none transition-all"
+  const inputStyle = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 focus:ring-1 focus:ring-stone-800 outline-none transition-all"
   const labelStyle = "block text-xs font-semibold text-stone-600 mb-1"
 
   return (
@@ -246,7 +246,7 @@ export default function CashBookPage() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-stone-200 pb-5">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#1E3A5F] to-[#2E5E8A] flex items-center justify-center text-white shadow-md">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-stone-800 to-stone-700 flex items-center justify-center text-white shadow-md">
             <Wallet className="w-6 h-6" />
           </div>
           <div>
@@ -480,7 +480,7 @@ export default function CashBookPage() {
                 type="button"
                 onClick={() => handleSave(false)}
                 disabled={submitting || !amount}
-                className="px-5 py-2.5 rounded-lg text-white bg-[#1E3A5F] hover:bg-[#162B47] font-medium text-sm disabled:opacity-55 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                className="px-5 py-2.5 rounded-lg text-white bg-stone-800 hover:bg-stone-900 font-medium text-sm disabled:opacity-55 transition-colors flex items-center justify-center gap-2 shadow-sm"
               >
                 {submitting ? 'Saving...' : 'Save Transaction'}
               </button>

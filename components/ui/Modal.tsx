@@ -30,20 +30,32 @@ export function Modal({ open, onClose, title, children, size = 'md', className }
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm" onClick={onClose}>
+    // No backdrop blur — the scrim is a flat ink wash.
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40"
+      onClick={onClose}
+      role="presentation"
+    >
       <div
-        className={cn('w-full bg-white rounded-2xl shadow-modal overflow-hidden', sizes[size], className)}
+        className={cn('w-full bg-white border border-stone-200 overflow-hidden', sizes[size], className)}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 pt-5 pb-3">
-            <h2 className="font-display font-semibold text-lg text-stone-900 tracking-tight">{title}</h2>
-            <button onClick={onClose} className="text-stone-400 hover:text-stone-700 p-1 rounded-lg" aria-label="Close">
-              <X className="w-5 h-5" />
+          <div className="flex items-center justify-between gap-4 border-b border-stone-200 px-6 py-4">
+            <h2 className="font-normal uppercase tracking-cta text-[13px] text-stone-800">{title}</h2>
+            <button
+              onClick={onClose}
+              className="border border-stone-200 p-1.5 text-stone-500 transition-colors hover:bg-stone-800 hover:text-white"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}
-        <div className="px-6 pb-6">{children}</div>
+        <div className="p-6">{children}</div>
       </div>
     </div>
   )

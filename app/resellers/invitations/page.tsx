@@ -219,7 +219,7 @@ export default function ResellerInvitationsPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-colors shadow-sm"
+              className="w-full flex items-center justify-center gap-2 bg-stone-800 hover:bg-stone-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-colors shadow-sm"
             >
               <Send className="w-4 h-4" />
               {submitting ? 'Generating link...' : 'Create Invite Link'}

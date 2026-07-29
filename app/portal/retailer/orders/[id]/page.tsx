@@ -248,7 +248,7 @@ export default function RetailerOrderDetail() {
               </div>
               {canEdit && !pending && (
                 <button onClick={openChangeModal}
-                  className="text-sm bg-[#1E3A5F] text-white px-3.5 py-2 rounded-lg hover:bg-[#16304F]">
+                  className="text-sm bg-stone-800 text-white px-3.5 py-2 rounded-lg hover:bg-stone-800">
                   Request changes
                 </button>
               )}
@@ -295,7 +295,7 @@ export default function RetailerOrderDetail() {
         <div className="bg-white rounded-xl border border-stone-200 p-5 mb-4">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
             <h2 className="font-medium text-stone-900 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#C49C64]" /> CAD design for your review
+              <Sparkles className="w-4 h-4 text-accent" /> CAD design for your review
             </h2>
             {cadStatus === 'approved' && (
               <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
@@ -346,7 +346,7 @@ export default function RetailerOrderDetail() {
                       ? 'bg-green-500'
                       : r.kind === 'revision_request'
                       ? 'bg-amber-500'
-                      : 'bg-[#C49C64]'
+                      : 'bg-accent'
                   const label =
                     r.kind === 'approval'
                       ? 'You approved the design'
@@ -422,7 +422,7 @@ export default function RetailerOrderDetail() {
               <button
                 onClick={() => submitCadAction('approve')}
                 disabled={submitting}
-                className="bg-[#C49C64] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50"
+                className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-deep disabled:opacity-50"
               >
                 {submitting ? 'Saving...' : 'Approve design'}
               </button>
@@ -452,7 +452,7 @@ export default function RetailerOrderDetail() {
               return (
                 <div key={s.value} className="flex items-center gap-3">
                   {done || active ? (
-                    <CheckCircle2 className={`w-5 h-5 shrink-0 ${active ? 'text-[#1E3A5F]' : 'text-green-500'}`} />
+                    <CheckCircle2 className={`w-5 h-5 shrink-0 ${active ? 'text-stone-800' : 'text-green-500'}`} />
                   ) : (
                     <Circle className="w-5 h-5 text-stone-200 shrink-0" />
                   )}
@@ -589,30 +589,30 @@ export default function RetailerOrderDetail() {
               <div>
                 <label className="text-xs text-stone-500 block mb-1">Quantity</label>
                 <input type="number" min={1} max={999} value={crQty} onChange={e => setCrQty(e.target.value)}
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none" />
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none" />
               </div>
               <div>
                 <label className="text-xs text-stone-500 block mb-1">Ring size</label>
                 <input type="text" value={crRingSize} onChange={e => setCrRingSize(e.target.value)} maxLength={20}
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none" />
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none" />
               </div>
               <div>
                 <label className="text-xs text-stone-500 block mb-1">Notes for Shewah</label>
                 <textarea value={crNotes} onChange={e => setCrNotes(e.target.value)} rows={2} maxLength={1000}
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none resize-none" />
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none resize-none" />
               </div>
               {order.type === 'custom' && (
                 <div>
                   <label className="text-xs text-stone-500 block mb-1">Brief / description</label>
                   <textarea value={crBrief} onChange={e => setCrBrief(e.target.value)} rows={3} maxLength={2000}
-                    className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none resize-none" />
+                    className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none resize-none" />
                 </div>
               )}
               <div>
                 <label className="text-xs text-stone-500 block mb-1">Why are you requesting this change? (optional)</label>
                 <textarea value={crNote} onChange={e => setCrNote(e.target.value)} rows={2} maxLength={1000}
                   placeholder="e.g. End customer changed her mind on size."
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none resize-none" />
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none resize-none" />
               </div>
             </div>
             {crError && (
@@ -626,7 +626,7 @@ export default function RetailerOrderDetail() {
                 Cancel
               </button>
               <button onClick={submitChangeRequest} disabled={crSubmitting}
-                className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#16304F] disabled:opacity-50">
+                className="flex-1 bg-stone-800 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-stone-800 disabled:opacity-50">
                 {crSubmitting ? 'Submitting...' : 'Submit request'}
               </button>
             </div>
@@ -653,7 +653,7 @@ export default function RetailerOrderDetail() {
               rows={4}
               maxLength={2000}
               placeholder="e.g. Make the centre stone slightly larger and switch to a hidden halo."
-              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#C49C64] outline-none resize-none mb-1"
+              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-accent outline-none resize-none mb-1"
             />
             <p className="text-[11px] text-stone-400 mb-4">{feedback.length}/2000</p>
             {actionError && (
@@ -668,7 +668,7 @@ export default function RetailerOrderDetail() {
               </button>
               <button onClick={() => submitCadAction('revise')}
                 disabled={submitting || !feedback.trim()}
-                className="flex-1 bg-[#C49C64] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50">
+                className="flex-1 bg-accent text-white py-2.5 rounded-xl text-sm font-medium hover:bg-accent-deep disabled:opacity-50">
                 {submitting ? 'Sending...' : 'Send to design team'}
               </button>
             </div>

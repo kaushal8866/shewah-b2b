@@ -1,9 +1,11 @@
 export { Button } from './Button'
 export type { ButtonProps } from './Button'
-export { Input, Textarea, Select } from './Input'
-export { Card, CardHeader, CardTitle } from './Card'
+export { Input, Textarea, Select, Label, Field, FieldHelp } from './Input'
+export { Card, CardHeader, CardTitle, CardDisplayTitle } from './Card'
 export type { CardProps } from './Card'
 export { StatusPill } from './StatusPill'
 export type { StatusPillProps } from './StatusPill'
 export { Modal } from './Modal'
 export type { ModalProps } from './Modal'
+// Functional tier — operational screens only.
+export { DataTable, TableScroller, Th, Td, Tr } from './DataTable'

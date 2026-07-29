@@ -31,7 +31,7 @@ export default function CircuitsPage() {
 
   const ProgressBar = ({ value }: { value: number }) => (
     <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
-      <div className="h-full bg-[#1E3A5F] rounded-full transition-all"
+      <div className="h-full bg-stone-800 rounded-full transition-all"
         style={{ width: `${value}%` }} />
     </div>
   )
@@ -53,7 +53,7 @@ export default function CircuitsPage() {
           <p className="text-stone-500 text-sm mt-0.5">B2B visit trip planner</p>
         </div>
         <Link href="/circuits/new"
-          className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
+          className="flex items-center gap-2 bg-stone-800 text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 transition-colors">
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Plan circuit</span>
           <span className="sm:hidden">New</span>
@@ -82,7 +82,7 @@ export default function CircuitsPage() {
         <div className="text-center py-16">
           <MapPin className="w-10 h-10 text-stone-200 mx-auto mb-3" />
           <p className="text-stone-400 text-sm">No circuits planned yet</p>
-          <Link href="/circuits/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">
+          <Link href="/circuits/new" className="inline-block mt-3 text-sm text-stone-800 hover:underline">
             Plan your first circuit →
           </Link>
         </div>

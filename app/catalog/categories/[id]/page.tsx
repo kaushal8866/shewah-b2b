@@ -185,7 +185,7 @@ export default function EditCategoryPage() {
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 mb-4">
           Error: {error}
         </div>
-        <Link href="/catalog/categories" className="text-sm font-semibold text-[#1E3A5F] hover:underline">
+        <Link href="/catalog/categories" className="text-sm font-semibold text-stone-800 hover:underline">
           Back to Categories
         </Link>
       </div>
@@ -268,7 +268,7 @@ export default function EditCategoryPage() {
             </div>
             <button
               onClick={addField}
-              className="flex items-center gap-1 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#162B47] transition-all"
+              className="flex items-center gap-1 bg-stone-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-stone-900 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Field
@@ -487,7 +487,7 @@ export default function EditCategoryPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-stone-800 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors shadow-sm"
           >
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Save Category'}

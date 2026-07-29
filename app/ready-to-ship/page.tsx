@@ -47,7 +47,7 @@ export default function ReadyToShipPage() {
   return (
     <div className="p-4 lg:p-7">
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/15 text-[#1E3A5F] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-stone-800/15 text-stone-800 flex items-center justify-center">
           <Package className="w-5 h-5" />
         </div>
         <div>
@@ -60,7 +60,7 @@ export default function ReadyToShipPage() {
         {STATUS_TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key as 'available' | 'sold' | 'withdrawn')}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t.key ? 'border-[#1E3A5F] text-stone-900' : 'border-transparent text-stone-500 hover:text-stone-800'
+              tab === t.key ? 'border-stone-800 text-stone-900' : 'border-transparent text-stone-500 hover:text-stone-800'
             }`}>
             {t.label}
           </button>
@@ -81,7 +81,7 @@ export default function ReadyToShipPage() {
             const photo = it.photos?.[0] || it.product?.photo_urls?.[0]
             return (
               <Link key={it.id} href={`/ready-to-ship/${it.id}`}
-                className="block bg-white border border-stone-200 hover:border-[#1E3A5F] rounded-xl overflow-hidden transition-colors">
+                className="block bg-white border border-stone-200 hover:border-stone-800 rounded-xl overflow-hidden transition-colors">
                 <div className="aspect-square bg-stone-100 relative overflow-hidden">
                   {photo ? (
                     <img src={photo} alt={it.product?.name || ''} className="w-full h-full object-cover" />
@@ -101,7 +101,7 @@ export default function ReadyToShipPage() {
                   <p className="text-sm font-medium text-stone-800 truncate">{it.product?.name || 'Unnamed piece'}</p>
                   <div className="flex items-center justify-between mt-2">
                     <p className="text-xs text-stone-500">{it.karat}kt · {Number(it.gross_weight).toFixed(2)}g</p>
-                    <p className="text-sm font-semibold text-[#1E3A5F] flex items-center gap-1">
+                    <p className="text-sm font-semibold text-stone-800 flex items-center gap-1">
                       <Tag className="w-3 h-3" /> ₹{Number(it.list_price).toLocaleString('en-IN')}
                     </p>
                   </div>

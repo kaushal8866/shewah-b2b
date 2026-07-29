@@ -222,7 +222,7 @@ export default function NewCategoryPage() {
             </div>
             <button
               onClick={addField}
-              className="flex items-center gap-1 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#162B47] transition-all"
+              className="flex items-center gap-1 bg-stone-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-stone-900 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Field
@@ -441,7 +441,7 @@ export default function NewCategoryPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-stone-800 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors shadow-sm"
           >
             <Save className="w-4 h-4" />
             {saving ? 'Creating...' : 'Create Category'}

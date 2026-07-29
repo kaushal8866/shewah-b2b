@@ -293,7 +293,7 @@ export default function RulesPage() {
 
     return (
       <span className="text-stone-700 text-xs">
-        <code className="bg-stone-100 text-[#1E3A5F] px-1 rounded font-bold font-mono">{cond.field}</code>{' '}
+        <code className="bg-stone-100 text-stone-800 px-1 rounded font-bold font-mono">{cond.field}</code>{' '}
         <span className="text-stone-500 font-medium">{opLabel}</span>{' '}
         <code className="bg-stone-150 text-stone-850 px-1 rounded font-bold">{values.value}</code>
       </span>
@@ -340,7 +340,7 @@ export default function RulesPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-semibold text-stone-900 truncate">{rule.name}</h3>
-                  <span className="text-[10px] bg-[#1E3A5F]/10 text-[#1E3A5F] px-2 py-0.5 rounded-md font-bold uppercase">
+                  <span className="text-[10px] bg-stone-800/10 text-stone-800 px-2 py-0.5 rounded-md font-bold uppercase">
                     {rule.rule_type}
                   </span>
                   {rule.category && (
@@ -514,7 +514,7 @@ export default function RulesPage() {
 
           <div className="flex justify-between items-center border-t border-stone-150 pt-4 mt-6">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="w-4 h-4 accent-[#1E3A5F]"
+              <input type="checkbox" className="w-4 h-4 accent-stone-800"
                 checked={ruleForm.is_active} onChange={e => setRuleForm(p => ({ ...p, is_active: e.target.checked }))} />
               <span className="text-sm font-medium text-stone-700">Enable this rule</span>
             </label>
@@ -538,7 +538,7 @@ export default function RulesPage() {
             <textarea
               value={testConfigText}
               onChange={e => setTestConfigText(e.target.value)}
-              className="w-full font-mono text-xs bg-stone-50 border border-stone-200 rounded-xl p-3 h-44 outline-none focus:bg-white focus:border-[#1E3A5F]"
+              className="w-full font-mono text-xs bg-stone-50 border border-stone-200 rounded-xl p-3 h-44 outline-none focus:bg-white focus:border-stone-800"
             />
           </div>
 

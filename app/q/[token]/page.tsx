@@ -152,8 +152,8 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF7F0] flex flex-col items-center justify-center p-4">
-        <div className="w-10 h-10 border-4 border-[#C9A86A]/35 border-t-[#C9A86A] rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-accent/35 border-t-accent rounded-full animate-spin"></div>
         <p className="mt-4 text-xs font-serif italic text-stone-500 tracking-wide">Retrieving your quotation details...</p>
       </div>
     )
@@ -162,7 +162,7 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
   // Error views (Link Expired / Invalid)
   if (errorMsg) {
     return (
-      <div className="min-h-screen bg-[#FAF7F0] flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
         <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 border border-amber-200 mb-5">
           <AlertTriangle className="w-8 h-8" />
         </div>
@@ -183,16 +183,16 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
   const clientCity = quote.partners ? quote.partners.city : quote.walk_in_city
 
   return (
-    <div className="min-h-screen bg-[#FAF7F0] text-stone-800 font-sans pb-24">
+    <div className="min-h-screen bg-white text-stone-800 font-sans pb-24">
       
       {/* Brand Header */}
-      <header className="border-b border-[#C9A86A]/20 bg-white py-4 px-4 shadow-sm flex items-center justify-between sticky top-0 z-30">
+      <header className="border-b border-accent/20 bg-white py-4 px-4 shadow-sm flex items-center justify-between sticky top-0 z-30">
         <div>
-          <span className="font-serif font-bold text-lg tracking-wider text-[#C9A86A]">SHEWAH</span>
+          <span className="font-serif font-bold text-lg tracking-wider text-accent">SHEWAH</span>
           <span className="text-[9px] block uppercase tracking-widest text-stone-400 font-medium">B2B Fine Jewellery</span>
         </div>
         <a href={`/api/quotes/share/${token}/pdf?download=1`}
-          className="flex items-center gap-1.5 px-3 py-1.5 border border-[#C9A86A]/30 text-xs font-semibold text-[#C9A86A] rounded-lg bg-[#FAF7F0]/30 hover:bg-[#FAF7F0]">
+          className="flex items-center gap-1.5 px-3 py-1.5 border border-accent/30 text-xs font-semibold text-accent rounded-lg bg-white/30 hover:bg-white">
           <Download className="w-3.5 h-3.5" /> PDF
         </a>
       </header>
@@ -201,8 +201,8 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
       <div className="max-w-4xl mx-auto p-4 space-y-6">
         
         {/* Greetings Panel */}
-        <div className="bg-white rounded-2xl border border-[#C9A86A]/15 p-5 shadow-sm space-y-2">
-          <span className="text-[10px] bg-[#C9A86A]/10 text-[#C9A86A] border border-[#C9A86A]/20 px-2 py-0.5 rounded-full font-semibold">
+        <div className="bg-white rounded-2xl border border-accent/15 p-5 shadow-sm space-y-2">
+          <span className="text-[10px] bg-accent/10 text-accent border border-accent/20 px-2 py-0.5 rounded-full font-semibold">
             OFFICIAL QUOTATION
           </span>
           <h1 className="text-xl font-serif font-bold text-stone-800">
@@ -214,7 +214,7 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
             <strong className="font-semibold">{new Date(quote.valid_until).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong>.
           </p>
           {quote.cover_note && (
-            <div className="border-l-2 border-[#C9A86A] pl-3 py-1 text-xs text-stone-600 font-serif italic mt-3 bg-[#FAF5EC]/30">
+            <div className="border-l-2 border-accent pl-3 py-1 text-xs text-stone-600 font-serif italic mt-3 bg-stone-50/30">
               "{quote.cover_note}"
             </div>
           )}
@@ -230,22 +230,22 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
           />
           {/* Mobile: prominent download button instead of tiny iframe */}
           <div className="sm:hidden w-full h-full flex flex-col items-center justify-center gap-4 p-6">
-            <div className="w-16 h-16 bg-[#C9A86A]/10 border border-[#C9A86A]/20 rounded-2xl flex items-center justify-center">
-              <FileText className="w-8 h-8 text-[#C9A86A]" />
+            <div className="w-16 h-16 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center">
+              <FileText className="w-8 h-8 text-accent" />
             </div>
             <div className="text-center">
               <p className="font-serif font-bold text-stone-800 text-base">Your Quotation is Ready</p>
               <p className="text-stone-500 text-xs mt-1">Tap below to open the full PDF with all details</p>
             </div>
             <a href={`/api/quotes/share/${token}/pdf`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-[#C9A86A] text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-md hover:bg-[#B39356] transition-colors">
+              className="flex items-center gap-2 bg-accent text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-md hover:bg-accent transition-colors">
               <Download className="w-4 h-4" /> Open Full PDF
             </a>
           </div>
         </div>
 
         {/* Compact Totals Strip */}
-        <div className="bg-white rounded-2xl border border-[#C9A86A]/15 p-4 shadow-sm">
+        <div className="bg-white rounded-2xl border border-accent/15 p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <div className="flex items-center gap-6">
               <div>
@@ -263,19 +263,19 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
             </div>
             <div className="text-right">
               <span className="text-xs text-stone-400 block">Grand Total</span>
-              <span className="font-serif font-bold text-xl text-[#C9A86A]">₹ {quote.grand_total.toLocaleString('en-IN')}</span>
+              <span className="font-serif font-bold text-xl text-accent">₹ {quote.grand_total.toLocaleString('en-IN')}</span>
             </div>
           </div>
         </div>
 
         {/* Client Responses Panel */}
         {responseMode === 'view' && (
-          <div className="bg-white rounded-2xl border border-[#C9A86A]/15 p-5 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl border border-accent/15 p-5 shadow-sm space-y-4">
             <h3 className="font-serif font-bold text-stone-800 border-b border-stone-100 pb-2 text-sm">Do you approve this quotation?</h3>
             
             <div className="flex flex-col sm:flex-row gap-3">
               <button onClick={handleAccept} disabled={actionLoading}
-                className="flex-1 flex items-center justify-center gap-2 bg-[#C9A86A] text-white py-3 rounded-xl font-bold hover:bg-[#B39356] transition-colors shadow-md disabled:opacity-50">
+                className="flex-1 flex items-center justify-center gap-2 bg-accent text-white py-3 rounded-xl font-bold hover:bg-accent transition-colors shadow-md disabled:opacity-50">
                 <Check className="w-4 h-4" /> Accept &amp; Approve Quote
               </button>
               
@@ -288,14 +288,14 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
         )}
 
         {responseMode === 'request_changes' && (
-          <div className="bg-white rounded-2xl border border-[#C9A86A]/15 p-5 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl border border-accent/15 p-5 shadow-sm space-y-4">
             <h3 className="font-serif font-bold text-stone-800 border-b border-stone-100 pb-2 text-sm">Request Revision</h3>
             <p className="text-xs text-stone-500 font-light">
               Describe the adjustments or weight/size changes you require. Our designers will revise and notify you.
             </p>
             
             <textarea
-              className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:border-[#C9A86A] outline-none min-h-[100px] resize-none"
+              className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:border-accent outline-none min-h-[100px] resize-none"
               placeholder="e.g. Please change karat to 22K for the second item, or adjust size to 16..."
               value={revisionNote}
               onChange={e => setRevisionNote(e.target.value)}
@@ -307,7 +307,7 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
                 Back
               </button>
               <button onClick={handleRequestChanges} disabled={actionLoading}
-                className="flex items-center gap-1.5 bg-[#C9A86A] text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-[#B39356]">
+                className="flex items-center gap-1.5 bg-accent text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-accent">
                 <Send className="w-3.5 h-3.5" /> Submit Request
               </button>
             </div>

@@ -341,7 +341,7 @@ export default function ResellerMarketingPage() {
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-black text-sm text-[#1E3A5F]">{c.code}</span>
+                          <span className="font-mono font-black text-sm text-stone-800">{c.code}</span>
                           <span className="text-[9px] bg-amber-50 border border-amber-200 text-amber-700 font-bold px-2 py-0.5 rounded">
                             {c.discount_type === 'percent' ? `${c.discount_value}% OFF` : `₹${c.discount_value} OFF`}
                           </span>

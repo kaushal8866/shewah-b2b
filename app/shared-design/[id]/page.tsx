@@ -47,9 +47,9 @@ export default function PortalProductPage() {
   const RING_SIZES = ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22']
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F6F8]">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50">
       <div className="text-center">
-        <div className="w-12 h-12 rounded-xl bg-[#1E3A5F] flex items-center justify-center mx-auto mb-3">
+        <div className="w-12 h-12 rounded-xl bg-stone-800 flex items-center justify-center mx-auto mb-3">
           <span className="text-white text-xl font-bold">S</span>
         </div>
         <p className="text-stone-500 text-sm">Loading design...</p>
@@ -58,7 +58,7 @@ export default function PortalProductPage() {
   )
 
   if (!product) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F6F8]">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50">
       <div className="text-center px-6">
         <p className="text-stone-400 text-lg mb-2">Design not found</p>
         <p className="text-stone-300 text-sm">This design may be unavailable or the link may be incorrect</p>
@@ -67,11 +67,11 @@ export default function PortalProductPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#F5F6F8]">
+    <div className="min-h-screen bg-stone-50">
       {/* Header */}
-      <header className="bg-[#1A1F2E] px-5 py-4 flex items-center justify-between">
+      <header className="bg-stone-900 px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center">
             <span className="text-white font-bold text-sm">S</span>
           </div>
           <div>
@@ -92,7 +92,7 @@ export default function PortalProductPage() {
 
         {/* Product code badge */}
         <div className="text-center mb-4">
-          <span className="text-xs text-[#162B47] bg-[#F2E8D5] px-3 py-1 rounded-full font-medium">
+          <span className="text-xs text-stone-900 bg-stone-50 px-3 py-1 rounded-full font-medium">
             {product.code}
           </span>
         </div>
@@ -109,7 +109,7 @@ export default function PortalProductPage() {
                 <div className="flex gap-2 p-3 overflow-x-auto">
                   {product.photo_urls.map((url: string, i: number) => (
                     <button key={i} onClick={() => setSelectedImage(i)}
-                      className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-colors ${selectedImage === i ? 'border-[#1E3A5F]' : 'border-transparent'}`}>
+                      className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-colors ${selectedImage === i ? 'border-stone-800' : 'border-transparent'}`}>
                       <img src={url} alt="" className="w-full h-full object-cover" />
                     </button>
                   ))}
@@ -155,7 +155,7 @@ export default function PortalProductPage() {
               <button key={k} onClick={() => setSelectedKarat(k)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all ${
                   selectedKarat === k
-                    ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
+                    ? 'bg-stone-800 text-white border-stone-800'
                     : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
                 }`}>
                 {k}K Gold
@@ -175,7 +175,7 @@ export default function PortalProductPage() {
               <button key={s} onClick={() => setSelectedSize(s)}
                 className={`w-10 h-10 rounded-lg text-sm font-medium border transition-all ${
                   selectedSize === s
-                    ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
+                    ? 'bg-stone-800 text-white border-stone-800'
                     : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'
                 }`}>
                 {s}
@@ -186,11 +186,11 @@ export default function PortalProductPage() {
         </div>
 
         {/* Delivery info */}
-        <div className="bg-[#F2E8D5] rounded-xl p-4 mb-6 flex items-center gap-3">
+        <div className="bg-stone-50 rounded-xl p-4 mb-6 flex items-center gap-3">
           <div className="text-2xl">◆</div>
           <div>
-            <p className="text-sm font-medium text-[#0F1F33]">Made-to-order in Surat</p>
-            <p className="text-xs text-[#162B47]">Each piece is custom made · Delivery in {product.delivery_days || 14}–{(product.delivery_days || 14) + 7} days · BIS Hallmarked · IGI Certified</p>
+            <p className="text-sm font-medium text-stone-900">Made-to-order in Surat</p>
+            <p className="text-xs text-stone-900">Each piece is custom made · Delivery in {product.delivery_days || 14}–{(product.delivery_days || 14) + 7} days · BIS Hallmarked · IGI Certified</p>
           </div>
         </div>
 

@@ -228,7 +228,7 @@ export default function ManufacturingOrderDetailPage() {
     router.push('/manufacturing')
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
@@ -280,7 +280,7 @@ export default function ManufacturingOrderDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
@@ -429,7 +429,7 @@ export default function ManufacturingOrderDetailPage() {
                           <Link
                             href={requestHref}
                             title="Opens the receive form pre-filled — log a vendor purchase or adjustment to clear this shortage."
-                            className="text-xs px-2 py-1 rounded-lg border border-[#1E3A5F] text-[#1E3A5F] hover:bg-yellow-50">
+                            className="text-xs px-2 py-1 rounded-lg border border-stone-800 text-stone-800 hover:bg-yellow-50">
                             Request stock
                           </Link>
                         )}
@@ -464,7 +464,7 @@ export default function ManufacturingOrderDetailPage() {
               )}
               <div className="flex justify-between font-semibold text-stone-900 pt-2 border-t border-stone-200">
                 <span>Total manufacturing cost</span>
-                <span className="text-[#1E3A5F]">₹{order.total_manufacturing_cost?.toLocaleString('en-IN') || '—'}</span>
+                <span className="text-stone-800">₹{order.total_manufacturing_cost?.toLocaleString('en-IN') || '—'}</span>
               </div>
             </div>
           </div>
@@ -474,7 +474,7 @@ export default function ManufacturingOrderDetailPage() {
             <div className="flex items-start justify-between mb-3 gap-2">
               <div>
                 <h2 className="font-medium text-stone-900 flex items-center gap-2">
-                  <Link2 className="w-4 h-4 text-[#1E3A5F]" />
+                  <Link2 className="w-4 h-4 text-stone-800" />
                   Karigar pack link
                 </h2>
                 <p className="text-xs text-stone-400 mt-0.5">Send the assets to {order.manufacturing_partners?.name || 'the karigar'} on WhatsApp. Link auto-expires in 48 hours.</p>
@@ -529,7 +529,7 @@ export default function ManufacturingOrderDetailPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button onClick={() => createOrRefreshLink(true, true)} disabled={shareBusy}
-                    className="flex items-center gap-1.5 text-xs bg-[#1E3A5F] hover:bg-[#162B47] text-white px-3 py-1.5 rounded-lg disabled:opacity-50">
+                    className="flex items-center gap-1.5 text-xs bg-stone-800 hover:bg-stone-900 text-white px-3 py-1.5 rounded-lg disabled:opacity-50">
                     <Send className="w-3.5 h-3.5" /> Re-send same link
                   </button>
                   <button onClick={() => createOrRefreshLink(false, false)} disabled={shareBusy}
@@ -544,7 +544,7 @@ export default function ManufacturingOrderDetailPage() {
               </div>
             ) : (
               <button onClick={() => createOrRefreshLink(true)} disabled={shareBusy}
-                className="flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">
+                className="flex items-center gap-2 bg-stone-800 hover:bg-stone-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">
                 <Send className="w-4 h-4" />
                 {shareBusy ? 'Sending...' : 'Send karigar pack on WhatsApp'}
               </button>
@@ -682,7 +682,7 @@ export default function ManufacturingOrderDetailPage() {
                   </div>
                   <div className="flex justify-between font-semibold text-stone-900">
                     <span>Total manufacturing cost</span>
-                    <span className="text-[#1E3A5F]">₹{totalMfgCost.toLocaleString('en-IN')}</span>
+                    <span className="text-stone-800">₹{totalMfgCost.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               )}
@@ -699,7 +699,7 @@ export default function ManufacturingOrderDetailPage() {
                 <label className="flex items-center gap-2 cursor-pointer text-sm text-stone-700">
                   <input type="checkbox" checked={form.material_from_float || false}
                     onChange={e => set('material_from_float', e.target.checked)}
-                    className="w-4 h-4 accent-[#1E3A5F]" />
+                    className="w-4 h-4 accent-stone-800" />
                   Material from float
                 </label>
               </div>

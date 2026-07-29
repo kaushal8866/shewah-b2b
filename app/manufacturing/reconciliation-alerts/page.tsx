@@ -219,7 +219,7 @@ export default function ReconciliationAlertsPage() {
 
   const today = istToday()
 
-  const inp = 'w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/30'
+  const inp = 'w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-stone-800/30'
   const lbl = 'block text-xs font-medium text-stone-600 mb-1'
 
   return (
@@ -230,12 +230,12 @@ export default function ReconciliationAlertsPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-semibold text-stone-900 flex items-center gap-2">
-            <Bell className="w-5 h-5 text-[#1E3A5F]" /> Karigar reconciliation digest
+            <Bell className="w-5 h-5 text-stone-800" /> Karigar reconciliation digest
           </h1>
           <p className="text-stone-500 text-sm truncate">Daily heads-up for partners with notable variance, negative balances, or unlinked consumption.</p>
         </div>
         <button onClick={runNow} disabled={running}
-          className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-60">
+          className="flex items-center gap-2 bg-stone-800 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-60">
           <Play className="w-4 h-4" /> {running ? 'Running…' : 'Run digest now'}
         </button>
       </div>
@@ -278,7 +278,7 @@ export default function ReconciliationAlertsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link href={`/manufacturing/partners/${f.partner_id}/reconciliation`}
-                      className="text-sm font-medium text-[#1E3A5F] hover:underline">
+                      className="text-sm font-medium text-stone-800 hover:underline">
                       {f.partner_name}
                     </Link>
                     {f.city && <span className="text-xs text-stone-400">{f.city}</span>}
@@ -340,7 +340,7 @@ export default function ReconciliationAlertsPage() {
 {digest.message}
           </pre>
           <p className="text-xs text-stone-400 mt-2">
-            Sends to {whatsappTo ? <span className="text-stone-600">{whatsappTo}</span> : <span>your saved WhatsApp number (set in <Link href="/settings" className="text-[#1E3A5F] underline">Settings</Link>)</span>}.
+            Sends to {whatsappTo ? <span className="text-stone-600">{whatsappTo}</span> : <span>your saved WhatsApp number (set in <Link href="/settings" className="text-stone-800 underline">Settings</Link>)</span>}.
           </p>
         </div>
       )}
@@ -349,10 +349,10 @@ export default function ReconciliationAlertsPage() {
       <div className="bg-white rounded-xl border border-stone-200 p-4 mb-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-medium text-stone-900 text-sm flex items-center gap-2">
-            <Settings2 className="w-4 h-4 text-[#1E3A5F]" /> Alert thresholds
+            <Settings2 className="w-4 h-4 text-stone-800" /> Alert thresholds
           </h3>
           <button onClick={saveThresholds} disabled={savingThresholds}
-            className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] disabled:opacity-60">
+            className="flex items-center gap-1.5 bg-stone-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-stone-900 disabled:opacity-60">
             <Save className="w-3.5 h-3.5" /> {savedFlash ? 'Saved' : (savingThresholds ? 'Saving…' : 'Save')}
           </button>
         </div>
@@ -442,7 +442,7 @@ export default function ReconciliationAlertsPage() {
                   {rows.map((r: any) => (
                     <div key={r.id} className="flex items-center gap-2 text-xs flex-wrap">
                       <Link href={`/manufacturing/partners/${r.partner_id}/reconciliation`}
-                        className="text-[#1E3A5F] hover:underline font-medium">
+                        className="text-stone-800 hover:underline font-medium">
                         {partnerNames[r.partner_id] || r.partner_id.slice(0, 8)}
                       </Link>
                       {(r.triggered_reasons || []).map((reason: string) => {

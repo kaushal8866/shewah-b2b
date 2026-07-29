@@ -189,7 +189,7 @@ export default function ReadyToShipDetailPage() {
                         className="border border-stone-200 rounded-lg px-3 py-2 text-sm" />
                       <div className="sm:col-span-2 flex gap-2">
                         <button onClick={() => decide(o.id, 'counter')} disabled={busyOffer === o.id}
-                          className="flex-1 bg-[#1E3A5F] text-white py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+                          className="flex-1 bg-stone-800 text-white py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
                           Send counter
                         </button>
                         <button onClick={() => { setCounterFor(null); setCounterPrice(''); setCounterNote('') }}

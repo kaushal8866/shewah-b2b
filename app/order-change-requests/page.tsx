@@ -117,7 +117,7 @@ export default function OrderChangeRequestsInboxPage() {
               <Link
                 key={r.id}
                 href={r.order ? `/orders/${r.order.id}` : '#'}
-                className="block bg-white border border-stone-200 hover:border-[#1E3A5F]/40 hover:shadow-sm transition rounded-2xl p-4"
+                className="block bg-white border border-stone-200 hover:border-stone-800/40 hover:shadow-sm transition rounded-2xl p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">

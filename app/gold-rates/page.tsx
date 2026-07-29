@@ -180,7 +180,7 @@ export default function GoldRatesPage() {
 
   const cogs = (parseFloat(calcDiamond) || 0) + goldCost + (parseFloat(calcMaking) || 0) + (parseFloat(calcIGI) || 0)
 
-  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
 
   return (
     <div className="p-4 lg:p-7">
@@ -251,7 +251,7 @@ export default function GoldRatesPage() {
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-4 flex items-center gap-2">
-              <Plus className="w-4 h-4 text-[#1E3A5F]" />
+              <Plus className="w-4 h-4 text-stone-800" />
               Update today's rate
             </h2>
             <div className="space-y-6">
@@ -303,7 +303,7 @@ export default function GoldRatesPage() {
                       <label className="block text-[10px] font-medium text-stone-400 mb-0.5 text-center">{k}kt</label>
                       <input
                         type="number" inputMode="decimal" step="1" min="0"
-                        className="w-full border border-stone-200 rounded-md px-1.5 py-1 text-xs text-center focus:border-[#1E3A5F] outline-none"
+                        className="w-full border border-stone-200 rounded-md px-1.5 py-1 text-xs text-center focus:border-stone-800 outline-none"
                         value={retailLabour[k]}
                         onChange={e => setRetailLabour(prev => ({ ...prev, [k]: e.target.value }))}
                         placeholder="—" />
@@ -319,7 +319,7 @@ export default function GoldRatesPage() {
               </div>
 
               <button onClick={saveRate} disabled={saving || !newRate24k}
-                className="w-full flex items-center justify-center gap-2 bg-[#1E3A5F] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-40 transition-colors">
+                className="w-full flex items-center justify-center gap-2 bg-stone-800 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-40 transition-colors">
                 <Save className="w-4 h-4" />
                 {saving ? 'Saving...' : 'Save rate'}
               </button>
@@ -394,7 +394,7 @@ export default function GoldRatesPage() {
         {/* Trade price calculator */}
         <div className="bg-white rounded-xl border border-stone-200 p-5">
           <h2 className="font-medium text-stone-900 mb-4 flex items-center gap-2">
-            <Calculator className="w-4 h-4 text-[#1E3A5F]" />
+            <Calculator className="w-4 h-4 text-stone-800" />
             Trade price calculator
           </h2>
           {!latest && (
@@ -460,7 +460,7 @@ export default function GoldRatesPage() {
                 <span>Margin ({calcMargin}%)</span>
                 <span>₹{Math.round(cogs * parseFloat(calcMargin) / 100).toLocaleString('en-IN')}</span>
               </div>
-              <div className="bg-[#1E3A5F] rounded-lg p-3 flex justify-between items-center">
+              <div className="bg-stone-800 rounded-lg p-3 flex justify-between items-center">
                 <span className="text-white font-medium">Trade price</span>
                 <span className="text-white text-2xl font-semibold">₹{tradePrice.toLocaleString('en-IN')}</span>
               </div>

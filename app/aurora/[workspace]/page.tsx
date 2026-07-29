@@ -43,7 +43,7 @@ export default function AuroraWorkspacePage() {
   const title = workspaceTitles[workspace] || 'AURORA Workspace'
 
   return (
-    <div className="p-4 lg:p-8 bg-[#0B0F17] min-h-screen text-stone-100 font-sans">
+    <div className="p-4 lg:p-8 bg-stone-950 min-h-screen text-stone-100 font-sans">
       <div className="flex items-center gap-3 mb-6">
         <Link href="/aurora" className="p-2 rounded-xl bg-stone-900 border border-stone-800 text-stone-400 hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4" />
@@ -59,7 +59,7 @@ export default function AuroraWorkspacePage() {
       {/* Main Workspace View */}
       {workspace === 'workforce' ? (
         <div className="space-y-6">
-          <div className="bg-[#161F30] rounded-2xl p-6 border border-stone-800">
+          <div className="bg-stone-900 rounded-2xl p-6 border border-stone-800">
             <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
               <Cpu className="w-5 h-5 text-emerald-400" /> Active AI Workforce Telemetry (17 Agents)
             </h2>
@@ -67,7 +67,7 @@ export default function AuroraWorkspacePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {agents.map((ag: any) => (
-                <div key={ag.id} className="bg-[#0F172A] p-4 rounded-xl border border-stone-800">
+                <div key={ag.id} className="bg-stone-900 p-4 rounded-xl border border-stone-800">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-amber-300 font-mono">{ag.name}</span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
@@ -87,7 +87,7 @@ export default function AuroraWorkspacePage() {
           </div>
         </div>
       ) : workspace === 'graph' ? (
-        <div className="bg-[#161F30] rounded-2xl p-6 border border-stone-800 space-y-6">
+        <div className="bg-stone-900 rounded-2xl p-6 border border-stone-800 space-y-6">
           <div className="flex items-center justify-between border-b border-stone-800 pb-4">
             <div>
               <h2 className="text-base font-semibold text-white flex items-center gap-2">
@@ -102,7 +102,7 @@ export default function AuroraWorkspacePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-[#0F172A] p-4 rounded-xl border border-stone-800">
+            <div className="bg-stone-900 p-4 rounded-xl border border-stone-800">
               <p className="text-xs font-semibold text-amber-300 mb-3">Sample Graph Entities</p>
               <div className="space-y-2 text-xs">
                 <div className="bg-stone-900 p-2.5 rounded-lg border border-stone-800 flex items-center justify-between">
@@ -123,7 +123,7 @@ export default function AuroraWorkspacePage() {
               </div>
             </div>
 
-            <div className="bg-[#0F172A] p-4 rounded-xl border border-stone-800">
+            <div className="bg-stone-900 p-4 rounded-xl border border-stone-800">
               <p className="text-xs font-semibold text-indigo-300 mb-3">Graph Edge Relationships</p>
               <div className="space-y-2 text-xs">
                 <div className="bg-stone-900 p-2.5 rounded-lg border border-stone-800 font-mono text-[11px]">
@@ -141,7 +141,7 @@ export default function AuroraWorkspacePage() {
           </div>
         </div>
       ) : (
-        <div className="bg-[#161F30] rounded-2xl p-6 border border-stone-800 space-y-4 text-xs">
+        <div className="bg-stone-900 rounded-2xl p-6 border border-stone-800 space-y-4 text-xs">
           <div className="flex items-center gap-3 bg-stone-900/80 p-4 rounded-xl border border-stone-800 text-stone-300">
             <Terminal className="w-5 h-5 text-amber-400 shrink-0" />
             <div>
@@ -153,15 +153,15 @@ export default function AuroraWorkspacePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-            <div className="bg-[#0F172A] p-4 rounded-xl border border-stone-800">
+            <div className="bg-stone-900 p-4 rounded-xl border border-stone-800">
               <p className="text-stone-400 font-mono text-[10px]">WORKFLOW STATUS</p>
               <p className="text-base font-semibold text-emerald-400 mt-1">100% Operational</p>
             </div>
-            <div className="bg-[#0F172A] p-4 rounded-xl border border-stone-800">
+            <div className="bg-stone-900 p-4 rounded-xl border border-stone-800">
               <p className="text-stone-400 font-mono text-[10px]">EVENT BUS QUEUE</p>
               <p className="text-base font-semibold text-amber-400 mt-1">0 Tasks Pending</p>
             </div>
-            <div className="bg-[#0F172A] p-4 rounded-xl border border-stone-800">
+            <div className="bg-stone-900 p-4 rounded-xl border border-stone-800">
               <p className="text-stone-400 font-mono text-[10px]">CONFIDENCE GATE</p>
               <p className="text-base font-semibold text-blue-400 mt-1">&ge; 85% Verified</p>
             </div>
