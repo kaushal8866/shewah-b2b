@@ -18,7 +18,6 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
   // Operator-editable override flows in from `app/page.tsx` (Settings →
   // Marketing landing page). Falls back to the build-time default.
   const wa = (whatsappE164 || BRAND.whatsappE164).replace(/\D/g, '')
-  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID
   const gaId    = process.env.NEXT_PUBLIC_GA_ID
   const [openFaq, setOpenFaq] = useState<number | null>(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -111,11 +110,6 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
 
   const waChatHref = `https://wa.me/${wa}?text=${encodeURIComponent(WHATSAPP_INTRO_MESSAGE)}`
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    try { (window as any).fbq && (window as any).fbq('track', 'PageView') } catch {}
-  }, [])
-
   const [activeSection, setActiveSection] = useState<string | null>(null)
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -151,29 +145,9 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
 
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-stone-800 selection:text-white pb-24 md:pb-0">
-      {/* Analytics */}
-      {pixelId && (
-        <>
-          <Script id="meta-pixel" strategy="afterInteractive">
-            {`
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window,document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '${pixelId}');
-              fbq('track', 'PageView');
-            `}
-          </Script>
-          <noscript>
-            <img height="1" width="1" style={{ display: 'none' }}
-              alt="" src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`} />
-          </noscript>
-        </>
-      )}
+      {/* Analytics — the Meta Pixel base code and its PageView live in
+          app/layout.tsx so they load once, on every route. Do not re-init
+          the pixel here: a second init double-counts PageView. */}
       {gaId && (
         <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />

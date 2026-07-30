@@ -121,8 +121,10 @@ export default function LeadForm({
         setError(j?.error || `Could not submit (${res.status}). Please try again.`)
         return
       }
-      // Fire conversion pixels (best-effort)
-      try { (window as any).fbq && (window as any).fbq('track', 'Lead') } catch {}
+      // Fire conversion pixels (best-effort).
+      // NOTE: the Meta `Lead` event is fired by /consultation/thank-you on load,
+      // not here. Firing it here double-counted every submission, and the hard
+      // navigation below could abort the beacon before it sent.
       try { (window as any).gtag && (window as any).gtag('event', 'conversion', { send_to: 'AW-18068366696/1IaCCIqgn9UcEOjKladD', value: 1.0, currency: 'INR' }) } catch {}
       try {
         if ((window as any).pintrk) {
