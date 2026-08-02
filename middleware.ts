@@ -12,6 +12,7 @@ function isPublicMarketing(pathname: string): boolean {
     pathname === '/' ||
     pathname.startsWith('/partner-signup') ||
     pathname.startsWith('/consultation') ||
+    pathname.startsWith('/bespoke') ||
     pathname.startsWith('/thank-you') ||
     pathname.startsWith('/frames') ||
     pathname === '/api/public/partner-signup' ||
@@ -194,6 +195,6 @@ export default withAuth(
 export const config = {
   matcher: [
     // SECURITY: anything matched here is excluded from NextAuth middleware.
-    '/((?!login|partner-signup|consultation|frames/|setup|showcase|track|m/|cad-share/|q/|c/|accept-invite/|r/|api/r/|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|api/cad-share/|api/quotes/share/|api/c/|api/public|api/upload|_next|_vercel|favicon\\.ico|opengraph-image|.*\\.).*)',
+    '/((?!login|partner-signup|consultation|bespoke|frames/|setup|showcase|track|m/|cad-share/|q/|c/|accept-invite/|r/|api/r/|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|api/cad-share/|api/quotes/share/|api/c/|api/public|api/upload|_next|_vercel|favicon\\.ico|opengraph-image|.*\\.).*)',
   ],
 }
