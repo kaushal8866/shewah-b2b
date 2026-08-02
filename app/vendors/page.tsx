@@ -103,7 +103,7 @@ export default function VendorsPage() {
             <Boxes className="w-4 h-4" /> Stock
           </Link>
           <Link href="/vendors/new"
-            className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47]">
+            className="flex items-center gap-1.5 bg-stone-800 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-stone-900">
             <Plus className="w-4 h-4" /> Add vendor
           </Link>
         </div>
@@ -120,7 +120,7 @@ export default function VendorsPage() {
         <div className="flex gap-1 overflow-x-auto">
           {CATEGORIES.map(c => (
             <button key={c} onClick={() => setCatFilter(c)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${catFilter === c ? 'bg-[#1E3A5F] text-white' : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300'}`}>
+              className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${catFilter === c ? 'bg-stone-800 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300'}`}>
               {c === 'all' ? 'All' : c.charAt(0).toUpperCase() + c.slice(1)}
             </button>
           ))}
@@ -135,7 +135,7 @@ export default function VendorsPage() {
           <div className="py-12 text-center">
             <Store className="w-10 h-10 text-stone-200 mx-auto mb-3" />
             <p className="text-stone-400 text-sm">No vendors yet</p>
-            <Link href="/vendors/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">Add first vendor →</Link>
+            <Link href="/vendors/new" className="inline-block mt-3 text-sm text-stone-800 hover:underline">Add first vendor →</Link>
           </div>
         ) : (
           <table className="w-full">
@@ -176,7 +176,7 @@ export default function VendorsPage() {
                   <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                     <div className="flex justify-end items-center gap-2.5">
                       <Link href={`/vendors/${v.id}?edit=true`}
-                        className="p-1 hover:text-[#1E3A5F] text-stone-400 transition-colors"
+                        className="p-1 hover:text-stone-800 text-stone-400 transition-colors"
                         title="Edit Vendor">
                         <Edit2 className="w-4 h-4" />
                       </Link>
@@ -203,7 +203,7 @@ export default function VendorsPage() {
           <div className="py-12 text-center">
             <Store className="w-10 h-10 text-stone-200 mx-auto mb-3" />
             <p className="text-stone-400 text-sm">No vendors yet</p>
-            <Link href="/vendors/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">Add first vendor →</Link>
+            <Link href="/vendors/new" className="inline-block mt-3 text-sm text-stone-800 hover:underline">Add first vendor →</Link>
           </div>
         ) : (
           <div className="divide-y divide-stone-50">
@@ -228,7 +228,7 @@ export default function VendorsPage() {
                     {v.outstanding > 0 && (
                       <span className="text-sm font-medium text-red-500 mr-1.5">{formatCurrency(v.outstanding)}</span>
                     )}
-                    <Link href={`/vendors/${v.id}?edit=true`} className="p-1 hover:text-[#1E3A5F] text-stone-400">
+                    <Link href={`/vendors/${v.id}?edit=true`} className="p-1 hover:text-stone-800 text-stone-400">
                       <Edit2 className="w-4.5 h-4.5" />
                     </Link>
                     <button onClick={() => { setVendorToDelete(v); setShowDeleteConfirm(true) }} className="p-1 hover:text-red-500 text-stone-400">

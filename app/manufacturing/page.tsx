@@ -81,7 +81,7 @@ export default function ManufacturingPage() {
             </Link>
           )}
           <Link href="/manufacturing/orders/new"
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
+            className="flex items-center gap-2 bg-stone-800 text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 transition-colors">
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Issue order</span>
             <span className="sm:hidden">Order</span>
@@ -100,7 +100,7 @@ export default function ManufacturingPage() {
         <div className="bg-white rounded-xl border border-stone-200 mb-5 overflow-hidden">
           <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
             <h2 className="font-medium text-stone-900 text-sm">Active manufacturing orders</h2>
-            <Link href="/manufacturing/orders" className="text-xs text-[#1E3A5F] hover:underline">View all</Link>
+            <Link href="/manufacturing/orders" className="text-xs text-stone-800 hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-stone-50">
             {activeOrders.slice(0, 5).map(o => (
@@ -110,7 +110,7 @@ export default function ManufacturingPage() {
                   <p className="text-sm font-medium text-stone-900 truncate">{o.order_number}</p>
                   <p className="text-xs text-stone-400">{o.manufacturing_partners?.name} · {o.description?.substring(0, 40)}</p>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${MFG_STATUS_COLORS[o.status] || 'bg-gray-100 text-gray-600'}`}>
+                <span className={`text-xs px-2 py-0.5 font-medium shrink-0 ${MFG_STATUS_COLORS[o.status] || 'bg-gray-100 text-gray-600'}`}>
                   {o.status?.replace(/_/g, ' ')}
                 </span>
                 <ChevronRight className="w-4 h-4 text-stone-300 shrink-0" />
@@ -129,7 +129,7 @@ export default function ManufacturingPage() {
           <div className="text-center py-12 bg-white rounded-xl border border-stone-200">
             <Factory className="w-10 h-10 text-stone-200 mx-auto mb-3" />
             <p className="text-stone-400 text-sm">No manufacturing partners yet</p>
-            <Link href="/manufacturing/partners/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">
+            <Link href="/manufacturing/partners/new" className="inline-block mt-3 text-sm text-stone-800 hover:underline">
               Add your first partner →
             </Link>
           </div>
@@ -154,13 +154,13 @@ export default function ManufacturingPage() {
                       {p.speciality && p.speciality.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {p.speciality.map(s => (
-                            <span key={s} className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">{s}</span>
+                            <span key={s} className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 ">{s}</span>
                           ))}
                         </div>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`text-xs px-2 py-0.5 ${p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                         {p.status}
                       </span>
                       <Link href={`/manufacturing/partners/${p.id}`} className="text-stone-300 hover:text-stone-600">
@@ -183,7 +183,7 @@ export default function ManufacturingPage() {
                           </div>
                         ))}
                         <Link href={`/manufacturing/partners/${p.id}/float`}
-                          className="rounded-lg border border-dashed border-stone-200 p-2.5 flex items-center justify-center text-xs text-stone-400 hover:border-[#1E3A5F] hover:text-[#1E3A5F] transition-colors">
+                          className="rounded-lg border border-dashed border-stone-200 p-2.5 flex items-center justify-center text-xs text-stone-400 hover:border-stone-800 hover:text-stone-800 transition-colors">
                           <Plus className="w-3.5 h-3.5 mr-1" /> Deposit / Return
                         </Link>
                       </div>
@@ -191,7 +191,7 @@ export default function ManufacturingPage() {
                       <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between">
                         <p className="text-xs text-stone-400">No material float yet</p>
                         <Link href={`/manufacturing/partners/${p.id}/float`}
-                          className="text-xs text-[#1E3A5F] hover:underline">
+                          className="text-xs text-stone-800 hover:underline">
                           Set up material float →
                         </Link>
                       </div>
@@ -201,7 +201,7 @@ export default function ManufacturingPage() {
                   {/* Quick actions */}
                   <div className="flex gap-2 mt-3 pt-3 border-t border-stone-100">
                     <Link href={`/manufacturing/orders/new?partner=${p.id}`}
-                      className="flex-1 text-center text-xs bg-[#1E3A5F] text-white py-2 rounded-lg hover:bg-[#162B47] transition-colors">
+                      className="flex-1 text-center text-xs bg-stone-800 text-white py-2 rounded-lg hover:bg-stone-900 transition-colors">
                       Issue order
                     </Link>
                     <a href={`tel:${p.phone}`}

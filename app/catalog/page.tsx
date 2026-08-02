@@ -71,14 +71,14 @@ function CatalogContent() {
               <span>Categories</span>
             </Link>
             <Link href="/catalog/new"
-              className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors shrink-0">
+              className="flex items-center gap-2 bg-stone-800 text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 transition-colors shrink-0">
               <Plus className="w-4 h-4" /><span className="hidden sm:inline">Add product</span><span className="sm:hidden">Add</span>
             </Link>
           </div>
         )}
         {activeTab === 'collections' && (
           <Link href="/catalog/collections/new"
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors shrink-0">
+            className="flex items-center gap-2 bg-stone-800 text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 transition-colors shrink-0">
             <Plus className="w-4 h-4" /><span className="hidden sm:inline">New collection</span><span className="sm:hidden">New</span>
           </Link>
         )}
@@ -270,35 +270,35 @@ function ProductsTab() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input type="text" placeholder="Search by name, code, shape..."
               value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-stone-200 rounded-xl focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] outline-none transition-all shadow-sm" />
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-stone-200 rounded-xl focus:border-stone-800 focus:ring-1 focus:ring-stone-800 outline-none transition-all shadow-sm" />
           </div>
           {/* Filters container */}
           <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full lg:w-auto">
             <select value={karatFilter} onChange={e => setKaratFilter(e.target.value)}
-              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] transition-all">
+              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-stone-800 focus:ring-1 focus:ring-stone-800 transition-all">
               <option value="all">All karats</option>
               <option value="14">14K gold</option>
               <option value="18">18K gold</option>
             </select>
             <select value={shapeFilter} onChange={e => setShapeFilter(e.target.value)}
-              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] transition-all capitalize">
+              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-stone-800 focus:ring-1 focus:ring-stone-800 transition-all capitalize">
               <option value="all">All shapes</option>
               {shapes.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] transition-all capitalize">
+              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-stone-800 focus:ring-1 focus:ring-stone-800 transition-all capitalize">
               <option value="all">All categories</option>
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <select value={marginFilter} onChange={e => setMarginFilter(e.target.value)}
-              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] transition-all" disabled={!goldRate}>
+              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-stone-800 focus:ring-1 focus:ring-stone-800 transition-all" disabled={!goldRate}>
               <option value="all">All margins</option>
               <option value="high">High (≥25%)</option>
               <option value="mid">Mid (10–25%)</option>
               <option value="low">Low (&lt;10%)</option>
             </select>
             <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
-              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] transition-all">
+              className="text-sm border border-stone-200 rounded-xl px-3 py-2 bg-white shadow-sm outline-none focus:border-stone-800 focus:ring-1 focus:ring-stone-800 transition-all">
               <option value="code">Sort: Code</option>
               <option value="category_asc">Sort: Category (A-Z)</option>
               <option value="category_desc">Sort: Category (Z-A)</option>
@@ -320,11 +320,11 @@ function ProductsTab() {
           <Package className="w-10 h-10 text-stone-200 mx-auto mb-3" />
           <p className="text-stone-400 text-sm">{products.length === 0 ? 'No products yet — add your first ring design' : 'No products match your filters'}</p>
           {products.length === 0 ? (
-            <Link href="/catalog/new" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">Add first product →</Link>
+            <Link href="/catalog/new" className="inline-block mt-3 text-sm text-stone-800 hover:underline">Add first product →</Link>
           ) : (
             <button
               onClick={() => { setSearch(''); setKaratFilter('all'); setShapeFilter('all'); setCategoryFilter('all'); setMarginFilter('all'); setShowInactive(false) }}
-              className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline"
+              className="inline-block mt-3 text-sm text-stone-800 hover:underline"
             >Clear all filters</button>
           )}
         </div>
@@ -357,11 +357,11 @@ function ProductsTab() {
                   </div>
                 )}
                 <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2">
-                  <span className="bg-white/90 backdrop-blur-sm text-stone-600 text-[10px] sm:text-xs px-2 py-0.5 rounded-full border border-stone-200 font-semibold">{p.code}</span>
+                  <span className="bg-white/90 backdrop-blur-sm text-stone-600 text-[10px] sm:text-xs px-2 py-0.5 border border-stone-200 font-semibold">{p.code}</span>
                 </div>
                 {((p as any).sell_mode && (p as any).sell_mode !== 'single') && (
                   <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2">
-                    <span className="bg-amber-500 text-white text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Set</span>
+                    <span className="bg-amber-500 text-white text-[9px] sm:text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider">Set</span>
                   </div>
                 )}
               </Link>
@@ -369,7 +369,7 @@ function ProductsTab() {
                 <div>
                   <div className="flex items-start justify-between mb-1 gap-2">
                     <p className="font-semibold text-stone-900 text-xs sm:text-sm truncate" title={p.name}>{p.name}</p>
-                    <span className="text-[10px] sm:text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full shrink-0">
+                    <span className="text-[10px] sm:text-xs text-stone-400 bg-stone-50 px-2 py-0.5 shrink-0">
                       {p.ref_karat || (p.gold_karat ? `${p.gold_karat}K` : '22K')}
                     </span>
                   </div>
@@ -609,7 +609,7 @@ function CollectionsTab() {
           <Library className="w-10 h-10 text-stone-200 mx-auto mb-3" />
           <p className="text-stone-400 text-sm mb-4">No collections yet. Create your first lookbook to share with partners.</p>
           <Link href="/catalog/collections/new"
-            className="inline-flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47]">
+            className="inline-flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900">
             <Plus className="w-4 h-4" /> Create first collection
           </Link>
         </div>
@@ -626,7 +626,7 @@ function CollectionsTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <p className="font-medium text-stone-900 text-sm">{c.name}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.is_published ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'}`}>
+                    <span className={`text-xs px-2 py-0.5 font-medium ${c.is_published ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'}`}>
                       {c.is_published ? 'Published' : 'Draft'}
                     </span>
                   </div>
@@ -634,14 +634,14 @@ function CollectionsTab() {
                   <div className="flex items-center gap-3 text-xs text-stone-400 flex-wrap">
                     {c.circuit_target && <span>📍 {c.circuit_target}</span>}
                     <span>{c.product_count} product{c.product_count !== 1 ? 's' : ''}</span>
-                    <span className="text-[#1E3A5F] font-medium">{c.response_count} response{c.response_count !== 1 ? 's' : ''}</span>
+                    <span className="text-stone-800 font-medium">{c.response_count} response{c.response_count !== 1 ? 's' : ''}</span>
                     {avgMargins.has(c.id) && (() => {
                       const m = avgMargins.get(c.id)!
                       const cls = m >= 25 ? 'bg-green-100 text-green-700'
                         : m >= 10 ? 'bg-amber-100 text-amber-700'
                         : 'bg-red-100 text-red-700'
                       return (
-                        <span className={`px-2 py-0.5 rounded-full font-medium ${cls}`}
+                        <span className={`px-2 py-0.5 font-medium ${cls}`}
                           title="Avg estimated margin across products in this collection (today's 24K gold rate)">
                           Avg margin {m.toFixed(0)}%
                         </span>
@@ -799,7 +799,7 @@ function InterestTab() {
                       <div className="flex justify-end gap-2">
                         <Link
                           href={`/orders/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
-                          className="text-xs px-2.5 py-1.5 rounded-lg bg-[#1E3A5F] text-white hover:bg-[#162B47] transition-colors whitespace-nowrap">
+                          className="text-xs px-2.5 py-1.5 rounded-lg bg-stone-800 text-white hover:bg-stone-900 transition-colors whitespace-nowrap">
                           → Order
                         </Link>
                         <Link
@@ -833,7 +833,7 @@ function InterestTab() {
                   <div className="flex gap-2 mt-2.5">
                     <Link
                       href={`/orders/new${i.partner_id ? `?partner_id=${i.partner_id}${i.product_id ? `&product_id=${i.product_id}` : ''}` : ''}`}
-                      className="text-xs px-2.5 py-1.5 rounded-lg bg-[#1E3A5F] text-white hover:bg-[#162B47] transition-colors">
+                      className="text-xs px-2.5 py-1.5 rounded-lg bg-stone-800 text-white hover:bg-stone-900 transition-colors">
                       → Order
                     </Link>
                     <Link

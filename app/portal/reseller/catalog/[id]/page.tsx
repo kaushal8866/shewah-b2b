@@ -407,7 +407,7 @@ export default function ResellerProductDetail() {
                 <button
                   type="submit"
                   disabled={submittingSample}
-                  className="bg-[#1E3A5F] hover:bg-[#162B47] text-white text-xs font-bold px-5 py-2 rounded-xl transition-colors disabled:opacity-50"
+                  className="bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold px-5 py-2 rounded-xl transition-colors disabled:opacity-50"
                 >
                   {submittingSample ? 'Submitting...' : 'Confirm Request'}
                 </button>

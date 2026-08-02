@@ -188,7 +188,7 @@ export default function SuggestionsPage() {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2 flex-wrap text-xs">
-                    <span className="font-bold text-[#1E3A5F]">{sug.trigger_value}</span>
+                    <span className="font-bold text-stone-800">{sug.trigger_value}</span>
                     <span className="text-stone-400">➔</span>
                     <span className="font-bold text-emerald-600">{sug.suggest_value}</span>
                   </div>
@@ -258,7 +258,7 @@ export default function SuggestionsPage() {
 
           <div className="flex justify-between items-center border-t border-stone-150 pt-4 mt-6">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="w-4 h-4 accent-[#1E3A5F]"
+              <input type="checkbox" className="w-4 h-4 accent-stone-800"
                 checked={form.is_active} onChange={e => setForm(p => ({ ...p, is_active: e.target.checked }))} />
               <span className="text-sm font-medium text-stone-700">Suggestion Active</span>
             </label>

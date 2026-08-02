@@ -176,7 +176,7 @@ export default function AdminDiamondAsksPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
           <h1 className="text-xl lg:text-2xl font-extrabold text-stone-900 tracking-tight flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#1E3A5F]" /> Loose Diamond Asks
+            <Sparkles className="w-5 h-5 text-stone-800" /> Loose Diamond Asks
           </h1>
           <p className="text-xs text-stone-500 mt-0.5">Manage price negotiations and loose diamond procurement bids.</p>
         </div>
@@ -262,7 +262,7 @@ export default function AdminDiamondAsksPage() {
                   <button key={ask.id} onClick={() => setSelectedAskId(ask.id)}
                     className={`w-full text-left p-3.5 rounded-xl border flex flex-col gap-2.5 transition-all outline-none ${
                       active
-                        ? 'bg-[#1E3A5F]/5 border-[#1E3A5F]'
+                        ? 'bg-stone-800/5 border-stone-800'
                         : 'border-stone-150 hover:bg-stone-50'
                     }`}>
                     <div className="flex items-start justify-between w-full">
@@ -276,7 +276,7 @@ export default function AdminDiamondAsksPage() {
                     <div className="flex justify-between items-center w-full">
                       <div className="text-[10px] text-stone-500 font-bold">
                         <span>Asked: </span>
-                        <span className="text-[#1E3A5F] font-black">
+                        <span className="text-stone-800 font-black">
                           ₹{ask.asked_price.toLocaleString('en-IN')}/{ask.asked_unit === 'per_pc' ? 'pc' : 'ct'}
                         </span>
                         <span className="mx-1 text-stone-300">·</span>
@@ -349,7 +349,7 @@ export default function AdminDiamondAsksPage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest block">Asked Rates</label>
-                    <p className="text-xs text-[#1E3A5F] font-black">
+                    <p className="text-xs text-stone-800 font-black">
                       ₹{selectedAsk.asked_price.toLocaleString('en-IN')}/{selectedAsk.asked_unit === 'per_pc' ? 'pc' : 'ct'}
                     </p>
                     <p className="text-[10px] text-stone-400 font-bold">Quantity: {selectedAsk.quantity} Pcs</p>
@@ -410,7 +410,7 @@ export default function AdminDiamondAsksPage() {
                         REJECT ASK
                       </button>
                       <button onClick={() => handleAction('approve')} disabled={submittingAction}
-                        className="flex-1 bg-[#1E3A5F] hover:bg-[#162B47] text-white py-3 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50">
+                        className="flex-1 bg-stone-800 hover:bg-stone-900 text-white py-3 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50">
                         {submittingAction ? <Loader2 className="w-3 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                         APPROVE Counter Price
                       </button>

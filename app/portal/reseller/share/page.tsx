@@ -352,7 +352,7 @@ export default function ResellerShareLinks() {
                             href={storefrontUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="p-1 hover:bg-stone-100 rounded text-stone-500 hover:text-[#1E3A5F]"
+                            className="p-1 hover:bg-stone-100 rounded text-stone-500 hover:text-stone-800"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
@@ -376,7 +376,7 @@ export default function ResellerShareLinks() {
                         <button
                           type="button"
                           onClick={() => handleToggleActive(link)}
-                          className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${
+                          className={`px-2 py-0.5 text-[9px] font-bold uppercase border ${
                             link.is_active
                               ? 'bg-green-50 text-green-700 border-green-200'
                               : 'bg-stone-100 text-stone-450 border-stone-200'

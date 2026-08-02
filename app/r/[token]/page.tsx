@@ -943,7 +943,7 @@ export default function PublicStorefront() {
           <button
             onClick={() => setActiveTab('catalog')}
             className={`px-5 py-3 text-xxs font-extrabold uppercase tracking-widest border-b-2 transition-all ${
-              activeTab === 'catalog' ? 'text-[#1E3A5F]' : 'border-transparent text-stone-400'
+              activeTab === 'catalog' ? 'text-stone-800' : 'border-transparent text-stone-400'
             }`}
             style={{ borderBottomColor: activeTab === 'catalog' ? c.primary : 'transparent', color: activeTab === 'catalog' ? c.primary : undefined }}
           >
@@ -952,7 +952,7 @@ export default function PublicStorefront() {
           <button
             onClick={() => setActiveTab('profile')}
             className={`px-5 py-3 text-xxs font-extrabold uppercase tracking-widest border-b-2 transition-all ${
-              activeTab === 'profile' ? 'text-[#1E3A5F]' : 'border-transparent text-stone-400'
+              activeTab === 'profile' ? 'text-stone-800' : 'border-transparent text-stone-400'
             }`}
             style={{ borderBottomColor: activeTab === 'profile' ? c.primary : 'transparent', color: activeTab === 'profile' ? c.primary : undefined }}
           >
@@ -1115,7 +1115,7 @@ export default function PublicStorefront() {
                               <button
                                 key={cat}
                                 onClick={() => setCategoryFilter(cat)}
-                                className="px-4.5 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.15em] transition-all shrink-0 snap-start border hover:opacity-85"
+                                className="px-4.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.15em] transition-all shrink-0 snap-start border hover:opacity-85"
                                 style={{
                                   backgroundColor: active ? c.primary : c.surface,
                                   borderColor: active ? c.primary : c.borders,
@@ -1362,7 +1362,7 @@ export default function PublicStorefront() {
                               <span className="font-mono text-xs font-bold" style={{ color: c.text }}>{o.order_number}</span>
                               <span className="block text-[10px] opacity-60 mt-0.5" style={{ color: c.text }}>Ordered {new Date(o.created_at).toLocaleDateString('en-IN')}</span>
                             </div>
-                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 ${
                               o.status === 'delivered' ? 'bg-green-50 text-green-700 border border-green-200' :
                               o.status === 'dispatched' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
                               o.status === 'cancelled' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -1894,7 +1894,7 @@ export default function PublicStorefront() {
                                 return next
                               })
                             }}
-                            className="rounded text-[#1E3A5F] focus:ring-[#1E3A5F] w-4 h-4"
+                            className="rounded text-stone-800 focus:ring-stone-800 w-4 h-4"
                             style={{ borderColor: c.borders }}
                           />
                           <div className="flex-1 min-w-0">
@@ -2087,7 +2087,7 @@ export default function PublicStorefront() {
               <div className="space-y-4 pt-4 border-t" style={{ borderColor: c.borders }}>
                 <div className="flex justify-between items-center">
                   <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">Customer reviews ({reviews.length})</p>
-                  <button onClick={() => setShowReviewForm(!showReviewForm)} className="text-[9px] font-bold uppercase text-[#1E3A5F]" style={{ color: c.primary }}>
+                  <button onClick={() => setShowReviewForm(!showReviewForm)} className="text-[9px] font-bold uppercase text-stone-800" style={{ color: c.primary }}>
                     {showReviewForm ? 'Cancel' : 'Write Review'}
                   </button>
                 </div>

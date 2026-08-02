@@ -75,15 +75,15 @@ function ErrorPage({ title, message, contact }: { title: string; message: string
   return (
     <div className="min-h-screen flex items-center justify-center px-6">
       <div className="text-center max-w-sm">
-        <div className="mx-auto w-14 h-14 rounded-full bg-[#E8D6AC] flex items-center justify-center mb-5">
-          <Diamond className="w-6 h-6 text-[#A88A4F]" />
+        <div className="mx-auto w-14 h-14 rounded-full bg-stone-100 flex items-center justify-center mb-5">
+          <Diamond className="w-6 h-6 text-accent" />
         </div>
-        <h1 className="serif text-3xl text-[#2A241B] mb-3">{title}</h1>
-        <p className="text-[#5C5347] text-base leading-relaxed mb-6">{message}</p>
+        <h1 className="serif text-3xl text-stone-800 mb-3">{title}</h1>
+        <p className="text-stone-600 text-base leading-relaxed mb-6">{message}</p>
         {wa && (
           <a
             href={`https://wa.me/${wa}`}
-            className="inline-flex items-center gap-2 bg-[#C9A86A] hover:bg-[#A88A4F] text-white font-medium px-5 py-3 rounded-full transition-colors"
+            className="inline-flex items-center gap-2 bg-accent hover:bg-accent text-white font-medium px-5 py-3 transition-colors"
           >
             <MessageCircle className="w-4 h-4" /> Chat with Shewah
           </a>
@@ -214,28 +214,28 @@ function Timeline({ stages, currentKey, datesByStage }: {
             <div className="flex flex-col items-center">
               <div className={[
                 'w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-all',
-                done ? 'bg-[#C9A86A] text-white' :
-                active ? 'bg-white text-[#A88A4F] ring-2 ring-[#C9A86A] stage-glow' :
-                'bg-[#F4ECDD] text-[#8C8275] ring-1 ring-[#E8DFC9]',
+                done ? 'bg-accent text-white' :
+                active ? 'bg-white text-accent ring-2 ring-accent stage-glow' :
+                'bg-stone-50 text-stone-400 ring-1 ring-stone-100',
               ].join(' ')}>
                 {done ? <Check className="w-4 h-4" /> : i + 1}
               </div>
               {!isLast && (
-                <div className={`w-0.5 flex-1 min-h-6 mt-1 mb-1 ${done ? 'bg-[#C9A86A]/60' : 'bg-[#E8DFC9]'}`} />
+                <div className={`w-0.5 flex-1 min-h-6 mt-1 mb-1 ${done ? 'bg-accent/60' : 'bg-stone-100'}`} />
               )}
             </div>
             <div className={`${isLast ? 'pb-0' : 'pb-5'} pt-1.5 flex-1`}>
               <p className={`serif text-lg leading-tight ${
-                active ? 'text-[#2A241B]' : done ? 'text-[#5C5347]' : 'text-[#8C8275]'
+                active ? 'text-stone-800' : done ? 'text-stone-600' : 'text-stone-400'
               }`}>
                 {s.label}
                 {active && (
-                  <span className="ml-2 align-middle text-[10px] tracking-widest font-sans uppercase bg-[#E8D6AC] text-[#A88A4F] px-2 py-0.5 rounded-full">
+                  <span className="ml-2 align-middle text-[10px] tracking-widest font-sans uppercase bg-stone-100 text-accent px-2 py-0.5 ">
                     Now
                   </span>
                 )}
               </p>
-              {date && <p className="text-xs text-[#8C8275] mt-0.5 tracking-wider uppercase">{fmtDate(date)}</p>}
+              {date && <p className="text-xs text-stone-400 mt-0.5 tracking-wider uppercase">{fmtDate(date)}</p>}
             </div>
           </li>
         )
@@ -287,12 +287,12 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
       {/* ── Header ───────────────────────────────────────── */}
       <header className="px-5 pt-6 pb-4 max-w-2xl mx-auto">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-[#C9A86A] flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center">
             <Diamond className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="serif text-xl text-[#2A241B] leading-none">Shewah</p>
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[#A88A4F] mt-1">Fine Jewellery</p>
+            <p className="serif text-xl text-stone-800 leading-none">Shewah</p>
+            <p className="text-[10px] tracking-[0.2em] uppercase text-accent mt-1">Fine Jewellery</p>
           </div>
         </div>
       </header>
@@ -301,48 +301,48 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
         {/* ── Hero greeting ───────────────────────────────── */}
         <section>
           {heroImage ? (
-            <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-[#F4ECDD] mb-6 shadow-sm">
+            <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-stone-50 mb-6 shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={heroImage} alt="Your custom piece" className="w-full h-full object-cover" />
             </div>
           ) : (
-            <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br from-[#E8D6AC] via-[#F4ECDD] to-[#FBF7F0] mb-6 flex items-center justify-center">
-              <Sparkles className="w-12 h-12 text-[#A88A4F]/60" />
+            <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br from-stone-100 via-stone-50 to-white mb-6 flex items-center justify-center">
+              <Sparkles className="w-12 h-12 text-accent/60" />
             </div>
           )}
-          <h1 className="serif text-4xl md:text-5xl text-[#2A241B] leading-tight">
+          <h1 className="serif text-4xl md:text-5xl text-stone-800 leading-tight">
             Hi {firstName},<br />
-            <span className="text-[#A88A4F]">here's your piece.</span>
+            <span className="text-accent">here's your piece.</span>
           </h1>
           {order?.order_number && (
-            <p className="text-[#5C5347] text-sm mt-3">Order {order.order_number}</p>
+            <p className="text-stone-600 text-sm mt-3">Order {order.order_number}</p>
           )}
         </section>
 
         {/* ── Journey timeline ────────────────────────────── */}
-        <section className="bg-white rounded-3xl border border-[#E8DFC9] p-6 shadow-sm">
+        <section className="bg-white rounded-3xl border border-stone-100 p-6 shadow-sm">
           <div className="flex items-baseline justify-between mb-5">
-            <h2 className="serif text-2xl text-[#2A241B]">Your journey</h2>
-            <span className="text-[10px] tracking-[0.2em] uppercase text-[#A88A4F]">Step {stageIndex(currentKey) + 1} of {JOURNEY_STAGES.length}</span>
+            <h2 className="serif text-2xl text-stone-800">Your journey</h2>
+            <span className="text-[10px] tracking-[0.2em] uppercase text-accent">Step {stageIndex(currentKey) + 1} of {JOURNEY_STAGES.length}</span>
           </div>
           <Timeline stages={JOURNEY_STAGES} currentKey={currentKey} datesByStage={datesByStage} />
         </section>
 
         {/* ── Quote placeholder (until Task #115 ships) ──── */}
-        <section className="bg-white rounded-3xl border border-[#E8DFC9] p-6 shadow-sm">
-          <h2 className="serif text-2xl text-[#2A241B] mb-2">Your quote</h2>
-          <p className="text-[#5C5347] text-sm leading-relaxed">
+        <section className="bg-white rounded-3xl border border-stone-100 p-6 shadow-sm">
+          <h2 className="serif text-2xl text-stone-800 mb-2">Your quote</h2>
+          <p className="text-stone-600 text-sm leading-relaxed">
             Your personalised quote will appear here as soon as it's ready. We'll send you a WhatsApp the moment it's shared.
           </p>
         </section>
 
         {/* ── Design preview (read-only — approval happens with your designer) ── */}
         {cad && cad.images.length > 0 && (
-          <section className="bg-white rounded-3xl border border-[#E8DFC9] p-6 shadow-sm">
+          <section className="bg-white rounded-3xl border border-stone-100 p-6 shadow-sm">
             <div className="flex items-baseline justify-between mb-4">
-              <h2 className="serif text-2xl text-[#2A241B]">Design preview</h2>
+              <h2 className="serif text-2xl text-stone-800">Design preview</h2>
               {cad.approvedAt && (
-                <span className="text-[11px] tracking-wider uppercase bg-[#E8F1E2] text-[#5C7F5F] px-2.5 py-1 rounded-full">
+                <span className="text-[11px] tracking-wider uppercase bg-status-success-bg text-status-success-fg px-2.5 py-1 ">
                   Approved {fmtDate(cad.approvedAt)}
                 </span>
               )}
@@ -350,14 +350,14 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
             <div className="grid grid-cols-2 gap-3">
               {cad.images.slice(0, 4).map((url, i) => (
                 <a key={url + i} href={url} target="_blank" rel="noreferrer"
-                   className="aspect-square rounded-2xl overflow-hidden bg-[#F4ECDD] block">
+                   className="aspect-square rounded-2xl overflow-hidden bg-stone-50 block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={url} alt={`Design ${i + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
                 </a>
               ))}
             </div>
             {!cad.approvedAt && (
-              <p className="text-xs text-[#8C8275] mt-4 leading-relaxed">
+              <p className="text-xs text-stone-400 mt-4 leading-relaxed">
                 Reach out on WhatsApp to share feedback or approve the design.
               </p>
             )}
@@ -367,37 +367,37 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
         {/* ── Production updates ──────────────────────────── */}
         <section>
           <div className="flex items-baseline justify-between mb-4 px-1">
-            <h2 className="serif text-2xl text-[#2A241B]">Workshop updates</h2>
+            <h2 className="serif text-2xl text-stone-800">Workshop updates</h2>
             {productionUpdates.length > 0 && (
-              <span className="text-xs text-[#8C8275]">{productionUpdates.length} {productionUpdates.length === 1 ? 'update' : 'updates'}</span>
+              <span className="text-xs text-stone-400">{productionUpdates.length} {productionUpdates.length === 1 ? 'update' : 'updates'}</span>
             )}
           </div>
           {productionUpdates.length === 0 ? (
-            <div className="bg-white/70 rounded-3xl border border-dashed border-[#E8DFC9] p-8 text-center">
-              <Camera className="w-8 h-8 text-[#A88A4F]/50 mx-auto mb-3" />
-              <p className="text-[#5C5347] text-sm leading-relaxed">
+            <div className="bg-white/70 rounded-3xl border border-dashed border-stone-100 p-8 text-center">
+              <Camera className="w-8 h-8 text-accent/50 mx-auto mb-3" />
+              <p className="text-stone-600 text-sm leading-relaxed">
                 Updates from our workshop will appear here as your piece comes to life.
               </p>
             </div>
           ) : (
             <ol className="space-y-4">
               {productionUpdates.map(u => (
-                <li key={u.id} className="bg-white rounded-3xl border border-[#E8DFC9] overflow-hidden shadow-sm">
+                <li key={u.id} className="bg-white rounded-3xl border border-stone-100 overflow-hidden shadow-sm">
                   {u.photo_url && (
-                    <div className="aspect-[4/3] bg-[#F4ECDD]">
+                    <div className="aspect-[4/3] bg-stone-50">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={u.photo_url} alt={u.title} className="w-full h-full object-cover" />
                     </div>
                   )}
                   <div className="p-5">
                     <div className="flex items-baseline gap-2 mb-1.5">
-                      <p className="text-[10px] tracking-[0.2em] uppercase text-[#A88A4F] flex items-center gap-1.5">
+                      <p className="text-[10px] tracking-[0.2em] uppercase text-accent flex items-center gap-1.5">
                         <Clock className="w-3 h-3" /> {fmtRelative(u.created_at)}
                       </p>
                     </div>
-                    <h3 className="serif text-xl text-[#2A241B] mb-1.5 leading-tight">{u.title}</h3>
+                    <h3 className="serif text-xl text-stone-800 mb-1.5 leading-tight">{u.title}</h3>
                     {u.body && (
-                      <p className="text-[#5C5347] text-sm leading-relaxed whitespace-pre-wrap">{u.body}</p>
+                      <p className="text-stone-600 text-sm leading-relaxed whitespace-pre-wrap">{u.body}</p>
                     )}
                   </div>
                 </li>
@@ -408,40 +408,40 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
 
         {/* ── Dispatch tracking ───────────────────────────── */}
         {order && (order.dispatch_date || order.courier || order.tracking_number) && (
-          <section className="bg-[#F4ECDD] rounded-3xl border border-[#E8DFC9] p-6">
+          <section className="bg-stone-50 rounded-3xl border border-stone-100 p-6">
             <div className="flex items-center gap-2.5 mb-4">
-              <Truck className="w-5 h-5 text-[#A88A4F]" />
-              <h2 className="serif text-2xl text-[#2A241B]">On its way</h2>
+              <Truck className="w-5 h-5 text-accent" />
+              <h2 className="serif text-2xl text-stone-800">On its way</h2>
             </div>
             <dl className="grid grid-cols-2 gap-y-3 gap-x-5 text-sm">
               {order.dispatch_date && (
                 <div>
-                  <dt className="text-[10px] tracking-widest uppercase text-[#8C8275] mb-0.5">Dispatched</dt>
-                  <dd className="text-[#2A241B]">{fmtDate(order.dispatch_date)}</dd>
+                  <dt className="text-[10px] tracking-widest uppercase text-stone-400 mb-0.5">Dispatched</dt>
+                  <dd className="text-stone-800">{fmtDate(order.dispatch_date)}</dd>
                 </div>
               )}
               {order.courier && (
                 <div>
-                  <dt className="text-[10px] tracking-widest uppercase text-[#8C8275] mb-0.5">Courier</dt>
-                  <dd className="text-[#2A241B]">{order.courier}</dd>
+                  <dt className="text-[10px] tracking-widest uppercase text-stone-400 mb-0.5">Courier</dt>
+                  <dd className="text-stone-800">{order.courier}</dd>
                 </div>
               )}
               {order.tracking_number && (
                 <div className="col-span-2">
-                  <dt className="text-[10px] tracking-widest uppercase text-[#8C8275] mb-0.5">Tracking number</dt>
-                  <dd className="text-[#2A241B] font-mono text-base">{order.tracking_number}</dd>
+                  <dt className="text-[10px] tracking-widest uppercase text-stone-400 mb-0.5">Tracking number</dt>
+                  <dd className="text-stone-800 font-mono text-base">{order.tracking_number}</dd>
                 </div>
               )}
               {order.expected_delivery && !order.actual_delivery && (
                 <div>
-                  <dt className="text-[10px] tracking-widest uppercase text-[#8C8275] mb-0.5">Expected delivery</dt>
-                  <dd className="text-[#2A241B]">{fmtDate(order.expected_delivery)}</dd>
+                  <dt className="text-[10px] tracking-widest uppercase text-stone-400 mb-0.5">Expected delivery</dt>
+                  <dd className="text-stone-800">{fmtDate(order.expected_delivery)}</dd>
                 </div>
               )}
               {order.actual_delivery && (
                 <div>
-                  <dt className="text-[10px] tracking-widest uppercase text-[#8C8275] mb-0.5">Delivered</dt>
-                  <dd className="text-[#2A241B]">{fmtDate(order.actual_delivery)}</dd>
+                  <dt className="text-[10px] tracking-widest uppercase text-stone-400 mb-0.5">Delivered</dt>
+                  <dd className="text-stone-800">{fmtDate(order.actual_delivery)}</dd>
                 </div>
               )}
             </dl>
@@ -450,41 +450,41 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
 
         {/* ── Footer / contact ────────────────────────────── */}
         <footer className="pt-6 pb-2 text-center">
-          <p className="serif text-xl text-[#2A241B] mb-2">Have a question?</p>
-          <p className="text-[#5C5347] text-sm mb-5 leading-relaxed">
+          <p className="serif text-xl text-stone-800 mb-2">Have a question?</p>
+          <p className="text-stone-600 text-sm mb-5 leading-relaxed">
             We're here every step of the way. Tap to reach us.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             {waNumber && (
               <a href={`https://wa.me/${waNumber}`}
-                 className="inline-flex items-center gap-2 bg-[#C9A86A] hover:bg-[#A88A4F] text-white font-medium px-5 py-3 rounded-full transition-colors text-sm">
+                 className="inline-flex items-center gap-2 bg-accent hover:bg-accent text-white font-medium px-5 py-3 transition-colors text-sm">
                 <MessageCircle className="w-4 h-4" /> WhatsApp
               </a>
             )}
             {phoneNumber && (
               <a href={`tel:${phoneNumber}`}
-                 className="inline-flex items-center gap-2 bg-white hover:bg-[#F4ECDD] border border-[#E8DFC9] text-[#2A241B] font-medium px-5 py-3 rounded-full transition-colors text-sm">
+                 className="inline-flex items-center gap-2 bg-white hover:bg-stone-50 border border-stone-100 text-stone-800 font-medium px-5 py-3 transition-colors text-sm">
                 <Phone className="w-4 h-4" /> Call us
               </a>
             )}
           </div>
-          <p className="mt-8 text-[10px] tracking-[0.25em] uppercase text-[#A88A4F]">Shewah · Fine Jewellery</p>
+          <p className="mt-8 text-[10px] tracking-[0.25em] uppercase text-accent">Shewah · Fine Jewellery</p>
         </footer>
       </div>
 
       {/* ── Sticky bottom contact bar (mobile only) ──────── */}
       {(waNumber || phoneNumber) && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-[#E8DFC9] px-4 py-3 safe-area-pb z-40">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-100 px-4 py-3 safe-area-pb z-40">
           <div className="max-w-2xl mx-auto flex gap-2">
             {waNumber && (
               <a href={`https://wa.me/${waNumber}`}
-                 className="flex-1 inline-flex items-center justify-center gap-2 bg-[#C9A86A] text-white font-medium py-3 rounded-full text-sm">
+                 className="flex-1 inline-flex items-center justify-center gap-2 bg-accent text-white font-medium py-3 rounded-full text-sm">
                 <MessageCircle className="w-4 h-4" /> Chat
               </a>
             )}
             {phoneNumber && (
               <a href={`tel:${phoneNumber}`}
-                 className="flex-1 inline-flex items-center justify-center gap-2 bg-[#F4ECDD] text-[#2A241B] font-medium py-3 rounded-full text-sm border border-[#E8DFC9]">
+                 className="flex-1 inline-flex items-center justify-center gap-2 bg-stone-50 text-stone-800 font-medium py-3 rounded-full text-sm border border-stone-100">
                 <Phone className="w-4 h-4" /> Call
               </a>
             )}

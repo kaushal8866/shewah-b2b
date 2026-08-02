@@ -339,7 +339,7 @@ export default function ConfiguratorStonePricesPage() {
           </Link>
           <div>
             <h1 className="text-xl lg:text-2xl font-semibold text-stone-900 flex items-center gap-2">
-              <Diamond className="w-5 h-5 text-[#1E3A5F]" />
+              <Diamond className="w-5 h-5 text-stone-800" />
               Configurator Stone Prices
             </h1>
             <p className="text-stone-500 text-sm mt-0.5">
@@ -372,10 +372,10 @@ export default function ConfiguratorStonePricesPage() {
 
           <button
             onClick={() => { setFillOpen(true); setFillMsg('') }}
-            className="px-3 py-2 rounded-lg bg-white border border-stone-200 hover:border-[#1E3A5F] text-stone-700 text-sm font-medium inline-flex items-center gap-1.5 shrink-0"
+            className="px-3 py-2 rounded-lg bg-white border border-stone-200 hover:border-stone-800 text-stone-700 text-sm font-medium inline-flex items-center gap-1.5 shrink-0"
             title="Auto-fill blank cells from a single ₹/ct rate"
           >
-            <Wand2 className="w-3.5 h-3.5 text-[#1E3A5F]" /> Bulk fill blanks
+            <Wand2 className="w-3.5 h-3.5 text-stone-800" /> Bulk fill blanks
           </button>
         </div>
       </div>
@@ -405,14 +405,14 @@ export default function ConfiguratorStonePricesPage() {
 
         <div className="bg-white border border-stone-200 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <Percent className="w-4 h-4 text-[#1E3A5F]" />
+            <Percent className="w-4 h-4 text-stone-800" />
             <h3 className="font-semibold text-stone-900">Bulk price adjust</h3>
           </div>
           <p className="text-xs text-stone-500 mb-3">Increase or decrease every cell by a percentage. Range ±50% per click.</p>
           <div className="flex items-center gap-2">
             <input
               type="number" step="0.5" min="-50" max="50"
-              className="w-24 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+              className="w-24 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
               placeholder="±%"
               value={bulkPct}
               onChange={e => setBulkPct(e.target.value)}
@@ -422,7 +422,7 @@ export default function ConfiguratorStonePricesPage() {
             <button
               onClick={applyBulk}
               disabled={bulkBusy || !bulkPct}
-              className="ml-auto px-3 py-2 rounded-lg bg-[#1E3A5F] text-white text-sm font-medium disabled:opacity-50 inline-flex items-center gap-1.5"
+              className="ml-auto px-3 py-2 rounded-lg bg-stone-800 text-white text-sm font-medium disabled:opacity-50 inline-flex items-center gap-1.5"
             >
               {bulkBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Apply
@@ -437,7 +437,7 @@ export default function ConfiguratorStonePricesPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-semibold text-stone-900 flex items-center gap-1.5">
-              <Plus className="w-4 h-4 text-[#1E3A5F]" />
+              <Plus className="w-4 h-4 text-stone-800" />
               Spreadsheet Columns Sequence Manager
             </h3>
             <p className="text-xs text-stone-500 mt-0.5">Define which Quality × Color pairs appear as table columns and in what order.</p>
@@ -499,7 +499,7 @@ export default function ConfiguratorStonePricesPage() {
             <select
               value={newColQuality}
               onChange={e => setNewColQuality(e.target.value)}
-              className="border border-stone-200 rounded-lg px-3 py-1.5 text-xs focus:border-[#1E3A5F] focus:outline-none bg-white font-medium text-stone-800 w-40"
+              className="border border-stone-200 rounded-lg px-3 py-1.5 text-xs focus:border-stone-800 focus:outline-none bg-white font-medium text-stone-800 w-40"
             >
               <option value="">Choose Quality…</option>
               {qualities.map(q => <option key={q.id} value={q.label}>{q.label}</option>)}
@@ -511,7 +511,7 @@ export default function ConfiguratorStonePricesPage() {
             <select
               value={newColColor}
               onChange={e => setNewColColor(e.target.value)}
-              className="border border-stone-200 rounded-lg px-3 py-1.5 text-xs focus:border-[#1E3A5F] focus:outline-none bg-white font-medium text-stone-800 w-40"
+              className="border border-stone-200 rounded-lg px-3 py-1.5 text-xs focus:border-stone-800 focus:outline-none bg-white font-medium text-stone-800 w-40"
             >
               <option value="">Choose Color…</option>
               {colors.map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
@@ -521,7 +521,7 @@ export default function ConfiguratorStonePricesPage() {
           <button
             onClick={addColumnPair}
             disabled={!newColQuality || !newColColor}
-            className="px-3.5 py-1.5 rounded-lg bg-[#1E3A5F] hover:bg-[#152a47] text-white text-xs font-semibold disabled:opacity-50 inline-flex items-center gap-1.5 transition-colors"
+            className="px-3.5 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-900 text-white text-xs font-semibold disabled:opacity-50 inline-flex items-center gap-1.5 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" /> Add Column Pair
           </button>
@@ -537,7 +537,7 @@ export default function ConfiguratorStonePricesPage() {
             placeholder="Search size (e.g. 1.5mm)..."
             value={filterSize}
             onChange={e => setFilterSize(e.target.value)}
-            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-[#1E3A5F] focus:outline-none w-48 bg-stone-50/50 hover:bg-stone-50 focus:bg-white transition-colors"
+            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-stone-800 focus:outline-none w-48 bg-stone-50/50 hover:bg-stone-50 focus:bg-white transition-colors"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -548,7 +548,7 @@ export default function ConfiguratorStonePricesPage() {
             placeholder="Min ct"
             value={filterMinWeight}
             onChange={e => setFilterMinWeight(e.target.value)}
-            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-[#1E3A5F] focus:outline-none w-24 bg-stone-50/50 hover:bg-stone-50 focus:bg-white transition-colors"
+            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-stone-800 focus:outline-none w-24 bg-stone-50/50 hover:bg-stone-50 focus:bg-white transition-colors"
           />
           <span className="text-stone-400">—</span>
           <input
@@ -557,7 +557,7 @@ export default function ConfiguratorStonePricesPage() {
             placeholder="Max ct"
             value={filterMaxWeight}
             onChange={e => setFilterMaxWeight(e.target.value)}
-            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-[#1E3A5F] focus:outline-none w-24 bg-stone-50/50 hover:bg-stone-50 focus:bg-white transition-colors"
+            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-stone-800 focus:outline-none w-24 bg-stone-50/50 hover:bg-stone-50 focus:bg-white transition-colors"
           />
         </div>
         <div className="flex items-center gap-2 md:ml-auto">
@@ -569,7 +569,7 @@ export default function ConfiguratorStonePricesPage() {
               setSortBy(field as 'size' | 'weight')
               setSortOrder(order as 'asc' | 'desc')
             }}
-            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-[#1E3A5F] focus:outline-none bg-white font-medium text-stone-850"
+            className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm focus:border-stone-800 focus:outline-none bg-white font-medium text-stone-850"
           >
             <option value="size-asc">Size: Ascending</option>
             <option value="size-desc">Size: Descending</option>
@@ -635,7 +635,7 @@ export default function ConfiguratorStonePricesPage() {
         return (
           <div key={shape.id} className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm">
             <div className="px-4 py-3 bg-stone-50 border-b border-stone-200 flex items-center gap-2">
-              <Diamond className="w-4 h-4 text-[#1E3A5F]" />
+              <Diamond className="w-4 h-4 text-stone-800" />
               <h2 className="font-semibold text-stone-900">{shape.name}</h2>
               <span className="text-xs text-stone-400">{filteredSizes.length} size{filteredSizes.length === 1 ? '' : 's'}</span>
             </div>
@@ -737,7 +737,7 @@ export default function ConfiguratorStonePricesPage() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => !fillBusy && setFillOpen(false)}>
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-1">
-              <Wand2 className="w-4 h-4 text-[#1E3A5F]" />
+              <Wand2 className="w-4 h-4 text-stone-800" />
               <h3 className="font-semibold text-stone-900">Bulk fill blank cells</h3>
             </div>
             <p className="text-xs text-stone-500 mb-4">
@@ -750,7 +750,7 @@ export default function ConfiguratorStonePricesPage() {
               <div>
                 <label className="block text-xs font-medium text-stone-600 mb-1">Shape</label>
                 <select
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
                   value={fillShape}
                   onChange={e => setFillShape(e.target.value)}
                   disabled={fillBusy}
@@ -762,7 +762,7 @@ export default function ConfiguratorStonePricesPage() {
               <div>
                 <label className="block text-xs font-medium text-stone-600 mb-1">Quality bucket</label>
                 <select
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
                   value={fillQuality}
                   onChange={e => setFillQuality(e.target.value)}
                   disabled={fillBusy}
@@ -774,7 +774,7 @@ export default function ConfiguratorStonePricesPage() {
               <div>
                 <label className="block text-xs font-medium text-stone-600 mb-1">Color bucket</label>
                 <select
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
                   value={fillColor}
                   onChange={e => setFillColor(e.target.value)}
                   disabled={fillBusy}
@@ -787,7 +787,7 @@ export default function ConfiguratorStonePricesPage() {
                 <label className="block text-xs font-medium text-stone-600 mb-1">Base rate (₹ per carat)</label>
                 <input
                   type="number" min="1" step="100"
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
                   placeholder="e.g. 25000"
                   value={fillRate}
                   onChange={e => setFillRate(e.target.value)}
@@ -797,7 +797,7 @@ export default function ConfiguratorStonePricesPage() {
               <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 accent-[#1E3A5F]"
+                  className="w-4 h-4 accent-stone-800"
                   checked={fillOverwrite}
                   onChange={e => setFillOverwrite(e.target.checked)}
                   disabled={fillBusy}
@@ -820,7 +820,7 @@ export default function ConfiguratorStonePricesPage() {
               <button
                 onClick={applyBulkFill}
                 disabled={fillBusy || !fillQuality || !fillColor || !fillRate}
-                className="px-3 py-2 rounded-lg bg-[#1E3A5F] text-white text-sm font-medium disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="px-3 py-2 rounded-lg bg-stone-800 text-white text-sm font-medium disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 {fillBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Fill blanks
@@ -860,7 +860,7 @@ function BucketCard({
       </div>
       <div className="flex gap-2">
         <input
-          className="flex-1 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+          className="flex-1 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
           placeholder="Add a bucket"
           value={draft}
           onChange={e => setDraft(e.target.value)}
@@ -869,7 +869,7 @@ function BucketCard({
         <button
           onClick={() => { if (draft.trim()) { onAdd(draft); setDraft('') } }}
           disabled={!draft.trim()}
-          className="px-3 py-2 rounded-lg bg-[#1E3A5F] text-white text-sm disabled:opacity-50 inline-flex items-center gap-1"
+          className="px-3 py-2 rounded-lg bg-stone-800 text-white text-sm disabled:opacity-50 inline-flex items-center gap-1"
         >
           <Plus className="w-3.5 h-3.5" /> Add
         </button>

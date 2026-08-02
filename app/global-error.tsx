@@ -26,7 +26,7 @@ export default function GlobalError({
       <body style={{ margin: 0, fontFamily: 'system-ui, -apple-system, sans-serif', background: '#F5F6F8' }}>
         <div style={{ maxWidth: 560, margin: '0 auto', padding: '48px 20px' }}>
           <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #E5E8EE' }}>
-            <h1 style={{ fontSize: 18, margin: '0 0 8px', color: '#1A1F2E' }}>
+            <h1 style={{ fontSize: 18, margin: '0 0 8px', color: '#111111' }}>
               Something went wrong
             </h1>
             <p style={{ fontSize: 14, lineHeight: 1.6, color: '#5C6478', margin: '0 0 16px' }}>
@@ -37,7 +37,7 @@ export default function GlobalError({
             <button
               onClick={reset}
               style={{
-                background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 10,
+                background: '#222222', color: '#fff', border: 'none', borderRadius: 10,
                 padding: '12px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer',
                 minHeight: 44,
               }}

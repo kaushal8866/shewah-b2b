@@ -210,7 +210,7 @@ export default function AnalyticsPage() {
                 <div key={m.month} className="flex-1 flex flex-col items-center gap-1 min-w-6">
                   <p className="text-xs text-stone-400">{m.revenue > 0 ? `₹${(m.revenue/1000).toFixed(0)}K` : ''}</p>
                   <div className="w-full bg-stone-100 rounded-t overflow-hidden" style={{ height: '80px' }}>
-                    <div className="w-full bg-[#1E3A5F] rounded-t transition-all"
+                    <div className="w-full bg-stone-800 rounded-t transition-all"
                       style={{ height: `${(m.revenue / maxRevenue) * 100}%`, marginTop: 'auto' }} />
                   </div>
                   <p className="text-xs text-stone-400">{m.month}</p>
@@ -291,7 +291,7 @@ export default function AnalyticsPage() {
                     <span className="font-medium text-stone-700">{formatCurrency(m.revenue)}</span>
                   </div>
                   <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#1E3A5F] rounded-full"
+                    <div className="h-full bg-stone-800 rounded-full"
                       style={{ width: `${(m.revenue / Math.max(...data.modelSplit.map(x => x.revenue))) * 100}%` }} />
                   </div>
                   <p className="text-xs text-stone-400 mt-0.5">{m.count} orders</p>

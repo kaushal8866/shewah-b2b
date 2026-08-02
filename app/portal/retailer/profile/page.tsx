@@ -128,7 +128,7 @@ export default function RetailerProfilePage() {
   )
   if (!profile) return null
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -193,7 +193,7 @@ export default function RetailerProfilePage() {
           </div>
           <div className="sm:col-span-2">
             <label className="flex items-center gap-3 cursor-pointer select-none">
-              <input type="checkbox" className="w-4 h-4 accent-[#1E3A5F]" checked={notifyWa} onChange={e => setNotifyWa(e.target.checked)} />
+              <input type="checkbox" className="w-4 h-4 accent-stone-800" checked={notifyWa} onChange={e => setNotifyWa(e.target.checked)} />
               <span className="flex items-center gap-1.5 text-sm text-stone-800">
                 <MessageCircle className="w-4 h-4 text-emerald-600" />
                 Send WhatsApp updates for my orders
@@ -211,7 +211,7 @@ export default function RetailerProfilePage() {
         )}
         <div className="flex justify-end mt-4">
           <button onClick={saveProfile} disabled={saving}
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+            className="flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
             <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save changes'}
           </button>
         </div>
@@ -220,7 +220,7 @@ export default function RetailerProfilePage() {
       {/* Password change */}
       <section className="bg-white rounded-xl border border-stone-200 p-5">
         <h2 className="font-medium text-stone-900 mb-1 flex items-center gap-2">
-          <Lock className="w-4 h-4 text-[#1E3A5F]" /> Change password
+          <Lock className="w-4 h-4 text-stone-800" /> Change password
         </h2>
         <p className="text-xs text-stone-400 mb-4">
           Logged in as <strong className="text-stone-700">{account?.username}</strong>.
@@ -251,7 +251,7 @@ export default function RetailerProfilePage() {
           )}
           <div className="sm:col-span-2 flex justify-end">
             <button type="submit" disabled={pwBusy || !pwCurrent || !pwNext || !pwConfirm}
-              className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+              className="flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
               <Lock className="w-4 h-4" /> {pwBusy ? 'Updating...' : 'Update password'}
             </button>
           </div>

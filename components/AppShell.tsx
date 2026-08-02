@@ -171,8 +171,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center">
-        <div className="w-10 h-10 rounded-xl bg-[#1E3A5F] flex items-center justify-center mb-3">
+      <div className="min-h-screen bg-stone-900 flex flex-col items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-stone-800 flex items-center justify-center mb-3">
           <Diamond className="w-5 h-5 text-white animate-pulse" />
         </div>
         <p className="text-xs font-mono text-white/60 uppercase tracking-widest">Verifying Authorization...</p>
@@ -213,10 +213,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden">
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-56 bg-[#1A1F2E] flex-col shrink-0">
+      <aside className="hidden lg:flex w-56 bg-stone-900 flex-col shrink-0">
         <div className="px-5 py-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center">
               <Diamond className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -254,7 +254,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       <Icon className="w-4 h-4 shrink-0" />
                       <span className="flex-1">{label}</span>
                       {badge > 0 && (
-                        <span className="text-[10px] font-semibold bg-amber-400 text-stone-900 rounded-full px-1.5 py-0.5 leading-none min-w-[18px] text-center">
+                        <span className="text-[10px] font-semibold bg-amber-400 text-stone-900 px-1.5 py-0.5 leading-none min-w-[18px] text-center">
                           {badge > 99 ? '99+' : badge}
                         </span>
                       )}
@@ -272,8 +272,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-white/8 transition-colors text-left">
-              <div className="w-7 h-7 rounded-full bg-[#1E3A5F]/20 border border-[#1E3A5F]/30 flex items-center justify-center shrink-0">
-                <span className="text-[#1E3A5F] text-xs font-semibold">{initials}</span>
+              <div className="w-7 h-7 rounded-full bg-stone-800/20 border border-stone-800/30 flex items-center justify-center shrink-0">
+                <span className="text-stone-800 text-xs font-semibold">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white text-xs font-medium truncate">{displayName}</p>
@@ -282,7 +282,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <ChevronDown className={cn('w-3 h-3 text-white/30 shrink-0 transition-transform', userMenuOpen && 'rotate-180')} />
             </button>
             {userMenuOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#252B3D] border border-white/10 rounded-xl p-1 z-50">
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-stone-800 border border-white/10 rounded-xl p-1 z-50">
                 {role === 'master' && (
                   <Link href="/settings" onClick={() => setUserMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/8 rounded-lg">
@@ -301,10 +301,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile full menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-[#1A1F2E] flex flex-col">
+        <div className="lg:hidden fixed inset-0 z-50 bg-stone-900 flex flex-col">
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center">
                 <Diamond className="w-4 h-4 text-white" />
               </div>
               <p className="text-white font-semibold text-sm">Shewah</p>
@@ -343,7 +343,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         <Icon className="w-5 h-5 shrink-0" />
                         <span className="flex-1">{label}</span>
                         {badge > 0 && (
-                          <span className="text-xs font-semibold bg-amber-400 text-stone-900 rounded-full px-2 py-0.5 leading-none min-w-[20px] text-center">
+                          <span className="text-xs font-semibold bg-amber-400 text-stone-900 px-2 py-0.5 leading-none min-w-[20px] text-center">
                             {badge > 99 ? '99+' : badge}
                           </span>
                         )}
@@ -357,8 +357,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="px-4 py-4 bg-black/15 space-y-2">
             <div className="flex items-center gap-3 px-3 py-2">
-              <div className="w-9 h-9 rounded-full bg-[#1E3A5F]/20 border border-[#1E3A5F]/30 flex items-center justify-center">
-                <span className="text-[#1E3A5F] text-sm font-semibold">{initials}</span>
+              <div className="w-9 h-9 rounded-full bg-stone-800/20 border border-stone-800/30 flex items-center justify-center">
+                <span className="text-stone-800 text-sm font-semibold">{initials}</span>
               </div>
               <div>
                 <p className="text-white text-sm font-medium">{displayName}</p>
@@ -376,9 +376,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile header */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#1A1F2E] shrink-0">
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-stone-900 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-stone-800 flex items-center justify-center">
               <Diamond className="w-3.5 h-3.5 text-white" />
             </div>
             <p className="text-white font-semibold text-sm">Shewah Admin</p>
@@ -400,7 +400,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <Link key={href} href={href}
                 className={cn(
                   'flex-1 flex flex-col items-center gap-0.5 py-2 text-xs transition-colors',
-                  active ? 'text-[#1E3A5F]' : 'text-stone-400'
+                  active ? 'text-stone-800' : 'text-stone-400'
                 )}>
                 <Icon className={cn('w-5 h-5', active && 'stroke-[2.5]')} />
                 <span className="text-[10px] leading-none">{short}</span>

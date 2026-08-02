@@ -64,13 +64,13 @@ export default function SetupPage() {
     }, 1500)
   }
 
-  const inp = "w-full bg-white/8 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 text-sm outline-none focus:border-[#B7C8DD] focus:bg-white/10 transition-colors"
+  const inp = "w-full bg-white/8 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 text-sm outline-none focus:border-stone-300 focus:bg-white/10 transition-colors"
 
   return (
-    <div className="min-h-screen bg-[#1A1F2E] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-stone-900 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-[#1E3A5F] flex items-center justify-center mb-4 shadow-lg">
+          <div className="w-14 h-14 rounded-2xl bg-stone-800 flex items-center justify-center mb-4 shadow-lg">
             <Diamond className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-white text-2xl font-bold">Initial Setup</h1>
@@ -104,8 +104,8 @@ export default function SetupPage() {
 
         {status === 'ready' && (
           <form onSubmit={handleSetup} className="space-y-3">
-            <div className="bg-[#B7C8DD]/10 border border-[#B7C8DD]/30 rounded-xl p-4 mb-2">
-              <p className="text-[#B7C8DD] text-xs font-medium">
+            <div className="bg-stone-300/10 border border-stone-300/30 rounded-xl p-4 mb-2">
+              <p className="text-stone-300 text-xs font-medium">
                 This account will have full access to all modules and can create sub-users with limited access.
               </p>
             </div>
@@ -135,7 +135,7 @@ export default function SetupPage() {
             )}
 
             <button type="submit" disabled={saving}
-              className="w-full bg-[#1E3A5F] hover:bg-[#162B47] text-white font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-50 mt-2">
+              className="w-full bg-stone-800 hover:bg-stone-900 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-50 mt-2">
               {saving ? 'Creating account...' : 'Create master account'}
             </button>
           </form>

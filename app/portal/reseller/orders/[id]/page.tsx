@@ -299,7 +299,7 @@ export default function ResellerOrderDetail() {
                 <p className="text-[10px] text-stone-450 font-bold uppercase tracking-wider">Set Components Breakdown</p>
                 <div className="space-y-3">
                   {groupOrders.map(comp => (
-                    <div key={comp.id} className="flex items-center gap-3 p-3 border rounded-xl bg-stone-50" style={{ borderColor: '#E7E5E4' }}>
+                    <div key={comp.id} className="flex items-center gap-3 p-3 border rounded-xl bg-stone-50" style={{ borderColor: '#E6E6E6' }}>
                       {comp.products?.photo_urls?.[0] ? (
                         <img src={comp.products.photo_urls[0]} className="w-12 h-12 object-cover rounded border" alt="" />
                       ) : (
@@ -550,7 +550,7 @@ export default function ResellerOrderDetail() {
                 <button
                   type="button"
                   onClick={() => setShowQR(!showQR)}
-                  className="w-full bg-[#1E3A5F] hover:bg-[#162B47] text-white text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1"
+                  className="w-full bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1"
                 >
                   <CreditCard className="w-3.5 h-3.5" /> {showQR ? 'Hide UPI QR Code' : 'Display UPI QR Code'}
                 </button>

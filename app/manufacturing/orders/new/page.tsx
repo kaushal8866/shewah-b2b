@@ -345,7 +345,7 @@ function NewMfgOrderForm() {
     router.push(`/manufacturing/orders/${data.id}`)
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
   const selectedPartner = partners.find(p => p.id === form.manufacturing_partner_id)
 
@@ -356,7 +356,7 @@ function NewMfgOrderForm() {
         <div style={{ fontFamily: 'sans-serif', padding: '20px', maxWidth: '700px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #1E3A5F', paddingBottom: '12px', marginBottom: '16px' }}>
             <div>
-              <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1A1F2E' }}>SHEWAH</h1>
+              <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111111' }}>SHEWAH</h1>
               <p style={{ fontSize: '12px', color: '#666' }}>Manufacturing Order</p>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -379,7 +379,7 @@ function NewMfgOrderForm() {
                 ['Expected Completion', form.expected_date || '—'],
               ].map(([k, v]) => (
                 <tr key={String(k)} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '6px 8px', fontWeight: '600', fontSize: '12px', color: '#555', width: '40%' }}>{k}</td>
+                  <td style={{ padding: '6px 8px', fontWeight: '600', fontSize: '12px', color: '#666666', width: '40%' }}>{k}</td>
                   <td style={{ padding: '6px 8px', fontSize: '12px' }}>{v}</td>
                 </tr>
               ))}
@@ -387,7 +387,7 @@ function NewMfgOrderForm() {
           </table>
 
           {form.special_notes && (
-            <div style={{ background: '#FFF8EC', border: '1px solid #1E3A5F', padding: '10px', borderRadius: '6px', marginBottom: '16px' }}>
+            <div style={{ background: '#F5F5F5', border: '1px solid #1E3A5F', padding: '10px', borderRadius: '6px', marginBottom: '16px' }}>
               <p style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>Special Instructions:</p>
               <p style={{ fontSize: '12px' }}>{form.special_notes}</p>
             </div>
@@ -499,7 +499,7 @@ function NewMfgOrderForm() {
                   </button>
                 </div>
               ))}
-              <label className="aspect-square border-2 border-dashed border-stone-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#1E3A5F] hover:bg-yellow-50 transition-colors">
+              <label className="aspect-square border-2 border-dashed border-stone-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-stone-800 hover:bg-yellow-50 transition-colors">
                 <input type="file" accept="image/*" multiple className="hidden"
                   onChange={e => { Array.from(e.target.files || []).forEach(f => uploadImage(f)); e.target.value = '' }} />
                 <Upload className="w-5 h-5 text-stone-300" />
@@ -525,7 +525,7 @@ function NewMfgOrderForm() {
                 </div>
               ))}
             </div>
-            <label className="flex items-center justify-center gap-2 border-2 border-dashed border-stone-200 rounded-lg py-3 cursor-pointer hover:border-[#1E3A5F] hover:bg-yellow-50 transition-colors">
+            <label className="flex items-center justify-center gap-2 border-2 border-dashed border-stone-200 rounded-lg py-3 cursor-pointer hover:border-stone-800 hover:bg-yellow-50 transition-colors">
               <input type="file" multiple className="hidden"
                 accept=".stl,.3dm,.step,.stp,.iges,.igs,.obj,.zip,.pdf,.dwg,.dxf,application/pdf,application/zip"
                 onChange={e => { Array.from(e.target.files || []).forEach(f => uploadCad(f)); e.target.value = '' }} />
@@ -541,7 +541,7 @@ function NewMfgOrderForm() {
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" checked={form.material_from_float}
                   onChange={e => set('material_from_float', e.target.checked)}
-                  className="w-4 h-4 accent-[#1E3A5F]" />
+                  className="w-4 h-4 accent-stone-800" />
                 <div>
                   <p className="text-sm font-medium text-stone-700">Use material from float (deposited gold)</p>
                   <p className="text-xs text-stone-400">Deduct gold weight from this partner's deposited material balance</p>
@@ -562,7 +562,7 @@ function NewMfgOrderForm() {
                     : b.material_type.replace(/_/g, ' ')
                   return (
                     <div key={b.material_type}
-                      className={`rounded-lg p-3 border ${isActive ? 'bg-[#F5F6F8] border-[#1E3A5F]' : 'bg-stone-50 border-stone-200'}`}>
+                      className={`rounded-lg p-3 border ${isActive ? 'bg-stone-50 border-stone-800' : 'bg-stone-50 border-stone-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs font-semibold uppercase tracking-wider text-stone-700">{label}</p>
                       </div>
@@ -710,7 +710,7 @@ function NewMfgOrderForm() {
               )}
               <div className="flex justify-between font-semibold text-stone-900 pt-2 border-t border-stone-200">
                 <span>Total manufacturing cost</span>
-                <span className="text-[#1E3A5F]">₹{totalMfgCost.toLocaleString('en-IN')}</span>
+                <span className="text-stone-800">₹{totalMfgCost.toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>
@@ -725,7 +725,7 @@ function NewMfgOrderForm() {
               <Printer className="w-4 h-4" /> Save & Print
             </button>
             <button onClick={handleSave} disabled={saving}
-              className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
+              className="flex items-center gap-2 bg-stone-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
               <Save className="w-4 h-4" />
               {saving ? 'Issuing...' : 'Issue order'}
             </button>
@@ -771,7 +771,7 @@ function NewMfgOrderForm() {
             <div className="p-5 pt-0 flex flex-col gap-2">
               <Link
                 href={`/manufacturing/partners/${form.manufacturing_partner_id}/float?deposit=${encodeURIComponent(requiredMaterialType)}&amount=${overIssueModal.shortfall.toFixed(3)}`}
-                className="bg-[#1E3A5F] hover:bg-[#162B47] text-white text-sm font-medium px-4 py-2.5 rounded-lg text-center">
+                className="bg-stone-800 hover:bg-stone-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg text-center">
                 Record {overIssueModal.shortfall.toFixed(3)}g deposit
               </Link>
               <button onClick={() => setOverIssueModal(null)}

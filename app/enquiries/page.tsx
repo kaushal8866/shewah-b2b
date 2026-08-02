@@ -55,7 +55,7 @@ export default function EnquiriesPage() {
           <h1 className="text-2xl font-serif mt-0.5">Enquiry inbox</h1>
         </div>
         <Link href="/enquiries/new"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#172d49]">
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-stone-800 text-white text-sm font-medium hover:bg-stone-900">
           <Plus className="w-4 h-4" /> Log enquiry
         </Link>
       </div>
@@ -63,11 +63,11 @@ export default function EnquiriesPage() {
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
         <button onClick={() => setView('board')}
-          className={`text-xs px-3 py-1.5 rounded-lg border inline-flex items-center gap-1.5 ${view === 'board' ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'bg-white text-stone-700 border-stone-200'}`}>
+          className={`text-xs px-3 py-1.5 rounded-lg border inline-flex items-center gap-1.5 ${view === 'board' ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-700 border-stone-200'}`}>
           <LayoutGrid className="w-3.5 h-3.5" /> Board
         </button>
         <button onClick={() => setView('list')}
-          className={`text-xs px-3 py-1.5 rounded-lg border inline-flex items-center gap-1.5 ${view === 'list' ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'bg-white text-stone-700 border-stone-200'}`}>
+          className={`text-xs px-3 py-1.5 rounded-lg border inline-flex items-center gap-1.5 ${view === 'list' ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-700 border-stone-200'}`}>
           <List className="w-3.5 h-3.5" /> List
         </button>
 
@@ -75,7 +75,7 @@ export default function EnquiriesPage() {
         <Filter className="w-4 h-4 text-stone-400" />
         {(['all', ...ENQUIRY_STATUSES] as const).map(k => (
           <button key={k} onClick={() => setFilter(k as any)}
-            className={`text-xs px-3 py-1 rounded-full border ${filter === k ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-stone-200'}`}>
+            className={`text-xs px-3 py-1 border ${filter === k ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-stone-200'}`}>
             {k === 'all' ? 'All' : ENQUIRY_STATUS_LABEL[k]}
             <span className="ml-1.5 text-[10px] opacity-70">{counts[k] || 0}</span>
           </button>
@@ -98,7 +98,7 @@ export default function EnquiriesPage() {
         <div className="text-center py-16 text-stone-500">
           <Inbox className="w-8 h-8 mx-auto text-stone-300" />
           <p className="mt-3 text-sm">No enquiries {filter !== 'all' ? `with status "${ENQUIRY_STATUS_LABEL[filter]}"` : 'yet'}.</p>
-          <Link href="/enquiries/new" className="inline-flex items-center gap-1 mt-4 text-sm text-[#1E3A5F] font-medium hover:text-[#172d49]">
+          <Link href="/enquiries/new" className="inline-flex items-center gap-1 mt-4 text-sm text-stone-800 font-medium hover:text-stone-900">
             <Plus className="w-4 h-4" /> Log the first one
           </Link>
         </div>
@@ -108,7 +108,7 @@ export default function EnquiriesPage() {
             <div key={col} className="bg-stone-50 rounded-xl p-3 min-h-[200px]">
               <div className="flex items-center justify-between mb-3 px-1">
                 <p className="text-xs font-semibold text-stone-700 uppercase tracking-wider">{ENQUIRY_STATUS_LABEL[col]}</p>
-                <span className="text-[10px] text-stone-500 bg-white border border-stone-200 rounded-full px-2 py-0.5">{byColumn[col].length}</span>
+                <span className="text-[10px] text-stone-500 bg-white border border-stone-200 px-2 py-0.5">{byColumn[col].length}</span>
               </div>
               <div className="space-y-2">
                 {byColumn[col].map(r => <EnquiryCard key={r.id} r={r} />)}
@@ -144,7 +144,7 @@ export default function EnquiriesPage() {
                     <p className="text-[11px] text-stone-500">{r.customer ? displayPhone(r.customer.whatsapp) : ''}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${ENQUIRY_STATUS_STYLE[r.status]}`}>
+                    <span className={`text-[10px] px-2 py-0.5 border font-medium ${ENQUIRY_STATUS_STYLE[r.status]}`}>
                       {ENQUIRY_STATUS_LABEL[r.status]}
                     </span>
                   </td>
@@ -153,7 +153,7 @@ export default function EnquiriesPage() {
                   </td>
                   <td className="px-4 py-3 text-stone-500 text-xs">{new Date(r.created_at).toLocaleDateString('en-IN')}</td>
                   <td className="px-2 py-3">
-                    <Link href={`/enquiries/${r.id}`} className="text-[#1E3A5F] hover:text-[#172d49]">
+                    <Link href={`/enquiries/${r.id}`} className="text-stone-800 hover:text-stone-900">
                       <ArrowUpRight className="w-4 h-4" />
                     </Link>
                   </td>
@@ -177,7 +177,7 @@ function EnquiryCard({ r }: { r: EnquiryRow }) {
       <p className="text-[11px] text-stone-500 mt-0.5">{r.enquiry_number}</p>
       <div className="mt-2 flex items-center justify-between text-[11px]">
         <span className="text-stone-700 truncate">{r.customer?.full_name || '—'}</span>
-        <span className={`px-1.5 py-0.5 rounded-full border ${ENQUIRY_STATUS_STYLE[r.status]}`}>{ENQUIRY_STATUS_LABEL[r.status]}</span>
+        <span className={`px-1.5 py-0.5 border ${ENQUIRY_STATUS_STYLE[r.status]}`}>{ENQUIRY_STATUS_LABEL[r.status]}</span>
       </div>
       {(r.budget_min || r.budget_max) && (
         <p className="mt-1 text-[11px] text-stone-500">{formatINR(r.budget_min)} – {formatINR(r.budget_max)}</p>

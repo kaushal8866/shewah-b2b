@@ -98,14 +98,14 @@ export default function StockPage() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl lg:text-2xl font-semibold text-stone-900 flex items-center gap-2">
-            <Boxes className="w-6 h-6 text-[#1E3A5F]" />
+            <Boxes className="w-6 h-6 text-stone-800" />
             Stock
           </h1>
           <p className="text-stone-500 text-sm mt-0.5">Live central inventory — every gram in or out</p>
         </div>
         <div className="flex gap-2">
           <Link href="/stock/partner-trades"
-            className="flex items-center gap-1.5 border border-[#1E3A5F] text-[#1E3A5F] px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
+            className="flex items-center gap-1.5 border border-stone-800 text-stone-800 px-3 py-2 rounded-lg text-sm hover:bg-stone-50">
             <Diamond className="w-4 h-4" /> Partner Trades
           </Link>
           <Link href="/stock/movements"
@@ -117,7 +117,7 @@ export default function StockPage() {
             <ArrowDownToLine className="w-4 h-4" /> Receive
           </Link>
           <Link href="/stock/issue"
-            className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47]">
+            className="flex items-center gap-1.5 bg-stone-800 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-stone-900">
             <ArrowUpFromLine className="w-4 h-4" /> Issue to karigar
           </Link>
         </div>
@@ -140,7 +140,7 @@ export default function StockPage() {
           <p className="text-xs text-stone-400">Gold on hand</p>
           <p className="text-xl font-semibold text-stone-900 mt-1">{totals.goldG.toFixed(3)} g</p>
         </div>
-        <Link href="/diamonds/catalog" className="bg-white rounded-xl border border-stone-200 p-4 hover:border-[#1E3A5F] transition-colors">
+        <Link href="/diamonds/catalog" className="bg-white rounded-xl border border-stone-200 p-4 hover:border-stone-800 transition-colors">
           <p className="text-xs text-stone-400 flex items-center gap-1"><Diamond className="w-3 h-3" /> Diamonds on hand</p>
           <p className="text-xl font-semibold text-stone-900 mt-1">{totals.diaC.toFixed(3)} ct</p>
           <p className="text-[11px] text-stone-400 mt-0.5">{totals.diaPcs} pcs · {diaGroups.length} groups{diaLowCount > 0 && <> · <span className="text-amber-600 font-medium">{diaLowCount} low</span></>}</p>
@@ -159,7 +159,7 @@ export default function StockPage() {
           <Boxes className="w-10 h-10 text-stone-200 mx-auto mb-3" />
           <p className="text-stone-500 text-sm">No stock movements yet.</p>
           <p className="text-xs text-stone-400 mt-1">Record a purchase from a vendor to start the ledger.</p>
-          <Link href="/stock/receive" className="inline-block mt-3 text-sm text-[#1E3A5F] hover:underline">
+          <Link href="/stock/receive" className="inline-block mt-3 text-sm text-stone-800 hover:underline">
             Record a purchase →
           </Link>
         </div>
@@ -170,9 +170,9 @@ export default function StockPage() {
           <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
             <div className="px-4 py-3 bg-stone-50 border-b border-stone-100 flex items-center justify-between">
               <h2 className="text-sm font-medium text-stone-700 flex items-center gap-2">
-                <Diamond className="w-4 h-4 text-[#1E3A5F]" /> Diamonds by shape × size
+                <Diamond className="w-4 h-4 text-stone-800" /> Diamonds by shape × size
               </h2>
-              <Link href="/diamonds/catalog" className="text-xs text-[#1E3A5F] hover:underline">Manage catalog →</Link>
+              <Link href="/diamonds/catalog" className="text-xs text-stone-800 hover:underline">Manage catalog →</Link>
             </div>
             <div className="divide-y divide-stone-50">
               {diaGroups.map((g, i) => {

@@ -597,7 +597,7 @@ function NewOrderForm() {
     router.push('/orders')
   }
 
-  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
   const label = "block text-xs font-medium text-stone-500 mb-1"
   const balanceDue = (parseFloat(form.total_amount) || 0) - (parseFloat(form.advance_paid) || 0)
 
@@ -685,12 +685,12 @@ function NewOrderForm() {
           <div className="flex items-center justify-between mb-1">
             <h2 className="font-medium text-stone-900">Diamond specifications</h2>
             <button type="button" onClick={addDiamondRow}
-              className="flex items-center gap-1.5 text-xs text-[#1E3A5F] border border-[#1E3A5F] px-3 py-1.5 rounded-lg hover:bg-yellow-50">
+              className="flex items-center gap-1.5 text-xs text-stone-800 border border-stone-800 px-3 py-1.5 rounded-lg hover:bg-yellow-50">
               <Plus className="w-3.5 h-3.5" /> Add row
             </button>
           </div>
           <p className="text-xs text-stone-400 mb-4">
-            Pick a shape × size from the <Link href="/diamonds/catalog" className="text-[#1E3A5F] underline">diamond catalog</Link> so cost suggestions appear and stock matching works. Row totals auto-mirror into <em>Stone cost</em> below until you edit it manually.
+            Pick a shape × size from the <Link href="/diamonds/catalog" className="text-stone-800 underline">diamond catalog</Link> so cost suggestions appear and stock matching works. Row totals auto-mirror into <em>Stone cost</em> below until you edit it manually.
           </p>
           <div className="space-y-3">
             {diamonds.map((d, idx) => (
@@ -725,7 +725,7 @@ function NewOrderForm() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
                   <div>
                     <label className="block text-xs font-medium text-stone-500 mb-1">Role</label>
-                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-stone-800 outline-none bg-white"
                       value={d.role} onChange={e => updateDiamond(d.id, 'role', e.target.value)}>
                       {DIAMOND_ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
                     </select>
@@ -733,32 +733,32 @@ function NewOrderForm() {
                   <div>
                     <label className="block text-xs font-medium text-stone-500 mb-1">Weight (ct)</label>
                     <input type="number" inputMode="decimal" step="0.01"
-                      className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                      className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-stone-800 outline-none bg-white"
                       value={d.weight} onChange={e => updateDiamond(d.id, 'weight', e.target.value)} placeholder="0.50" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-stone-500 mb-1">Pieces</label>
                     <input type="number" inputMode="decimal" min="1"
-                      className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                      className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-stone-800 outline-none bg-white"
                       value={d.pieces} onChange={e => updateDiamond(d.id, 'pieces', e.target.value)} placeholder="1" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-stone-500 mb-1">Quality</label>
-                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-stone-800 outline-none bg-white"
                       value={d.quality} onChange={e => updateDiamond(d.id, 'quality', e.target.value)}>
                       {DIAMOND_QUALITIES.map(q => <option key={q} value={q}>{q}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-stone-500 mb-1">Color</label>
-                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-stone-800 outline-none bg-white"
                       value={d.color} onChange={e => updateDiamond(d.id, 'color', e.target.value)}>
                       {DIAMOND_COLORS.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-stone-500 mb-1">Type</label>
-                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-stone-800 outline-none bg-white"
                       value={d.type} onChange={e => updateDiamond(d.id, 'type', e.target.value)}>
                       <option value="lgd">LGD</option>
                       <option value="natural">Natural</option>
@@ -766,7 +766,7 @@ function NewOrderForm() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-stone-500 mb-1">Setting</label>
-                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                    <select className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-stone-800 outline-none bg-white"
                       value={d.setting_type || 'prong'} onChange={e => updateDiamond(d.id, 'setting_type', e.target.value)}>
                       <option value="prong">Prong</option>
                       <option value="bezel">Bezel</option>
@@ -777,7 +777,7 @@ function NewOrderForm() {
                   <div>
                     <label className="block text-xs font-medium text-stone-500 mb-1">Cost/pc (₹)</label>
                     <input type="number" inputMode="decimal"
-                      className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+                      className="w-full border border-stone-200 rounded-lg px-2 py-2 text-sm focus:border-stone-800 outline-none bg-white"
                       value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} placeholder="8000" />
                   </div>
                 </div>
@@ -798,8 +798,8 @@ function NewOrderForm() {
                               type="button"
                               onClick={() => updateDiamond(d.id, 'cost', String(pcCost))}
                               className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
-                                (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
-                                        : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}
+                                (active ? 'border-stone-800 bg-stone-800/5 text-stone-800'
+                                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-800/40')}
                               title={`Matrix · ${m.quality_label} · ${m.color_label} · Rate: ₹${m.price.toLocaleString('en-IN')}/ct`}
                             >
                               <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
@@ -850,11 +850,11 @@ function NewOrderForm() {
               <label className={label}>Weight Calculation Method</label>
               <div className="flex gap-6 mt-1">
                 <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
-                  <input type="radio" name="weightCalcMethod" value="manual" checked={weightCalcMethod === 'manual'} onChange={() => setWeightCalcMethod('manual')} className="text-[#1E3A5F] focus:ring-[#1E3A5F]" />
+                  <input type="radio" name="weightCalcMethod" value="manual" checked={weightCalcMethod === 'manual'} onChange={() => setWeightCalcMethod('manual')} className="text-stone-800 focus:ring-stone-800" />
                   <span>Manual / Sizing Scale</span>
                 </label>
                 <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
-                  <input type="radio" name="weightCalcMethod" value="cad" checked={weightCalcMethod === 'cad'} onChange={() => setWeightCalcMethod('cad')} className="text-[#1E3A5F] focus:ring-[#1E3A5F]" />
+                  <input type="radio" name="weightCalcMethod" value="cad" checked={weightCalcMethod === 'cad'} onChange={() => setWeightCalcMethod('cad')} className="text-stone-800 focus:ring-stone-800" />
                   <span>CAD Alloy-Density Engine</span>
                 </label>
               </div>
@@ -961,8 +961,8 @@ function NewOrderForm() {
                       {getAlloyDensity(form.gold_karat, metalTone).toFixed(2)} g/cm³
                     </div>
 
-                    <div className="border-t border-stone-200 pt-1 font-semibold text-[#1E3A5F]">Casting Weight (Estimated Gross):</div>
-                    <div className="border-t border-stone-200 pt-1 font-semibold text-right text-[#1E3A5F]">
+                    <div className="border-t border-stone-200 pt-1 font-semibold text-stone-800">Casting Weight (Estimated Gross):</div>
+                    <div className="border-t border-stone-200 pt-1 font-semibold text-right text-stone-800">
                       {parseFloat(form.gold_weight_estimated) ? `${parseFloat(form.gold_weight_estimated).toFixed(4)}g` : '—'}
                     </div>
 
@@ -1019,7 +1019,7 @@ function NewOrderForm() {
               </div>
               <div className="flex justify-between font-semibold text-stone-900 border-t border-stone-200 pt-1">
                 <span>Estimated COGS</span>
-                <span className="text-[#1E3A5F]">₹{Math.round(estCogs.total_cogs).toLocaleString('en-IN')}</span>
+                <span className="text-stone-800">₹{Math.round(estCogs.total_cogs).toLocaleString('en-IN')}</span>
               </div>
               {parseFloat(form.total_amount) > 0 && (
                 <div className="flex justify-between font-medium">
@@ -1092,7 +1092,7 @@ function NewOrderForm() {
             Cancel
           </Link>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
+            className="flex items-center gap-2 bg-stone-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
             {saving ? 'Creating...' : 'Create order'}
           </button>

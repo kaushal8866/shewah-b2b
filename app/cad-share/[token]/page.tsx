@@ -104,11 +104,11 @@ export default async function CadPartnerSharePage({ params }: { params: { token:
       <div className="bg-stone-900 border-b border-stone-800">
         <div className="max-w-2xl mx-auto px-4 py-5">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#1E3A5F] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-stone-800 flex items-center justify-center shrink-0">
               <Diamond className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-[#B7C8DD] text-xs font-medium tracking-wider uppercase">Shewah Jewellery</p>
+              <p className="text-stone-300 text-xs font-medium tracking-wider uppercase">Shewah Jewellery</p>
               <p className="text-stone-400 text-xs">CAD partner brief</p>
             </div>
           </div>
@@ -128,13 +128,13 @@ export default async function CadPartnerSharePage({ params }: { params: { token:
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-5">
         {/* Brief */}
         <div className="bg-stone-900 rounded-2xl border border-stone-800 p-5">
-          <h2 className="text-white text-sm font-medium mb-3 uppercase tracking-wider text-[#B7C8DD]">Design brief</h2>
+          <h2 className="text-white text-sm font-medium mb-3 uppercase tracking-wider text-stone-300">Design brief</h2>
           <p className="text-stone-200 text-sm whitespace-pre-wrap leading-relaxed">
             {c.brief_text || 'No brief text provided.'}
           </p>
           {c.special_requests && (
             <div className="mt-4 pt-4 border-t border-stone-800">
-              <p className="text-xs text-[#B7C8DD] uppercase tracking-wider mb-1">Special requests</p>
+              <p className="text-xs text-stone-300 uppercase tracking-wider mb-1">Special requests</p>
               <p className="text-stone-200 text-sm whitespace-pre-wrap leading-relaxed">{c.special_requests}</p>
             </div>
           )}
@@ -142,7 +142,7 @@ export default async function CadPartnerSharePage({ params }: { params: { token:
 
         {/* Spec */}
         <div className="bg-stone-900 rounded-2xl border border-stone-800 p-5">
-          <h2 className="text-white text-sm font-medium mb-4 uppercase tracking-wider text-[#B7C8DD]">Spec</h2>
+          <h2 className="text-white text-sm font-medium mb-4 uppercase tracking-wider text-stone-300">Spec</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-5 text-sm">
             {specs.map(([k, v]) => (
               <div key={k}>
@@ -156,7 +156,7 @@ export default async function CadPartnerSharePage({ params }: { params: { token:
         {/* Downloads */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <a href={zipUrl}
-             className="flex items-center justify-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white py-3.5 rounded-2xl text-sm font-semibold transition-colors">
+             className="flex items-center justify-center gap-2 bg-stone-800 hover:bg-stone-900 text-white py-3.5 rounded-2xl text-sm font-semibold transition-colors">
             <Download className="w-4 h-4" />
             Download all images (ZIP)
           </a>
@@ -170,7 +170,7 @@ export default async function CadPartnerSharePage({ params }: { params: { token:
         {/* Reference images */}
         {refs.length > 0 && (
           <div className="bg-stone-900 rounded-2xl border border-stone-800 p-5">
-            <h2 className="text-white text-sm font-medium mb-3 uppercase tracking-wider text-[#B7C8DD]">
+            <h2 className="text-white text-sm font-medium mb-3 uppercase tracking-wider text-stone-300">
               Reference images ({refs.length})
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 
 export default function ConsultationLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${serif.variable} ${sans.variable} consultation-shell min-h-screen bg-[#050505] text-[rgba(255,255,255,0.90)]`}>
+    <div className={`${serif.variable} ${sans.variable} consultation-shell min-h-screen bg-stone-900 text-[rgba(255,255,255,0.90)]`}>
       {children}
     </div>
   )

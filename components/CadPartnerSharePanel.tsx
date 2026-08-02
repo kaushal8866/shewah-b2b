@@ -175,7 +175,7 @@ export default function CadPartnerSharePanel({
       <div className="flex items-start justify-between mb-3 gap-2">
         <div>
           <h2 className="font-medium text-stone-900 flex items-center gap-2">
-            <Link2 className="w-4 h-4 text-[#1E3A5F]" />
+            <Link2 className="w-4 h-4 text-stone-800" />
             CAD partner handoff
           </h2>
           <p className="text-xs text-stone-400 mt-0.5">
@@ -186,7 +186,7 @@ export default function CadPartnerSharePanel({
         </div>
         <Link
           href="/cad-partners"
-          className="shrink-0 flex items-center gap-1 text-[11px] text-stone-500 hover:text-[#1E3A5F] border border-stone-200 hover:border-[#1E3A5F]/40 rounded-lg px-2 py-1"
+          className="shrink-0 flex items-center gap-1 text-[11px] text-stone-500 hover:text-stone-800 border border-stone-200 hover:border-stone-800/40 rounded-lg px-2 py-1"
         >
           <BookUser className="w-3 h-3" /> Manage directory
         </Link>
@@ -208,7 +208,7 @@ export default function CadPartnerSharePanel({
               <span className="text-xs text-emerald-700 font-normal">
                 · {activeDirEntry?.name || active.partner_name}
                 {activeDirEntry && (
-                  <span className="ml-1 inline-block text-[9px] uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 align-middle">
+                  <span className="ml-1 inline-block text-[9px] uppercase tracking-wider bg-emerald-100 text-emerald-700 px-1.5 py-0.5 align-middle">
                     Directory
                   </span>
                 )}
@@ -273,7 +273,7 @@ export default function CadPartnerSharePanel({
                 : 'bg-red-50 border-red-200'
             }`}>
               <div className="flex items-center gap-2 mb-1">
-                <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 ${
                   inactiveLatest.status === 'expired'
                     ? 'bg-stone-200 text-stone-700'
                     : 'bg-red-200 text-red-800'
@@ -314,7 +314,7 @@ export default function CadPartnerSharePanel({
             <button
               onClick={() => setShowForm(true)}
               disabled={!hasReferenceImages}
-              className="flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-stone-800 hover:bg-stone-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Send className="w-4 h-4" /> {inactiveLatest ? 'Generate a new partner link' : 'Share with CAD partner'}
             </button>
@@ -330,7 +330,7 @@ export default function CadPartnerSharePanel({
             <select
               value={selectedPartnerId}
               onChange={e => pickDirectoryPartner(e.target.value)}
-              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-[#1E3A5F] outline-none"
+              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-stone-800 outline-none"
             >
               <option value={ADHOC}>Ad-hoc — type details below</option>
               {directory.map(d => (
@@ -342,7 +342,7 @@ export default function CadPartnerSharePanel({
             {directory.length === 0 && (
               <p className="text-[11px] text-stone-400 mt-1">
                 Tip: add recurring partners in the{' '}
-                <Link href="/cad-partners" className="underline hover:text-[#1E3A5F]">CAD partners directory</Link>{' '}
+                <Link href="/cad-partners" className="underline hover:text-stone-800">CAD partners directory</Link>{' '}
                 to skip retyping next time.
               </p>
             )}
@@ -353,19 +353,19 @@ export default function CadPartnerSharePanel({
               placeholder="Partner name (optional)"
               value={partnerName}
               onChange={(e) => setPartnerName(e.target.value)}
-              className="border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-[#1E3A5F] outline-none"
+              className="border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-stone-800 outline-none"
             />
             <input
               type="tel"
               placeholder="Partner WhatsApp number"
               value={partnerPhone}
               onChange={(e) => setPartnerPhone(e.target.value)}
-              className="border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-[#1E3A5F] outline-none"
+              className="border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-stone-800 outline-none"
             />
             <select
               value={ttlDays}
               onChange={(e) => setTtlDays(parseInt(e.target.value) || 7)}
-              className="border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-[#1E3A5F] outline-none"
+              className="border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-stone-800 outline-none"
             >
               <option value="1">Expires in 1 day</option>
               <option value="3">Expires in 3 days</option>
@@ -376,7 +376,7 @@ export default function CadPartnerSharePanel({
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => generate(true)} disabled={busy}
-              className="flex items-center gap-1.5 text-xs bg-[#1E3A5F] hover:bg-[#162B47] text-white px-3 py-1.5 rounded-lg disabled:opacity-50">
+              className="flex items-center gap-1.5 text-xs bg-stone-800 hover:bg-stone-900 text-white px-3 py-1.5 rounded-lg disabled:opacity-50">
               <Send className="w-3.5 h-3.5" /> Generate &amp; send on WhatsApp
             </button>
             <button onClick={() => generate(false)} disabled={busy}
@@ -427,7 +427,7 @@ export default function CadPartnerSharePanel({
       {uploads.length > 0 && (
         <div className="mt-3 border border-stone-200 rounded-xl p-3 bg-white">
           <p className="text-sm font-medium text-stone-800 mb-2 flex items-center gap-2">
-            <FileIcon className="w-4 h-4 text-[#1E3A5F]" />
+            <FileIcon className="w-4 h-4 text-stone-800" />
             CAD partner uploads ({uploads.length})
           </p>
           <ul className="space-y-2">
@@ -472,7 +472,7 @@ export default function CadPartnerSharePanel({
                   href={u.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-stone-500 hover:text-[#1E3A5F] p-1.5 rounded-md hover:bg-stone-50"
+                  className="text-stone-500 hover:text-stone-800 p-1.5 rounded-md hover:bg-stone-50"
                   title="Download"
                 >
                   <Download className="w-4 h-4" />
