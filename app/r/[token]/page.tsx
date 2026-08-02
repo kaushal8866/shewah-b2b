@@ -1114,7 +1114,7 @@ export default function PublicStorefront() {
                               <button
                                 key={cat}
                                 onClick={() => setCategoryFilter(cat)}
-                                className="px-4.5 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.15em] transition-all shrink-0 snap-start border hover:opacity-85"
+                                className="px-4.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.15em] transition-all shrink-0 snap-start border hover:opacity-85"
                                 style={{
                                   backgroundColor: active ? c.primary : c.surface,
                                   borderColor: active ? c.primary : c.borders,
@@ -1361,7 +1361,7 @@ export default function PublicStorefront() {
                               <span className="font-mono text-xs font-bold" style={{ color: c.text }}>{o.order_number}</span>
                               <span className="block text-[10px] opacity-60 mt-0.5" style={{ color: c.text }}>Ordered {new Date(o.created_at).toLocaleDateString('en-IN')}</span>
                             </div>
-                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 ${
                               o.status === 'delivered' ? 'bg-green-50 text-green-700 border border-green-200' :
                               o.status === 'dispatched' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
                               o.status === 'cancelled' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200'

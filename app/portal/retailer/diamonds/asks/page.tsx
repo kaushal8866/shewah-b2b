@@ -86,7 +86,7 @@ export default function RetailerAsksPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    const base = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider "
+    const base = "px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
     switch (status) {
       case 'pending':
         return base + "bg-blue-50 text-blue-700 border border-blue-200"

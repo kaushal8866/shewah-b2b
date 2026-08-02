@@ -274,7 +274,7 @@ export default function QuotesPage() {
                       ₹ {q.grand_total.toLocaleString('en-IN')}
                     </td>
                     <td className="px-4 py-4">
-                      <span className={`px-2 py-0.5 text-xs font-medium border rounded-full ${getStatusStyle(q.status)}`}>
+                      <span className={`px-2 py-0.5 text-xs font-medium border ${getStatusStyle(q.status)}`}>
                         {q.status.replace(/_/g, ' ')}
                       </span>
                     </td>
@@ -381,7 +381,7 @@ export default function QuotesPage() {
                     </Link>
                     <p className="text-xs text-stone-500 mt-0.5">For: {billToName}</p>
                   </div>
-                  <span className={`px-2 py-0.5 text-[10px] font-medium border rounded-full ${getStatusStyle(q.status)}`}>
+                  <span className={`px-2 py-0.5 text-[10px] font-medium border ${getStatusStyle(q.status)}`}>
                     {q.status.replace(/_/g, ' ')}
                   </span>
                 </div>

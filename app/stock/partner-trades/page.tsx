@@ -381,7 +381,7 @@ export default function PartnerTradesPage() {
                         <p className="text-xs text-stone-400">{t.partners?.owner_name || '—'}</p>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${isReturn ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
+                        <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 ${isReturn ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
                           {isReturn ? (
                             <><ArrowDownLeft className="w-3 h-3" /> Return</>
                           ) : (
@@ -406,7 +406,7 @@ export default function PartnerTradesPage() {
                         <p className="text-[10px] text-stone-400 font-normal">@ ₹{Number(t.rate_per_carat).toLocaleString('en-IN')}/ct</p>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${getStatusStyle(t.payment_status)}`}>
+                        <span className={`inline-block px-2 py-0.5 text-xs font-medium ${getStatusStyle(t.payment_status)}`}>
                           {t.payment_status?.replace(/_/g, ' ')}
                         </span>
                       </td>
@@ -448,7 +448,7 @@ export default function PartnerTradesPage() {
                 </div>
                 <div className="flex justify-between items-center border-t border-stone-100 pt-2">
                   <span className="text-xs text-stone-500 font-medium">Trade Type</span>
-                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${selectedTrade.trade_type === 'return' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
+                  <span className={`text-xs font-semibold px-2.5 py-0.5 ${selectedTrade.trade_type === 'return' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
                     {selectedTrade.trade_type === 'return' ? 'Return' : 'Sale'}
                   </span>
                 </div>

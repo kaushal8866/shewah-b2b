@@ -115,11 +115,7 @@ export default function NewCircuitPage() {
                       setForm(prev => ({ ...prev, cities: [...prev.cities, city] }))
                     }
                   }}
-                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                      form.cities.includes(city)
-                        ? 'bg-stone-800 text-white border-stone-800'
-                        : 'border-stone-200 text-stone-500 hover:border-stone-800 hover:text-stone-800'
-                    }`}>
+                    className={`text-xs px-2.5 py-1 border transition-colors ${ form.cities.includes(city) ? 'bg-stone-800 text-white border-stone-800' : 'border-stone-200 text-stone-500 hover:border-stone-800 hover:text-stone-800' }`}>
                     {city}
                   </button>
                 ))}
@@ -140,7 +136,7 @@ export default function NewCircuitPage() {
           {form.cities.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {form.cities.map((city, i) => (
-                <span key={city} className="flex items-center gap-1 bg-stone-100 text-stone-700 text-xs px-2.5 py-1 rounded-full">
+                <span key={city} className="flex items-center gap-1 bg-stone-100 text-stone-700 text-xs px-2.5 py-1">
                   <span className="text-stone-400 text-xs">{i + 1}.</span>
                   {city}
                   <button onClick={() => removeCity(city)} className="text-stone-400 hover:text-stone-600 ml-0.5">

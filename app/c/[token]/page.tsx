@@ -83,7 +83,7 @@ function ErrorPage({ title, message, contact }: { title: string; message: string
         {wa && (
           <a
             href={`https://wa.me/${wa}`}
-            className="inline-flex items-center gap-2 bg-accent hover:bg-accent text-white font-medium px-5 py-3 rounded-full transition-colors"
+            className="inline-flex items-center gap-2 bg-accent hover:bg-accent text-white font-medium px-5 py-3 transition-colors"
           >
             <MessageCircle className="w-4 h-4" /> Chat with Shewah
           </a>
@@ -225,7 +225,7 @@ function Timeline({ stages, currentKey, datesByStage }: {
               }`}>
                 {s.label}
                 {active && (
-                  <span className="ml-2 align-middle text-[10px] tracking-widest font-sans uppercase bg-stone-100 text-accent px-2 py-0.5 rounded-full">
+                  <span className="ml-2 align-middle text-[10px] tracking-widest font-sans uppercase bg-stone-100 text-accent px-2 py-0.5">
                     Now
                   </span>
                 )}
@@ -337,7 +337,7 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
             <div className="flex items-baseline justify-between mb-4">
               <h2 className="serif text-2xl text-stone-800">Design preview</h2>
               {cad.approvedAt && (
-                <span className="text-[11px] tracking-wider uppercase bg-status-success-bg text-status-success-fg px-2.5 py-1 rounded-full">
+                <span className="text-[11px] tracking-wider uppercase bg-status-success-bg text-status-success-fg px-2.5 py-1">
                   Approved {fmtDate(cad.approvedAt)}
                 </span>
               )}
@@ -452,13 +452,13 @@ export default async function CustomerJourneyPage({ params }: { params: { token:
           <div className="flex gap-3 justify-center flex-wrap">
             {waNumber && (
               <a href={`https://wa.me/${waNumber}`}
-                 className="inline-flex items-center gap-2 bg-accent hover:bg-accent text-white font-medium px-5 py-3 rounded-full transition-colors text-sm">
+                 className="inline-flex items-center gap-2 bg-accent hover:bg-accent text-white font-medium px-5 py-3 transition-colors text-sm">
                 <MessageCircle className="w-4 h-4" /> WhatsApp
               </a>
             )}
             {phoneNumber && (
               <a href={`tel:${phoneNumber}`}
-                 className="inline-flex items-center gap-2 bg-white hover:bg-stone-50 border border-stone-100 text-stone-800 font-medium px-5 py-3 rounded-full transition-colors text-sm">
+                 className="inline-flex items-center gap-2 bg-white hover:bg-stone-50 border border-stone-100 text-stone-800 font-medium px-5 py-3 transition-colors text-sm">
                 <Phone className="w-4 h-4" /> Call us
               </a>
             )}

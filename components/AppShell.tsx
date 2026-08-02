@@ -254,7 +254,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       <Icon className="w-4 h-4 shrink-0" />
                       <span className="flex-1">{label}</span>
                       {badge > 0 && (
-                        <span className="text-[10px] font-semibold bg-amber-400 text-stone-900 rounded-full px-1.5 py-0.5 leading-none min-w-[18px] text-center">
+                        <span className="text-[10px] font-semibold bg-amber-400 text-stone-900 px-1.5 py-0.5 leading-none min-w-[18px] text-center">
                           {badge > 99 ? '99+' : badge}
                         </span>
                       )}
@@ -343,7 +343,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         <Icon className="w-5 h-5 shrink-0" />
                         <span className="flex-1">{label}</span>
                         {badge > 0 && (
-                          <span className="text-xs font-semibold bg-amber-400 text-stone-900 rounded-full px-2 py-0.5 leading-none min-w-[20px] text-center">
+                          <span className="text-xs font-semibold bg-amber-400 text-stone-900 px-2 py-0.5 leading-none min-w-[20px] text-center">
                             {badge > 99 ? '99+' : badge}
                           </span>
                         )}

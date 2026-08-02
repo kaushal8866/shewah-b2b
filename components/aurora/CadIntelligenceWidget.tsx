@@ -16,7 +16,7 @@ export default function CadIntelligenceWidget({ cadRequestId }: { cadRequestId?:
           <div>
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               AURORA CAD & Manufacturing Intelligence
-              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">48h SLA Evaluated</span>
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 border border-amber-500/30">48h SLA Evaluated</span>
             </h3>
             <p className="text-xs text-stone-400">CAD Request: #{cadRequestId || 'SH-CAD-2026-004'} · Mfg Agent Active</p>
           </div>

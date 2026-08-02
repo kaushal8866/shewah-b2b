@@ -167,7 +167,7 @@ export default function ConsultationPage() {
 
     ctx.save()
     ctx.scale(dpr, dpr)
-    ctx.fillStyle = '#050505'
+    ctx.fillStyle = '#111111'
     ctx.fillRect(0, 0, width, height)
 
     // Aspect Ratio Calculations (Full Cover & Center for Portrait & Landscape)
@@ -460,7 +460,7 @@ export default function ConsultationPage() {
           {/* Right CTA */}
           <button 
             onClick={scrollToConsultation}
-            className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] sm:tracking-[0.2em] bg-accent text-stone-900 font-semibold hover:bg-stone-100 active:scale-95 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all duration-300 shadow-md shadow-accent/10"
+            className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] sm:tracking-[0.2em] bg-accent text-stone-900 font-semibold hover:bg-stone-100 active:scale-95 px-3.5 py-1.5 sm:px-4 sm:py-2 transition-all duration-300 shadow-md shadow-accent/10"
           >
             Design Your Ring
           </button>
@@ -505,7 +505,7 @@ export default function ConsultationPage() {
           )}
 
           {/* Frame Progress Indicator (Subtle Luxury Badge at Bottom Left) */}
-          <div className="absolute bottom-5 left-4 sm:bottom-6 sm:left-6 z-20 flex items-center gap-2 sm:gap-3 bg-stone-900/90 backdrop-blur-md px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-white/15 text-[8px] sm:text-[9px] font-mono text-white/60 shadow-lg">
+          <div className="absolute bottom-5 left-4 sm:bottom-6 sm:left-6 z-20 flex items-center gap-2 sm:gap-3 bg-stone-900/90 backdrop-blur-md px-3 py-1 sm:px-3.5 sm:py-1.5 border border-white/15 text-[8px] sm:text-[9px] font-mono text-white/60 shadow-lg">
             <span className="text-accent">FRAME {String(currentFrame + 1).padStart(3, '0')}</span>
             <span>/</span>
             <span>300</span>
@@ -522,7 +522,7 @@ export default function ConsultationPage() {
           {/* HERO OVERLAY: Frames 1 - 40 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame <= 40 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
             <div className="max-w-4xl space-y-4 sm:space-y-6 pointer-events-auto bg-stone-900/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
-              <div className="inline-flex items-center gap-2 border border-accent/30 bg-stone-900/90 backdrop-blur-md px-3 py-1 sm:px-4 sm:py-1.5 rounded-full mb-1 sm:mb-2">
+              <div className="inline-flex items-center gap-2 border border-accent/30 bg-stone-900/90 backdrop-blur-md px-3 py-1 sm:px-4 sm:py-1.5 mb-1 sm:mb-2">
                 <Sparkle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-accent" />
                 <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-stone-100 font-semibold">SHEWAH PRIVATE COMMISSION</span>
               </div>
@@ -539,7 +539,7 @@ export default function ConsultationPage() {
               <div className="pt-2 sm:pt-6">
                 <button 
                   onClick={scrollToCraftsmanship}
-                  className="bg-accent text-stone-900 font-semibold hover:bg-stone-100 active:scale-95 px-6 py-3 sm:px-8 sm:py-4 rounded-full text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-xl shadow-accent/20"
+                  className="bg-accent text-stone-900 font-semibold hover:bg-stone-100 active:scale-95 px-6 py-3 sm:px-8 sm:py-4 text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-xl shadow-accent/20"
                 >
                   <span>Begin Your Story</span>
                   <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -559,7 +559,7 @@ export default function ConsultationPage() {
           {/* CRAFTSMANSHIP OVERLAY: Frames 41 - 110 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 41 && currentFrame <= 110 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <div className="max-w-3xl space-y-4 sm:space-y-6 bg-stone-900/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
-              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-accent font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 rounded-full border border-accent/30">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-accent font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 border border-accent/30">
                 <Flame className="w-3.5 h-3.5 text-accent" />
                 <span>01 / GOLDSMITHING & FIRE</span>
               </div>
@@ -577,7 +577,7 @@ export default function ConsultationPage() {
             
             {/* Center Story Title */}
             <div className="absolute top-20 sm:top-24 left-1/2 transform -translate-x-1/2 text-center space-y-1.5 sm:space-y-2 w-full px-4">
-              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-accent font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 rounded-full border border-accent/30">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-accent font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 border border-accent/30">
                 <Microscope className="w-3.5 h-3.5" />
                 <span>02 / MICRON-LEVEL PRECISION</span>
               </div>
@@ -642,7 +642,7 @@ export default function ConsultationPage() {
           {/* COMPLETION OVERLAY: Frames 181 - 240 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 181 && currentFrame <= 240 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <div className="max-w-2xl space-y-3 sm:space-y-4 bg-stone-900/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
-              <span className="text-[9px] sm:text-[10px] font-mono text-accent uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 rounded-full border border-accent/30">03 / PERFECTED SILENCE</span>
+              <span className="text-[9px] sm:text-[10px] font-mono text-accent uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 border border-accent/30">03 / PERFECTED SILENCE</span>
               <h2 className="text-2.5xl sm:text-5xl font-serif text-white font-normal leading-relaxed drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                 Perfection is not created. <br />
                 <span className="text-stone-100 italic font-serif">It is uncovered.</span>
@@ -653,7 +653,7 @@ export default function ConsultationPage() {
           {/* EMOTION OVERLAY: Frames 241 - 300 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 241 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <div className="max-w-3xl space-y-4 sm:space-y-6 pointer-events-auto bg-stone-900/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
-              <span className="text-[9px] sm:text-[10px] font-mono text-accent uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 rounded-full border border-accent/30">04 / THE UNBOXING</span>
+              <span className="text-[9px] sm:text-[10px] font-mono text-accent uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 border border-accent/30">04 / THE UNBOXING</span>
               <h2 className="text-3xl sm:text-6xl md:text-7xl font-serif text-white font-normal leading-tight tracking-apple drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                 Made for one story. <br />
                 <span className="text-shimmer-gold italic">Yours.</span>
@@ -665,7 +665,7 @@ export default function ConsultationPage() {
               <div className="pt-2 sm:pt-6">
                 <button 
                   onClick={scrollToConsultation}
-                  className="bg-accent text-stone-900 font-semibold hover:bg-stone-100 active:scale-95 px-6 py-3.5 sm:px-8 sm:py-4 rounded-full text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-2xl shadow-accent/20"
+                  className="bg-accent text-stone-900 font-semibold hover:bg-stone-100 active:scale-95 px-6 py-3.5 sm:px-8 sm:py-4 text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-2xl shadow-accent/20"
                 >
                   <span>Book Your Private Consultation</span>
                   <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -686,7 +686,7 @@ export default function ConsultationPage() {
         <div className="max-w-4xl mx-auto space-y-10 sm:space-y-16 relative z-10">
           
           <div className="text-center space-y-3 sm:space-y-4">
-            <div className="inline-flex items-center gap-2 border border-accent/30 bg-stone-900 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full">
+            <div className="inline-flex items-center gap-2 border border-accent/30 bg-stone-900 px-3.5 py-1 sm:px-4 sm:py-1.5">
               <Sparkles className="w-3.5 h-3.5 text-accent" />
               <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-stone-100 font-semibold">PRIVATE DESIGN CONCIERGE</span>
             </div>

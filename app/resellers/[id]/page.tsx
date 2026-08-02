@@ -466,7 +466,7 @@ export default function ResellerDetailPage() {
             <h1 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
               <Store className="w-5 h-5 text-stone-800" />
               {reseller.store_name}
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${statusColors[reseller.status]}`}>
+              <span className={`px-2 py-0.5 text-xs font-semibold border ${statusColors[reseller.status]}`}>
                 {reseller.status}
               </span>
             </h1>

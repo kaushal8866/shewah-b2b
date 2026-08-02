@@ -110,7 +110,7 @@ export default function ManufacturingPage() {
                   <p className="text-sm font-medium text-stone-900 truncate">{o.order_number}</p>
                   <p className="text-xs text-stone-400">{o.manufacturing_partners?.name} · {o.description?.substring(0, 40)}</p>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${MFG_STATUS_COLORS[o.status] || 'bg-gray-100 text-gray-600'}`}>
+                <span className={`text-xs px-2 py-0.5 font-medium shrink-0 ${MFG_STATUS_COLORS[o.status] || 'bg-gray-100 text-gray-600'}`}>
                   {o.status?.replace(/_/g, ' ')}
                 </span>
                 <ChevronRight className="w-4 h-4 text-stone-300 shrink-0" />
@@ -154,13 +154,13 @@ export default function ManufacturingPage() {
                       {p.speciality && p.speciality.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {p.speciality.map(s => (
-                            <span key={s} className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">{s}</span>
+                            <span key={s} className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5">{s}</span>
                           ))}
                         </div>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`text-xs px-2 py-0.5 ${p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                         {p.status}
                       </span>
                       <Link href={`/manufacturing/partners/${p.id}`} className="text-stone-300 hover:text-stone-600">

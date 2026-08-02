@@ -198,7 +198,7 @@ export default function LeadForm({
   const stepIndicator = multiStep ? (
     <div className="flex items-center gap-2 text-xs text-stone-500">
       <span className={step === 1 ? 'font-semibold text-stone-800' : ''}>Step 1 · Quick intro</span>
-      <span className="text-stone-300">›</span>
+      <span className="text-stone-400" aria-hidden="true">›</span>
       <span className={step === 2 ? 'font-semibold text-stone-800' : ''}>Step 2 · A few optional details</span>
     </div>
   ) : null

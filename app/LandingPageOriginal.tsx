@@ -236,7 +236,7 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
       <a
         href={`https://wa.me/${wa}?text=${encodeURIComponent('Hi Shewah, I run a jewellery store and would like to learn more about partnering.')}`}
         target="_blank" rel="noopener noreferrer"
-        className="fixed bottom-5 right-5 z-50 bg-[#25D366] text-white rounded-full px-4 py-3 shadow-lg flex items-center gap-2 text-sm font-medium hover:bg-[#1da851]">
+        className="fixed bottom-5 right-5 z-50 bg-[#25D366] text-white px-4 py-3 shadow-lg flex items-center gap-2 text-sm font-medium hover:bg-[#1da851]">
         <MessageCircle className="w-4 h-4" /> Chat on WhatsApp
       </a>
     </div>

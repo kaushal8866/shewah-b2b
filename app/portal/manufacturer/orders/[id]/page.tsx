@@ -121,7 +121,7 @@ export default function ManufacturerOrderDetail() {
           <h1 className="text-xl font-semibold text-stone-900">{order.order_number}</h1>
           <p className="text-stone-400 text-xs">Issued {fmtDate(order.issued_date)}</p>
         </div>
-        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLES[order.status] || 'bg-stone-100 text-stone-600'}`}>
+        <span className={`text-xs px-2.5 py-1 font-medium ${STATUS_STYLES[order.status] || 'bg-stone-100 text-stone-600'}`}>
           {order.status?.replace(/_/g, ' ')}
         </span>
       </div>

@@ -100,7 +100,7 @@ export default function RetailerReadyToShipPage() {
                     <Tag className="w-3 h-3" /> ₹{Number(it.list_price).toLocaleString('en-IN')}
                   </p>
                   {myStatus && (
-                    <p className={`text-[10px] mt-1 px-2 py-0.5 rounded-full inline-block ${
+                    <p className={`text-[10px] mt-1 px-2 py-0.5 inline-block ${
                       myStatus === 'pending' ? 'bg-amber-100 text-amber-700' :
                       myStatus === 'countered' ? 'bg-blue-100 text-blue-700' :
                       myStatus === 'accepted' ? 'bg-emerald-100 text-emerald-700' :

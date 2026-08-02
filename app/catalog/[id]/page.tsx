@@ -715,7 +715,7 @@ export default function CatalogProductEditPage() {
                           <span className="font-bold text-stone-800 text-sm">
                             {comp.component_label || 'Unnamed component'}
                           </span>
-                          <span className="bg-stone-200 text-stone-600 text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                          <span className="bg-stone-200 text-stone-600 text-[10px] px-2 py-0.5 font-semibold">
                             {comp.category}
                           </span>
                         </div>

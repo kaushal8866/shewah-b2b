@@ -356,7 +356,7 @@ function NewMfgOrderForm() {
         <div style={{ fontFamily: 'sans-serif', padding: '20px', maxWidth: '700px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #1E3A5F', paddingBottom: '12px', marginBottom: '16px' }}>
             <div>
-              <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1A1F2E' }}>SHEWAH</h1>
+              <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111111' }}>SHEWAH</h1>
               <p style={{ fontSize: '12px', color: '#666' }}>Manufacturing Order</p>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -379,7 +379,7 @@ function NewMfgOrderForm() {
                 ['Expected Completion', form.expected_date || '—'],
               ].map(([k, v]) => (
                 <tr key={String(k)} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '6px 8px', fontWeight: '600', fontSize: '12px', color: '#555', width: '40%' }}>{k}</td>
+                  <td style={{ padding: '6px 8px', fontWeight: '600', fontSize: '12px', color: '#666666', width: '40%' }}>{k}</td>
                   <td style={{ padding: '6px 8px', fontSize: '12px' }}>{v}</td>
                 </tr>
               ))}
@@ -387,7 +387,7 @@ function NewMfgOrderForm() {
           </table>
 
           {form.special_notes && (
-            <div style={{ background: '#FFF8EC', border: '1px solid #1E3A5F', padding: '10px', borderRadius: '6px', marginBottom: '16px' }}>
+            <div style={{ background: '#F5F5F5', border: '1px solid #1E3A5F', padding: '10px', borderRadius: '6px', marginBottom: '16px' }}>
               <p style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>Special Instructions:</p>
               <p style={{ fontSize: '12px' }}>{form.special_notes}</p>
             </div>

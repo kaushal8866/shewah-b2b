@@ -16,7 +16,7 @@ export default function ProductIntelligenceWidget({ productId }: { productId?: s
           <div>
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               AURORA Product Intelligence
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">AI Live Verified</span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 border border-emerald-500/30">AI Live Verified</span>
             </h3>
             <p className="text-xs text-stone-400">Context: Product #{productId || '1842'} · Knowledge Graph Connected</p>
           </div>

@@ -181,7 +181,7 @@ export default function ResellerSampleBox() {
                         )}
                       </td>
                       <td className="px-5 py-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${statusColors[sample.status]}`}>
+                        <span className={`px-2 py-0.5 text-[9px] font-bold border ${statusColors[sample.status]}`}>
                           {sample.status}
                           {isOverdue && ' (Overdue)'}
                         </span>

@@ -202,7 +202,7 @@ export default function PublicQuotePage({ params }: { params: { token: string } 
         
         {/* Greetings Panel */}
         <div className="bg-white rounded-2xl border border-accent/15 p-5 shadow-sm space-y-2">
-          <span className="text-[10px] bg-accent/10 text-accent border border-accent/20 px-2 py-0.5 rounded-full font-semibold">
+          <span className="text-[10px] bg-accent/10 text-accent border border-accent/20 px-2 py-0.5 font-semibold">
             OFFICIAL QUOTATION
           </span>
           <h1 className="text-xl font-serif font-bold text-stone-800">

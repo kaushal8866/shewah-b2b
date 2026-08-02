@@ -170,11 +170,7 @@ export default function DiamondsCatalogPage() {
                             <span className="flex-1 text-sm font-medium text-stone-900">
                               {s.name}{!s.active && <span className="ml-2 text-[10px] text-stone-400">(inactive)</span>}
                             </span>
-                            <span className={`text-[11px] rounded-full px-2 py-0.5 font-medium ${
-                              count === 0
-                                ? 'bg-stone-100 text-stone-400'
-                                : 'bg-stone-800/10 text-stone-800'
-                            }`}>
+                            <span className={`text-[11px] px-2 py-0.5 font-medium ${ count === 0 ? 'bg-stone-100 text-stone-400' : 'bg-stone-800/10 text-stone-800' }`}>
                               {count} size{count === 1 ? '' : 's'}
                             </span>
                             <ChevronRight className="w-4 h-4 text-stone-300" />

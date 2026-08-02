@@ -357,7 +357,7 @@ export default function InvoicesPage() {
                         </p>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${inv.invoice_type === 'diamond_trade' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+                        <span className={`inline-block px-2 py-0.5 text-xs font-semibold ${inv.invoice_type === 'diamond_trade' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
                           {inv.invoice_type === 'diamond_trade' ? 'Loose Diamond' : 'Jewellery'}
                         </span>
                       </td>

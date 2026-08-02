@@ -40,7 +40,7 @@ export default async function OG() {
           </div>
           <div style={{ display: 'flex', marginTop: 36, gap: 20, alignItems: 'center', fontFamily: 'sans-serif' }}>
             <div style={{
-              background: 'white', color: '#1E3A5F', fontSize: 22, fontWeight: 600,
+              background: 'white', color: '#222222', fontSize: 22, fontWeight: 600,
               padding: '14px 26px', borderRadius: 12,
             }}>
               Become a Shewah partner →

@@ -126,11 +126,7 @@ export default function CategoriesDashboardPage() {
                       <td className="px-5 py-4 font-semibold text-stone-900">{cat.name}</td>
                       <td className="px-5 py-4 text-stone-500 font-mono text-xs">{cat.slug}</td>
                       <td className="px-5 py-4 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          schema.length > 0
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-stone-100 text-stone-500'
-                        }`}>
+                        <span className={`px-2 py-0.5 text-xs font-semibold ${ schema.length > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-stone-100 text-stone-500' }`}>
                           {schema.length} fields
                         </span>
                       </td>

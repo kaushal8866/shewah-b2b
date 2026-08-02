@@ -376,11 +376,7 @@ export default function ResellerShareLinks() {
                         <button
                           type="button"
                           onClick={() => handleToggleActive(link)}
-                          className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${
-                            link.is_active
-                              ? 'bg-green-50 text-green-700 border-green-200'
-                              : 'bg-stone-100 text-stone-450 border-stone-200'
-                          }`}
+                          className={`px-2 py-0.5 text-[9px] font-bold uppercase border ${ link.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-stone-100 text-stone-450 border-stone-200' }`}
                         >
                           {link.is_active ? 'Active' : 'Inactive'}
                         </button>

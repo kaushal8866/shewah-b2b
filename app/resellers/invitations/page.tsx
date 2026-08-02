@@ -305,7 +305,7 @@ export default function ResellerInvitationsPage() {
                             })}
                           </td>
                           <td className="px-4 py-3.5">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[displayStatus]}`}>
+                            <span className={`px-2 py-0.5 text-xs font-medium border ${statusColors[displayStatus]}`}>
                               {displayStatus}
                             </span>
                           </td>

@@ -227,7 +227,7 @@ export default function CollectionDetailPage() {
           <p className="text-stone-400 text-sm">
             {selectedIds.size} product{selectedIds.size !== 1 ? 's' : ''} · {collection.is_published ? 'Published' : 'Draft'}
             {selectedAvgMargin != null && (
-              <span className={`ml-2 inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${
+              <span className={`ml-2 inline-flex items-center text-xs font-medium px-2 py-0.5 ${
                 selectedAvgMargin >= 25 ? 'bg-green-100 text-green-700'
                 : selectedAvgMargin >= 10 ? 'bg-amber-100 text-amber-700'
                 : 'bg-red-100 text-red-700'
@@ -305,7 +305,7 @@ export default function CollectionDetailPage() {
                             <div className="flex items-center gap-2 mt-0.5">
                               <p className="text-xs text-stone-400">{p.city}{pCircuitLabel ? ` · ${pCircuitLabel}` : ''}</p>
                               {views > 0 && (
-                                <span className="flex items-center gap-0.5 text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                                <span className="flex items-center gap-0.5 text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 ">
                                   <Eye className="w-2.5 h-2.5" />{views}
                                 </span>
                               )}
@@ -405,7 +405,7 @@ export default function CollectionDetailPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium text-stone-400">{p.code}</span>
-                          {!p.is_active && <span className="text-xs bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded-full">Inactive</span>}
+                          {!p.is_active && <span className="text-xs bg-stone-100 text-stone-400 px-1.5 py-0.5 ">Inactive</span>}
                         </div>
                         <p className="text-sm text-stone-800 truncate">{p.name}</p>
                         <p className="text-xs text-stone-400">{p.gold_karat}K{p.diamond_shape ? ` · ${p.diamond_shape}` : ''}{p.trade_price ? ` · ₹${Math.round(p.trade_price / 1000)}K` : ''}</p>

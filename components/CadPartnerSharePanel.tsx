@@ -208,7 +208,7 @@ export default function CadPartnerSharePanel({
               <span className="text-xs text-emerald-700 font-normal">
                 · {activeDirEntry?.name || active.partner_name}
                 {activeDirEntry && (
-                  <span className="ml-1 inline-block text-[9px] uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 align-middle">
+                  <span className="ml-1 inline-block text-[9px] uppercase tracking-wider bg-emerald-100 text-emerald-700 px-1.5 py-0.5 align-middle">
                     Directory
                   </span>
                 )}
@@ -273,11 +273,7 @@ export default function CadPartnerSharePanel({
                 : 'bg-red-50 border-red-200'
             }`}>
               <div className="flex items-center gap-2 mb-1">
-                <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                  inactiveLatest.status === 'expired'
-                    ? 'bg-stone-200 text-stone-700'
-                    : 'bg-red-200 text-red-800'
-                }`}>
+                <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 ${ inactiveLatest.status === 'expired' ? 'bg-stone-200 text-stone-700' : 'bg-red-200 text-red-800' }`}>
                   {inactiveLatest.status === 'expired' ? 'Expired' : 'Revoked'}
                 </span>
                 <span className="text-xs text-stone-600">

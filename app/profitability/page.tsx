@@ -518,14 +518,14 @@ function GoldSourceBreakdown({ rows }: { rows: { name: string; orders: number; r
       <div className="flex w-full h-2.5 rounded-full overflow-hidden bg-stone-100">
         {rows.map((r, i) => {
           const pct = (Math.abs(r.margin) / totalMargin) * 100
-          const bg = i === 0 ? '#1E3A5F' : '#7B8295'
+          const bg = i === 0 ? '#222222' : '#767676'
           return <div key={r.name} style={{ width: `${pct}%`, background: bg }} />
         })}
       </div>
       <div className="space-y-3">
         {rows.map((r, i) => {
           const pct = r.revenue ? (r.margin / r.revenue) * 100 : 0
-          const dotBg = i === 0 ? '#1E3A5F' : '#7B8295'
+          const dotBg = i === 0 ? '#222222' : '#767676'
           return (
             <div key={r.name}>
               <div className="flex items-center gap-2 mb-1">

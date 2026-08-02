@@ -70,7 +70,7 @@ export default function AuroraWorkspacePage() {
                 <div key={ag.id} className="bg-stone-900 p-4 rounded-xl border border-stone-800">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-amber-300 font-mono">{ag.name}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                    <span className="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> {ag.status.toUpperCase()}
                     </span>
                   </div>

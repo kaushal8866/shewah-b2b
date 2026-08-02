@@ -203,7 +203,7 @@ export default function RetailerOrderDetail() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-xl font-semibold text-stone-900">{order.order_number}</h1>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[order.status] || 'bg-stone-100 text-stone-600'}`}>
+              <span className={`text-[10px] px-2 py-0.5 font-medium ${STATUS_STYLES[order.status] || 'bg-stone-100 text-stone-600'}`}>
                 {order.status?.replace(/_/g, ' ')}
               </span>
               {order.type === 'custom' && (
@@ -272,7 +272,7 @@ export default function RetailerOrderDetail() {
                 {history.map(h => (
                   <div key={h.id} className="text-sm">
                     <div className="flex items-center gap-2">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      <span className={`text-[10px] px-2 py-0.5 font-medium ${
                         h.status === 'approved' ? 'bg-green-100 text-green-700' :
                         h.status === 'rejected' ? 'bg-red-100 text-red-700' :
                         'bg-stone-100 text-stone-600'
@@ -298,7 +298,7 @@ export default function RetailerOrderDetail() {
               <Sparkles className="w-4 h-4 text-accent" /> CAD design for your review
             </h2>
             {cadStatus === 'approved' && (
-              <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
+              <span className="text-[11px] px-2 py-0.5 font-medium bg-green-100 text-green-700">
                 Approved {cad.approved_date ? `· ${fmtDate(cad.approved_date)}` : ''}
               </span>
             )}
@@ -310,18 +310,18 @@ export default function RetailerOrderDetail() {
                 .find((r: any) => r.kind === 'revision_request')
               const ackedAt: string | null = lastRev?.acknowledged_at || null
               return ackedAt ? (
-                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700 inline-flex items-center gap-1">
+                <span className="text-[11px] px-2 py-0.5 font-medium bg-green-100 text-green-700 inline-flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
                   Acknowledged by design team · {fmtDate(ackedAt)}
                 </span>
               ) : (
-                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">
+                <span className="text-[11px] px-2 py-0.5 font-medium bg-amber-100 text-amber-700">
                   Revision requested
                 </span>
               )
             })()}
             {cadStatus === 'sent' && (
-              <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">
+              <span className="text-[11px] px-2 py-0.5 font-medium bg-purple-100 text-purple-700">
                 Awaiting your decision
               </span>
             )}

@@ -157,7 +157,7 @@ export default function EnquiryDetailPage() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
-          <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${ENQUIRY_STATUS_STYLE[enquiry.status]}`}>
+          <span className={`text-xs px-2.5 py-1 border font-medium ${ENQUIRY_STATUS_STYLE[enquiry.status]}`}>
             {ENQUIRY_STATUS_LABEL[enquiry.status]}
           </span>
           {busy && <Loader2 className="w-3 h-3 animate-spin text-stone-400" />}

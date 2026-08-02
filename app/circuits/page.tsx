@@ -98,7 +98,7 @@ export default function CircuitsPage() {
                       {c.status.replace(/_/g, ' ')}
                     </span>
                     {c.region && (
-                      <span className="text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-stone-400 bg-stone-50 px-2 py-0.5">
                         {CIRCUITS.find(r => r.value === c.region)?.label || c.region}
                       </span>
                     )}

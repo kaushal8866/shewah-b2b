@@ -305,7 +305,7 @@ export default function ShowcasePage() {
                       </div>
                     )}
                     {isShortlisted && (
-                      <div className="absolute top-2 left-2 bg-stone-800 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                      <div className="absolute top-2 left-2 bg-stone-800 text-white text-xs px-2 py-0.5 font-medium">
                         Shortlisted
                       </div>
                     )}
@@ -317,13 +317,13 @@ export default function ShowcasePage() {
                     <p className="text-white text-sm font-medium leading-tight mt-0.5 mb-1 line-clamp-2">{product.name}</p>
                     <div className="flex flex-wrap gap-1 mb-3">
                       {product.gold_karat && (
-                        <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">{product.gold_karat}K</span>
+                        <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5">{product.gold_karat}K</span>
                       )}
                       {product.diamond_shape && (
-                        <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">{product.diamond_shape}</span>
+                        <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5">{product.diamond_shape}</span>
                       )}
                       {product.trade_price && (
-                        <span className="bg-stone-800 text-stone-300 text-xs px-2 py-0.5 rounded-full">
+                        <span className="bg-stone-800 text-stone-300 text-xs px-2 py-0.5">
                           ₹{product.trade_price >= 100000
                             ? `${(product.trade_price / 100000).toFixed(1)}L`
                             : `${Math.round(product.trade_price / 1000)}K`}

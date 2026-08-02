@@ -91,7 +91,7 @@ export default function ReadyToShipPage() {
                     </div>
                   )}
                   {it.pending_offers > 0 && (
-                    <span className="absolute top-2 right-2 text-[10px] font-semibold bg-amber-400 text-stone-900 rounded-full px-2 py-0.5">
+                    <span className="absolute top-2 right-2 text-[10px] font-semibold bg-amber-400 text-stone-900 px-2 py-0.5">
                       {it.pending_offers} offer{it.pending_offers === 1 ? '' : 's'}
                     </span>
                   )}

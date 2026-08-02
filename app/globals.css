@@ -17,15 +17,15 @@
   --ink:           #222222;
   --ink-strong:    #111111;
   --ink-muted:     #666666;
-  --ink-meta:      #7D7D7D;   /* 4.12:1 — metadata only, never body text */
+  --ink-meta:      #767676;   /* 4.54:1 — clears AA; see tailwind.config note */
   --ink-inverse:   #FFFFFF;
 
   --rule:          #E6E6E6;
   --rule-quiet:    #CCCCCC;
   --rule-strong:   #111111;
 
-  --accent:        #788C40;
-  --accent-deep:   #5F7033;
+  --accent:        #A88A4F;
+  --accent-deep:   #8A6E3A;
 
   --sem-issue:     #8C3A32;
   --sem-good:      #4A6B32;

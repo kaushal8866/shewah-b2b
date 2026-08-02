@@ -189,7 +189,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
             <a
               href={waChatHref}
               target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-stone-800 bg-stone-800/10 px-4 py-2 rounded-full hover:bg-stone-800/20 transition-colors">
+              className="flex items-center gap-2 text-stone-800 bg-stone-800/10 px-4 py-2 hover:bg-stone-800/20 transition-colors">
               <MessageCircle className="w-4 h-4" />
               {NAV.whatsappCta}
             </a>
@@ -255,7 +255,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
                   href={waChatHref}
                   target="_blank" rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="mt-4 inline-flex items-center justify-center gap-2 text-stone-800 bg-stone-800/10 px-4 py-3 rounded-full font-medium hover:bg-stone-800/20 transition-colors"
+                  className="mt-4 inline-flex items-center justify-center gap-2 text-stone-800 bg-stone-800/10 px-4 py-3 font-medium hover:bg-stone-800/20 transition-colors"
                 >
                   <MessageCircle className="w-4 h-4" />
                   {NAV.whatsappCta}
@@ -271,7 +271,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-100 via-white to-white -z-10" aria-hidden />
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_420px] gap-8 md:gap-12 lg:gap-16 items-start">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-stone-800 text-[11px] sm:text-xs font-semibold uppercase tracking-widest mb-5 md:mb-7">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 text-stone-800 text-[11px] sm:text-xs font-semibold uppercase tracking-widest mb-5 md:mb-7">
               <ShieldCheck className="w-4 h-4" />
               {HERO.eyebrow}
             </div>
@@ -554,7 +554,7 @@ export default function LandingPage({ whatsappE164 }: { whatsappE164?: string })
       <a
         href={waChatHref}
         target="_blank" rel="noopener noreferrer"
-        className="hidden md:flex fixed bottom-8 right-8 bg-[#25D366] text-white px-5 py-3 rounded-full shadow-lg items-center gap-2 text-sm font-medium hover:-translate-y-1 transition-transform z-50 hover:shadow-xl"
+        className="hidden md:flex fixed bottom-8 right-8 bg-[#25D366] text-white px-5 py-3 shadow-lg items-center gap-2 text-sm font-medium hover:-translate-y-1 transition-transform z-50 hover:shadow-xl"
       >
         <MessageCircle className="w-5 h-5" />
         {NAV.whatsappCta}

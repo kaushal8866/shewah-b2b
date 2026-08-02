@@ -252,7 +252,7 @@ export default function ReconciliationAlertsPage() {
             <p className="text-xs text-stone-400">{digest?.run_date || today} · last {digest?.window_days || thresholds.reconciliation_alert_window_days || '7'} days</p>
           </div>
           {digest && (
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${digest.partners_flagged > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+            <span className={`text-xs px-2 py-0.5 font-medium ${digest.partners_flagged > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
               {digest.partners_flagged} flagged
             </span>
           )}
@@ -285,7 +285,7 @@ export default function ReconciliationAlertsPage() {
                     {f.reasons.map(r => {
                       const meta = REASON_LABELS[r] || { label: r, cls: 'bg-stone-100 text-stone-600' }
                       return (
-                        <span key={r} className={`text-[10px] px-1.5 py-0.5 rounded-full uppercase font-medium ${meta.cls}`}>{meta.label}</span>
+                        <span key={r} className={`text-[10px] px-1.5 py-0.5 uppercase font-medium ${meta.cls}`}>{meta.label}</span>
                       )
                     })}
                   </div>
@@ -447,16 +447,16 @@ export default function ReconciliationAlertsPage() {
                       </Link>
                       {(r.triggered_reasons || []).map((reason: string) => {
                         const meta = REASON_LABELS[reason] || { label: reason, cls: 'bg-stone-100 text-stone-600' }
-                        return <span key={reason} className={`text-[10px] px-1.5 py-0.5 rounded-full uppercase font-medium ${meta.cls}`}>{meta.label}</span>
+                        return <span key={reason} className={`text-[10px] px-1.5 py-0.5 uppercase font-medium ${meta.cls}`}>{meta.label}</span>
                       })}
                       <span className="text-stone-500">
                         var {r.variance_total > 0 ? '+' : ''}{fmt(Number(r.variance_total))}g · neg {r.negative_count} · unlinked {r.unlinked_count}
                       </span>
                       {r.notified_at && (
-                        <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase font-medium">sent</span>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 uppercase font-medium">sent</span>
                       )}
                       {r.notify_error && (
-                        <span title={r.notify_error} className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full uppercase font-medium">send failed</span>
+                        <span title={r.notify_error} className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 uppercase font-medium">send failed</span>
                       )}
                     </div>
                   ))}

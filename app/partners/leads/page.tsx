@@ -239,7 +239,7 @@ export default function PartnerLeadsPage() {
         <Filter className="w-4 h-4 text-stone-400" />
         {(['all', ...STATUSES] as const).map(k => (
           <button key={k} onClick={() => setFilter(k as any)}
-            className={`text-xs px-3 py-1.5 rounded-full border ${filter === k ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300'}`}>
+            className={`text-xs px-3 py-1.5 border ${filter === k ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300'}`}>
             {k === 'all' ? 'All' : k.charAt(0).toUpperCase() + k.slice(1)}
             <span className="ml-1.5 text-[10px] opacity-70">{counts[k] || 0}</span>
           </button>
@@ -272,7 +272,7 @@ export default function PartnerLeadsPage() {
                 <div className="p-4 flex items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center flex-wrap gap-2">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${STATUS_STYLE[l.status]}`}>{l.status}</span>
+                      <span className={`text-[10px] px-2 py-0.5 border font-medium ${STATUS_STYLE[l.status]}`}>{l.status}</span>
                       <p className="font-semibold text-stone-900">{l.full_name}</p>
                       {l.store_name && (<>
                         <span className="text-stone-300">·</span>

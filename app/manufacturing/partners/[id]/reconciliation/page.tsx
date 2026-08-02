@@ -328,7 +328,7 @@ export default function ReconciliationPage() {
                         </Link>
                         {r.anyNegative && (
                           <span title="At least one consumption row pushed balance negative"
-                            className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full uppercase font-medium">neg</span>
+                            className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 uppercase font-medium">neg</span>
                         )}
                       </div>
                       <p className="text-xs text-stone-400 mt-0.5">
@@ -371,10 +371,10 @@ export default function ReconciliationPage() {
                       {t.material_float?.material_type?.replace(/_/g, ' ') || 'consumption'}
                     </span>
                     {t.creates_negative_balance && (
-                      <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full uppercase font-medium">negative balance</span>
+                      <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 uppercase font-medium">negative balance</span>
                     )}
                     {!t.order_id && (
-                      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full uppercase font-medium">no order link</span>
+                      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 uppercase font-medium">no order link</span>
                     )}
                   </div>
                   <p className="text-xs text-stone-400 truncate mt-0.5">

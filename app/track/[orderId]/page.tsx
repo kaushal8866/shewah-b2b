@@ -132,7 +132,7 @@ export default async function TrackOrderPage({ params }: { params: { orderId: st
                     }`}>
                       {stage.label}
                       {isActive && (
-                        <span className="ml-2 text-xs bg-stone-300/20 text-stone-300 px-2 py-0.5 rounded-full border border-stone-300/40 font-normal">
+                        <span className="ml-2 text-xs bg-stone-300/20 text-stone-300 px-2 py-0.5 border border-stone-300/40 font-normal">
                           Current
                         </span>
                       )}

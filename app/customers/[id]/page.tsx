@@ -173,7 +173,7 @@ export default function CustomerDetailPage() {
                         <p className="text-[11px] text-stone-500 font-mono">{en.enquiry_number}</p>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${ENQUIRY_STATUS_STYLE[en.status]}`}>
+                        <span className={`text-[10px] px-2 py-0.5 border font-medium ${ENQUIRY_STATUS_STYLE[en.status]}`}>
                           {ENQUIRY_STATUS_LABEL[en.status]}
                         </span>
                       </td>

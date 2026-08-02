@@ -209,7 +209,7 @@ export default function ResellerCatalog() {
                       <span className="text-[10px] uppercase font-bold tracking-wider mt-1 text-stone-400">No Image</span>
                     </div>
                   )}
-                  <div className="absolute top-2 left-2 bg-stone-900/80 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                  <div className="absolute top-2 left-2 bg-stone-900/80 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5">
                     {p.category}
                   </div>
                 </div>

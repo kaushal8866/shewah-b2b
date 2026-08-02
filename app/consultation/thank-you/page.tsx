@@ -102,7 +102,7 @@ export default function ThankYouPage() {
           <span className="font-serif text-xl sm:text-2xl font-bold tracking-[0.25em] text-white group-hover:text-accent transition-colors">
             SHEWAH
           </span>
-          <span className="text-[10px] tracking-widest text-accent uppercase font-mono border border-accent/30 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] tracking-widest text-accent uppercase font-mono border border-accent/30 px-2 py-0.5">
             ATELIER
           </span>
         </Link>
@@ -111,7 +111,7 @@ export default function ThankYouPage() {
           href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-[#25D366]/15 text-[#25D366] hover:bg-[#25D366] hover:text-black border border-[#25D366]/30 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
+          className="inline-flex items-center gap-2 bg-[#25D366]/15 text-[#25D366] hover:bg-[#25D366] hover:text-black border border-[#25D366]/30 px-3.5 py-1.5 text-xs font-medium transition-all"
         >
           <MessageCircle className="w-3.5 h-3.5" />
           <span>Director Line</span>
@@ -132,7 +132,7 @@ export default function ThankYouPage() {
 
         {/* Heading & Subtitle */}
         <div className="space-y-4 max-w-2xl mx-auto">
-          <span className="text-[11px] font-mono uppercase tracking-[0.3em] text-accent bg-accent/10 px-3 py-1 rounded-full border border-accent/20">
+          <span className="text-[11px] font-mono uppercase tracking-[0.3em] text-accent bg-accent/10 px-3 py-1 border border-accent/20">
             Consultation Confirmed
           </span>
           <h1 className="text-3xl sm:text-5xl font-serif font-light tracking-wide leading-tight text-white">
@@ -251,7 +251,7 @@ export default function ThankYouPage() {
                   unoptimized
                 />
                 <div className="absolute top-3 left-3">
-                  <span className="text-[9px] font-mono uppercase tracking-wider bg-black/70 backdrop-blur-md text-accent px-2.5 py-1 rounded-full border border-accent/30">
+                  <span className="text-[9px] font-mono uppercase tracking-wider bg-black/70 backdrop-blur-md text-accent px-2.5 py-1 border border-accent/30">
                     {card.tag}
                   </span>
                 </div>

@@ -202,7 +202,7 @@ export default function CADRequestsPage() {
                     <p className="text-sm font-medium text-stone-900">{r.request_number}</p>
                     <p className="text-xs text-stone-400">{formatDate(r.received_date)}</p>
                     {r.priority === 'urgent' && (
-                      <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">urgent</span>
+                      <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5">urgent</span>
                     )}
                   </td>
                   <td className="px-4 py-3.5">
@@ -291,7 +291,7 @@ export default function CADRequestsPage() {
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <p className="text-sm font-medium text-stone-900">{r.request_number}</p>
                     <span className={`status-pill text-xs ${getStatusColor(r.status)}`}>{r.status.replace(/_/g, ' ')}</span>
-                    {r.priority === 'urgent' && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">urgent</span>}
+                    {r.priority === 'urgent' && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5">urgent</span>}
                   </div>
                   <p className="text-xs text-stone-500 truncate">{r.partner_name || '—'} · {r.brief_text?.substring(0, 50) || '—'}</p>
                   <div className="mt-1">

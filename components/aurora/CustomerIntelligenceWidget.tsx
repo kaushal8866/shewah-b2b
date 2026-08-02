@@ -16,7 +16,7 @@ export default function CustomerIntelligenceWidget({ customerId }: { customerId?
           <div>
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               AURORA Consumer Intelligence
-              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30">Persona Decoded</span>
+              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 border border-purple-500/30">Persona Decoded</span>
             </h3>
             <p className="text-xs text-stone-400">Customer #{customerId || 'CUST-882'} · Sentiment Agent Active</p>
           </div>

@@ -235,7 +235,7 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">{quote.quote_number}</h1>
-              <span className={`px-2.5 py-0.5 text-xs font-semibold border rounded-full ${getStatusStyle(quote.status)}`}>
+              <span className={`px-2.5 py-0.5 text-xs font-semibold border ${getStatusStyle(quote.status)}`}>
                 {quote.status.replace(/_/g, ' ')}
               </span>
             </div>

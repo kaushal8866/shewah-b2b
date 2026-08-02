@@ -226,7 +226,7 @@ export default function ReadyToShipDetailPage() {
             {otherOffers.map(o => (
               <li key={o.id} className="py-2 flex items-center justify-between text-sm">
                 <span className="text-stone-700">{o.partner?.store_name || 'Unknown'} · ₹{Number(o.offer_price).toLocaleString('en-IN')}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                <span className={`text-xs px-2 py-0.5 capitalize ${
                   o.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
                   o.status === 'rejected' ? 'bg-red-100 text-red-600' :
                   o.status === 'withdrawn' ? 'bg-stone-100 text-stone-500' : 'bg-stone-100 text-stone-500'

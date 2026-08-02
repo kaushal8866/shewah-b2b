@@ -96,13 +96,13 @@ export default function CustomerJourneyPanel({ orderId, customerId }: { orderId:
         <LinkIcon className="w-4 h-4 text-stone-500" />
         <h3 className="font-medium text-stone-900">Customer journey link</h3>
         {link && !isRevoked && !isExpired && (
-          <span className="text-[10px] uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">Active</span>
+          <span className="text-[10px] uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-0.5">Active</span>
         )}
         {isRevoked && (
-          <span className="text-[10px] uppercase tracking-wider bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full">Revoked</span>
+          <span className="text-[10px] uppercase tracking-wider bg-stone-100 text-stone-600 px-2 py-0.5">Revoked</span>
         )}
         {!isRevoked && isExpired && (
-          <span className="text-[10px] uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Expired</span>
+          <span className="text-[10px] uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5">Expired</span>
         )}
       </div>
 

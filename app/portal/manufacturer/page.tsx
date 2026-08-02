@@ -93,7 +93,7 @@ export default function ManufacturerPortalHome() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="font-medium text-stone-900 text-sm">{o.order_number}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[o.status] || 'bg-stone-100 text-stone-600'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 font-medium ${STATUS_STYLES[o.status] || 'bg-stone-100 text-stone-600'}`}>
                       {o.status?.replace(/_/g, ' ')}
                     </span>
                   </div>

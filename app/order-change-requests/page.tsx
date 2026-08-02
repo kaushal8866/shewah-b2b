@@ -130,7 +130,7 @@ export default function OrderChangeRequestsInboxPage() {
                         {r.partner?.store_name || 'Retailer'}
                         {r.partner?.city ? `, ${r.partner.city}` : ''}
                       </span>
-                      <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+                      <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 font-medium">
                         Pending
                       </span>
                     </div>

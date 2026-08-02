@@ -1545,7 +1545,7 @@ function QuoteBuilderForm() {
             <div className="bg-stone-900 text-white rounded-xl border border-stone-800 p-5 shadow-lg space-y-4">
               <div className="flex items-center justify-between border-b border-stone-800 pb-2">
                 <h3 className="font-bold text-xs uppercase tracking-wider text-stone-400">Live Breakdown</h3>
-                <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-medium">
+                <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 font-medium">
                   Live Preview
                 </span>
               </div>

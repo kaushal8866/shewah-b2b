@@ -253,7 +253,7 @@ export default function ResellersDirectoryPage() {
                         ₹{(reseller.outstanding_balance_paise / 100).toLocaleString('en-IN')}
                       </td>
                       <td className="px-5 py-4">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[reseller.status]}`}>
+                        <span className={`px-2 py-0.5 text-xs font-medium border ${statusColors[reseller.status]}`}>
                           {reseller.status}
                         </span>
                       </td>

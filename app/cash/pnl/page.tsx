@@ -397,7 +397,7 @@ export default function PnLStatementPage() {
                     <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Gross Profit (Lot-based)</p>
                     <p className="text-lg font-bold text-stone-900 mt-0.5">{formatCurrency(report.gross_profit)}</p>
                   </div>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1">
                     Margin: {report.gross_margin_pct}%
                   </span>
                 </div>
@@ -419,7 +419,7 @@ export default function PnLStatementPage() {
                       <p className="text-xs font-bold text-stone-800 uppercase tracking-wider">Adjusted Gross Profit</p>
                       <p className="text-lg font-bold text-stone-800 mt-0.5">{formatCurrency(report.adjusted_gross_profit)}</p>
                     </div>
-                    <span className="text-xs font-bold text-white bg-stone-800 px-2.5 py-1 rounded-full">
+                    <span className="text-xs font-bold text-white bg-stone-800 px-2.5 py-1">
                       Margin: {report.adjusted_gross_margin_pct}%
                     </span>
                   </div>

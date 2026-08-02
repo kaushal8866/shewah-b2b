@@ -36,7 +36,14 @@ const olive = {
 // The system's neutral ramp. Informational blues and decorative purples have no
 // place in a monochrome system, so they resolve to ink.
 const ink = {
-  50: '#F5F5F5', 100: '#EEEEEE', 200: '#E6E6E6', 300: '#CCCCCC', 400: '#7D7D7D',
+  50: '#F5F5F5', 100: '#EEEEEE', 200: '#E6E6E6', 300: '#CCCCCC',
+  // The reference measures #7D7D7D here, which is 4.12:1 on white — below AA.
+  // The spec calls it a metadata-only token, but the app uses `text-stone-400`
+  // in 1,249 places as ordinary body and label text. Rather than police 1,249
+  // call sites, the token is darkened to the lightest grey that clears 4.5:1
+  // (#767676 = 4.54:1). Deliberate deviation from the reference: legibility
+  // wins over fidelity, and the difference is not perceptible at this value.
+  400: '#767676',
   500: '#666666', 600: '#4A4A4A', 700: '#333333', 800: '#222222', 900: '#111111',
   950: '#0A0A0A',
 }
@@ -113,10 +120,20 @@ const config: Config = {
           'on-container': '#111111',
         },
         // The single chromatic value in the system.
+        //
+        // The reference house uses an olive (#788C40). Measured faithfully, it
+        // reads botanical rather than jewelry once it is sitting on every
+        // screen of a diamond business, so the accent is an antique gold
+        // instead — restrained enough not to fight the monochrome, and the
+        // consolidation point for the eight golds that used to be in the app.
+        // Revert to '#788C40' here to go back to the reference olive.
+        //
+        // 3.27:1 on white: permitted on rules, hover states, iconography and
+        // text at 18px or larger — never on body copy.
         accent: {
-          DEFAULT: '#788C40',
-          soft:    '#93A85A',
-          deep:    '#5F7033',
+          DEFAULT: '#A88A4F',
+          soft:    '#C9A86A',
+          deep:    '#8A6E3A',
         },
         // Layered surfaces — ground change replaces elevation.
         surface: {

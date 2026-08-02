@@ -66,7 +66,7 @@ function OrderChangeRequestsPanel({ orderId, onApplied }: { orderId: string, onA
         <MessageSquare className="w-4 h-4 text-stone-500" />
         <h3 className="font-medium text-stone-900">Change requests from retailer</h3>
         {pending.length > 0 && (
-          <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+          <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 font-medium">
             {pending.length} pending
           </span>
         )}
@@ -130,7 +130,7 @@ function OrderChangeRequestsPanel({ orderId, onApplied }: { orderId: string, onA
             <div className="mt-2 space-y-2">
               {recent.map(r => (
                 <div key={r.id} className="text-[12px] text-stone-600 border-l-2 pl-2"
-                  style={{ borderColor: r.status === 'approved' ? '#10b981' : '#ef4444' }}>
+                  style={{ borderColor: r.status === 'approved' ? '#4A6B32' : '#8C3A32' }}>
                   <span className={`font-medium ${r.status === 'approved' ? 'text-green-700' : 'text-red-700'}`}>
                     {r.status}
                   </span>{' '}· {r.reviewer?.display_name || r.reviewer?.username || 'Admin'} · {new Date(r.reviewed_at || r.created_at).toLocaleDateString('en-IN')}

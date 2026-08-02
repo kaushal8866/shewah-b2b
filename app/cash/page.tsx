@@ -657,16 +657,16 @@ export default function CashBookPage() {
                       </td>
                       <td className="px-6 py-4">
                         {t.is_void ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-stone-200 text-stone-700">
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-stone-200 text-stone-700">
                             Voided
                           </span>
                         ) : t.txn_type === 'income' ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
                             <ArrowUpRight className="w-3 h-3 mr-0.5" />
                             Income
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-800 border border-rose-100">
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-rose-50 text-rose-800 border border-rose-100">
                             <ArrowDownLeft className="w-3 h-3 mr-0.5" />
                             Expense
                           </span>

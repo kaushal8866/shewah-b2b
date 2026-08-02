@@ -426,10 +426,10 @@ function PartnerCard({
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h3 className="font-medium text-stone-900">{p.name}</h3>
                 {!p.is_active && (
-                  <span className="text-[10px] uppercase tracking-wider bg-stone-100 text-stone-500 rounded-full px-2 py-0.5">Archived</span>
+                  <span className="text-[10px] uppercase tracking-wider bg-stone-100 text-stone-500 px-2 py-0.5">Archived</span>
                 )}
                 {(p.stats?.active_links ?? 0) > 0 && (
-                  <span className="text-[10px] uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded-full px-2 py-0.5">
+                  <span className="text-[10px] uppercase tracking-wider bg-emerald-100 text-emerald-700 px-2 py-0.5">
                     {p.stats!.active_links} active link{p.stats!.active_links === 1 ? '' : 's'}
                   </span>
                 )}

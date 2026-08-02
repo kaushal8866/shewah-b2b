@@ -139,7 +139,7 @@ export default function FounderCopilotFloating() {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-stone-900 text-white px-4 py-3 rounded-full shadow-2xl border border-amber-500/40 hover:border-amber-400 hover:scale-105 transition-all group"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-stone-900 text-white px-4 py-3 shadow-2xl border border-amber-500/40 hover:border-amber-400 hover:scale-105 transition-all group"
       >
         <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center text-stone-950 font-bold shadow-sm">
           <Sparkles className="w-4 h-4 text-stone-950 animate-pulse" />
@@ -160,7 +160,7 @@ export default function FounderCopilotFloating() {
               <div>
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                   Founder Copilot
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono border border-amber-500/30">CIO AIOS</span>
+                  <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 font-mono border border-amber-500/30">CIO AIOS</span>
                 </h3>
                 <p className="text-xs text-stone-400 font-mono truncate max-w-[260px]">{contextLabel}</p>
               </div>

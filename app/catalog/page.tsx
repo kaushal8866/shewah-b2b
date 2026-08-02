@@ -357,11 +357,11 @@ function ProductsTab() {
                   </div>
                 )}
                 <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2">
-                  <span className="bg-white/90 backdrop-blur-sm text-stone-600 text-[10px] sm:text-xs px-2 py-0.5 rounded-full border border-stone-200 font-semibold">{p.code}</span>
+                  <span className="bg-white/90 backdrop-blur-sm text-stone-600 text-[10px] sm:text-xs px-2 py-0.5 border border-stone-200 font-semibold">{p.code}</span>
                 </div>
                 {((p as any).sell_mode && (p as any).sell_mode !== 'single') && (
                   <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2">
-                    <span className="bg-amber-500 text-white text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Set</span>
+                    <span className="bg-amber-500 text-white text-[9px] sm:text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider">Set</span>
                   </div>
                 )}
               </Link>
@@ -369,7 +369,7 @@ function ProductsTab() {
                 <div>
                   <div className="flex items-start justify-between mb-1 gap-2">
                     <p className="font-semibold text-stone-900 text-xs sm:text-sm truncate" title={p.name}>{p.name}</p>
-                    <span className="text-[10px] sm:text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full shrink-0">
+                    <span className="text-[10px] sm:text-xs text-stone-400 bg-stone-50 px-2 py-0.5 shrink-0">
                       {p.ref_karat || (p.gold_karat ? `${p.gold_karat}K` : '22K')}
                     </span>
                   </div>
@@ -626,7 +626,7 @@ function CollectionsTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <p className="font-medium text-stone-900 text-sm">{c.name}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.is_published ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'}`}>
+                    <span className={`text-xs px-2 py-0.5 font-medium ${c.is_published ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'}`}>
                       {c.is_published ? 'Published' : 'Draft'}
                     </span>
                   </div>
@@ -641,7 +641,7 @@ function CollectionsTab() {
                         : m >= 10 ? 'bg-amber-100 text-amber-700'
                         : 'bg-red-100 text-red-700'
                       return (
-                        <span className={`px-2 py-0.5 rounded-full font-medium ${cls}`}
+                        <span className={`px-2 py-0.5 font-medium ${cls}`}
                           title="Avg estimated margin across products in this collection (today's 24K gold rate)">
                           Avg margin {m.toFixed(0)}%
                         </span>

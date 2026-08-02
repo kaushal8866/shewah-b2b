@@ -125,11 +125,11 @@ export default function RetailerOrdersPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
                     <span className="font-medium text-stone-900 text-sm">{o.order_number}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[o.status] || 'bg-stone-100 text-stone-600'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 font-medium ${STATUS_STYLES[o.status] || 'bg-stone-100 text-stone-600'}`}>
                       {STATUS_LABEL[o.status] || o.status?.replace(/_/g, ' ')}
                     </span>
                     {o.type === 'custom' && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 font-medium">CUSTOM</span>
+                      <span className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 font-medium">CUSTOM</span>
                     )}
                   </div>
                   <p className="text-sm text-stone-700 truncate">

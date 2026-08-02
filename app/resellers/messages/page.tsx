@@ -388,7 +388,7 @@ export default function AdminResellerMessagesPage() {
                   <p className="text-[10px] text-stone-450 mt-0.5">{r.owner_name} · {r.reseller_code}</p>
                 </div>
                 {unreadCount > 0 && (
-                  <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shrink-0">
+                  <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 shrink-0">
                     {unreadCount}
                   </span>
                 )}
@@ -500,7 +500,7 @@ export default function AdminResellerMessagesPage() {
               if (isSystem) {
                 return (
                   <div key={m.id} className="flex justify-center my-2">
-                    <span className="bg-stone-200/60 border border-stone-250 text-stone-600 text-[10px] font-semibold py-1 px-3 rounded-full flex items-center gap-1">
+                    <span className="bg-stone-200/60 border border-stone-250 text-stone-600 text-[10px] font-semibold py-1 px-3 flex items-center gap-1">
                       <Info className="w-3 h-3 text-stone-500 shrink-0" /> {m.body}
                     </span>
                   </div>
