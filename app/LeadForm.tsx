@@ -141,7 +141,13 @@ export default function LeadForm({
       setF(empty)
       setStep(1)
       if (typeof window !== 'undefined') {
-        window.location.href = '/consultation/thank-you'
+        // `eid` is the Conversions API event id minted server-side; the
+        // thank-you page reuses it so the browser and server events
+        // deduplicate instead of counting one signup as two.
+        const eid = typeof j?.event_id === 'string' ? j.event_id : null
+        window.location.href = eid
+          ? `/consultation/thank-you?eid=${encodeURIComponent(eid)}`
+          : '/consultation/thank-you'
       }
     } catch (err: any) {
       setError(err?.message || 'Network error. Please try again.')

@@ -160,7 +160,12 @@ export default function BespokePage() {
       }
       // The Meta `Lead` event fires on /consultation/thank-you, not here — see
       // app/LeadForm.tsx for why firing it before a hard navigation is unsafe.
-      window.location.href = '/consultation/thank-you'
+      // `eid` is the Conversions API event id minted server-side; the thank-you
+      // page reuses it so the browser and server events deduplicate.
+      const eid = typeof j?.event_id === 'string' ? j.event_id : null
+      window.location.href = eid
+        ? `/consultation/thank-you?eid=${encodeURIComponent(eid)}`
+        : '/consultation/thank-you'
     } catch {
       setError('Network error. Please try again.')
     } finally {

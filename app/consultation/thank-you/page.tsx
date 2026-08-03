@@ -84,10 +84,27 @@ export default function ThankYouPage() {
       }
     }
 
-    // Fire Meta Pixel Lead Event if available
+    // Fire Meta Pixel Lead Event if available.
+    //
+    // The server already sent this same Lead via the Conversions API. Both must
+    // carry the identical eventID or Meta counts one submission as two, which
+    // halves every reported cost-per-lead and teaches the algorithm from
+    // phantom conversions. The id is minted server-side from the enquiry id and
+    // handed back through ?eid=. Without it we skip the browser event entirely
+    // and let the server event stand alone — one real conversion beats two
+    // fictional ones.
     if (typeof window !== 'undefined' && (window as any).fbq) {
       try {
-        (window as any).fbq('track', 'Lead')
+        // The id prefix says which event the server sent, so the browser fires
+        // the matching one. D2C consultations are `Lead`; B2B partner signups
+        // are `CompleteRegistration`, kept separate so the bespoke campaign
+        // never optimises toward retailers.
+        const eid = new URLSearchParams(window.location.search).get('eid')
+        if (eid?.startsWith('lead_')) {
+          ;(window as any).fbq('track', 'Lead', {}, { eventID: eid })
+        } else if (eid?.startsWith('partner_')) {
+          ;(window as any).fbq('track', 'CompleteRegistration', {}, { eventID: eid })
+        }
       } catch (e) {
         console.error('fbq error:', e)
       }
