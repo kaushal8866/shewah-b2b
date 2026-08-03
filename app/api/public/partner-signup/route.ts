@@ -3,6 +3,7 @@ import { createHash } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { notifyNewPartnerLead } from '@/lib/leadNotify'
 import { LANDING_VARIANT_COOKIE, isLandingVariant } from '@/lib/landingVariant'
+import { sendCapiEvent, fbcFromFbclid } from '@/lib/metaCapi'
 
 export const runtime = 'nodejs'
 
@@ -184,5 +185,30 @@ export async function POST(req: NextRequest) {
     })
     .eq('id', inserted.id)
 
-  return NextResponse.json({ ok: true, id: inserted.id })
+  // Meta Conversions API.
+  //
+  // Deliberately NOT `Lead`. This route is the B2B retailer signup; the D2C
+  // bespoke campaign optimises on `Lead`, and mixing retailers into that event
+  // would teach Meta to go looking for shop owners instead of people buying an
+  // engagement ring. `CompleteRegistration` keeps the two audiences separate
+  // so each campaign learns from its own conversions.
+  const eventId = `partner_${inserted.id}`
+  await sendCapiEvent({
+    eventName: 'CompleteRegistration',
+    eventId,
+    eventSourceUrl: clean(body?.landing_path, 300) || req.headers.get('referer'),
+    user: {
+      phone: row.whatsapp || null,
+      email: row.email || null,
+      firstName: row.full_name || null,
+      city: row.city || null,
+      fbp: req.cookies.get('_fbp')?.value || null,
+      fbc: req.cookies.get('_fbc')?.value || fbcFromFbclid(clean(body?.fbclid, 200)) || null,
+      clientIp: ip,
+      userAgent: req.headers.get('user-agent'),
+    },
+    customData: { content_name: 'Partner signup', currency: 'INR' },
+  })
+
+  return NextResponse.json({ ok: true, id: inserted.id, event_id: eventId })
 }
