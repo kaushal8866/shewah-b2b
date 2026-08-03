@@ -117,7 +117,7 @@ export default function CancelMfgOrderModal(props: {
           <div className="space-y-2">
             <p className="text-sm text-stone-600 mb-3">What stage is this with <strong>{currentPartnerName || 'the karigar'}</strong>?</p>
             <button onClick={() => setBranch('not_started')}
-              className="w-full text-left border border-stone-200 hover:border-[#1E3A5F] rounded-xl p-3 flex items-start gap-3">
+              className="w-full text-left border border-stone-200 hover:border-stone-800 rounded-xl p-3 flex items-start gap-3">
               <ArrowRightCircle className="w-5 h-5 text-stone-400 mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium text-stone-900 text-sm">Not started yet</p>
@@ -125,7 +125,7 @@ export default function CancelMfgOrderModal(props: {
               </div>
             </button>
             <button onClick={() => setBranch('reassign')}
-              className="w-full text-left border border-stone-200 hover:border-[#1E3A5F] rounded-xl p-3 flex items-start gap-3">
+              className="w-full text-left border border-stone-200 hover:border-stone-800 rounded-xl p-3 flex items-start gap-3">
               <ArrowRightCircle className="w-5 h-5 text-stone-400 mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium text-stone-900 text-sm">In making — karigar refuses</p>
@@ -133,7 +133,7 @@ export default function CancelMfgOrderModal(props: {
               </div>
             </button>
             <button onClick={() => setBranch('receive')}
-              className="w-full text-left border border-stone-200 hover:border-[#1E3A5F] rounded-xl p-3 flex items-start gap-3">
+              className="w-full text-left border border-stone-200 hover:border-stone-800 rounded-xl p-3 flex items-start gap-3">
               <Package className="w-5 h-5 text-stone-400 mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium text-stone-900 text-sm">Already completed (not received)</p>
@@ -214,7 +214,7 @@ export default function CancelMfgOrderModal(props: {
                         </button>
                       </div>
                     ))}
-                    <label className="w-16 h-16 rounded-lg border-2 border-dashed border-stone-200 flex items-center justify-center text-stone-400 hover:border-[#1E3A5F] cursor-pointer">
+                    <label className="w-16 h-16 rounded-lg border-2 border-dashed border-stone-200 flex items-center justify-center text-stone-400 hover:border-stone-800 cursor-pointer">
                       <FileUp className="w-4 h-4" />
                       <input type="file" accept="image/*" className="hidden"
                         disabled={uploading}
@@ -234,7 +234,7 @@ export default function CancelMfgOrderModal(props: {
                 Cancel
               </button>
               <button onClick={() => submit(branch as 'not_started' | 'reassign' | 'receive')} disabled={busy}
-                className="flex-1 bg-[#1E3A5F] hover:bg-[#162B47] text-white py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                className="flex-1 bg-stone-800 hover:bg-stone-900 text-white py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
                 {busy ? 'Working...' :
                   branch === 'not_started' ? 'Cancel & release float' :
                   branch === 'reassign' ? 'Reassign' :

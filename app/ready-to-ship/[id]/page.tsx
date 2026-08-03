@@ -189,7 +189,7 @@ export default function ReadyToShipDetailPage() {
                         className="border border-stone-200 rounded-lg px-3 py-2 text-sm" />
                       <div className="sm:col-span-2 flex gap-2">
                         <button onClick={() => decide(o.id, 'counter')} disabled={busyOffer === o.id}
-                          className="flex-1 bg-[#1E3A5F] text-white py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+                          className="flex-1 bg-stone-800 text-white py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
                           Send counter
                         </button>
                         <button onClick={() => { setCounterFor(null); setCounterPrice(''); setCounterNote('') }}
@@ -226,7 +226,7 @@ export default function ReadyToShipDetailPage() {
             {otherOffers.map(o => (
               <li key={o.id} className="py-2 flex items-center justify-between text-sm">
                 <span className="text-stone-700">{o.partner?.store_name || 'Unknown'} · ₹{Number(o.offer_price).toLocaleString('en-IN')}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                <span className={`text-xs px-2 py-0.5 capitalize ${
                   o.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
                   o.status === 'rejected' ? 'bg-red-100 text-red-600' :
                   o.status === 'withdrawn' ? 'bg-stone-100 text-stone-500' : 'bg-stone-100 text-stone-500'

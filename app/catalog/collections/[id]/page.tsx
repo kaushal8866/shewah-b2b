@@ -207,7 +207,7 @@ export default function CollectionDetailPage() {
     ? activePartners.filter(p => !p.circuit || p.circuit === collection.circuit_target)
     : activePartners
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
@@ -227,7 +227,7 @@ export default function CollectionDetailPage() {
           <p className="text-stone-400 text-sm">
             {selectedIds.size} product{selectedIds.size !== 1 ? 's' : ''} · {collection.is_published ? 'Published' : 'Draft'}
             {selectedAvgMargin != null && (
-              <span className={`ml-2 inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${
+              <span className={`ml-2 inline-flex items-center text-xs font-medium px-2 py-0.5 ${
                 selectedAvgMargin >= 25 ? 'bg-green-100 text-green-700'
                 : selectedAvgMargin >= 10 ? 'bg-amber-100 text-amber-700'
                 : 'bg-red-100 text-red-700'
@@ -276,7 +276,7 @@ export default function CollectionDetailPage() {
               </div>
             </div>
             <button onClick={handleSave} disabled={saving}
-              className="mt-4 w-full flex items-center justify-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
+              className="mt-4 w-full flex items-center justify-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
               <Save className="w-4 h-4" /> {saving ? 'Saving…' : 'Save changes'}
             </button>
           </div>
@@ -305,7 +305,7 @@ export default function CollectionDetailPage() {
                             <div className="flex items-center gap-2 mt-0.5">
                               <p className="text-xs text-stone-400">{p.city}{pCircuitLabel ? ` · ${pCircuitLabel}` : ''}</p>
                               {views > 0 && (
-                                <span className="flex items-center gap-0.5 text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                                <span className="flex items-center gap-0.5 text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 ">
                                   <Eye className="w-2.5 h-2.5" />{views}
                                 </span>
                               )}
@@ -358,7 +358,7 @@ export default function CollectionDetailPage() {
                   )}
                 </div>
                 <button onClick={saveProducts} disabled={savingProducts}
-                  className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors whitespace-nowrap">
+                  className="flex items-center gap-1.5 bg-stone-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors whitespace-nowrap">
                   <Save className="w-3.5 h-3.5" /> {savingProducts ? 'Saving…' : 'Save selection'}
                 </button>
               </div>
@@ -396,7 +396,7 @@ export default function CollectionDetailPage() {
                   return (
                     <label key={p.id} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-stone-50 ${selected ? 'bg-amber-50/50' : ''}`}>
                       <input type="checkbox" checked={selected} onChange={() => toggleProduct(p.id)}
-                        className="w-4 h-4 rounded border-stone-300 text-[#1E3A5F] accent-[#1E3A5F]" />
+                        className="w-4 h-4 rounded border-stone-300 text-stone-800 accent-stone-800" />
                       {p.photo_urls && p.photo_urls.length > 0 ? (
                         <img src={p.photo_urls[0]} alt="" className="w-10 h-10 rounded-lg object-cover border border-stone-100 shrink-0" />
                       ) : (
@@ -405,7 +405,7 @@ export default function CollectionDetailPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium text-stone-400">{p.code}</span>
-                          {!p.is_active && <span className="text-xs bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded-full">Inactive</span>}
+                          {!p.is_active && <span className="text-xs bg-stone-100 text-stone-400 px-1.5 py-0.5 ">Inactive</span>}
                         </div>
                         <p className="text-sm text-stone-800 truncate">{p.name}</p>
                         <p className="text-xs text-stone-400">{p.gold_karat}K{p.diamond_shape ? ` · ${p.diamond_shape}` : ''}{p.trade_price ? ` · ₹${Math.round(p.trade_price / 1000)}K` : ''}</p>

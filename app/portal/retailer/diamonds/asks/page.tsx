@@ -86,7 +86,7 @@ export default function RetailerAsksPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    const base = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider "
+    const base = "px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider "
     switch (status) {
       case 'pending':
         return base + "bg-blue-50 text-blue-700 border border-blue-200"
@@ -149,7 +149,7 @@ export default function RetailerAsksPage() {
                     </div>
                     <div>
                       <p className="text-stone-400 font-semibold">Asked Price</p>
-                      <p className="text-[#1E3A5F] font-bold mt-0.5">
+                      <p className="text-stone-800 font-bold mt-0.5">
                         ₹{ask.asked_price.toLocaleString('en-IN')}/{ask.asked_unit === 'per_pc' ? 'pc' : 'ct'}
                       </p>
                     </div>
@@ -195,7 +195,7 @@ export default function RetailerAsksPage() {
                         <span>{getRemainingTime(ask.purchase_window_expiry_at)}</span>
                       </div>
                       <button onClick={() => handlePurchase(ask.id)} disabled={purchasingId === ask.id}
-                        className="bg-[#1E3A5F] hover:bg-[#162B47] text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 disabled:opacity-50">
+                        className="bg-stone-800 hover:bg-stone-900 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 disabled:opacity-50">
                         {purchasingId === ask.id ? <Loader2 className="w-3 animate-spin" /> : <ShoppingCart className="w-3 h-3" />}
                         Purchase Now
                       </button>

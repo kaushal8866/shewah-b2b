@@ -629,7 +629,7 @@ export default function CatalogProductEditPage() {
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -657,7 +657,7 @@ export default function CatalogProductEditPage() {
           <div className="text-sm text-stone-700">
             This product is a component of a set. Saving changes here will automatically recalculate the parent set's weights and prices.
           </div>
-          <Link href={`/catalog/${parentSetId}`} className="text-sm font-semibold text-[#1E3A5F] hover:underline whitespace-nowrap">
+          <Link href={`/catalog/${parentSetId}`} className="text-sm font-semibold text-stone-800 hover:underline whitespace-nowrap">
             View Parent Set →
           </Link>
         </div>
@@ -694,7 +694,7 @@ export default function CatalogProductEditPage() {
               <h2 className="font-semibold text-stone-900">Components in this Set</h2>
               <Link
                 href={`/catalog/new`}
-                className="text-xs text-[#1E3A5F] border border-[#1E3A5F] px-3 py-1.5 rounded-lg hover:bg-yellow-50 font-medium transition-colors"
+                className="text-xs text-stone-800 border border-stone-800 px-3 py-1.5 rounded-lg hover:bg-yellow-50 font-medium transition-colors"
               >
                 + Add Component
               </Link>
@@ -715,7 +715,7 @@ export default function CatalogProductEditPage() {
                           <span className="font-bold text-stone-800 text-sm">
                             {comp.component_label || 'Unnamed component'}
                           </span>
-                          <span className="bg-stone-200 text-stone-600 text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                          <span className="bg-stone-200 text-stone-600 text-[10px] px-2 py-0.5 font-semibold">
                             {comp.category}
                           </span>
                         </div>
@@ -733,7 +733,7 @@ export default function CatalogProductEditPage() {
                         </span>
                         <Link
                           href={`/catalog/${comp.id}`}
-                          className="text-xs font-semibold text-[#1E3A5F] hover:underline"
+                          className="text-xs font-semibold text-stone-800 hover:underline"
                         >
                           Edit Component →
                         </Link>
@@ -784,14 +784,14 @@ export default function CatalogProductEditPage() {
             {photoUrls.map((url, i) => (
               <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 group">
                 <img src={url} alt="" className="w-full h-full object-cover" />
-                {i === 0 && <div className="absolute bottom-1 left-1 bg-[#1E3A5F] text-white text-xs px-1.5 py-0.5 rounded-md">Cover</div>}
+                {i === 0 && <div className="absolute bottom-1 left-1 bg-stone-800 text-white text-xs px-1.5 py-0.5 rounded-md">Cover</div>}
                 <button onClick={() => setPhotoUrls(prev => prev.filter((_, idx) => idx !== i))}
                   className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <X className="w-3 h-3" />
                 </button>
               </div>
             ))}
-            <label className="aspect-square border-2 border-dashed border-stone-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#1E3A5F] hover:bg-yellow-50 transition-colors">
+            <label className="aspect-square border-2 border-dashed border-stone-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-stone-800 hover:bg-yellow-50 transition-colors">
               <input type="file" accept="image/*" multiple className="hidden" onChange={e => handleImageUpload(e.target.files)} disabled={uploading} />
               <Upload className={`w-5 h-5 mb-1 ${uploading ? 'text-stone-200 animate-pulse' : 'text-stone-300'}`} />
               <span className="text-xs text-stone-300">{uploading ? 'Uploading...' : 'Add photos'}</span>
@@ -803,7 +803,7 @@ export default function CatalogProductEditPage() {
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
           <div className="flex items-center justify-between mb-1">
             <h2 className="font-medium text-stone-900">Diamond specifications</h2>
-            <button onClick={addDiamondRow} className="flex items-center gap-1.5 text-xs text-[#1E3A5F] border border-[#1E3A5F] px-3 py-1.5 rounded-lg hover:bg-yellow-50">
+            <button onClick={addDiamondRow} className="flex items-center gap-1.5 text-xs text-stone-800 border border-stone-800 px-3 py-1.5 rounded-lg hover:bg-yellow-50">
               <Plus className="w-3.5 h-3.5" /> Add row
             </button>
           </div>
@@ -886,8 +886,8 @@ export default function CatalogProductEditPage() {
                             <button key={`m-${i}`} type="button"
                               onClick={() => updateDiamond(d.id, 'cost', String(pcCost))}
                               className={'text-xs px-2 py-1 rounded-md border transition-colors ' +
-                                (active ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
-                                        : 'border-stone-200 bg-white text-stone-600 hover:border-[#1E3A5F]/40')}
+                                (active ? 'border-stone-800 bg-stone-800/5 text-stone-800'
+                                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-800/40')}
                               title={`Matrix · ${m.quality_label} · ${m.color_label} · Rate: ₹${m.price.toLocaleString('en-IN')}${isLgd ? '/pc' : '/ct'}`}>
                               <span className="text-stone-400 mr-1">{m.quality_label}·{m.color_label}</span>
                               ₹{pcCost.toLocaleString('en-IN')}
@@ -956,7 +956,7 @@ export default function CatalogProductEditPage() {
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-medium text-stone-900 flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-[#1E3A5F]" />
+              <Calculator className="w-4 h-4 text-stone-800" />
               {isSilver ? 'Silver pricing' : 'Per-karat pricing'}
             </h2>
             <div>
@@ -1024,7 +1024,7 @@ export default function CatalogProductEditPage() {
                     <td className="px-3 py-2 text-right text-stone-600">₹{silverRateB2B}</td>
                     <td className="px-3 py-2 text-right text-stone-600">₹{silverRateD2C}</td>
                     <td className="px-3 py-2 text-right text-stone-750">₹{silverB2B_cogs.toLocaleString('en-IN')}</td>
-                    <td className="px-3 py-2 text-right font-semibold text-[#1E3A5F]">₹{silverTrade.toLocaleString('en-IN')}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-stone-800">₹{silverTrade.toLocaleString('en-IN')}</td>
                     <td className="px-3 py-2 text-right font-medium text-stone-800">₹{silverMrp.toLocaleString('en-IN')}</td>
                   </tr>
                 ) : (
@@ -1038,7 +1038,7 @@ export default function CatalogProductEditPage() {
                         {(retailLabour[Number(row.karat)] || 0) === 0 && <span className="text-[10px] text-amber-600 ml-1">(no rate)</span>}
                       </td>
                       <td className="px-3 py-2 text-right text-stone-700">{row.cogs.toLocaleString('en-IN')}</td>
-                      <td className="px-3 py-2 text-right font-semibold text-[#1E3A5F]">{row.trade.toLocaleString('en-IN')}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-stone-800">{row.trade.toLocaleString('en-IN')}</td>
                       <td className="px-3 py-2 text-right font-medium text-stone-800">{row.mrp.toLocaleString('en-IN')}</td>
                     </tr>
                   ))
@@ -1119,7 +1119,7 @@ export default function CatalogProductEditPage() {
             <input
               type="checkbox"
               id="readyToShip"
-              className="mt-1 w-4 h-4 rounded text-[#1E3A5F] border-stone-300 focus:ring-[#1E3A5F]"
+              className="mt-1 w-4 h-4 rounded text-stone-800 border-stone-300 focus:ring-stone-800"
               checked={isReadyToShip}
               onChange={e => handleToggleReadyToShip(e.target.checked)}
             />
@@ -1138,7 +1138,7 @@ export default function CatalogProductEditPage() {
               <div>
                 <label className="block text-xs font-semibold text-stone-500 mb-1.5 uppercase tracking-wider">Stock Karat</label>
                 <select
-                  className="w-full text-sm border-stone-200 rounded-xl focus:border-[#1E3A5F] focus:ring-[#1E3A5F] bg-stone-50"
+                  className="w-full text-sm border-stone-200 rounded-xl focus:border-stone-800 focus:ring-stone-800 bg-stone-50"
                   value={refKarat}
                   disabled
                 >
@@ -1151,7 +1151,7 @@ export default function CatalogProductEditPage() {
                 <input
                   type="number"
                   step="0.001"
-                  className="w-full text-sm border-stone-200 rounded-xl focus:border-[#1E3A5F] focus:ring-[#1E3A5F]"
+                  className="w-full text-sm border-stone-200 rounded-xl focus:border-stone-800 focus:ring-stone-800"
                   placeholder="e.g. 5.230"
                   value={rtsGrossWeight}
                   onChange={e => setRtsGrossWeight(e.target.value)}
@@ -1161,7 +1161,7 @@ export default function CatalogProductEditPage() {
                 <label className="block text-xs font-semibold text-stone-500 mb-1.5 uppercase tracking-wider">List Price (₹)</label>
                 <input
                   type="number"
-                  className="w-full text-sm border-stone-200 rounded-xl focus:border-[#1E3A5F] focus:ring-[#1E3A5F]"
+                  className="w-full text-sm border-stone-200 rounded-xl focus:border-stone-800 focus:ring-stone-800"
                   placeholder="e.g. 45000"
                   value={rtsListPrice}
                   onChange={e => setRtsListPrice(e.target.value)}
@@ -1171,7 +1171,7 @@ export default function CatalogProductEditPage() {
                 <label className="block text-xs font-semibold text-stone-500 mb-1.5 uppercase tracking-wider">Internal / Stock Notes</label>
                 <input
                   type="text"
-                  className="w-full text-sm border-stone-200 rounded-xl focus:border-[#1E3A5F] focus:ring-[#1E3A5F]"
+                  className="w-full text-sm border-stone-200 rounded-xl focus:border-stone-800 focus:ring-stone-800"
                   placeholder="e.g. Size 12 ring, ready at counter 1"
                   value={rtsInternalNotes}
                   onChange={e => setRtsInternalNotes(e.target.value)}
@@ -1193,8 +1193,8 @@ export default function CatalogProductEditPage() {
               <button key={m.id} onClick={() => toggleModel(m.id)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
                   form.models_available.includes(m.id)
-                    ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                    : 'bg-white text-stone-600 border-stone-200 hover:border-[#1E3A5F]'
+                    ? 'bg-stone-800 text-white border-stone-800'
+                    : 'bg-white text-stone-600 border-stone-200 hover:border-stone-800'
                 }`}>{m.label}</button>
             ))}
           </div>
@@ -1202,7 +1202,7 @@ export default function CatalogProductEditPage() {
 
         <div className="flex justify-end gap-3 pt-2">
           <Link href="/catalog" className="px-5 py-2.5 text-sm text-stone-600 border border-stone-200 rounded-xl hover:bg-stone-50">Cancel</Link>
-          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-[#1E3A5F] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
+          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-stone-800 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save product'}
           </button>
         </div>

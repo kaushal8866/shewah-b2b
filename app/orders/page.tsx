@@ -75,7 +75,7 @@ export default function OrdersPage() {
           <p className="text-stone-500 text-sm mt-0.5">Pipeline tracker — {orders.length} orders</p>
         </div>
         <Link href="/orders/new"
-          className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
+          className="flex items-center gap-2 bg-stone-800 text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 transition-colors">
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">New order</span>
           <span className="sm:hidden">New</span>
@@ -108,7 +108,7 @@ export default function OrdersPage() {
                 onClick={() => setStatusFilter(stage.value === statusFilter ? 'all' : stage.value)}
                 className={`snap-start shrink-0 min-w-[120px] sm:min-w-0 sm:flex-1 text-center py-4 transition-colors ${
                   statusFilter === stage.value
-                    ? 'bg-[#1E3A5F] text-white'
+                    ? 'bg-stone-800 text-white'
                     : count > 0 ? 'bg-stone-100 text-stone-700 hover:bg-stone-200' : 'bg-stone-50 text-stone-300'
                 }`}>
                 <p className="display-sm">{count}</p>
@@ -165,7 +165,7 @@ export default function OrdersPage() {
                     No orders match filters.{' '}
                     <button
                       onClick={() => { setSearch(''); setStatusFilter('all') }}
-                      className="text-[#1E3A5F] hover:underline"
+                      className="text-stone-800 hover:underline"
                     >Clear filters</button>
                   </span>
                 )}
@@ -232,7 +232,7 @@ export default function OrdersPage() {
                 No orders match filters.{' '}
                 <button
                   onClick={() => { setSearch(''); setStatusFilter('all') }}
-                  className="text-[#1E3A5F] hover:underline"
+                  className="text-stone-800 hover:underline"
                 >Clear filters</button>
               </span>
             )}

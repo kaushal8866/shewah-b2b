@@ -41,15 +41,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1A1F2E] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-stone-900 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-[#1E3A5F] flex items-center justify-center mb-4 shadow-lg">
-            <Diamond className="w-7 h-7 text-white" />
+          <div className="w-14 h-14 border border-white/25 flex items-center justify-center mb-5">
+            <Diamond className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-white text-2xl font-bold tracking-tight">Shewah Admin</h1>
-          <p className="text-white/40 text-sm mt-1">Sign in to your account</p>
+          <h1 className="font-serif text-white text-3xl">Shewah</h1>
+          <p className="text-white/50 text-[10px] uppercase tracking-micro mt-2">Internal sign in</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -62,7 +62,7 @@ export default function LoginPage() {
                 onChange={e => setUsername(e.target.value)}
                 placeholder="Username"
                 autoComplete="username"
-                className="w-full bg-white/8 border border-white/10 rounded-xl pl-10 pr-4 py-3.5 text-white placeholder-white/30 text-sm outline-none focus:border-[#1E3A5F] focus:bg-white/10 transition-colors"
+                className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-4 py-3.5 text-white placeholder-white/30 text-sm outline-none focus:border-accent focus:bg-white/15 transition-colors"
               />
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function LoginPage() {
                 onChange={e => setPassword(e.target.value)}
                 placeholder="Password"
                 autoComplete="current-password"
-                className="w-full bg-white/8 border border-white/10 rounded-xl pl-10 pr-11 py-3.5 text-white placeholder-white/30 text-sm outline-none focus:border-[#1E3A5F] focus:bg-white/10 transition-colors"
+                className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-11 py-3.5 text-white placeholder-white/30 text-sm outline-none focus:border-accent focus:bg-white/15 transition-colors"
               />
               <button
                 type="button"
@@ -96,7 +96,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#1E3A5F] hover:bg-[#162B47] text-white font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            className="w-full bg-white hover:bg-accent hover:text-white text-stone-900 py-3.5 text-[13px] uppercase tracking-cta transition-colors disabled:opacity-35 disabled:cursor-not-allowed">
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>

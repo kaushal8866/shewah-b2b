@@ -266,7 +266,7 @@ export default function ResellerSamplesPage() {
         </div>
         <button
           onClick={fetchSamples}
-          className="text-xs font-semibold text-[#1E3A5F] hover:underline"
+          className="text-xs font-semibold text-stone-800 hover:underline"
         >
           Reload Ledger
         </button>
@@ -355,7 +355,7 @@ export default function ResellerSamplesPage() {
                         )}
                       </td>
                       <td className="px-5 py-4">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[sample.status]}`}>
+                        <span className={`px-2 py-0.5 text-xs font-medium border ${statusColors[sample.status]}`}>
                           {sample.status}
                           {isOverdue && ' (Overdue)'}
                         </span>
@@ -376,7 +376,7 @@ export default function ResellerSamplesPage() {
                                   handleApproveSample(sample.id, 'deposit', Number(dep) || 0)
                                 }
                               }}
-                              className="bg-[#1E3A5F] hover:bg-[#162B47] text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors"
+                              className="bg-stone-800 hover:bg-stone-900 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors"
                             >
                               Approve (Deposit)
                             </button>

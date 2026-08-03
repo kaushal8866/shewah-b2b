@@ -185,7 +185,7 @@ export default function StockMovementsPage() {
                         <div className="flex justify-end gap-1.5">
                           <button onClick={() => openEdit(r)}
                             title="Edit"
-                            className="text-stone-400 hover:text-[#1E3A5F] p-1 rounded hover:bg-stone-50">
+                            className="text-stone-400 hover:text-stone-800 p-1 rounded hover:bg-stone-50">
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={() => handleDelete(r)}
@@ -275,7 +275,7 @@ function EditMovementModal({
   }
 
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -351,7 +351,7 @@ function EditMovementModal({
             Cancel
           </button>
           <button onClick={save} disabled={saving}
-            className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+            className="flex-1 bg-stone-800 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
             {saving ? 'Saving...' : 'Save changes'}
           </button>
         </div>

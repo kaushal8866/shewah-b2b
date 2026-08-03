@@ -70,7 +70,7 @@ export default function ResellersDirectoryPage() {
             <span className="text-stone-700">Resellers</span>
           </div>
           <h1 className="text-xl lg:text-2xl font-semibold text-stone-900 tracking-tight flex items-center gap-2">
-            <Store className="w-6 h-6 text-[#1E3A5F]" />
+            <Store className="w-6 h-6 text-stone-800" />
             Reseller Network
           </h1>
           <p className="text-xs text-stone-400 mt-1">
@@ -120,7 +120,7 @@ export default function ResellersDirectoryPage() {
       {/* Analytics Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-blue-50 rounded-xl text-[#1E3A5F]">
+          <div className="p-3 bg-blue-50 rounded-xl text-stone-800">
             <Store className="w-6 h-6" />
           </div>
           <div>
@@ -156,7 +156,7 @@ export default function ResellersDirectoryPage() {
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-stone-400" />
           <input
             type="text"
-            className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/20 focus:border-[#1E3A5F]"
+            className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-stone-800/20 focus:border-stone-800"
             placeholder="Search by code, owner name, store name, or phone..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -165,7 +165,7 @@ export default function ResellersDirectoryPage() {
 
         <div className="flex gap-2">
           <select
-            className="border border-stone-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/20"
+            className="border border-stone-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-800/20"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
           >
@@ -177,7 +177,7 @@ export default function ResellersDirectoryPage() {
           </select>
 
           <select
-            className="border border-stone-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/20"
+            className="border border-stone-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-800/20"
             value={tierFilter}
             onChange={e => setTierFilter(e.target.value)}
           >
@@ -253,14 +253,14 @@ export default function ResellersDirectoryPage() {
                         ₹{(reseller.outstanding_balance_paise / 100).toLocaleString('en-IN')}
                       </td>
                       <td className="px-5 py-4">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[reseller.status]}`}>
+                        <span className={`px-2 py-0.5 text-xs font-medium border ${statusColors[reseller.status]}`}>
                           {reseller.status}
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right">
                         <Link
                           href={`/resellers/${reseller.id}`}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-[#1E3A5F] hover:text-[#162B47] bg-stone-100 hover:bg-stone-200/60 px-3 py-1.5 rounded-lg transition-all"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-stone-800 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/60 px-3 py-1.5 rounded-lg transition-all"
                         >
                           View Profile
                         </Link>

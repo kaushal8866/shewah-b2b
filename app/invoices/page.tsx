@@ -237,21 +237,21 @@ export default function InvoicesPage() {
     return acc
   }, { subtotal: 0, tax: 0, total: 0 })
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white text-stone-800"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white text-stone-800"
 
   return (
     <div className="p-4 lg:p-7 relative min-h-screen">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
           <h1 className="text-xl lg:text-2xl font-semibold text-stone-900 flex items-center gap-2">
-            <FileText className="w-6 h-6 text-[#1E3A5F]" />
+            <FileText className="w-6 h-6 text-stone-800" />
             GST Tax Invoices
           </h1>
           <p className="text-stone-500 text-sm mt-0.5">Audit log of all tax invoices generated for retail partners and customers</p>
         </div>
         {isMaster && (
           <button onClick={() => setCreateOpen(true)}
-            className="flex items-center justify-center gap-1.5 bg-[#1E3A5F] text-white hover:bg-[#162B47] px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm">
+            className="flex items-center justify-center gap-1.5 bg-stone-800 text-white hover:bg-stone-900 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm">
             <Plus className="w-4 h-4" /> Create Standalone Invoice
           </button>
         )}
@@ -269,7 +269,7 @@ export default function InvoicesPage() {
         </div>
         <div className="bg-white rounded-xl border border-stone-200 px-4 py-3">
           <p className="text-xs text-stone-400">Active Invoice Total (Incl. Taxes)</p>
-          <p className="text-xl font-semibold mt-0.5 text-[#1E3A5F]">₹{summaries.total.toLocaleString('en-IN')}</p>
+          <p className="text-xl font-semibold mt-0.5 text-stone-800">₹{summaries.total.toLocaleString('en-IN')}</p>
         </div>
       </div>
 
@@ -357,7 +357,7 @@ export default function InvoicesPage() {
                         </p>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${inv.invoice_type === 'diamond_trade' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+                        <span className={`inline-block px-2 py-0.5 text-xs font-semibold ${inv.invoice_type === 'diamond_trade' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
                           {inv.invoice_type === 'diamond_trade' ? 'Loose Diamond' : 'Jewellery'}
                         </span>
                       </td>
@@ -510,7 +510,7 @@ export default function InvoicesPage() {
               )}
 
               <span className="font-bold text-stone-900 border-t border-stone-200 pt-2 mt-1">Invoice Grand Total:</span>
-              <span className="text-right font-bold text-[#1E3A5F] border-t border-stone-200 pt-2 mt-1 text-sm">₹{Number(selectedInvoice.grand_total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <span className="text-right font-bold text-stone-800 border-t border-stone-200 pt-2 mt-1 text-sm">₹{Number(selectedInvoice.grand_total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
 
             {editError && <p className="text-xs text-red-600 font-medium">{editError}</p>}
@@ -528,7 +528,7 @@ export default function InvoicesPage() {
                     Cancel
                   </button>
                   <button onClick={handleUpdateInvoice} disabled={savingEdit}
-                    className="px-5 py-2 bg-[#1E3A5F] text-white rounded-xl text-sm font-semibold hover:bg-[#162B47] disabled:opacity-50 flex items-center gap-1.5 shadow-sm">
+                    className="px-5 py-2 bg-stone-800 text-white rounded-xl text-sm font-semibold hover:bg-stone-900 disabled:opacity-50 flex items-center gap-1.5 shadow-sm">
                     <Save className="w-4 h-4" /> {savingEdit ? 'Saving...' : 'Save Changes'}
                   </button>
                 </>
@@ -680,7 +680,7 @@ export default function InvoicesPage() {
                     ...createForm,
                     items: [...createForm.items, { description: '', hsn_code: createForm.invoice_type === 'diamond_trade' ? '7102' : '7113', qty: 1, unit: 'pcs', rate: 0, amount: 0 }]
                   })}
-                  className="text-xs text-[#1E3A5F] hover:underline flex items-center gap-1 font-semibold">
+                  className="text-xs text-stone-800 hover:underline flex items-center gap-1 font-semibold">
                   + Add Line Item
                 </button>
               </div>
@@ -688,21 +688,21 @@ export default function InvoicesPage() {
               <div className="space-y-2 max-h-[200px] overflow-y-auto border border-stone-200 rounded-xl p-3 bg-stone-50">
                 {createForm.items.map((it: any, idx: number) => (
                   <div key={idx} className="flex gap-2 items-center">
-                    <input type="text" placeholder="Description of goods..." className="flex-2 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-stone-800 outline-none focus:border-[#1E3A5F]"
+                    <input type="text" placeholder="Description of goods..." className="flex-2 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-stone-800 outline-none focus:border-stone-800"
                       value={it.description} onChange={e => {
                         const newItems = [...createForm.items]
                         newItems[idx].description = e.target.value
                         setCreateForm({ ...createForm, items: newItems })
                       }} />
                     
-                    <input type="text" placeholder="HSN" className="w-16 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-stone-800 text-center outline-none focus:border-[#1E3A5F]"
+                    <input type="text" placeholder="HSN" className="w-16 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-stone-800 text-center outline-none focus:border-stone-800"
                       value={it.hsn_code} onChange={e => {
                         const newItems = [...createForm.items]
                         newItems[idx].hsn_code = e.target.value
                         setCreateForm({ ...createForm, items: newItems })
                       }} />
                     
-                    <input type="number" placeholder="Qty" className="w-16 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-stone-800 text-right outline-none focus:border-[#1E3A5F]"
+                    <input type="number" placeholder="Qty" className="w-16 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-stone-800 text-right outline-none focus:border-stone-800"
                       value={it.qty} onChange={e => {
                         const newItems = [...createForm.items]
                         newItems[idx].qty = Number(e.target.value) || 0
@@ -710,7 +710,7 @@ export default function InvoicesPage() {
                         setCreateForm({ ...createForm, items: newItems })
                       }} />
                     
-                    <select className="w-20 border border-stone-200 rounded-lg px-2 py-1.5 text-xs bg-white text-stone-800 outline-none focus:border-[#1E3A5F]"
+                    <select className="w-20 border border-stone-200 rounded-lg px-2 py-1.5 text-xs bg-white text-stone-800 outline-none focus:border-stone-800"
                       value={it.unit} onChange={e => {
                         const newItems = [...createForm.items]
                         newItems[idx].unit = e.target.value
@@ -721,7 +721,7 @@ export default function InvoicesPage() {
                       <option value="carats">carats</option>
                     </select>
 
-                    <input type="number" placeholder="Rate" className="w-24 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-stone-800 text-right outline-none focus:border-[#1E3A5F]"
+                    <input type="number" placeholder="Rate" className="w-24 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-stone-800 text-right outline-none focus:border-stone-800"
                       value={it.rate} onChange={e => {
                         const newItems = [...createForm.items]
                         newItems[idx].rate = Number(e.target.value) || 0
@@ -787,7 +787,7 @@ export default function InvoicesPage() {
                   </div>
                   <div className="flex justify-between font-bold text-stone-900 border-t border-stone-200 pt-1 text-sm">
                     <span>Grand Total:</span>
-                    <span className="text-[#1E3A5F]">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-stone-800">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               )
@@ -801,7 +801,7 @@ export default function InvoicesPage() {
                 Cancel
               </button>
               <button onClick={handleCreateStandalone} disabled={creating}
-                className="flex-1 bg-[#1E3A5F] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-[#162B47] disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm">
+                className="flex-1 bg-stone-800 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-stone-900 disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm">
                 <Plus className="w-4 h-4" /> {creating ? 'Generating...' : 'Create Invoice'}
               </button>
             </div>

@@ -127,7 +127,7 @@ export default function RespondPanel({
     <>
       {/* -- Attach draft files ------------------------------------------------ */}
       <div className="bg-stone-900 rounded-2xl border border-stone-800 p-5">
-        <h2 className="text-white text-sm font-medium mb-1 uppercase tracking-wider text-[#B7C8DD]">
+        <h2 className="text-white text-sm font-medium mb-1 uppercase tracking-wider text-stone-300">
           Attach draft files
         </h2>
         <p className="text-stone-400 text-xs mb-3">
@@ -139,7 +139,7 @@ export default function RespondPanel({
           className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl py-6 px-3 text-sm cursor-pointer transition-colors ${
             uploading
               ? 'border-stone-700 text-stone-500 pointer-events-none'
-              : 'border-stone-700 hover:border-[#B7C8DD] text-stone-300'
+              : 'border-stone-700 hover:border-stone-300 text-stone-300'
           }`}
         >
           <input
@@ -247,7 +247,7 @@ export default function RespondPanel({
         </div>
       ) : (
         <div className="bg-stone-900 rounded-2xl border border-stone-800 p-5">
-          <h2 className="text-white text-sm font-medium mb-3 uppercase tracking-wider text-[#B7C8DD]">
+          <h2 className="text-white text-sm font-medium mb-3 uppercase tracking-wider text-stone-300">
             Your response
           </h2>
 
@@ -287,7 +287,7 @@ export default function RespondPanel({
                     ? 'Optional note (e.g. "All good, ready to cut")'
                     : 'Required: e.g. "Make the prongs thinner and reduce the halo by 0.5mm"'
                 }
-                className="w-full bg-stone-950 border border-stone-700 text-stone-100 rounded-xl px-3 py-2 text-sm focus:border-[#B7C8DD] outline-none placeholder:text-stone-600"
+                className="w-full bg-stone-950 border border-stone-700 text-stone-100 rounded-xl px-3 py-2 text-sm focus:border-stone-300 outline-none placeholder:text-stone-600"
                 disabled={submitting}
               />
               {error && <p className="text-amber-300 text-xs">{error}</p>}

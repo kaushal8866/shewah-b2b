@@ -82,7 +82,7 @@ export default function MetalWeightCalculator({
   const showColorSelector = metalType === 'gold' && refKarat !== '24K'
 
   const lbl = 'block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5'
-  const inp = 'w-full px-3.5 py-2 rounded-lg border border-stone-200 text-stone-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition-all placeholder:text-stone-300'
+  const inp = 'w-full px-3.5 py-2 rounded-lg border border-stone-200 text-stone-800 text-sm focus:outline-none focus:ring-2 focus:ring-stone-800 focus:border-transparent transition-all placeholder:text-stone-300'
 
   return (
     <div className="space-y-4">
@@ -191,7 +191,7 @@ export default function MetalWeightCalculator({
                               key={c}
                               className={`px-4 py-2.5 text-right ${
                                 isRef
-                                  ? 'bg-[#1E3A5F]/5 font-bold text-[#1E3A5F]'
+                                  ? 'bg-stone-800/5 font-bold text-stone-800'
                                   : hasValue
                                   ? 'text-stone-850'
                                   : 'text-stone-300 italic'
@@ -209,15 +209,15 @@ export default function MetalWeightCalculator({
             </div>
           ) : (
             <div className="grid grid-cols-2 divide-x divide-stone-100 text-center">
-              <div className={`px-2 py-3 ${refKarat === 'silver_925' ? 'bg-[#1E3A5F]/5' : ''}`}>
+              <div className={`px-2 py-3 ${refKarat === 'silver_925' ? 'bg-stone-800/5' : ''}`}>
                 <p className="text-xs text-stone-400">Silver 925</p>
-                <p className={`text-sm font-semibold ${refKarat === 'silver_925' ? 'text-[#1E3A5F]' : 'text-stone-850'}`}>
+                <p className={`text-sm font-semibold ${refKarat === 'silver_925' ? 'text-stone-800' : 'text-stone-850'}`}>
                   {(getMetalWeight(computedWeights, 'silver_925', 'default') || 0).toFixed(3)} g
                 </p>
               </div>
-              <div className={`px-2 py-3 ${refKarat === 'silver_999' ? 'bg-[#1E3A5F]/5' : ''}`}>
+              <div className={`px-2 py-3 ${refKarat === 'silver_999' ? 'bg-stone-800/5' : ''}`}>
                 <p className="text-xs text-stone-400">Silver 999</p>
-                <p className={`text-sm font-semibold ${refKarat === 'silver_999' ? 'text-[#1E3A5F]' : 'text-stone-850'}`}>
+                <p className={`text-sm font-semibold ${refKarat === 'silver_999' ? 'text-stone-800' : 'text-stone-850'}`}>
                   {(getMetalWeight(computedWeights, 'silver_999', 'default') || 0).toFixed(3)} g
                 </p>
               </div>

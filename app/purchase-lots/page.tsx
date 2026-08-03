@@ -272,7 +272,7 @@ export default function PurchaseLotsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-stone-200 pb-5 gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#1E3A5F] to-[#2E5E8A] flex items-center justify-center text-white shadow-md">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-stone-800 to-stone-700 flex items-center justify-center text-white shadow-md">
             <Layers className="w-6 h-6" />
           </div>
           <div>
@@ -764,7 +764,7 @@ export default function PurchaseLotsPage() {
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 bg-[#1E3A5F] text-white hover:bg-[#162B47] rounded-lg text-sm font-semibold shadow-sm transition-colors flex items-center gap-2"
+              className="px-5 py-2 bg-stone-800 text-white hover:bg-stone-900 rounded-lg text-sm font-semibold shadow-sm transition-colors flex items-center gap-2"
             >
               {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
               Save Lot
@@ -823,8 +823,8 @@ export default function PurchaseLotsPage() {
               {/* Gold Group */}
               {goldLots.length > 0 && (
                 <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-xs">
-                  <div className="bg-[#1E3A5F]/5 px-6 py-4 border-b border-stone-200 flex justify-between items-center">
-                    <h3 className="text-sm font-extrabold text-[#1E3A5F] uppercase tracking-wider flex items-center gap-2">
+                  <div className="bg-stone-800/5 px-6 py-4 border-b border-stone-200 flex justify-between items-center">
+                    <h3 className="text-sm font-extrabold text-stone-800 uppercase tracking-wider flex items-center gap-2">
                       <Coins className="w-4 h-4" /> Gold Lots (24K Pure Equivalent)
                     </h3>
                     <span className="text-xs text-stone-500 font-semibold">{goldLots.length} Active Lots</span>
@@ -847,7 +847,7 @@ export default function PurchaseLotsPage() {
                           const grossQty = l.gold_purity_factor ? Number(l.total_qty) / Number(l.gold_purity_factor) : Number(l.total_qty)
                           return (
                             <tr key={l.id} className="hover:bg-stone-50/50">
-                              <td className="p-4 font-bold text-[#1E3A5F]">{l.lot_number}</td>
+                              <td className="p-4 font-bold text-stone-800">{l.lot_number}</td>
                               <td className="p-4 font-semibold"><span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md text-[10px]">{l.gold_karat}</span></td>
                               <td className="p-4">{formatDate(l.purchase_date)}</td>
                               <td className="p-4 font-medium">{l.vendors?.name || l.supplier_name || 'N/A'}</td>
@@ -1055,7 +1055,7 @@ export default function PurchaseLotsPage() {
                       <div key={ob.id} className="border border-stone-150 rounded-xl p-4 flex justify-between items-center hover:bg-stone-50/20">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-[#1E3A5F] text-sm">{ob.obligation_number}</span>
+                            <span className="font-bold text-stone-800 text-sm">{ob.obligation_number}</span>
                             <span className="text-stone-400 text-xs">| {ob.manufacturing_orders?.order_number || 'MO-N/A'}</span>
                             <span className={cn(
                               "text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase",
@@ -1207,7 +1207,7 @@ export default function PurchaseLotsPage() {
                 type="button"
                 disabled={confirmingOffset}
                 onClick={handleConfirmOffset}
-                className="px-5 py-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                className="px-5 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm"
               >
                 {confirmingOffset && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 Confirm & Offset

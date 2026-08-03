@@ -245,7 +245,7 @@ export default function ResellerOrdersList() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
                       <span className="font-bold text-stone-900 text-sm font-mono">{o.order_number}</span>
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${STATUS_CLASSES[o.status] || 'bg-stone-50 border-stone-250'}`}>
+                      <span className={`text-[9px] px-2 py-0.5 font-bold border ${STATUS_CLASSES[o.status] || 'bg-stone-50 border-stone-250'}`}>
                         {ORDER_STATUS_LABELS[o.status] || o.status}
                         {isOverdue && ' (Overdue)'}
                       </span>

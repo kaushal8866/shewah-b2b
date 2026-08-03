@@ -95,14 +95,14 @@ export default function ThankYouPage() {
   }, [])
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white selection:bg-[#D4AF37]/30 selection:text-[#D4AF37]">
+    <main className="min-h-screen bg-stone-900 text-white selection:bg-accent/30 selection:text-accent">
       {/* Header Bar */}
-      <header className="border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-50 px-4 sm:px-8 py-4 flex items-center justify-between">
+      <header className="border-b border-white/10 bg-stone-900/80 backdrop-blur-xl sticky top-0 z-50 px-4 sm:px-8 py-4 flex items-center justify-between">
         <Link href="/consultation" className="flex items-center gap-2 group">
-          <span className="font-serif text-xl sm:text-2xl font-bold tracking-[0.25em] text-white group-hover:text-[#D4AF37] transition-colors">
+          <span className="font-serif text-xl sm:text-2xl font-bold tracking-[0.25em] text-white group-hover:text-accent transition-colors">
             SHEWAH
           </span>
-          <span className="text-[10px] tracking-widest text-[#D4AF37] uppercase font-mono border border-[#D4AF37]/30 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] tracking-widest text-accent uppercase font-mono border border-accent/30 px-2 py-0.5 ">
             ATELIER
           </span>
         </Link>
@@ -111,7 +111,7 @@ export default function ThankYouPage() {
           href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-[#25D366]/15 text-[#25D366] hover:bg-[#25D366] hover:text-black border border-[#25D366]/30 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
+          className="inline-flex items-center gap-2 bg-[#25D366]/15 text-[#25D366] hover:bg-[#25D366] hover:text-black border border-[#25D366]/30 px-3.5 py-1.5 text-xs font-medium transition-all"
         >
           <MessageCircle className="w-3.5 h-3.5" />
           <span>Director Line</span>
@@ -121,18 +121,18 @@ export default function ThankYouPage() {
       {/* Hero Section */}
       <section className="relative px-4 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24 max-w-4xl mx-auto text-center space-y-8">
         {/* Glow Scrim */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#D4AF37]/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent/10 blur-[120px] rounded-full pointer-events-none" />
 
         {/* Animated Badge */}
         <div className="relative inline-flex">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-b from-[#D4AF37]/25 to-[#D4AF37]/5 border border-[#D4AF37]/40 rounded-full flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(212,175,55,0.2)]">
-            <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12 text-[#D4AF37] animate-pulse" />
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-b from-accent/25 to-accent/5 border border-accent/40 rounded-full flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(212,175,55,0.2)]">
+            <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12 text-accent animate-pulse" />
           </div>
         </div>
 
         {/* Heading & Subtitle */}
         <div className="space-y-4 max-w-2xl mx-auto">
-          <span className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#D4AF37] bg-[#D4AF37]/10 px-3 py-1 rounded-full border border-[#D4AF37]/20">
+          <span className="text-[11px] font-mono uppercase tracking-[0.3em] text-accent bg-accent/10 px-3 py-1 border border-accent/20">
             Consultation Confirmed
           </span>
           <h1 className="text-3xl sm:text-5xl font-serif font-light tracking-wide leading-tight text-white">
@@ -144,7 +144,7 @@ export default function ThankYouPage() {
         </div>
 
         {/* Immediate WhatsApp Action Box */}
-        <div className="bg-[#0B0B0E] border border-white/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 max-w-xl mx-auto shadow-2xl space-y-5 text-left relative overflow-hidden">
+        <div className="bg-stone-900 border border-white/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 max-w-xl mx-auto shadow-2xl space-y-5 text-left relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#25D366]/5 blur-3xl pointer-events-none" />
           
           <div className="flex items-start gap-4">
@@ -173,10 +173,10 @@ export default function ThankYouPage() {
       </section>
 
       {/* What Happens Next Roadmap */}
-      <section className="border-t border-white/10 bg-[#08080A] py-16 sm:py-24 px-4 sm:px-6">
+      <section className="border-t border-white/10 bg-stone-950 py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="text-center space-y-2">
-            <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#D4AF37]">
+            <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-accent">
               Next Steps
             </span>
             <h2 className="text-2xl sm:text-4xl font-serif font-light text-white">
@@ -193,10 +193,10 @@ export default function ThankYouPage() {
               return (
                 <div
                   key={idx}
-                  className="bg-[#0D0D12] border border-white/10 p-6 rounded-2xl relative space-y-4 hover:border-[#D4AF37]/40 transition-all group"
+                  className="bg-stone-950 border border-white/10 p-6 rounded-2xl relative space-y-4 hover:border-accent/40 transition-all group"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#D4AF37] bg-[#D4AF37]/10 px-2.5 py-1 rounded-md border border-[#D4AF37]/20">
+                    <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-1 rounded-md border border-accent/20">
                       {item.step}
                     </span>
                     <span className="text-[10px] font-mono text-white/40">
@@ -204,7 +204,7 @@ export default function ThankYouPage() {
                     </span>
                   </div>
 
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#D4AF37] group-hover:bg-[#D4AF37]/15 transition-colors">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-accent group-hover:bg-accent/15 transition-colors">
                     <IconComp className="w-5 h-5" />
                   </div>
 
@@ -223,7 +223,7 @@ export default function ThankYouPage() {
       <section className="py-16 sm:py-24 px-4 sm:px-6 max-w-5xl mx-auto space-y-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 border-b border-white/10 pb-6">
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#D4AF37]">
+            <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-accent">
               Atelier Archive
             </span>
             <h2 className="text-2xl sm:text-3xl font-serif text-white mt-1">
@@ -232,7 +232,7 @@ export default function ThankYouPage() {
           </div>
           <Link
             href="/catalog"
-            className="inline-flex items-center gap-1.5 text-xs text-[#D4AF37] hover:underline font-mono tracking-wider"
+            className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline font-mono tracking-wider"
           >
             <span>Explore Full Catalog</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -241,7 +241,7 @@ export default function ThankYouPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {FEATURED_INSPIRED_STYLES.map((card, i) => (
-            <div key={i} className="group bg-[#0B0B0E] border border-white/10 rounded-2xl overflow-hidden hover:border-[#D4AF37]/50 transition-all">
+            <div key={i} className="group bg-stone-900 border border-white/10 rounded-2xl overflow-hidden hover:border-accent/50 transition-all">
               <div className="relative h-64 w-full overflow-hidden bg-black">
                 <Image
                   src={card.image}
@@ -251,14 +251,14 @@ export default function ThankYouPage() {
                   unoptimized
                 />
                 <div className="absolute top-3 left-3">
-                  <span className="text-[9px] font-mono uppercase tracking-wider bg-black/70 backdrop-blur-md text-[#D4AF37] px-2.5 py-1 rounded-full border border-[#D4AF37]/30">
+                  <span className="text-[9px] font-mono uppercase tracking-wider bg-black/70 backdrop-blur-md text-accent px-2.5 py-1 border border-accent/30">
                     {card.tag}
                   </span>
                 </div>
               </div>
 
               <div className="p-5 space-y-2">
-                <h3 className="text-base font-serif text-white group-hover:text-[#D4AF37] transition-colors">{card.title}</h3>
+                <h3 className="text-base font-serif text-white group-hover:text-accent transition-colors">{card.title}</h3>
                 <p className="text-xs text-white/60 font-light leading-relaxed">{card.desc}</p>
               </div>
             </div>
@@ -267,18 +267,18 @@ export default function ThankYouPage() {
       </section>
 
       {/* Trust & Footer */}
-      <footer className="border-t border-white/10 bg-[#050505] py-12 px-4 text-center space-y-6">
+      <footer className="border-t border-white/10 bg-stone-900 py-12 px-4 text-center space-y-6">
         <div className="flex flex-wrap justify-center gap-6 text-xs text-white/50 font-light">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
+            <ShieldCheck className="w-4 h-4 text-accent" />
             <span>100% Certified Lab-Grown Diamonds</span>
           </div>
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
+            <ShieldCheck className="w-4 h-4 text-accent" />
             <span>BIS Hallmarked Solid Gold</span>
           </div>
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
+            <ShieldCheck className="w-4 h-4 text-accent" />
             <span>Confidential & Zero Pressure</span>
           </div>
         </div>

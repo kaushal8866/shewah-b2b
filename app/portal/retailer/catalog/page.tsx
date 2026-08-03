@@ -40,7 +40,7 @@ export default function RetailerCatalog() {
   return (
     <div className="p-4 lg:p-7 max-w-6xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/15 text-[#1E3A5F] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-stone-800/15 text-stone-800 flex items-center justify-center">
           <Package className="w-5 h-5" />
         </div>
         <div>
@@ -58,11 +58,11 @@ export default function RetailerCatalog() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <input value={q} onChange={e => setQ(e.target.value)}
             placeholder="Search by name, code or category..."
-            className="w-full pl-9 pr-3 py-2.5 bg-white border border-stone-200 rounded-lg text-sm focus:border-[#1E3A5F] outline-none" />
+            className="w-full pl-9 pr-3 py-2.5 bg-white border border-stone-200 rounded-lg text-sm focus:border-stone-800 outline-none" />
         </div>
         {categories.length > 1 && (
           <select value={category} onChange={e => setCategory(e.target.value)}
-            className="px-3 py-2.5 bg-white border border-stone-200 rounded-lg text-sm focus:border-[#1E3A5F] outline-none capitalize">
+            className="px-3 py-2.5 bg-white border border-stone-200 rounded-lg text-sm focus:border-stone-800 outline-none capitalize">
             {categories.map(c => <option key={c} value={c} className="capitalize">{c === 'all' ? 'All categories' : c}</option>)}
           </select>
         )}
@@ -78,7 +78,7 @@ export default function RetailerCatalog() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filtered.map(p => (
             <Link key={p.id} href={`/portal/retailer/catalog/${p.id}`}
-              className="block bg-white border border-stone-200 hover:border-[#1E3A5F] rounded-xl overflow-hidden transition-colors">
+              className="block bg-white border border-stone-200 hover:border-stone-800 rounded-xl overflow-hidden transition-colors">
               <div className="aspect-square bg-stone-100 relative overflow-hidden">
                 {p.photo_urls?.[0] ? (
                   <img src={p.photo_urls[0]} alt={p.name} className="w-full h-full object-cover" />
@@ -94,13 +94,13 @@ export default function RetailerCatalog() {
                 {p.starts_from ? (
                   <>
                     <p className="text-[10px] text-stone-400 mt-1">Starts from</p>
-                    <p className="text-sm font-semibold text-[#1E3A5F]">
+                    <p className="text-sm font-semibold text-stone-800">
                       ₹{(Number(p.starts_from?.trade) || 0).toLocaleString('en-IN')}
                       <span className="text-[10px] text-stone-400 ml-1">({p.starts_from?.karat}kt)</span>
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm font-semibold text-[#1E3A5F] mt-1">
+                  <p className="text-sm font-semibold text-stone-800 mt-1">
                     ₹{(p.trade_price || 0).toLocaleString('en-IN')}
                   </p>
                 )}

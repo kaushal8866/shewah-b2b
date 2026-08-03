@@ -195,7 +195,7 @@ export default function QuotesPage() {
           <p className="text-stone-500 text-sm mt-0.5">Manage and share B2B &amp; D2C custom quotes</p>
         </div>
         <Link href="/quotes/new"
-          className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
+          className="flex items-center gap-2 bg-stone-800 text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 transition-colors">
           <Plus className="w-4 h-4" />
           <span>New Quote</span>
         </Link>
@@ -219,7 +219,7 @@ export default function QuotesPage() {
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-stone-400" />
           <input type="text" placeholder="Search quote #, customer, reference..."
             value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 rounded-lg bg-white outline-none focus:border-[#1E3A5F]" />
+            className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 rounded-lg bg-white outline-none focus:border-stone-800" />
         </div>
       </div>
 
@@ -255,7 +255,7 @@ export default function QuotesPage() {
                 return (
                   <tr key={q.id} className="hover:bg-stone-50 transition-colors">
                     <td className="px-5 py-4 font-semibold text-stone-900">
-                      <Link href={`/quotes/${q.id}`} className="hover:underline text-[#1E3A5F]">
+                      <Link href={`/quotes/${q.id}`} className="hover:underline text-stone-800">
                         {q.quote_number}
                       </Link>
                       {q.reference_no && (
@@ -274,7 +274,7 @@ export default function QuotesPage() {
                       ₹ {q.grand_total.toLocaleString('en-IN')}
                     </td>
                     <td className="px-4 py-4">
-                      <span className={`px-2 py-0.5 text-xs font-medium border rounded-full ${getStatusStyle(q.status)}`}>
+                      <span className={`px-2 py-0.5 text-xs font-medium border ${getStatusStyle(q.status)}`}>
                         {q.status.replace(/_/g, ' ')}
                       </span>
                     </td>
@@ -303,7 +303,7 @@ export default function QuotesPage() {
                         {isSentOrViewed && q.share_token && (
                           <>
                             <button onClick={() => handleCopyLink(q.share_token)} title="Copy Magic Link"
-                              className="p-1.5 text-stone-500 hover:text-[#1E3A5F] border border-stone-100 rounded-md hover:bg-stone-100 transition-colors">
+                              className="p-1.5 text-stone-500 hover:text-stone-800 border border-stone-100 rounded-md hover:bg-stone-100 transition-colors">
                               <Copy className="w-4 h-4" />
                             </button>
                             <button onClick={() => handleSend(q.id)} title="WhatsApp Link"
@@ -381,7 +381,7 @@ export default function QuotesPage() {
                     </Link>
                     <p className="text-xs text-stone-500 mt-0.5">For: {billToName}</p>
                   </div>
-                  <span className={`px-2 py-0.5 text-[10px] font-medium border rounded-full ${getStatusStyle(q.status)}`}>
+                  <span className={`px-2 py-0.5 text-[10px] font-medium border ${getStatusStyle(q.status)}`}>
                     {q.status.replace(/_/g, ' ')}
                   </span>
                 </div>

@@ -197,7 +197,7 @@ export default function ResellerDashboard() {
         </div>
 
         {/* In Progress Orders */}
-        <div className="bg-[#1E3A5F] text-white p-4 rounded-xl shadow-sm flex flex-col justify-between">
+        <div className="bg-stone-800 text-white p-4 rounded-xl shadow-sm flex flex-col justify-between">
           <div>
             <p className="text-[10px] text-white/60 font-bold uppercase tracking-wider">Active Orders</p>
             <p className="text-3xl font-extrabold mt-1">{activeOrdersCount}</p>
@@ -317,7 +317,7 @@ export default function ResellerDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <span className="font-bold text-stone-900 text-xs font-mono">{o.order_number}</span>
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${STATUS_CLASSES[o.status] || 'bg-stone-50 border-stone-200'}`}>
+                        <span className={`text-[9px] px-2 py-0.5 font-bold border ${STATUS_CLASSES[o.status] || 'bg-stone-50 border-stone-200'}`}>
                           {ORDER_STATUS_LABELS[o.status] || o.status}
                           {deadlinePassed && ' (Payment Overdue)'}
                         </span>

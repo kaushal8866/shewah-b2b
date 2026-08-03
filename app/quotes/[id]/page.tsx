@@ -235,7 +235,7 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl lg:text-2xl font-semibold text-stone-900">{quote.quote_number}</h1>
-              <span className={`px-2.5 py-0.5 text-xs font-semibold border rounded-full ${getStatusStyle(quote.status)}`}>
+              <span className={`px-2.5 py-0.5 text-xs font-semibold border ${getStatusStyle(quote.status)}`}>
                 {quote.status.replace(/_/g, ' ')}
               </span>
             </div>
@@ -276,7 +276,7 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
 
           {/* Create new revision */}
           <button onClick={handleRevise} disabled={actionLoading}
-            className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-3.5 py-2 rounded-lg text-xs font-semibold hover:bg-[#162B47] disabled:opacity-50">
+            className="flex items-center gap-1.5 bg-stone-800 text-white px-3.5 py-2 rounded-lg text-xs font-semibold hover:bg-stone-900 disabled:opacity-50">
             <RefreshCw className="w-3.5 h-3.5" /> Make Revision
           </button>
 
@@ -311,7 +311,7 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
               <User className="w-4 h-4 text-stone-400 mt-0.5" />
               <div>
                 <p className="font-bold text-stone-800 text-sm">{clientName}</p>
-                {quote.partners && <span className="text-[10px] bg-[#1E3A5F]/10 text-[#1E3A5F] px-2 py-0.5 rounded font-medium">B2B Partner</span>}
+                {quote.partners && <span className="text-[10px] bg-stone-800/10 text-stone-800 px-2 py-0.5 rounded font-medium">B2B Partner</span>}
                 {!quote.partners && <span className="text-[10px] bg-stone-100 text-stone-600 px-2 py-0.5 rounded font-medium">Walk-in customer</span>}
               </div>
             </div>
@@ -365,7 +365,7 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
 
               <div className="flex justify-between text-sm font-bold border-t border-stone-100 pt-2">
                 <span className="text-stone-900">Grand Total:</span>
-                <span className="text-[#1E3A5F]">₹ {quote.grand_total.toLocaleString('en-IN')}</span>
+                <span className="text-stone-800">₹ {quote.grand_total.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
@@ -413,7 +413,7 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
                   const isActive = rev.id === id
                   return (
                     <div key={rev.id} className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-[#1E3A5F] ring-4 ring-[#1E3A5F]/20' : 'bg-stone-300'}`} />
+                      <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-stone-800 ring-4 ring-stone-800/20' : 'bg-stone-300'}`} />
                       <div className="flex-1 min-w-0">
                         {isActive ? (
                           <span className="font-semibold text-stone-800 text-xs block truncate">{rev.quote_number} (Active)</span>

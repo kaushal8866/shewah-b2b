@@ -112,7 +112,7 @@ export default function DiamondsCatalogPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-xl lg:text-2xl font-semibold text-stone-900 flex items-center gap-2">
-            <Diamond className="w-5 h-5 text-[#1E3A5F]" />
+            <Diamond className="w-5 h-5 text-stone-800" />
             Diamond catalog
           </h1>
           <p className="text-stone-500 text-sm mt-0.5">
@@ -170,10 +170,10 @@ export default function DiamondsCatalogPage() {
                             <span className="flex-1 text-sm font-medium text-stone-900">
                               {s.name}{!s.active && <span className="ml-2 text-[10px] text-stone-400">(inactive)</span>}
                             </span>
-                            <span className={`text-[11px] rounded-full px-2 py-0.5 font-medium ${
+                            <span className={`text-[11px] px-2 py-0.5 font-medium ${
                               count === 0
                                 ? 'bg-stone-100 text-stone-400'
-                                : 'bg-[#1E3A5F]/10 text-[#1E3A5F]'
+                                : 'bg-stone-800/10 text-stone-800'
                             }`}>
                               {count} size{count === 1 ? '' : 's'}
                             </span>
@@ -266,7 +266,7 @@ function NewShapeRow({ onCreated }: { onCreated: () => void }) {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="text-xs flex items-center gap-1 text-[#1E3A5F] hover:underline">
+        className="text-xs flex items-center gap-1 text-stone-800 hover:underline">
         <Plus className="w-3.5 h-3.5" /> New shape
       </button>
     )
@@ -275,8 +275,8 @@ function NewShapeRow({ onCreated }: { onCreated: () => void }) {
     <div className="flex items-center gap-1">
       <input autoFocus value={name} onChange={e => setName(e.target.value)}
         placeholder="e.g. Baguette"
-        className="text-sm border border-stone-200 rounded px-2 py-1 outline-none focus:border-[#1E3A5F] w-32" />
-      <button disabled={busy} onClick={save} className="text-xs bg-[#1E3A5F] text-white px-2 py-1 rounded disabled:opacity-50">
+        className="text-sm border border-stone-200 rounded px-2 py-1 outline-none focus:border-stone-800 w-32" />
+      <button disabled={busy} onClick={save} className="text-xs bg-stone-800 text-white px-2 py-1 rounded disabled:opacity-50">
         {busy ? '...' : 'Save'}
       </button>
       <button onClick={() => { setOpen(false); setName(''); setErr('') }} className="text-stone-400 hover:text-stone-700">
@@ -370,7 +370,7 @@ function SizeRow({
     onChanged()
   }
 
-  const inp = "border border-stone-200 rounded px-2 py-1 text-sm w-full outline-none focus:border-[#1E3A5F]"
+  const inp = "border border-stone-200 rounded px-2 py-1 text-sm w-full outline-none focus:border-stone-800"
   if (editing && canEdit) {
     return (
       <tr className="bg-yellow-50">
@@ -380,7 +380,7 @@ function SizeRow({
         <td className="px-3 py-2 text-right text-stone-400 text-xs">—</td>
         <td className="px-3 py-2">
           <div className="flex items-center gap-2 justify-end">
-            <button disabled={busy} onClick={save} className="text-xs bg-[#1E3A5F] text-white px-2 py-1 rounded">{busy ? '...' : 'Save'}</button>
+            <button disabled={busy} onClick={save} className="text-xs bg-stone-800 text-white px-2 py-1 rounded">{busy ? '...' : 'Save'}</button>
             <button onClick={() => setEditing(false)} className="text-stone-400 hover:text-stone-700"><X className="w-4 h-4" /></button>
           </div>
         </td>
@@ -406,7 +406,7 @@ function SizeRow({
       <td className="px-3 py-2">
         {canEdit && (
           <div className="flex items-center gap-2 justify-end">
-            <button onClick={() => setEditing(true)} className="text-xs text-[#1E3A5F] hover:underline">Edit</button>
+            <button onClick={() => setEditing(true)} className="text-xs text-stone-800 hover:underline">Edit</button>
             <button disabled={busy} onClick={toggleActive} className="text-xs text-stone-500 hover:text-stone-900 underline">
               {size.active ? 'Hide' : 'Show'}
             </button>
@@ -458,7 +458,7 @@ function CopySizesAction({
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="text-xs flex items-center gap-1 text-[#1E3A5F] hover:underline"
+        className="text-xs flex items-center gap-1 text-stone-800 hover:underline"
         title="Copy sizes from another shape">
         <Copy className="w-3.5 h-3.5" /> Copy sizes
       </button>
@@ -467,7 +467,7 @@ function CopySizesAction({
   return (
     <div className="flex items-center gap-1">
       <select autoFocus value={from} onChange={e => { setFrom(e.target.value); setErr('') }}
-        className="text-xs border border-stone-200 rounded px-2 py-1 outline-none focus:border-[#1E3A5F] max-w-[160px]">
+        className="text-xs border border-stone-200 rounded px-2 py-1 outline-none focus:border-stone-800 max-w-[160px]">
         <option value="">Copy from…</option>
         {sourceOptions.map(s => {
           const n = sizes.filter(z => z.shape_id === s.id).length
@@ -475,7 +475,7 @@ function CopySizesAction({
         })}
       </select>
       <button disabled={busy || !from} onClick={copy}
-        className="text-xs bg-[#1E3A5F] text-white px-2 py-1 rounded disabled:opacity-50">
+        className="text-xs bg-stone-800 text-white px-2 py-1 rounded disabled:opacity-50">
         {busy ? '...' : 'Copy'}
       </button>
       <button onClick={() => { setOpen(false); setFrom(''); setErr('') }}
@@ -508,7 +508,7 @@ function NewSizeRow({ shapeId, onCreated }: { shapeId: string; onCreated: () => 
     setDraft({ label: '', approx_carats: '', reorder_threshold_pieces: '' })
     onCreated()
   }
-  const inp = "border border-stone-200 rounded px-2 py-1 text-sm w-full outline-none focus:border-[#1E3A5F]"
+  const inp = "border border-stone-200 rounded px-2 py-1 text-sm w-full outline-none focus:border-stone-800"
   return (
     <div className="px-3 py-3 border-t border-stone-100 bg-stone-50/60 flex items-end gap-2 flex-wrap">
       <div className="flex-1 min-w-[120px]">
@@ -527,7 +527,7 @@ function NewSizeRow({ shapeId, onCreated }: { shapeId: string; onCreated: () => 
           onChange={e => setDraft(d => ({ ...d, reorder_threshold_pieces: e.target.value }))} />
       </div>
       <button disabled={busy} onClick={save}
-        className="bg-[#1E3A5F] text-white text-sm px-3 py-1.5 rounded flex items-center gap-1.5 disabled:opacity-50">
+        className="bg-stone-800 text-white text-sm px-3 py-1.5 rounded flex items-center gap-1.5 disabled:opacity-50">
         <Save className="w-3.5 h-3.5" /> {busy ? 'Saving...' : 'Add size'}
       </button>
       {err && <span className="text-xs text-red-500 w-full">{err}</span>}

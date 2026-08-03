@@ -156,7 +156,7 @@ export default function NewInventoryItemPage() {
     router.push('/vendors')
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
   const isDiamonds = form.category === 'diamonds'
   const isGold = form.category === 'gold'
@@ -367,7 +367,7 @@ export default function NewInventoryItemPage() {
             Cancel
           </Link>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
+            className="flex items-center gap-2 bg-stone-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Add item'}
           </button>

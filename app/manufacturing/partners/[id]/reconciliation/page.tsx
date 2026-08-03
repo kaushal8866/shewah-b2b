@@ -261,7 +261,7 @@ export default function ReconciliationPage() {
         {PRESETS.map(p => (
           <button key={p.key} onClick={() => setPreset(p.key)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              preset === p.key ? 'bg-[#1E3A5F] text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+              preset === p.key ? 'bg-stone-800 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
             {p.label}
           </button>
         ))}
@@ -323,12 +323,12 @@ export default function ReconciliationPage() {
                   <tr key={r.orderId} className={r.anyNegative ? 'bg-red-50/40' : ''}>
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <Link href={`/orders/${r.orderId}`} className="text-[#1E3A5F] hover:underline font-medium">
+                        <Link href={`/orders/${r.orderId}`} className="text-stone-800 hover:underline font-medium">
                           {r.order?.order_number || r.orderId.slice(0, 8)}
                         </Link>
                         {r.anyNegative && (
                           <span title="At least one consumption row pushed balance negative"
-                            className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full uppercase font-medium">neg</span>
+                            className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 uppercase font-medium">neg</span>
                         )}
                       </div>
                       <p className="text-xs text-stone-400 mt-0.5">
@@ -371,16 +371,16 @@ export default function ReconciliationPage() {
                       {t.material_float?.material_type?.replace(/_/g, ' ') || 'consumption'}
                     </span>
                     {t.creates_negative_balance && (
-                      <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full uppercase font-medium">negative balance</span>
+                      <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 uppercase font-medium">negative balance</span>
                     )}
                     {!t.order_id && (
-                      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full uppercase font-medium">no order link</span>
+                      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 uppercase font-medium">no order link</span>
                     )}
                   </div>
                   <p className="text-xs text-stone-400 truncate mt-0.5">
                     {formatDate(t.date)}
                     {t.order_id && orders[t.order_id] && (
-                      <> · <Link href={`/orders/${t.order_id}`} className="text-[#1E3A5F] hover:underline">{orders[t.order_id].order_number}</Link></>
+                      <> · <Link href={`/orders/${t.order_id}`} className="text-stone-800 hover:underline">{orders[t.order_id].order_number}</Link></>
                     )}
                     {t.reference && ` · ${t.reference}`}
                     {t.notes && ` · ${t.notes}`}
@@ -391,7 +391,7 @@ export default function ReconciliationPage() {
                   {!t.order_id && (
                     <button
                       onClick={() => openAttachModal(t)}
-                      className="inline-flex items-center gap-1 text-xs text-[#1E3A5F] border border-stone-200 hover:border-[#1E3A5F] hover:bg-stone-50 rounded-lg px-2 py-1 font-medium"
+                      className="inline-flex items-center gap-1 text-xs text-stone-800 border border-stone-200 hover:border-stone-800 hover:bg-stone-50 rounded-lg px-2 py-1 font-medium"
                     >
                       <Link2 className="w-3 h-3" /> Attach order
                     </button>
@@ -429,7 +429,7 @@ export default function ReconciliationPage() {
                   value={orderSearch}
                   onChange={e => setOrderSearch(e.target.value)}
                   placeholder="Search order # or status…"
-                  className="w-full border border-stone-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+                  className="w-full border border-stone-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-stone-800 outline-none"
                 />
               </div>
             </div>
@@ -461,7 +461,7 @@ export default function ReconciliationPage() {
                         <button
                           onClick={() => attachOrderToTx(o.id)}
                           disabled={isSaving || attachSavingId !== null}
-                          className="text-xs bg-[#1E3A5F] text-white rounded-lg px-3 py-1.5 font-medium disabled:opacity-50 hover:bg-[#172d49]"
+                          className="text-xs bg-stone-800 text-white rounded-lg px-3 py-1.5 font-medium disabled:opacity-50 hover:bg-stone-900"
                         >
                           {isSaving ? 'Attaching…' : 'Attach'}
                         </button>

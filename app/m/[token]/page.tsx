@@ -78,11 +78,11 @@ export default async function KarigarAssetPage({ params }: { params: { token: st
       <div className="bg-stone-900 border-b border-stone-800">
         <div className="max-w-2xl mx-auto px-4 py-5">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#1E3A5F] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-stone-800 flex items-center justify-center shrink-0">
               <Diamond className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-[#B7C8DD] text-xs font-medium tracking-wider uppercase">Shewah Jewellery</p>
+              <p className="text-stone-300 text-xs font-medium tracking-wider uppercase">Shewah Jewellery</p>
               <p className="text-stone-400 text-xs">Manufacturing pack</p>
             </div>
           </div>
@@ -99,7 +99,7 @@ export default async function KarigarAssetPage({ params }: { params: { token: st
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-5">
         {/* Spec card */}
         <div className="bg-stone-900 rounded-2xl border border-stone-800 p-5">
-          <h2 className="text-white text-sm font-medium mb-4 uppercase tracking-wider text-[#B7C8DD]">Order spec</h2>
+          <h2 className="text-white text-sm font-medium mb-4 uppercase tracking-wider text-stone-300">Order spec</h2>
           {o.description && <p className="text-stone-200 text-sm mb-4 whitespace-pre-wrap">{o.description}</p>}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-5 text-sm">
             {[
@@ -118,7 +118,7 @@ export default async function KarigarAssetPage({ params }: { params: { token: st
           </div>
           {o.special_notes && (
             <div className="mt-4 pt-4 border-t border-stone-800">
-              <p className="text-xs text-[#B7C8DD] uppercase tracking-wider mb-1">Special instructions</p>
+              <p className="text-xs text-stone-300 uppercase tracking-wider mb-1">Special instructions</p>
               <p className="text-stone-200 text-sm whitespace-pre-wrap">{o.special_notes}</p>
             </div>
           )}
@@ -127,7 +127,7 @@ export default async function KarigarAssetPage({ params }: { params: { token: st
         {/* Download all */}
         {hasAssets && (
           <a href={zipUrl}
-             className="flex items-center justify-center gap-2 w-full bg-[#1E3A5F] hover:bg-[#162B47] text-white py-3.5 rounded-2xl text-sm font-semibold transition-colors">
+             className="flex items-center justify-center gap-2 w-full bg-stone-800 hover:bg-stone-900 text-white py-3.5 rounded-2xl text-sm font-semibold transition-colors">
             <Download className="w-4 h-4" />
             Download all as ZIP ({refs.length + cads.length} file{refs.length + cads.length === 1 ? '' : 's'})
           </a>
@@ -136,7 +136,7 @@ export default async function KarigarAssetPage({ params }: { params: { token: st
         {/* CAD files */}
         {cads.length > 0 && (
           <div className="bg-stone-900 rounded-2xl border border-stone-800 p-5">
-            <h2 className="text-white text-sm font-medium mb-3 uppercase tracking-wider text-[#B7C8DD]">CAD / STL files</h2>
+            <h2 className="text-white text-sm font-medium mb-3 uppercase tracking-wider text-stone-300">CAD / STL files</h2>
             <ul className="divide-y divide-stone-800">
               {cads.map((url, i) => {
                 const name = cadNames[i] || `file-${i + 1}`
@@ -158,7 +158,7 @@ export default async function KarigarAssetPage({ params }: { params: { token: st
         {/* Reference images */}
         {refs.length > 0 && (
           <div className="bg-stone-900 rounded-2xl border border-stone-800 p-5">
-            <h2 className="text-white text-sm font-medium mb-3 uppercase tracking-wider text-[#B7C8DD]">Reference images</h2>
+            <h2 className="text-white text-sm font-medium mb-3 uppercase tracking-wider text-stone-300">Reference images</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {refs.map((url, i) => (
                 <a key={url + i} href={url} target="_blank" rel="noreferrer"
