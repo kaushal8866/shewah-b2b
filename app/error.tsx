@@ -101,7 +101,7 @@ export default function RouteError({
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 onClick={() => (isStaleDeploy ? window.location.reload() : reset())}
-                className="inline-flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px]"
+                className="inline-flex items-center gap-2 bg-stone-800 hover:bg-stone-900 text-white text-sm font-medium px-4 py-2 rounded-lg min-h-[44px]"
               >
                 <RefreshCw className="w-4 h-4" /> {isStaleDeploy ? 'Reload' : 'Try again'}
               </button>

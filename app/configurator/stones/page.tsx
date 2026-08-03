@@ -464,7 +464,7 @@ export default function StonesPage() {
                           Category: {type.category}
                         </span>
                         {type.default_cert_body && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 bg-[#1E3A5F]/10 text-[#1E3A5F] rounded-md">
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-stone-800/10 text-stone-800 rounded-md">
                             Cert: {type.default_cert_body}
                           </span>
                         )}
@@ -610,7 +610,7 @@ export default function StonesPage() {
                                         type="number"
                                         value={val === 0 ? '' : val}
                                         onChange={e => handleCellChange(clarity.id, color.id, selectedSize, e.target.value)}
-                                        className={`w-full bg-stone-50 border rounded-lg pl-6 pr-2 py-1.5 text-center text-xs font-semibold focus:bg-white focus:outline-none focus:border-[#1E3A5F]/50 transition-colors ${
+                                        className={`w-full bg-stone-50 border rounded-lg pl-6 pr-2 py-1.5 text-center text-xs font-semibold focus:bg-white focus:outline-none focus:border-stone-800/50 transition-colors ${
                                           isEdited ? 'border-amber-400 bg-amber-50/20' : 'border-stone-200'
                                         }`}
                                         placeholder="0"
@@ -664,7 +664,7 @@ export default function StonesPage() {
                                 type="number"
                                 value={val === 0 ? '' : val}
                                 onChange={e => handleCellChange(null, null, size.id, e.target.value)}
-                                className={`w-full bg-white border rounded-xl pl-6 pr-3 py-2 text-sm font-semibold focus:outline-none focus:border-[#1E3A5F]/50 transition-colors ${
+                                className={`w-full bg-white border rounded-xl pl-6 pr-3 py-2 text-sm font-semibold focus:outline-none focus:border-stone-800/50 transition-colors ${
                                   isEdited ? 'border-amber-400 bg-amber-50/10' : 'border-stone-200'
                                 }`}
                                 placeholder="0"
@@ -720,7 +720,7 @@ export default function StonesPage() {
             </div>
             <div className="flex items-center mt-5">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 accent-[#1E3A5F]"
+                <input type="checkbox" className="w-4 h-4 accent-stone-800"
                   checked={typeForm.is_active} onChange={e => setTypeForm(p => ({ ...p, is_active: e.target.checked }))} />
                 <span className="text-sm font-medium text-stone-700">Active Option</span>
               </label>

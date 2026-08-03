@@ -94,7 +94,7 @@ export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, pa
   }
 
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm focus:border-[#C49C64] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm focus:border-accent outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1.5"
 
   return (
@@ -128,13 +128,13 @@ export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, pa
             <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
               <input type="checkbox" checked={form.catalog_left}
                 onChange={e => set('catalog_left', e.target.checked)}
-                className="w-4 h-4 rounded border-stone-300 text-[#C49C64] focus:ring-[#C49C64]" />
+                className="w-4 h-4 rounded border-stone-300 text-accent focus:ring-accent" />
               Catalog left
             </label>
             <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
               <input type="checkbox" checked={form.sample_offered}
                 onChange={e => set('sample_offered', e.target.checked)}
-                className="w-4 h-4 rounded border-stone-300 text-[#C49C64] focus:ring-[#C49C64]" />
+                className="w-4 h-4 rounded border-stone-300 text-accent focus:ring-accent" />
               Sample offered
             </label>
           </div>
@@ -159,7 +159,7 @@ export default function VisitModal({ isOpen, onClose, partnerId, partnerCity, pa
             Cancel
           </button>
           <button onClick={handleSave} disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 bg-[#C49C64] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#9B7A40] disabled:opacity-50 transition-colors">
+            className="flex-1 flex items-center justify-center gap-2 bg-accent text-white py-2.5 rounded-xl text-sm font-medium hover:bg-accent-deep disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Log visit'}
           </button>

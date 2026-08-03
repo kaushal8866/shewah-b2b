@@ -47,7 +47,7 @@ export default function CustomersPage() {
           <h1 className="text-2xl font-serif mt-0.5">Customers</h1>
         </div>
         <Link href="/enquiries/new"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#172d49]">
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-stone-800 text-white text-sm font-medium hover:bg-stone-900">
           <Plus className="w-4 h-4" /> Log enquiry
         </Link>
       </div>
@@ -100,7 +100,7 @@ export default function CustomersPage() {
                   <td className="px-4 py-2.5 text-stone-700">{c.source || '—'}</td>
                   <td className="px-4 py-2.5 text-xs text-stone-500">{new Date(c.created_at).toLocaleDateString('en-IN')}</td>
                   <td className="px-2 py-2.5">
-                    <Link href={`/customers/${c.id}`} className="text-[#1E3A5F] hover:text-[#172d49]">
+                    <Link href={`/customers/${c.id}`} className="text-stone-800 hover:text-stone-900">
                       <ArrowUpRight className="w-4 h-4" />
                     </Link>
                   </td>

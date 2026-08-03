@@ -227,7 +227,7 @@ export default function BrowseDiamondsPage() {
               <button key={t} onClick={() => { setType(t); setPriceData(null); setQueried(false) }}
                 className={`flex-1 py-3 px-4 rounded-xl border font-semibold text-sm transition-all ${
                   type === t
-                    ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F]'
+                    ? 'border-stone-800 bg-stone-800/5 text-stone-800'
                     : 'border-stone-200 text-stone-500 hover:border-stone-300'
                 }`}>
                 {t === 'lgd' ? 'Lab Grown (LGD)' : 'Natural Diamond'}
@@ -244,7 +244,7 @@ export default function BrowseDiamondsPage() {
               <button key={s.id} onClick={() => handleShapeChange(s.id)}
                 className={`py-3 px-2 rounded-xl border text-center font-medium text-xs transition-all flex flex-col items-center justify-center gap-1.5 ${
                   selectedShape === s.id
-                    ? 'border-[#1E3A5F] bg-[#1E3A5F]/5 text-[#1E3A5F] font-bold'
+                    ? 'border-stone-800 bg-stone-800/5 text-stone-800 font-bold'
                     : 'border-stone-150 text-stone-600 hover:border-stone-250'
                 }`}>
                 <span className="capitalize">{s.name}</span>
@@ -266,7 +266,7 @@ export default function BrowseDiamondsPage() {
                 <button key={g} onClick={() => { setSieve(g); setSelectedSize('') }}
                   className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
                     sieve === g
-                      ? 'border-[#1E3A5F] bg-[#1E3A5F]/8 text-[#1E3A5F]'
+                      ? 'border-stone-800 bg-stone-800/8 text-stone-800'
                       : 'border-stone-200 text-stone-500 hover:border-stone-300'
                   }`}>
                   {g === 'all' ? 'All Sizes' : g}
@@ -298,7 +298,7 @@ export default function BrowseDiamondsPage() {
                   <button key={q.id} onClick={() => { setSelectedQuality(q.id); setPriceData(null); setQueried(false) }}
                     className={`px-4 py-2 rounded-lg border text-xs font-semibold transition-all ${
                       selectedQuality === q.id
-                        ? 'border-[#1E3A5F] bg-[#1E3A5F]/8 text-[#1E3A5F]'
+                        ? 'border-stone-800 bg-stone-800/8 text-stone-800'
                         : 'border-stone-200 text-stone-500 hover:border-stone-300'
                     }`}>
                     {q.label}
@@ -314,7 +314,7 @@ export default function BrowseDiamondsPage() {
                   <button key={c.id} onClick={() => { setSelectedColor(c.id); setPriceData(null); setQueried(false) }}
                     className={`px-4 py-2 rounded-lg border text-xs font-semibold transition-all ${
                       selectedColor === c.id
-                        ? 'border-[#1E3A5F] bg-[#1E3A5F]/8 text-[#1E3A5F]'
+                        ? 'border-stone-800 bg-stone-800/8 text-stone-800'
                         : 'border-stone-200 text-stone-500 hover:border-stone-300'
                     }`}>
                     {c.label}
@@ -339,7 +339,7 @@ export default function BrowseDiamondsPage() {
           ) : (
             <div className="space-y-5">
               <button onClick={handleGetPrice} disabled={loading}
-                className="w-full flex items-center justify-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white py-3 rounded-lg text-xs font-bold transition-colors disabled:opacity-50">
+                className="w-full flex items-center justify-center gap-2 bg-stone-800 hover:bg-stone-900 text-white py-3 rounded-lg text-xs font-bold transition-colors disabled:opacity-50">
                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'FETCH QUOTED RATE'}
               </button>
 
@@ -372,7 +372,7 @@ export default function BrowseDiamondsPage() {
 
                       <div className="space-y-2">
                         <button onClick={handleInstantBuy} disabled={purchasingInstant}
-                          className="w-full flex items-center justify-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white py-3 rounded-lg text-xs font-bold transition-colors disabled:opacity-50">
+                          className="w-full flex items-center justify-center gap-2 bg-stone-800 hover:bg-stone-900 text-white py-3 rounded-lg text-xs font-bold transition-colors disabled:opacity-50">
                           {purchasingInstant ? (
                             <>
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -453,7 +453,7 @@ export default function BrowseDiamondsPage() {
                 Cancel
               </button>
               <button type="submit" disabled={submittingAsk}
-                className="bg-[#1E3A5F] hover:bg-[#162B47] text-white px-5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 disabled:opacity-50">
+                className="bg-stone-800 hover:bg-stone-900 text-white px-5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 disabled:opacity-50">
                 {submittingAsk && <Loader2 className="w-3 h-3 animate-spin" />}
                 Submit Ask
               </button>

@@ -167,7 +167,7 @@ export default function ConsultationPage() {
 
     ctx.save()
     ctx.scale(dpr, dpr)
-    ctx.fillStyle = '#050505'
+    ctx.fillStyle = '#111111'
     ctx.fillRect(0, 0, width, height)
 
     // Aspect Ratio Calculations (Full Cover & Center for Portrait & Landscape)
@@ -435,16 +435,16 @@ export default function ConsultationPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#050505] text-[rgba(255,255,255,0.90)] font-sans antialiased selection:bg-[#D4AF37]/30 selection:text-white overflow-x-clip">
+    <div className="relative min-h-screen bg-stone-900 text-[rgba(255,255,255,0.90)] font-sans antialiased selection:bg-accent/30 selection:text-white overflow-x-clip">
       
       {/* Apple-Inspired Slim Glassmorphism Header Nav */}
-      <header className={`fixed top-0 left-0 right-0 z-50 py-3.5 px-4 sm:px-6 md:px-12 transition-all duration-500 ${showNav ? 'bg-[#050505]/85 backdrop-blur-xl border-b border-white/5 py-3 shadow-2xl' : 'bg-transparent'}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 py-3.5 px-4 sm:px-6 md:px-12 transition-all duration-500 ${showNav ? 'bg-stone-900/85 backdrop-blur-xl border-b border-white/5 py-3 shadow-2xl' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           
           {/* Left: Brand */}
           <div className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform" onClick={scrollToStory}>
-            <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center">
-              <Diamond className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#D4AF37]" />
+            <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-full bg-accent/15 border border-accent/40 flex items-center justify-center">
+              <Diamond className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-accent" />
             </div>
             <span className="font-semibold text-[11px] sm:text-xs tracking-[0.22em] sm:tracking-[0.25em] text-white uppercase">SHEWAH</span>
           </div>
@@ -452,15 +452,15 @@ export default function ConsultationPage() {
           {/* Center Links */}
           <nav className="hidden md:flex items-center gap-9 text-[11px] uppercase tracking-[0.2em] font-medium text-white/60">
             <button onClick={scrollToStory} className="hover:text-white transition-colors">Story</button>
-            <button onClick={scrollToCraftsmanship} className="hover:text-[#D4AF37] transition-colors">Craftsmanship</button>
-            <button onClick={scrollToProcess} className="hover:text-[#D4AF37] transition-colors">Process</button>
-            <button onClick={scrollToConsultation} className="hover:text-[#D4AF37] transition-colors">Consultation</button>
+            <button onClick={scrollToCraftsmanship} className="hover:text-accent transition-colors">Craftsmanship</button>
+            <button onClick={scrollToProcess} className="hover:text-accent transition-colors">Process</button>
+            <button onClick={scrollToConsultation} className="hover:text-accent transition-colors">Consultation</button>
           </nav>
 
           {/* Right CTA */}
           <button 
             onClick={scrollToConsultation}
-            className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] sm:tracking-[0.2em] bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-95 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all duration-300 shadow-md shadow-[#D4AF37]/10"
+            className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] sm:tracking-[0.2em] bg-accent text-stone-900 font-semibold hover:bg-stone-100 active:scale-95 px-3.5 py-1.5 sm:px-4 sm:py-2 transition-all duration-300 shadow-md shadow-accent/10"
           >
             Design Your Ring
           </button>
@@ -472,7 +472,7 @@ export default function ConsultationPage() {
         href="https://wa.me/919662266360?text=Hi%20Shewah,%20I'd%20like%20to%20know%20more%20about%20your%20custom%20jewellery%20design%20consultations."
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 bg-[#0B0B0E]/90 backdrop-blur-lg border border-[#D4AF37]/40 p-3 sm:p-3.5 rounded-full text-[#D4AF37] hover:text-white hover:bg-[#D4AF37] active:scale-90 transition-all duration-300 shadow-2xl flex items-center justify-center group"
+        className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 bg-stone-900/90 backdrop-blur-lg border border-accent/40 p-3 sm:p-3.5 rounded-full text-accent hover:text-white hover:bg-accent active:scale-90 transition-all duration-300 shadow-2xl flex items-center justify-center group"
         aria-label="Contact WhatsApp Concierge"
       >
         <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-6 transition-transform" />
@@ -488,7 +488,7 @@ export default function ConsultationPage() {
           <div className={`absolute inset-0 transition-all duration-1000 ${getAmbientGlowClass()}`} />
 
           {/* Vertical Mobile Dark Scrim Gradient for 100% Uncompromising Text Readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/80 via-[#050505]/35 to-[#050505]/85 pointer-events-none z-[5] sm:hidden" />
+          <div className="absolute inset-0 bg-gradient-to-b from-stone-900/80 via-stone-900/35 to-stone-900/85 pointer-events-none z-[5] sm:hidden" />
 
           {/* HTML5 Canvas Component */}
           <canvas 
@@ -498,20 +498,20 @@ export default function ConsultationPage() {
 
           {/* Loading Overlay */}
           {!isLoaded && (
-            <div className="absolute inset-0 bg-[#050505] z-30 flex flex-col items-center justify-center gap-4 px-4 text-center">
-              <Loader2 className="w-7 h-7 text-[#D4AF37] animate-spin" />
-              <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4AF37]">Loading Atelier Film...</p>
+            <div className="absolute inset-0 bg-stone-900 z-30 flex flex-col items-center justify-center gap-4 px-4 text-center">
+              <Loader2 className="w-7 h-7 text-accent animate-spin" />
+              <p className="text-[10px] uppercase tracking-[0.25em] text-accent">Loading Atelier Film...</p>
             </div>
           )}
 
           {/* Frame Progress Indicator (Subtle Luxury Badge at Bottom Left) */}
-          <div className="absolute bottom-5 left-4 sm:bottom-6 sm:left-6 z-20 flex items-center gap-2 sm:gap-3 bg-[#0B0B0E]/90 backdrop-blur-md px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-white/15 text-[8px] sm:text-[9px] font-mono text-white/60 shadow-lg">
-            <span className="text-[#D4AF37]">FRAME {String(currentFrame + 1).padStart(3, '0')}</span>
+          <div className="absolute bottom-5 left-4 sm:bottom-6 sm:left-6 z-20 flex items-center gap-2 sm:gap-3 bg-stone-900/90 backdrop-blur-md px-3 py-1 sm:px-3.5 sm:py-1.5 border border-white/15 text-[8px] sm:text-[9px] font-mono text-white/60 shadow-lg">
+            <span className="text-accent">FRAME {String(currentFrame + 1).padStart(3, '0')}</span>
             <span>/</span>
             <span>300</span>
             <div className="w-8 sm:w-12 h-1 bg-white/15 rounded-full overflow-hidden ml-0.5 sm:ml-1">
               <div 
-                className="h-full bg-[#D4AF37] transition-all duration-100" 
+                className="h-full bg-accent transition-all duration-100" 
                 style={{ width: `${((currentFrame + 1) / TOTAL_FRAMES) * 100}%` }}
               />
             </div>
@@ -521,10 +521,10 @@ export default function ConsultationPage() {
 
           {/* HERO OVERLAY: Frames 1 - 40 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame <= 40 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
-            <div className="max-w-4xl space-y-4 sm:space-y-6 pointer-events-auto bg-[#0B0B0E]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
-              <div className="inline-flex items-center gap-2 border border-[#D4AF37]/30 bg-[#050505]/90 backdrop-blur-md px-3 py-1 sm:px-4 sm:py-1.5 rounded-full mb-1 sm:mb-2">
-                <Sparkle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D4AF37]" />
-                <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#E8D7A8] font-semibold">SHEWAH PRIVATE COMMISSION</span>
+            <div className="max-w-4xl space-y-4 sm:space-y-6 pointer-events-auto bg-stone-900/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
+              <div className="inline-flex items-center gap-2 border border-accent/30 bg-stone-900/90 backdrop-blur-md px-3 py-1 sm:px-4 sm:py-1.5 mb-1 sm:mb-2">
+                <Sparkle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-accent" />
+                <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-stone-100 font-semibold">SHEWAH PRIVATE COMMISSION</span>
               </div>
               
               <h1 className="text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-normal font-serif text-white tracking-apple leading-[1.08] sm:leading-[1.05] drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
@@ -539,7 +539,7 @@ export default function ConsultationPage() {
               <div className="pt-2 sm:pt-6">
                 <button 
                   onClick={scrollToCraftsmanship}
-                  className="bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-95 px-6 py-3 sm:px-8 sm:py-4 rounded-full text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-xl shadow-[#D4AF37]/20"
+                  className="bg-accent text-stone-900 font-semibold hover:bg-stone-100 active:scale-95 px-6 py-3 sm:px-8 sm:py-4 text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-xl shadow-accent/20"
                 >
                   <span>Begin Your Story</span>
                   <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -549,18 +549,18 @@ export default function ConsultationPage() {
 
             {/* Scroll Indicator Prompt */}
             <div className="absolute bottom-8 sm:bottom-10 left-1/2 transform -translate-x-1/2 text-center space-y-1.5 sm:space-y-2 opacity-75 sm:opacity-60">
-              <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#E8D7A8] font-mono">Scroll to view craftsmanship</p>
+              <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-stone-100 font-mono">Scroll to view craftsmanship</p>
               <div className="w-3.5 h-6 sm:w-4 sm:h-7 border border-white/30 rounded-full mx-auto flex items-start justify-center p-0.5 sm:p-1">
-                <div className="w-0.5 h-1.5 sm:w-1 sm:h-2 bg-[#D4AF37] rounded-full animate-bounce" />
+                <div className="w-0.5 h-1.5 sm:w-1 sm:h-2 bg-accent rounded-full animate-bounce" />
               </div>
             </div>
           </div>
 
           {/* CRAFTSMANSHIP OVERLAY: Frames 41 - 110 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 41 && currentFrame <= 110 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="max-w-3xl space-y-4 sm:space-y-6 bg-[#0B0B0E]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
-              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[#D4AF37] font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#050505]/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/30">
-                <Flame className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <div className="max-w-3xl space-y-4 sm:space-y-6 bg-stone-900/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-accent font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 border border-accent/30">
+                <Flame className="w-3.5 h-3.5 text-accent" />
                 <span>01 / GOLDSMITHING & FIRE</span>
               </div>
               <h2 className="text-2.5xl sm:text-5xl md:text-6xl font-serif text-white font-normal leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
@@ -577,7 +577,7 @@ export default function ConsultationPage() {
             
             {/* Center Story Title */}
             <div className="absolute top-20 sm:top-24 left-1/2 transform -translate-x-1/2 text-center space-y-1.5 sm:space-y-2 w-full px-4">
-              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[#D4AF37] font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#050505]/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/30">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 text-accent font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 border border-accent/30">
                 <Microscope className="w-3.5 h-3.5" />
                 <span>02 / MICRON-LEVEL PRECISION</span>
               </div>
@@ -588,10 +588,10 @@ export default function ConsultationPage() {
 
             {/* Mobile HUD Floating Pill Card (Visible on mobile screens) */}
             <div className="sm:hidden absolute bottom-16 left-4 right-4 z-20 pointer-events-auto">
-              <div className="tech-badge p-4 rounded-2xl bg-[#0B0B0E]/95 backdrop-blur-2xl border border-[#D4AF37]/40 space-y-1.5 text-center shadow-2xl">
+              <div className="tech-badge p-4 rounded-2xl bg-stone-900/95 backdrop-blur-2xl border border-accent/40 space-y-1.5 text-center shadow-2xl">
                 <div className="flex items-center justify-center gap-2">
                   <div className="radar-dot" />
-                  <span className="text-[9.5px] uppercase tracking-[0.2em] font-mono text-[#D4AF37] font-semibold">
+                  <span className="text-[9.5px] uppercase tracking-[0.2em] font-mono text-accent font-semibold">
                     {currentFrame < 135 ? 'Diamond Setting' : currentFrame < 160 ? 'Micron Accuracy' : 'Hand Finished'}
                   </span>
                 </div>
@@ -609,7 +609,7 @@ export default function ConsultationPage() {
             <div className="absolute top-[32%] left-[10%] sm:left-[16%] tech-badge p-4 rounded-xl max-w-[220px] space-y-1.5 hidden sm:block transition-all duration-500">
               <div className="flex items-center gap-2">
                 <div className="radar-dot" />
-                <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[#D4AF37] font-semibold">Diamond Setting</span>
+                <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-accent font-semibold">Diamond Setting</span>
               </div>
               <p className="text-[11px] text-white/70 font-light leading-snug">
                 Hand-adjusted claw angles securing brilliant diamonds under 40x optical magnification.
@@ -620,7 +620,7 @@ export default function ConsultationPage() {
             <div className="absolute bottom-[28%] right-[10%] sm:right-[16%] tech-badge p-4 rounded-xl max-w-[220px] space-y-1.5 hidden sm:block transition-all duration-500">
               <div className="flex items-center gap-2">
                 <div className="radar-dot" />
-                <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[#D4AF37] font-semibold">Micron Accuracy</span>
+                <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-accent font-semibold">Micron Accuracy</span>
               </div>
               <p className="text-[11px] text-white/70 font-light leading-snug">
                 Sub-millimeter tolerance checks ensuring seamless comfort and structural security.
@@ -631,7 +631,7 @@ export default function ConsultationPage() {
             <div className="absolute bottom-[20%] left-[12%] sm:left-[20%] tech-badge p-4 rounded-xl max-w-[200px] space-y-1.5 hidden md:block transition-all duration-500">
               <div className="flex items-center gap-2">
                 <div className="radar-dot" />
-                <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[#D4AF37] font-semibold">Hand Finished</span>
+                <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-accent font-semibold">Hand Finished</span>
               </div>
               <p className="text-[11px] text-white/70 font-light leading-snug">
                 Hand polished with silk buffs to achieve mirror-like gold finish.
@@ -641,19 +641,19 @@ export default function ConsultationPage() {
 
           {/* COMPLETION OVERLAY: Frames 181 - 240 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 181 && currentFrame <= 240 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="max-w-2xl space-y-3 sm:space-y-4 bg-[#0B0B0E]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
-              <span className="text-[9px] sm:text-[10px] font-mono text-[#D4AF37] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#050505]/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/30">03 / PERFECTED SILENCE</span>
+            <div className="max-w-2xl space-y-3 sm:space-y-4 bg-stone-900/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
+              <span className="text-[9px] sm:text-[10px] font-mono text-accent uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 border border-accent/30">03 / PERFECTED SILENCE</span>
               <h2 className="text-2.5xl sm:text-5xl font-serif text-white font-normal leading-relaxed drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                 Perfection is not created. <br />
-                <span className="text-[#E8D7A8] italic font-serif">It is uncovered.</span>
+                <span className="text-stone-100 italic font-serif">It is uncovered.</span>
               </h2>
             </div>
           </div>
 
           {/* EMOTION OVERLAY: Frames 241 - 300 */}
           <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 transition-all duration-700 pointer-events-none ${currentFrame >= 241 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="max-w-3xl space-y-4 sm:space-y-6 pointer-events-auto bg-[#0B0B0E]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
-              <span className="text-[9px] sm:text-[10px] font-mono text-[#D4AF37] uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-[#050505]/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#D4AF37]/30">04 / THE UNBOXING</span>
+            <div className="max-w-3xl space-y-4 sm:space-y-6 pointer-events-auto bg-stone-900/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 shadow-2xl sm:shadow-none">
+              <span className="text-[9px] sm:text-[10px] font-mono text-accent uppercase tracking-[0.2em] sm:tracking-[0.25em] bg-stone-900/90 backdrop-blur-md px-3 py-1 border border-accent/30">04 / THE UNBOXING</span>
               <h2 className="text-3xl sm:text-6xl md:text-7xl font-serif text-white font-normal leading-tight tracking-apple drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                 Made for one story. <br />
                 <span className="text-shimmer-gold italic">Yours.</span>
@@ -665,7 +665,7 @@ export default function ConsultationPage() {
               <div className="pt-2 sm:pt-6">
                 <button 
                   onClick={scrollToConsultation}
-                  className="bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-95 px-6 py-3.5 sm:px-8 sm:py-4 rounded-full text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-2xl shadow-[#D4AF37]/20"
+                  className="bg-accent text-stone-900 font-semibold hover:bg-stone-100 active:scale-95 px-6 py-3.5 sm:px-8 sm:py-4 text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 inline-flex items-center gap-2.5 sm:gap-3 shadow-2xl shadow-accent/20"
                 >
                   <span>Book Your Private Consultation</span>
                   <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -678,17 +678,17 @@ export default function ConsultationPage() {
       </div>
 
       {/* GUIDED LUXURY CONSULTATION EXPERIENCE SECTION */}
-      <section id="consultation-experience" className="relative py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 bg-[#0B0B0E] border-t border-white/5 z-20 overflow-x-clip">
+      <section id="consultation-experience" className="relative py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 bg-stone-900 border-t border-white/5 z-20 overflow-x-clip">
         
         {/* Soft Background Illumination */}
-        <div className="absolute inset-0 bg-radial from-[#D4AF37]/5 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-radial from-accent/5 via-transparent to-transparent pointer-events-none" />
 
         <div className="max-w-4xl mx-auto space-y-10 sm:space-y-16 relative z-10">
           
           <div className="text-center space-y-3 sm:space-y-4">
-            <div className="inline-flex items-center gap-2 border border-[#D4AF37]/30 bg-[#050505] px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full">
-              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#E8D7A8] font-semibold">PRIVATE DESIGN CONCIERGE</span>
+            <div className="inline-flex items-center gap-2 border border-accent/30 bg-stone-900 px-3.5 py-1 sm:px-4 sm:py-1.5 ">
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
+              <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-stone-100 font-semibold">PRIVATE DESIGN CONCIERGE</span>
             </div>
             <h2 className="text-2.5xl sm:text-5xl md:text-6xl font-serif text-white font-normal leading-tight px-2">
               Let's create something <br />
@@ -700,18 +700,18 @@ export default function ConsultationPage() {
           </div>
 
           {/* Interactive Multi-Step Questionnaire Form Card */}
-          <div className="bg-[#050505] p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+          <div className="bg-stone-900 p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
             
             {/* Step Progress Bar Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4 sm:pb-6 mb-6 sm:mb-8 text-[10px] sm:text-xs font-mono">
-              <span className="text-[#D4AF37] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-semibold">
+              <span className="text-accent uppercase tracking-[0.15em] sm:tracking-[0.2em] font-semibold">
                 STEP 0{step} OF 05 &middot; {step === 1 ? 'RECIPIENT' : step === 2 ? 'OCCASION' : step === 3 ? 'INSPIRATION' : step === 4 ? 'SCOPE' : 'CONTACT'}
               </span>
               <div className="flex gap-1 sm:gap-1.5">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div 
                     key={i} 
-                    className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-6 sm:w-8 bg-[#D4AF37]' : i < step ? 'w-3 sm:w-4 bg-[#D4AF37]/40' : 'w-3 sm:w-4 bg-white/10'}`} 
+                    className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-6 sm:w-8 bg-accent' : i < step ? 'w-3 sm:w-4 bg-accent/40' : 'w-3 sm:w-4 bg-white/10'}`} 
                   />
                 ))}
               </div>
@@ -736,7 +736,7 @@ export default function ConsultationPage() {
                       key={opt.id}
                       type="button"
                       onClick={() => { setRecipient(opt.label); setStep(2); }}
-                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${recipient === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
+                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${recipient === opt.label ? 'border-accent bg-accent/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
                     >
                       <p className="font-medium text-xs sm:text-sm text-white mb-0.5 sm:mb-1">{opt.label}</p>
                       <p className="text-[11px] sm:text-xs text-white/50 font-light">{opt.desc}</p>
@@ -765,7 +765,7 @@ export default function ConsultationPage() {
                       key={idx}
                       type="button"
                       onClick={() => { setOccasion(opt.label); setStep(3); }}
-                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${occasion === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
+                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${occasion === opt.label ? 'border-accent bg-accent/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
                     >
                       <p className="font-medium text-xs sm:text-sm text-white mb-0.5 sm:mb-1">{opt.label}</p>
                       <p className="text-[11px] sm:text-xs text-white/50 font-light">{opt.desc}</p>
@@ -802,7 +802,7 @@ export default function ConsultationPage() {
                       key={idx}
                       type="button"
                       onClick={() => { setInspiration(opt.label); setStep(4); }}
-                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${inspiration === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
+                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${inspiration === opt.label ? 'border-accent bg-accent/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
                     >
                       <p className="font-medium text-xs sm:text-sm text-white mb-0.5 sm:mb-1">{opt.label}</p>
                       <p className="text-[11px] sm:text-xs text-white/50 font-light">{opt.desc}</p>
@@ -841,7 +841,7 @@ export default function ConsultationPage() {
                       key={idx}
                       type="button"
                       onClick={() => { setCreationScope(opt.label); setStep(5); }}
-                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${creationScope === opt.label ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
+                      className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl text-left border active:scale-[0.98] transition-all duration-300 ${creationScope === opt.label ? 'border-accent bg-accent/10 text-white' : 'border-white/10 hover:border-white/20 bg-white/[0.01] text-white/80'}`}
                     >
                       <p className="font-medium text-xs sm:text-sm text-white mb-0.5 sm:mb-1">{opt.label}</p>
                       <p className="text-[11px] sm:text-xs text-white/50 font-light">{opt.desc}</p>
@@ -864,12 +864,12 @@ export default function ConsultationPage() {
               <div className="space-y-6 sm:space-y-8 animate-fadeIn">
                 {success ? (
                   <div className="text-center py-8 sm:py-12 space-y-4 sm:space-y-6">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/40 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-bounce">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 bg-accent/15 text-accent border border-accent/40 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-bounce">
                       <CheckCircle2 className="w-8 h-8 sm:w-9 sm:h-9" />
                     </div>
                     <h3 className="text-2xl sm:text-3xl font-serif text-white">Consultation Reserved</h3>
                     <p className="text-xs sm:text-sm text-white/70 leading-relaxed max-w-md mx-auto font-light px-2">
-                      Thank you. Your parameters have been received. A dedicated design director will reach out via <span className="text-[#D4AF37] font-medium capitalize">{preferredContact}</span> within 24 hours to present sketch references.
+                      Thank you. Your parameters have been received. A dedicated design director will reach out via <span className="text-accent font-medium capitalize">{preferredContact}</span> within 24 hours to present sketch references.
                     </p>
                   </div>
                 ) : (
@@ -888,7 +888,7 @@ export default function ConsultationPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Name */}
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">First Name *</label>
+                        <label className="block text-[9px] uppercase tracking-[0.2em] text-accent font-semibold font-mono">First Name *</label>
                         <div className="relative">
                           <input
                             type="text"
@@ -906,15 +906,15 @@ export default function ConsultationPage() {
 
                       {/* International Phone & Country Code */}
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Mobile / WhatsApp Number *</label>
+                        <label className="block text-[9px] uppercase tracking-[0.2em] text-accent font-semibold font-mono">Mobile / WhatsApp Number *</label>
                         <div className="flex gap-2">
                           <select
                             value={countryCode}
                             onChange={e => setCountryCode(e.target.value)}
-                            className="luxury-input-dark rounded-xl py-3.5 px-2.5 text-[14px] sm:text-xs bg-[#050505] text-white border border-white/10 shrink-0 cursor-pointer"
+                            className="luxury-input-dark rounded-xl py-3.5 px-2.5 text-[14px] sm:text-xs bg-stone-900 text-white border border-white/10 shrink-0 cursor-pointer"
                           >
                             {COUNTRY_CODES.map((c) => (
-                              <option key={c.code} value={c.code} className="bg-[#050505] text-white">
+                              <option key={c.code} value={c.code} className="bg-stone-900 text-white">
                                 {c.flag} {c.code}
                               </option>
                             ))}
@@ -937,7 +937,7 @@ export default function ConsultationPage() {
 
                       {/* Email */}
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Email Address (Optional)</label>
+                        <label className="block text-[9px] uppercase tracking-[0.2em] text-accent font-semibold font-mono">Email Address (Optional)</label>
                         <div className="relative">
                           <input
                             type="email"
@@ -954,7 +954,7 @@ export default function ConsultationPage() {
 
                       {/* City / Location */}
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Your City & Country *</label>
+                        <label className="block text-[9px] uppercase tracking-[0.2em] text-accent font-semibold font-mono">Your City & Country *</label>
                         <div className="relative">
                           <input
                             type="text"
@@ -974,7 +974,7 @@ export default function ConsultationPage() {
                     {/* Multi-Currency & Budget Range Selection */}
                     <div className="space-y-2">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                        <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Estimated Investment Target</label>
+                        <label className="block text-[9px] uppercase tracking-[0.2em] text-accent font-semibold font-mono">Estimated Investment Target</label>
                         
                         {/* Currency Selector Pills */}
                         <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
@@ -986,7 +986,7 @@ export default function ConsultationPage() {
                                 setCurrency(cKey)
                                 setBudget('')
                               }}
-                              className={`text-[10px] font-mono px-2.5 py-1 rounded-md border transition-all ${currency === cKey ? 'bg-[#D4AF37] text-black border-[#D4AF37] font-bold' : 'bg-white/5 text-white/60 border-white/10 hover:text-white'}`}
+                              className={`text-[10px] font-mono px-2.5 py-1 rounded-md border transition-all ${currency === cKey ? 'bg-accent text-black border-accent font-bold' : 'bg-white/5 text-white/60 border-white/10 hover:text-white'}`}
                             >
                               {cKey}
                             </button>
@@ -999,9 +999,9 @@ export default function ConsultationPage() {
                         onChange={e => setBudget(e.target.value)}
                         className="luxury-input-dark w-full rounded-xl py-3.5 px-4 text-[16px] sm:text-xs appearance-none cursor-pointer"
                       >
-                        <option value="" className="bg-[#050505] text-white">Select budget range ({currency})</option>
+                        <option value="" className="bg-stone-900 text-white">Select budget range ({currency})</option>
                         {CURRENCIES[currency]?.ranges.map((r, idx) => (
-                          <option key={idx} value={r} className="bg-[#050505] text-white">
+                          <option key={idx} value={r} className="bg-stone-900 text-white">
                             {r}
                           </option>
                         ))}
@@ -1010,7 +1010,7 @@ export default function ConsultationPage() {
 
                     {/* Preferred Contact Method */}
                     <div className="space-y-2">
-                      <label className="block text-[9px] uppercase tracking-[0.2em] text-[#D4AF37] font-semibold font-mono">Preferred Communication Channel</label>
+                      <label className="block text-[9px] uppercase tracking-[0.2em] text-accent font-semibold font-mono">Preferred Communication Channel</label>
                       <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         {[
                           { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
@@ -1019,7 +1019,7 @@ export default function ConsultationPage() {
                         ].map((m) => (
                           <label 
                             key={m.id}
-                            className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-xl border text-center cursor-pointer active:scale-95 transition-all duration-300 ${preferredContact === m.id ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 hover:border-white/20 text-white/50'}`}
+                            className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-xl border text-center cursor-pointer active:scale-95 transition-all duration-300 ${preferredContact === m.id ? 'border-accent bg-accent/10 text-white' : 'border-white/10 hover:border-white/20 text-white/50'}`}
                           >
                             <input
                               type="radio"
@@ -1029,7 +1029,7 @@ export default function ConsultationPage() {
                               onChange={() => setPreferredContact(m.id)}
                               className="sr-only"
                             />
-                            <m.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-1 text-[#D4AF37]" />
+                            <m.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-1 text-accent" />
                             <span className="text-[9px] sm:text-[10px] font-semibold">{m.label}</span>
                           </label>
                         ))}
@@ -1048,7 +1048,7 @@ export default function ConsultationPage() {
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full sm:flex-1 bg-[#D4AF37] text-[#050505] font-semibold hover:bg-[#E8D7A8] active:scale-98 py-3.5 sm:py-4 rounded-full text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 shadow-xl shadow-[#D4AF37]/10"
+                        className="w-full sm:flex-1 bg-accent text-stone-900 font-semibold hover:bg-stone-100 active:scale-98 py-3.5 sm:py-4 rounded-full text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 shadow-xl shadow-accent/10"
                       >
                         {submitting ? (
                           <>
@@ -1077,19 +1077,19 @@ export default function ConsultationPage() {
           {/* Guarantees / Trust Badges */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 text-center text-[8.5px] sm:text-[10px] uppercase font-mono tracking-[0.15em] sm:tracking-[0.18em] text-white/60 pt-2 sm:pt-6">
             <div className="p-3 sm:p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-1.5 sm:gap-2">
-              <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37]" />
+              <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
               <span>IGI & GIA Certified</span>
             </div>
             <div className="p-3 sm:p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-1.5 sm:gap-2">
-              <Diamond className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37]" />
+              <Diamond className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
               <span>BIS 916 Hallmarked</span>
             </div>
             <div className="p-3 sm:p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-1.5 sm:gap-2">
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37]" />
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
               <span>Unlimited CAD Revisions</span>
             </div>
             <div className="p-3 sm:p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col items-center gap-1.5 sm:gap-2">
-              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37]" />
+              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
               <span>Insured Delivery</span>
             </div>
           </div>
@@ -1098,7 +1098,7 @@ export default function ConsultationPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#050505] py-8 sm:py-12 text-center text-[9px] sm:text-[10px] text-white/40 border-t border-white/5 uppercase tracking-[0.2em] sm:tracking-[0.25em] font-mono px-4">
+      <footer className="bg-stone-900 py-8 sm:py-12 text-center text-[9px] sm:text-[10px] text-white/40 border-t border-white/5 uppercase tracking-[0.2em] sm:tracking-[0.25em] font-mono px-4">
         <p>&copy; {new Date().getFullYear()} SHEWAH. ALL RIGHTS RESERVED. PRIVATE JEWELLERY ATELIER.</p>
       </footer>
 

@@ -212,7 +212,7 @@ export default function CadRequestDetailPage() {
     router.push('/cad-requests')
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
@@ -247,7 +247,7 @@ export default function CadRequestDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
@@ -336,7 +336,7 @@ export default function CadRequestDetailPage() {
 
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h2 className="font-medium text-stone-900 mb-3 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#C49C64]" /> Revision history
+              <Sparkles className="w-4 h-4 text-accent" /> Revision history
             </h2>
             {revisions.length === 0 ? (
               <p className="text-sm text-stone-400">
@@ -352,7 +352,7 @@ export default function CadRequestDetailPage() {
                       ? 'bg-amber-500'
                       : r.kind === 'partner_upload'
                       ? 'bg-blue-500'
-                      : 'bg-[#C49C64]'
+                      : 'bg-accent'
                   const label =
                     r.kind === 'approval'
                       ? 'Retailer approved the design'
@@ -461,7 +461,7 @@ export default function CadRequestDetailPage() {
                           maxLength={120}
                           disabled={uploading}
                           placeholder='Caption (e.g. "Before halo change")'
-                          className="w-full border border-stone-200 rounded px-2 py-1 text-xs focus:border-[#1E3A5F] outline-none bg-white"
+                          className="w-full border border-stone-200 rounded px-2 py-1 text-xs focus:border-stone-800 outline-none bg-white"
                         />
                       </div>
                     ))}
@@ -481,7 +481,7 @@ export default function CadRequestDetailPage() {
                   <Upload className={`w-4 h-4 ${refUploading ? 'animate-pulse' : ''}`} />
                   {refUploading ? 'Uploading...' : 'Add reference / annotation'}
                 </label>
-                <label className={`flex items-center gap-2 border border-dashed border-[#1E3A5F]/30 bg-[#1E3A5F]/5 rounded-lg px-3 py-2 text-sm cursor-pointer ${uploading || refUploading ? 'text-stone-300 pointer-events-none' : 'text-[#1E3A5F] hover:bg-[#1E3A5F]/10'}`}>
+                <label className={`flex items-center gap-2 border border-dashed border-stone-800/30 bg-stone-800/5 rounded-lg px-3 py-2 text-sm cursor-pointer ${uploading || refUploading ? 'text-stone-300 pointer-events-none' : 'text-stone-800 hover:bg-stone-800/10'}`}>
                   <input
                     type="file"
                     accept="image/*"
@@ -520,7 +520,7 @@ export default function CadRequestDetailPage() {
               <div className="space-y-2">
                 {req.cad_files.map((url: string, i: number) => (
                   <a key={i} href={url} target="_blank" rel="noreferrer"
-                    className="flex items-center gap-2 text-sm text-[#1E3A5F] hover:underline break-all">
+                    className="flex items-center gap-2 text-sm text-stone-800 hover:underline break-all">
                     {url}
                   </a>
                 ))}

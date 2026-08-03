@@ -318,7 +318,7 @@ function ResellerOrderWizard() {
               }
               setStep(2)
             }}
-            className="w-full bg-[#1E3A5F] hover:bg-[#162B47] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors shadow-sm"
+            className="w-full bg-stone-800 hover:bg-stone-900 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors shadow-sm"
           >
             Enter Shipping Details <ArrowRight className="w-4 h-4" />
           </button>
@@ -387,7 +387,7 @@ function ResellerOrderWizard() {
                 }
                 setStep(3)
               }}
-              className="flex-1 bg-[#1E3A5F] hover:bg-[#162B47] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors shadow-sm"
+              className="flex-1 bg-stone-800 hover:bg-stone-900 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors shadow-sm"
             >
               Verify &amp; Confirm <ArrowRight className="w-4 h-4" />
             </button>

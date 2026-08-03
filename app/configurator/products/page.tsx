@@ -412,13 +412,13 @@ export default function ProductMappingPage() {
           <div className="flex gap-2 border-b border-stone-150 mb-5">
             <button onClick={() => setActiveSubTab('mapping')}
               className={`pb-2.5 text-sm font-semibold border-b-2 px-1 transition-all ${
-                activeSubTab === 'mapping' ? 'border-[#1E3A5F] text-[#1E3A5F]' : 'border-transparent text-stone-400 hover:text-stone-600'
+                activeSubTab === 'mapping' ? 'border-stone-800 text-stone-800' : 'border-transparent text-stone-400 hover:text-stone-600'
               }`}>
               Allowed Options & Constraints
             </button>
             <button onClick={() => { setActiveSubTab('simulator'); runSimulation(); }}
               className={`pb-2.5 text-sm font-semibold border-b-2 px-1 transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'simulator' ? 'border-[#1E3A5F] text-[#1E3A5F]' : 'border-transparent text-stone-400 hover:text-stone-600'
+                activeSubTab === 'simulator' ? 'border-stone-800 text-stone-800' : 'border-transparent text-stone-400 hover:text-stone-600'
               }`}>
               <Play className="w-3.5 h-3.5" /> Live Price Simulator
             </button>
@@ -429,7 +429,7 @@ export default function ProductMappingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex items-center mt-5 bg-stone-50 border border-stone-200 rounded-xl p-3">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4 accent-[#1E3A5F]"
+                    <input type="checkbox" className="w-4 h-4 accent-stone-800"
                       checked={mappingForm.is_configurable}
                       onChange={e => setMappingForm(p => ({ ...p, is_configurable: e.target.checked }))} />
                     <div>
@@ -455,7 +455,7 @@ export default function ProductMappingPage() {
                   <div className="space-y-1.5">
                     {metals.map(m => (
                       <label key={m.id} className="flex items-center gap-2 text-xs text-stone-650 cursor-pointer">
-                        <input type="checkbox" className="w-3.5 h-3.5 accent-[#1E3A5F]"
+                        <input type="checkbox" className="w-3.5 h-3.5 accent-stone-800"
                           checked={mappingForm.metals.includes(m.id)}
                           onChange={() => toggleOption('metals', m.id)} />
                         <span>{m.name}</span>
@@ -471,7 +471,7 @@ export default function ProductMappingPage() {
                   <div className="space-y-1.5">
                     {finishes.map(f => (
                       <label key={f.id} className="flex items-center gap-2 text-xs text-stone-650 cursor-pointer">
-                        <input type="checkbox" className="w-3.5 h-3.5 accent-[#1E3A5F]"
+                        <input type="checkbox" className="w-3.5 h-3.5 accent-stone-800"
                           checked={mappingForm.finishes.includes(f.id)}
                           onChange={() => toggleOption('finishes', f.id)} />
                         <span>{f.name}</span>
@@ -486,7 +486,7 @@ export default function ProductMappingPage() {
                   <div className="space-y-1.5">
                     {stoneTypes.map(st => (
                       <label key={st.id} className="flex items-center gap-2 text-xs text-stone-650 cursor-pointer">
-                        <input type="checkbox" className="w-3.5 h-3.5 accent-[#1E3A5F]"
+                        <input type="checkbox" className="w-3.5 h-3.5 accent-stone-800"
                           checked={mappingForm.stone_types.includes(st.id)}
                           onChange={() => toggleOption('stone_types', st.id)} />
                         <span>{st.name}</span>
@@ -501,7 +501,7 @@ export default function ProductMappingPage() {
                   <div className="space-y-1.5">
                     {SETTING_TYPES_OPTIONS.map(st => (
                       <label key={st} className="flex items-center gap-2 text-xs text-stone-650 cursor-pointer">
-                        <input type="checkbox" className="w-3.5 h-3.5 accent-[#1E3A5F]"
+                        <input type="checkbox" className="w-3.5 h-3.5 accent-stone-800"
                           checked={mappingForm.setting_types.includes(st.toLowerCase())}
                           onChange={() => toggleOption('setting_types', st.toLowerCase())} />
                         <span>{st} Setting</span>
@@ -517,7 +517,7 @@ export default function ProductMappingPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {shapes.map(s => (
                       <label key={s.id} className="flex items-center gap-2 text-xs text-stone-650 cursor-pointer">
-                        <input type="checkbox" className="w-3.5 h-3.5 accent-[#1E3A5F]"
+                        <input type="checkbox" className="w-3.5 h-3.5 accent-stone-800"
                           checked={mappingForm.shapes.includes(s.id)}
                           onChange={() => toggleOption('shapes', s.id)} />
                         <span>{s.name}</span>
@@ -533,7 +533,7 @@ export default function ProductMappingPage() {
                   <div className="grid grid-cols-2 gap-2">
                     {addons.map(a => (
                       <label key={a.id} className="flex items-center gap-2 text-xs text-stone-650 cursor-pointer">
-                        <input type="checkbox" className="w-3.5 h-3.5 accent-[#1E3A5F]"
+                        <input type="checkbox" className="w-3.5 h-3.5 accent-stone-800"
                           checked={mappingForm.addons.includes(a.id)}
                           onChange={() => toggleOption('addons', a.id)} />
                         <span>{a.name}</span>
@@ -635,7 +635,7 @@ export default function ProductMappingPage() {
                   <div className="grid grid-cols-2 gap-2">
                     {addons.filter(a => mappingForm.addons.includes(a.id)).map(a => (
                       <label key={a.id} className="flex items-center gap-2 text-xs text-stone-650 cursor-pointer">
-                        <input type="checkbox" className="w-3.5 h-3.5 accent-[#1E3A5F]"
+                        <input type="checkbox" className="w-3.5 h-3.5 accent-stone-800"
                           checked={simSelectedAddons.includes(a.id)}
                           onChange={() => {
                             setSimSelectedAddons(prev =>

@@ -47,7 +47,7 @@ export function DiamondCatalogPicker({
 }) {
   const { shapes, sizes } = useDiamondCatalog()
   const lbl = lblClass || 'block text-xs font-medium text-stone-500 mb-1'
-  const inp = inpClass || 'w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white'
+  const inp = inpClass || 'w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white'
   const activeShapes = shapes.filter(s => s.active || s.id === shapeId)
   const activeSizes = sizes.filter(z => z.shape_id === shapeId && (z.active || z.id === sizeId))
 

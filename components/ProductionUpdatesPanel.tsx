@@ -106,7 +106,7 @@ export default function ProductionUpdatesPanel({ orderId }: { orderId: string })
         </div>
         {!showForm && (
           <button onClick={() => setShowForm(true)}
-            className="text-sm bg-[#1E3A5F] hover:bg-[#162B47] text-white font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+            className="text-sm bg-stone-800 hover:bg-stone-900 text-white font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5">
             <Plus className="w-3.5 h-3.5" /> New update
           </button>
         )}
@@ -122,10 +122,10 @@ export default function ProductionUpdatesPanel({ orderId }: { orderId: string })
           </div>
           <input type="text" maxLength={140} value={title} onChange={e => setTitle(e.target.value)}
             placeholder="e.g. Casting complete"
-            className="w-full mb-2 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none" />
+            className="w-full mb-2 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none" />
           <textarea rows={3} value={body} onChange={e => setBody(e.target.value)}
             placeholder="Optional details for the customer (kept warm and friendly)"
-            className="w-full mb-2 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none resize-none" />
+            className="w-full mb-2 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none resize-none" />
           <div className="flex items-center gap-3 mb-3">
             {photoUrl ? (
               <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-stone-200">
@@ -136,7 +136,7 @@ export default function ProductionUpdatesPanel({ orderId }: { orderId: string })
                 </button>
               </div>
             ) : (
-              <label className="cursor-pointer flex items-center gap-2 text-sm text-stone-600 border border-dashed border-stone-300 rounded-lg px-3 py-2 hover:border-[#1E3A5F] hover:text-[#1E3A5F]">
+              <label className="cursor-pointer flex items-center gap-2 text-sm text-stone-600 border border-dashed border-stone-300 rounded-lg px-3 py-2 hover:border-stone-800 hover:text-stone-800">
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
                 <span>{uploading ? 'Uploading...' : 'Attach photo (optional)'}</span>
                 <input type="file" accept="image/*" className="hidden"
@@ -150,7 +150,7 @@ export default function ProductionUpdatesPanel({ orderId }: { orderId: string })
           </label>
           <div className="flex gap-2">
             <button onClick={submit} disabled={busy || uploading || !title.trim()}
-              className="bg-[#1E3A5F] hover:bg-[#162B47] text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-40">
+              className="bg-stone-800 hover:bg-stone-900 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-40">
               {busy ? 'Posting...' : 'Post update'}
             </button>
             <button onClick={reset} disabled={busy}

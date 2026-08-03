@@ -341,7 +341,7 @@ export default function RetailerProductDetail() {
   const photos = product.photo_urls && product.photo_urls.length > 0 ? product.photo_urls : []
   const unitPrice = selectedRow?.trade || Number(product.trade_price) || 0
   const total = unitPrice * (parseInt(qty) || 1)
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -364,7 +364,7 @@ export default function RetailerProductDetail() {
             <div className="grid grid-cols-5 gap-2 mt-3">
               {photos.map((u, i) => (
                 <button key={u} onClick={() => setActiveImg(i)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${i === activeImg ? 'border-[#1E3A5F]' : 'border-stone-200'}`}>
+                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${i === activeImg ? 'border-stone-800' : 'border-stone-200'}`}>
                   <img src={u} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
@@ -411,7 +411,7 @@ export default function RetailerProductDetail() {
                             return next
                           })
                         }}
-                        className="rounded text-[#1E3A5F] focus:ring-[#1E3A5F] w-4 h-4 border-stone-300"
+                        className="rounded text-stone-800 focus:ring-stone-800 w-4 h-4 border-stone-300"
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-stone-800 flex items-center gap-2">
@@ -495,14 +495,14 @@ export default function RetailerProductDetail() {
                         onClick={() => setSelectedKarat(r.karat)}
                         className={`rounded-lg border px-1 py-2 text-center transition-colors ${
                           active
-                            ? 'border-[#1E3A5F] bg-[#1E3A5F] text-white'
-                            : 'border-stone-200 bg-white text-stone-700 hover:border-[#1E3A5F]'
+                            ? 'border-stone-800 bg-stone-800 text-white'
+                            : 'border-stone-200 bg-white text-stone-700 hover:border-stone-800'
                         }`}>
                         <p className="text-xs font-semibold">{r.karat}kt</p>
                         <p className={`text-[10px] mt-0.5 ${active ? 'text-white/80' : 'text-stone-400'}`}>
                           {r.weight.toFixed(2)}g
                         </p>
-                        <p className={`text-[11px] font-medium mt-0.5 ${active ? 'text-white' : 'text-[#1E3A5F]'}`}>
+                        <p className={`text-[11px] font-medium mt-0.5 ${active ? 'text-white' : 'text-stone-800'}`}>
                           ₹{(r.trade / 1000).toFixed(0)}K
                         </p>
                       </button>
@@ -573,7 +573,7 @@ export default function RetailerProductDetail() {
             {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
             <button onClick={placeOrder} disabled={submitting || !selectedRow}
-              className="w-full flex items-center justify-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] text-white px-5 py-3 rounded-lg text-sm font-medium disabled:opacity-50">
+              className="w-full flex items-center justify-center gap-2 bg-stone-800 hover:bg-stone-900 text-white px-5 py-3 rounded-lg text-sm font-medium disabled:opacity-50">
               <ShoppingBag className="w-4 h-4" />
               {submitting ? 'Placing order...' : 'Place order'}
             </button>

@@ -6,11 +6,13 @@ export interface StatusPillProps extends HTMLAttributes<HTMLSpanElement> {
   label?: string
 }
 
+// Rectangular, hairline-bordered, tracked uppercase. The wording carries the
+// state on its own — color only reinforces it, never signals alone.
 export function StatusPill({ status, label, className, ...rest }: StatusPillProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+        'inline-flex items-center border border-current px-2.5 py-1 text-[10px] font-normal uppercase tracking-micro',
         getStatusColor(status),
         className
       )}

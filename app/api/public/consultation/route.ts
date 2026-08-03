@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { notifyNewD2cConsultation } from '@/lib/leadNotify'
+import { sendCapiEvent, fbcFromFbclid } from '@/lib/metaCapi'
 
 export const runtime = 'nodejs'
 
@@ -251,5 +252,48 @@ export async function POST(req: NextRequest) {
     console.error('[consultation] Notification failure:', notifyErr)
   }
 
-  return NextResponse.json({ ok: true, id: enquiry.id, enquiry_number: enquiry.enquiry_number })
+  // Step 5: Meta Conversions API.
+  //
+  // The event id is derived from the enquiry id so the browser pixel on
+  // /consultation/thank-you can fire the same id and Meta deduplicates the
+  // pair. Without that, every lead counts twice and reported cost-per-lead is
+  // half the truth.
+  //
+  // `_fbp` / `_fbc` are read from the request cookies rather than the body:
+  // the pixel sets them client-side, and passing them server-side is what
+  // makes a server event match as well as a browser one. Awaited, but the
+  // sender never throws and times out at 4s.
+  const eventId = `lead_${enquiry.id}`
+  const capiResult = await sendCapiEvent({
+    eventName: 'Lead',
+    eventId,
+    eventSourceUrl: clean(body?.landing_path, 300) || req.headers.get('referer'),
+    user: {
+      phone: normalizedWhatsapp,
+      email: email || null,
+      firstName: first_name,
+      city,
+      fbp: req.cookies.get('_fbp')?.value || null,
+      fbc: req.cookies.get('_fbc')?.value || fbcFromFbclid(clean(body?.fbclid, 200)) || null,
+      clientIp: ip,
+      userAgent: req.headers.get('user-agent'),
+    },
+    customData: {
+      content_name: typeText || 'Bespoke consultation',
+      currency: 'INR',
+      // Budget band floor, so Meta can learn which enquiries are worth more.
+      value: mappedBudgets.min ?? undefined,
+    },
+  })
+  if (!capiResult.sent && capiResult.error !== 'not-configured') {
+    console.error('[consultation] CAPI not delivered:', capiResult.error)
+  }
+
+  return NextResponse.json({
+    ok: true,
+    id: enquiry.id,
+    enquiry_number: enquiry.enquiry_number,
+    // Returned so the thank-you page fires the browser Lead with the same id.
+    event_id: eventId,
+  })
 }

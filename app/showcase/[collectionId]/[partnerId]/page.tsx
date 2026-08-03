@@ -155,7 +155,7 @@ export default function ShowcasePage() {
     return (
       <div className="min-h-screen bg-stone-950 flex items-center justify-center">
         <div className="text-center text-stone-400">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-[#B7C8DD]" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-stone-300" />
           <p className="text-sm">Loading your collection preview…</p>
         </div>
       </div>
@@ -193,13 +193,13 @@ export default function ShowcasePage() {
     return (
       <div className="min-h-screen bg-stone-950 flex items-center justify-center px-4">
         <div className="text-center max-w-sm w-full">
-          <div className="w-20 h-20 rounded-full bg-[#B7C8DD]/20 border-2 border-[#B7C8DD]/50 flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-9 h-9 text-[#B7C8DD]" />
+          <div className="w-20 h-20 rounded-full bg-stone-300/20 border-2 border-stone-300/50 flex items-center justify-center mx-auto mb-6">
+            <Sparkles className="w-9 h-9 text-stone-300" />
           </div>
           <h1 className="text-white text-2xl font-semibold mb-3">Shortlist submitted!</h1>
           <p className="text-stone-400 text-sm leading-relaxed mb-2">
             Thank you, <span className="text-white font-medium">{partner?.store_name}</span>.{' '}
-            Your shortlist of <span className="text-[#B7C8DD] font-semibold">{shortlistedCount} design{shortlistedCount !== 1 ? 's' : ''}</span> has been received.
+            Your shortlist of <span className="text-stone-300 font-semibold">{shortlistedCount} design{shortlistedCount !== 1 ? 's' : ''}</span> has been received.
           </p>
           <p className="text-stone-500 text-sm leading-relaxed mb-8">
             Our team will review your preferences and follow up with you shortly.
@@ -211,7 +211,7 @@ export default function ShowcasePage() {
                 const row = interests.get(p.id)
                 return (
                   <li key={p.id} className="flex items-start gap-2">
-                    <Heart className="w-3.5 h-3.5 text-[#B7C8DD] fill-[#B7C8DD] shrink-0 mt-0.5" />
+                    <Heart className="w-3.5 h-3.5 text-stone-300 fill-stone-300 shrink-0 mt-0.5" />
                     <div>
                       <span className="text-white text-sm">{p.name}</span>
                       {row?.quantity_hint && <span className="text-stone-500 text-xs ml-2">× {row.quantity_hint}</span>}
@@ -239,11 +239,11 @@ export default function ShowcasePage() {
       <div className="bg-stone-900 border-b border-stone-800">
         <div className="max-w-4xl mx-auto px-4 py-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-[#1E3A5F] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-stone-800 flex items-center justify-center shrink-0">
               <span className="text-white font-bold text-sm">◆</span>
             </div>
             <div>
-              <p className="text-[#B7C8DD] text-xs font-medium tracking-wider uppercase">Shewah Jewellery</p>
+              <p className="text-stone-300 text-xs font-medium tracking-wider uppercase">Shewah Jewellery</p>
               <p className="text-stone-400 text-xs">Exclusive Design Preview</p>
             </div>
           </div>
@@ -263,7 +263,7 @@ export default function ShowcasePage() {
 
       {/* Instructions */}
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-2">
-        <div className="bg-[#B7C8DD]/10 border border-[#B7C8DD]/30 rounded-xl px-4 py-3 text-[#B7C8DD] text-xs">
+        <div className="bg-stone-300/10 border border-stone-300/30 rounded-xl px-4 py-3 text-stone-300 text-xs">
           Tap the <span className="font-semibold">heart</span> on any design to shortlist it.
           Add notes or quantity, then tap <span className="font-semibold">Submit shortlist</span> when you&apos;re done.
         </div>
@@ -287,7 +287,7 @@ export default function ShowcasePage() {
                 <div key={product.id}
                   className={`bg-stone-900 rounded-2xl overflow-hidden border transition-all ${
                     isShortlisted
-                      ? 'border-[#1E3A5F] shadow-lg shadow-[#B7C8DD]/20'
+                      ? 'border-stone-800 shadow-lg shadow-stone-300/20'
                       : 'border-stone-800'
                   }`}>
                   {/* Photo */}
@@ -305,7 +305,7 @@ export default function ShowcasePage() {
                       </div>
                     )}
                     {isShortlisted && (
-                      <div className="absolute top-2 left-2 bg-[#1E3A5F] text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                      <div className="absolute top-2 left-2 bg-stone-800 text-white text-xs px-2 py-0.5 font-medium">
                         Shortlisted
                       </div>
                     )}
@@ -317,13 +317,13 @@ export default function ShowcasePage() {
                     <p className="text-white text-sm font-medium leading-tight mt-0.5 mb-1 line-clamp-2">{product.name}</p>
                     <div className="flex flex-wrap gap-1 mb-3">
                       {product.gold_karat && (
-                        <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">{product.gold_karat}K</span>
+                        <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 ">{product.gold_karat}K</span>
                       )}
                       {product.diamond_shape && (
-                        <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">{product.diamond_shape}</span>
+                        <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 ">{product.diamond_shape}</span>
                       )}
                       {product.trade_price && (
-                        <span className="bg-stone-800 text-[#B7C8DD] text-xs px-2 py-0.5 rounded-full">
+                        <span className="bg-stone-800 text-stone-300 text-xs px-2 py-0.5 ">
                           ₹{product.trade_price >= 100000
                             ? `${(product.trade_price / 100000).toFixed(1)}L`
                             : `${Math.round(product.trade_price / 1000)}K`}
@@ -342,7 +342,7 @@ export default function ShowcasePage() {
                             min={1}
                             value={interestRow?.quantity_hint ?? ''}
                             onChange={e => updateNote(product.id, 'quantity_hint', e.target.value ? parseInt(e.target.value) : null)}
-                            className="w-full bg-stone-800 text-white text-xs px-2 py-1.5 rounded-lg border border-stone-700 outline-none focus:border-[#B7C8DD] placeholder-stone-600"
+                            className="w-full bg-stone-800 text-white text-xs px-2 py-1.5 rounded-lg border border-stone-700 outline-none focus:border-stone-300 placeholder-stone-600"
                           />
                         </div>
                         <div className="flex items-start gap-1.5">
@@ -352,7 +352,7 @@ export default function ShowcasePage() {
                             value={interestRow?.note ?? ''}
                             onChange={e => updateNote(product.id, 'note', e.target.value)}
                             rows={2}
-                            className="w-full bg-stone-800 text-white text-xs px-2 py-1.5 rounded-lg border border-stone-700 outline-none focus:border-[#B7C8DD] placeholder-stone-600 resize-none"
+                            className="w-full bg-stone-800 text-white text-xs px-2 py-1.5 rounded-lg border border-stone-700 outline-none focus:border-stone-300 placeholder-stone-600 resize-none"
                           />
                         </div>
                       </div>
@@ -364,7 +364,7 @@ export default function ShowcasePage() {
                         onClick={() => toggleInterest(product)}
                         className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium transition-all active:scale-95 ${
                           isShortlisted
-                            ? 'bg-[#1E3A5F] text-white hover:bg-[#162B47]'
+                            ? 'bg-stone-800 text-white hover:bg-stone-900'
                             : 'bg-stone-800 text-stone-400 hover:text-white hover:bg-stone-700'
                         }`}>
                         <Heart className={`w-3.5 h-3.5 ${isShortlisted ? 'fill-white' : ''}`} />
@@ -404,7 +404,7 @@ export default function ShowcasePage() {
           ) : (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-[#1E3A5F] flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center shrink-0">
                   <span className="text-white text-xs font-bold">{shortlistedCount}</span>
                 </div>
                 <div className="min-w-0">
@@ -415,7 +415,7 @@ export default function ShowcasePage() {
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#162B47] disabled:opacity-60 text-white px-5 py-3 rounded-xl text-sm font-semibold transition-all shrink-0 active:scale-95">
+                className="flex items-center gap-2 bg-stone-800 hover:bg-stone-900 disabled:opacity-60 text-white px-5 py-3 rounded-xl text-sm font-semibold transition-all shrink-0 active:scale-95">
                 {submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (

@@ -188,7 +188,7 @@ export default function PnLStatementPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-stone-200 pb-5 gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#1E3A5F] to-[#2E5E8A] flex items-center justify-center text-white shadow-md">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-stone-800 to-stone-700 flex items-center justify-center text-white shadow-md">
             <BarChart2 className="w-6 h-6" />
           </div>
           <div>
@@ -236,7 +236,7 @@ export default function PnLStatementPage() {
           <button
             onClick={handleExportCSV}
             disabled={!report}
-            className="flex items-center gap-1.5 bg-[#1E3A5F] text-white hover:bg-[#162B47] px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 bg-stone-800 text-white hover:bg-stone-900 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
           >
             <Download className="w-3.5 h-3.5" />
             Export CSV
@@ -397,7 +397,7 @@ export default function PnLStatementPage() {
                     <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Gross Profit (Lot-based)</p>
                     <p className="text-lg font-bold text-stone-900 mt-0.5">{formatCurrency(report.gross_profit)}</p>
                   </div>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 ">
                     Margin: {report.gross_margin_pct}%
                   </span>
                 </div>
@@ -414,12 +414,12 @@ export default function PnLStatementPage() {
                       {report.gold_replacement_variance > 0 ? ' (loss)' : report.gold_replacement_variance < 0 ? ' (gain)' : ''}
                     </span>
                   </div>
-                  <div className="bg-[#1E3A5F]/5 rounded-xl p-4 flex justify-between items-center border border-[#1E3A5F]/15">
+                  <div className="bg-stone-800/5 rounded-xl p-4 flex justify-between items-center border border-stone-800/15">
                     <div>
-                      <p className="text-xs font-bold text-[#1E3A5F] uppercase tracking-wider">Adjusted Gross Profit</p>
-                      <p className="text-lg font-bold text-[#1E3A5F] mt-0.5">{formatCurrency(report.adjusted_gross_profit)}</p>
+                      <p className="text-xs font-bold text-stone-800 uppercase tracking-wider">Adjusted Gross Profit</p>
+                      <p className="text-lg font-bold text-stone-800 mt-0.5">{formatCurrency(report.adjusted_gross_profit)}</p>
                     </div>
-                    <span className="text-xs font-bold text-white bg-[#1E3A5F] px-2.5 py-1 rounded-full">
+                    <span className="text-xs font-bold text-white bg-stone-800 px-2.5 py-1 ">
                       Margin: {report.adjusted_gross_margin_pct}%
                     </span>
                   </div>

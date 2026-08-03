@@ -167,7 +167,7 @@ function StockReceiveForm() {
     }
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -229,7 +229,7 @@ function StockReceiveForm() {
           </div>
 
           {isGold && (
-            <div className="bg-[#F5F6F8] border border-stone-200 rounded-lg p-3 space-y-3">
+            <div className="bg-stone-50 border border-stone-200 rounded-lg p-3 space-y-3">
               <p className="text-xs font-medium text-stone-700">
                 Gold inventory is held only as 24kt-net. Enter the gross weight + the karat you bought it at; we convert below.
               </p>
@@ -326,7 +326,7 @@ function StockReceiveForm() {
             Cancel
           </Link>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+            className="flex items-center gap-2 bg-stone-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Receive'}
           </button>

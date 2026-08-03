@@ -247,7 +247,7 @@ function NewEnquiryForm() {
               </div>
             )}
             <button onClick={() => setShowCreate(true)}
-              className="text-sm inline-flex items-center gap-1.5 text-[#1E3A5F] hover:text-[#172d49] font-medium">
+              className="text-sm inline-flex items-center gap-1.5 text-stone-800 hover:text-stone-900 font-medium">
               <UserPlus className="w-4 h-4" /> Create new customer
             </button>
           </>
@@ -278,7 +278,7 @@ function NewEnquiryForm() {
             </div>
             <div className="flex items-center gap-2">
               <button onClick={handleCreateCustomer} disabled={creatingCustomer}
-                className="px-4 py-2 rounded-lg bg-[#1E3A5F] text-white text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2">
+                className="px-4 py-2 rounded-lg bg-stone-800 text-white text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2">
                 {creatingCustomer && <Loader2 className="w-4 h-4 animate-spin" />}
                 Save customer
               </button>
@@ -376,7 +376,7 @@ function NewEnquiryForm() {
       <div className="flex items-center justify-end gap-3">
         <Link href="/enquiries" className="text-sm text-stone-600 hover:text-stone-900 px-3 py-2">Cancel</Link>
         <button onClick={handleSubmit} disabled={submitting || !customer || !title.trim()}
-          className="px-5 py-2.5 rounded-lg bg-[#1E3A5F] text-white text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2">
+          className="px-5 py-2.5 rounded-lg bg-stone-800 text-white text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2">
           {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
           Save enquiry
         </button>
@@ -385,7 +385,7 @@ function NewEnquiryForm() {
   )
 }
 
-const inp = 'w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/20 focus:border-[#1E3A5F]'
+const inp = 'w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-stone-800/20 focus:border-stone-800'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

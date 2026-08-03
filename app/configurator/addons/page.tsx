@@ -251,7 +251,7 @@ export default function AddonsPage() {
                   <span className="text-[10px] uppercase font-bold px-2 py-0.5 bg-stone-100 text-stone-550 rounded">
                     {addon.addon_type}
                   </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 bg-[#1E3A5F]/10 text-[#1E3A5F] rounded">
+                  <span className="text-[10px] font-bold px-2 py-0.5 bg-stone-800/10 text-stone-800 rounded">
                     {getPricingDisplay(addon)}
                   </span>
                 </div>
@@ -348,7 +348,7 @@ export default function AddonsPage() {
 
           <div className="flex justify-between items-center border-t border-stone-150 pt-4 mt-6">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="w-4 h-4 accent-[#1E3A5F]"
+              <input type="checkbox" className="w-4 h-4 accent-stone-800"
                 checked={form.is_active} onChange={e => setForm(p => ({ ...p, is_active: e.target.checked }))} />
               <span className="text-sm font-medium text-stone-700">Option Active</span>
             </label>

@@ -48,7 +48,7 @@ export default function NewCircuitPage() {
     router.push('/circuits')
   }
 
-  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none"
+  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none"
   const label = "block text-xs font-medium text-stone-500 mb-1"
 
   const SUGGESTED_CITIES = {
@@ -115,10 +115,10 @@ export default function NewCircuitPage() {
                       setForm(prev => ({ ...prev, cities: [...prev.cities, city] }))
                     }
                   }}
-                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                    className={`text-xs px-2.5 py-1 border transition-colors ${
                       form.cities.includes(city)
-                        ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]'
-                        : 'border-stone-200 text-stone-500 hover:border-[#1E3A5F] hover:text-[#1E3A5F]'
+                        ? 'bg-stone-800 text-white border-stone-800'
+                        : 'border-stone-200 text-stone-500 hover:border-stone-800 hover:text-stone-800'
                     }`}>
                     {city}
                   </button>
@@ -140,7 +140,7 @@ export default function NewCircuitPage() {
           {form.cities.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {form.cities.map((city, i) => (
-                <span key={city} className="flex items-center gap-1 bg-stone-100 text-stone-700 text-xs px-2.5 py-1 rounded-full">
+                <span key={city} className="flex items-center gap-1 bg-stone-100 text-stone-700 text-xs px-2.5 py-1 ">
                   <span className="text-stone-400 text-xs">{i + 1}.</span>
                   {city}
                   <button onClick={() => removeCity(city)} className="text-stone-400 hover:text-stone-600 ml-0.5">
@@ -195,7 +195,7 @@ export default function NewCircuitPage() {
             Cancel
           </Link>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
+            className="flex items-center gap-2 bg-stone-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Save circuit'}
           </button>

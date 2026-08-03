@@ -7,7 +7,7 @@ export default function CustomerIntelligenceWidget({ customerId }: { customerId?
   const [expanded, setExpanded] = useState(true)
 
   return (
-    <div className="bg-[#0F172A] text-stone-100 rounded-2xl p-5 border border-stone-800 shadow-xl my-6 font-sans">
+    <div className="bg-stone-900 text-stone-100 rounded-2xl p-5 border border-stone-800 shadow-xl my-6 font-sans">
       <div className="flex items-center justify-between border-b border-stone-800 pb-3 mb-4">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-stone-950">
@@ -16,7 +16,7 @@ export default function CustomerIntelligenceWidget({ customerId }: { customerId?
           <div>
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               AURORA Consumer Intelligence
-              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30">Persona Decoded</span>
+              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 border border-purple-500/30">Persona Decoded</span>
             </h3>
             <p className="text-xs text-stone-400">Customer #{customerId || 'CUST-882'} · Sentiment Agent Active</p>
           </div>
@@ -32,7 +32,7 @@ export default function CustomerIntelligenceWidget({ customerId }: { customerId?
       {expanded && (
         <div className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-[#1E293B] rounded-xl p-3.5 border border-stone-800">
+            <div className="bg-stone-800 rounded-xl p-3.5 border border-stone-800">
               <p className="text-xs font-semibold text-amber-300 mb-2 flex items-center gap-1.5">
                 <Target className="w-3.5 h-3.5" /> Primary Buying Motivations
               </p>
@@ -43,7 +43,7 @@ export default function CustomerIntelligenceWidget({ customerId }: { customerId?
               </ul>
             </div>
 
-            <div className="bg-[#1E293B] rounded-xl p-3.5 border border-stone-800">
+            <div className="bg-stone-800 rounded-xl p-3.5 border border-stone-800">
               <p className="text-xs font-semibold text-stone-300 mb-2 flex items-center gap-1.5">
                 <MessageSquare className="w-3.5 h-3.5 text-blue-400" /> Common Objections & Solutions
               </p>

@@ -115,7 +115,7 @@ export default function PartnerDetailPage() {
   }
 
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return (
@@ -152,7 +152,7 @@ export default function PartnerDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
@@ -215,7 +215,7 @@ export default function PartnerDetailPage() {
             <Plus className="w-4 h-4" /> Log visit
           </button>
           <Link href={`/orders/new?partner=${id}`}
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#162B47]">
+            className="flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-xl text-sm hover:bg-stone-900">
             <Plus className="w-4 h-4" /> New order
           </Link>
           <Link href={`/stock/partner-trade?partner_id=${id}`}
@@ -275,7 +275,7 @@ export default function PartnerDetailPage() {
             <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
               <h2 className="font-medium text-stone-900">Visit history ({visits.length})</h2>
               <button onClick={() => setShowVisitModal(true)}
-                className="text-xs text-[#1E3A5F] hover:underline flex items-center gap-1">
+                className="text-xs text-stone-800 hover:underline flex items-center gap-1">
                 <Plus className="w-3.5 h-3.5" /> Log visit
               </button>
             </div>
@@ -328,7 +328,7 @@ export default function PartnerDetailPage() {
             <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
               <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
                 <h2 className="font-medium text-stone-900">Loose Diamond Trades ({trades.length})</h2>
-                <Link href="/stock/partner-trades" className="text-xs text-[#1E3A5F] hover:underline">
+                <Link href="/stock/partner-trades" className="text-xs text-stone-800 hover:underline">
                   Manage trades →
                 </Link>
               </div>
@@ -438,7 +438,7 @@ export default function PartnerDetailPage() {
                 <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border border-stone-200 hover:bg-stone-50">
                   <input
                     type="checkbox"
-                    className="mt-0.5 w-4 h-4 accent-[#1E3A5F]"
+                    className="mt-0.5 w-4 h-4 accent-stone-800"
                     checked={form.notify_whatsapp !== false}
                     onChange={e => setForm((prev: any) => ({ ...prev, notify_whatsapp: e.target.checked }))}
                   />
@@ -467,7 +467,7 @@ export default function PartnerDetailPage() {
                 <input type="checkbox" id="require_approval"
                   checked={form.credit_approval_required || false}
                   onChange={e => setForm(prev => ({ ...prev, credit_approval_required: e.target.checked }))}
-                  className="w-4 h-4 rounded border-stone-300 text-[#C49C64] focus:ring-[#C49C64]" />
+                  className="w-4 h-4 rounded border-stone-300 text-accent focus:ring-accent" />
                 <label htmlFor="require_approval" className="text-sm text-stone-600 cursor-pointer">
                   Require manual approval for all orders
                 </label>

@@ -105,7 +105,7 @@ export default function PartnersPage() {
             <span className="sm:hidden">Leads</span>
           </Link>
           <Link href="/partners/new"
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] transition-colors">
+            className="flex items-center gap-2 bg-stone-800 text-white px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 transition-colors">
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Add partner</span>
             <span className="sm:hidden">Add</span>
@@ -218,7 +218,7 @@ export default function PartnersPage() {
                     No partners match your filters.{' '}
                     <button
                       onClick={() => { setSearch(''); setStatusFilter('all'); setStageFilter('all'); setCircuitFilter('all') }}
-                      className="text-[#1E3A5F] hover:underline"
+                      className="text-stone-800 hover:underline"
                     >Clear filters</button>
                   </span>
                 )}
@@ -279,7 +279,7 @@ export default function PartnersPage() {
                   No partners match your filters.{' '}
                   <button
                     onClick={() => { setSearch(''); setStatusFilter('all'); setStageFilter('all'); setCircuitFilter('all') }}
-                    className="text-[#1E3A5F] hover:underline"
+                    className="text-stone-800 hover:underline"
                   >Clear filters</button>
                 </span>
               )}

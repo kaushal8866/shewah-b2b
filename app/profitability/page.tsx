@@ -260,16 +260,16 @@ export default function ProfitabilityPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}
-            className="bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none">
+            className="bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none">
             <option value="realised">Dispatched / delivered only</option>
             <option value="all">All open orders (provisional)</option>
           </select>
           <select value={range} onChange={e => setRange(e.target.value as Range)}
-            className="bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none">
+            className="bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none">
             {RANGE_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
           <button onClick={downloadCsv} disabled={!filtered.length}
-            className="flex items-center gap-1.5 bg-white border border-stone-200 hover:border-[#1E3A5F] text-stone-700 px-3 py-2 rounded-lg text-sm disabled:opacity-50">
+            className="flex items-center gap-1.5 bg-white border border-stone-200 hover:border-stone-800 text-stone-700 px-3 py-2 rounded-lg text-sm disabled:opacity-50">
             <Download className="w-4 h-4" /> CSV
           </button>
         </div>
@@ -316,7 +316,7 @@ export default function ProfitabilityPage() {
                     <p className="text-[10px] text-stone-400">{m.revenue ? `₹${(m.revenue/1000).toFixed(0)}K` : ''}</p>
                     <div className="flex items-end gap-0.5" style={{ height: 140 }}>
                       <div className="w-3 bg-blue-200 rounded-t" style={{ height: `${revH}px` }} />
-                      <div className="w-3 bg-[#1E3A5F] rounded-t" style={{ height: `${marH}px` }} />
+                      <div className="w-3 bg-stone-800 rounded-t" style={{ height: `${marH}px` }} />
                     </div>
                     <p className="text-xs text-stone-400">{m.label}</p>
                   </div>
@@ -325,7 +325,7 @@ export default function ProfitabilityPage() {
             </div>
             <div className="flex items-center gap-4 mt-3 text-xs text-stone-500">
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-blue-200 rounded-sm" /> Revenue</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#1E3A5F] rounded-sm" /> Margin</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-stone-800 rounded-sm" /> Margin</span>
             </div>
           </div>
         )}
@@ -444,7 +444,7 @@ export default function ProfitabilityPage() {
                         {fmtPct(m, r)}
                       </td>
                       <td className="px-4 py-2.5 text-right">
-                        <Link href={`/orders/${o.id}`} className="text-stone-300 hover:text-[#1E3A5F]">
+                        <Link href={`/orders/${o.id}`} className="text-stone-300 hover:text-stone-800">
                           <ChevronRight className="w-4 h-4 inline" />
                         </Link>
                       </td>
@@ -518,14 +518,14 @@ function GoldSourceBreakdown({ rows }: { rows: { name: string; orders: number; r
       <div className="flex w-full h-2.5 rounded-full overflow-hidden bg-stone-100">
         {rows.map((r, i) => {
           const pct = (Math.abs(r.margin) / totalMargin) * 100
-          const bg = i === 0 ? '#1E3A5F' : '#7B8295'
+          const bg = i === 0 ? '#222222' : '#767676'
           return <div key={r.name} style={{ width: `${pct}%`, background: bg }} />
         })}
       </div>
       <div className="space-y-3">
         {rows.map((r, i) => {
           const pct = r.revenue ? (r.margin / r.revenue) * 100 : 0
-          const dotBg = i === 0 ? '#1E3A5F' : '#7B8295'
+          const dotBg = i === 0 ? '#222222' : '#767676'
           return (
             <div key={r.name}>
               <div className="flex items-center gap-2 mb-1">

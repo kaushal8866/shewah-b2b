@@ -7,7 +7,7 @@ export default function CadIntelligenceWidget({ cadRequestId }: { cadRequestId?:
   const [expanded, setExpanded] = useState(true)
 
   return (
-    <div className="bg-[#0F172A] text-stone-100 rounded-2xl p-5 border border-stone-800 shadow-xl my-6 font-sans">
+    <div className="bg-stone-900 text-stone-100 rounded-2xl p-5 border border-stone-800 shadow-xl my-6 font-sans">
       <div className="flex items-center justify-between border-b border-stone-800 pb-3 mb-4">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-stone-950">
@@ -16,7 +16,7 @@ export default function CadIntelligenceWidget({ cadRequestId }: { cadRequestId?:
           <div>
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               AURORA CAD & Manufacturing Intelligence
-              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">48h SLA Evaluated</span>
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 border border-amber-500/30">48h SLA Evaluated</span>
             </h3>
             <p className="text-xs text-stone-400">CAD Request: #{cadRequestId || 'SH-CAD-2026-004'} · Mfg Agent Active</p>
           </div>
@@ -33,7 +33,7 @@ export default function CadIntelligenceWidget({ cadRequestId }: { cadRequestId?:
         <div className="space-y-4 text-xs">
           {/* Key Metrics Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div className="bg-[#1E293B] rounded-xl p-3 border border-stone-800">
+            <div className="bg-stone-800 rounded-xl p-3 border border-stone-800">
               <div className="flex items-center gap-1.5 text-emerald-400 mb-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span className="font-medium text-[11px]">Casting Void Risk</span>
@@ -42,7 +42,7 @@ export default function CadIntelligenceWidget({ cadRequestId }: { cadRequestId?:
               <p className="text-[10px] text-stone-400 font-mono mt-0.5">Prong thickness 1.1mm verified</p>
             </div>
 
-            <div className="bg-[#1E293B] rounded-xl p-3 border border-stone-800">
+            <div className="bg-stone-800 rounded-xl p-3 border border-stone-800">
               <div className="flex items-center gap-1.5 text-amber-400 mb-1">
                 <Wrench className="w-3.5 h-3.5" />
                 <span className="font-medium text-[11px]">Karigar Setting Time</span>
@@ -51,7 +51,7 @@ export default function CadIntelligenceWidget({ cadRequestId }: { cadRequestId?:
               <p className="text-[10px] text-amber-400 font-mono mt-0.5">Standard Setting Effort</p>
             </div>
 
-            <div className="bg-[#1E293B] rounded-xl p-3 border border-stone-800 col-span-2 sm:col-span-1">
+            <div className="bg-stone-800 rounded-xl p-3 border border-stone-800 col-span-2 sm:col-span-1">
               <div className="flex items-center gap-1.5 text-blue-400 mb-1">
                 <DollarSign className="w-3.5 h-3.5" />
                 <span className="font-medium text-[11px]">Gold Weight Est. (18K)</span>
@@ -62,7 +62,7 @@ export default function CadIntelligenceWidget({ cadRequestId }: { cadRequestId?:
           </div>
 
           {/* Design Simplification & Cost Optimization */}
-          <div className="bg-[#1E293B] rounded-xl p-3.5 border border-stone-800">
+          <div className="bg-stone-800 rounded-xl p-3.5 border border-stone-800">
             <p className="text-xs font-semibold text-amber-300 mb-2 flex items-center gap-1.5">
               <Lightbulb className="w-3.5 h-3.5" /> AI Design Simplification Recommendation
             </p>

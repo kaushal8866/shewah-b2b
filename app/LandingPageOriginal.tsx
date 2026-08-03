@@ -46,7 +46,7 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
       <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-stone-100">
         <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-stone-800 flex items-center justify-center">
               <Diamond className="w-4 h-4 text-white" />
             </div>
             <div className="leading-none">
@@ -61,7 +61,7 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
             <Link href="/login" className="hover:text-stone-900">Partner sign in</Link>
           </nav>
           <a href="#signup"
-            className="inline-flex items-center gap-1.5 bg-[#1E3A5F] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-[#172d49]">
+            className="inline-flex items-center gap-1.5 bg-stone-800 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-stone-900">
             Become a partner <ArrowRight className="w-3.5 h-3.5" />
           </a>
         </div>
@@ -69,15 +69,15 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
 
       {/* ── Hero ──────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F5F1EA] via-white to-white" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-b from-stone-50 via-white to-white" aria-hidden />
         <div className="relative max-w-6xl mx-auto px-5 pt-12 pb-16 md:pt-20 md:pb-24 grid md:grid-cols-2 gap-10 items-center">
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-4">{HERO.eyebrow}</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-stone-800 font-semibold mb-4">{HERO.eyebrow}</p>
             <h1 className="text-3xl md:text-5xl font-serif leading-[1.08] text-stone-900">{HERO.headline}</h1>
             <p className="mt-5 text-base md:text-lg text-stone-600 leading-relaxed">{HERO.subhead}</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <a href="#signup"
-                className="inline-flex items-center gap-1.5 bg-[#1E3A5F] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#172d49]">
+                className="inline-flex items-center gap-1.5 bg-stone-800 text-white px-5 py-3 rounded-xl font-medium hover:bg-stone-900">
                 {HERO.primaryCta} <ArrowRight className="w-4 h-4" />
               </a>
               <a href="#how-it-works"
@@ -98,7 +98,7 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
       </section>
 
       {/* ── Stats strip ───────────────────────────────────── */}
-      <section className="bg-[#1E3A5F] text-white">
+      <section className="bg-stone-800 text-white">
         <div className="max-w-6xl mx-auto px-5 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
           {STATS.map(s => (
             <div key={s.label}>
@@ -112,14 +112,14 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
       {/* ── Value props ───────────────────────────────────── */}
       <section id="what-you-get" className="max-w-6xl mx-auto px-5 py-16 md:py-24">
         <div className="max-w-2xl">
-          <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">What you get</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-stone-800 font-semibold mb-3">What you get</p>
           <h2 className="text-2xl md:text-4xl font-serif leading-tight">A complete back-office for the diamond side of your store.</h2>
           <p className="mt-4 text-stone-600">No new software to learn. No setup fee. No exclusivity. Just the catalog, the tooling and the team you wish your existing manufacturer had.</p>
         </div>
         <div className="mt-12 grid md:grid-cols-2 gap-6">
           {VALUE_PROPS.map(v => (
             <div key={v.title} className="bg-stone-50 rounded-2xl p-6 border border-stone-100">
-              <div className="w-9 h-9 rounded-lg bg-[#1E3A5F]/10 text-[#1E3A5F] flex items-center justify-center mb-4">
+              <div className="w-9 h-9 rounded-lg bg-stone-800/10 text-stone-800 flex items-center justify-center mb-4">
                 <Check className="w-4 h-4" />
               </div>
               <h3 className="font-semibold text-lg leading-snug">{v.title}</h3>
@@ -133,13 +133,13 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
       <section id="how-it-works" className="bg-stone-50">
         <div className="max-w-6xl mx-auto px-5 py-16 md:py-24">
           <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">How it works</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-stone-800 font-semibold mb-3">How it works</p>
             <h2 className="text-2xl md:text-4xl font-serif leading-tight">From hello to your first order in a week.</h2>
           </div>
           <div className="mt-12 grid md:grid-cols-4 gap-6">
             {HOW_IT_WORKS.map((s, i) => (
               <div key={s.step} className="relative">
-                <p className="text-[#1E3A5F]/30 font-serif text-3xl">{s.step}</p>
+                <p className="text-stone-800/30 font-serif text-3xl">{s.step}</p>
                 <h3 className="mt-2 font-semibold text-base">{s.title}</h3>
                 <p className="mt-2 text-sm text-stone-600 leading-relaxed">{s.body}</p>
                 {i < HOW_IT_WORKS.length - 1 && (
@@ -169,7 +169,7 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
       <section id="faq" className="bg-stone-50">
         <div className="max-w-3xl mx-auto px-5 py-16 md:py-24">
           <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#1E3A5F] font-semibold mb-3">FAQ</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-stone-800 font-semibold mb-3">FAQ</p>
             <h2 className="text-2xl md:text-4xl font-serif leading-tight">Questions retailers usually ask first.</h2>
           </div>
           <div className="mt-10 divide-y divide-stone-200 border-y border-stone-200">
@@ -194,12 +194,12 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
       </section>
 
       {/* ── Final CTA ─────────────────────────────────────── */}
-      <section className="bg-[#1E3A5F] text-white">
+      <section className="bg-stone-800 text-white">
         <div className="max-w-4xl mx-auto px-5 py-16 md:py-20 text-center">
           <h2 className="text-2xl md:text-4xl font-serif leading-tight">Ready to add the Shewah catalog to your store?</h2>
           <p className="mt-4 text-white/70">Tell us a bit about your store — we&rsquo;ll WhatsApp you within one business day.</p>
           <a href="#signup"
-            className="mt-7 inline-flex items-center gap-1.5 bg-white text-[#1E3A5F] px-6 py-3 rounded-xl font-medium hover:bg-stone-100">
+            className="mt-7 inline-flex items-center gap-1.5 bg-white text-stone-800 px-6 py-3 rounded-xl font-medium hover:bg-stone-100">
             {HERO.primaryCta} <ArrowRight className="w-4 h-4" />
           </a>
         </div>
@@ -210,7 +210,7 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
         <div className="max-w-6xl mx-auto px-5 py-10 grid md:grid-cols-3 gap-8 text-sm">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#1E3A5F] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center">
                 <Diamond className="w-4 h-4 text-white" />
               </div>
               <p className="text-white font-semibold">{BRAND.name}</p>
@@ -236,7 +236,7 @@ export default function LandingPageOriginal({ whatsappE164 }: { whatsappE164?: s
       <a
         href={`https://wa.me/${wa}?text=${encodeURIComponent('Hi Shewah, I run a jewellery store and would like to learn more about partnering.')}`}
         target="_blank" rel="noopener noreferrer"
-        className="fixed bottom-5 right-5 z-50 bg-[#25D366] text-white rounded-full px-4 py-3 shadow-lg flex items-center gap-2 text-sm font-medium hover:bg-[#1da851]">
+        className="fixed bottom-5 right-5 z-50 bg-[#25D366] text-white px-4 py-3 shadow-lg flex items-center gap-2 text-sm font-medium hover:bg-[#1da851]">
         <MessageCircle className="w-4 h-4" /> Chat on WhatsApp
       </a>
     </div>

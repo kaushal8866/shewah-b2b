@@ -186,7 +186,7 @@ export default function EnquiryDetailPage() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
-          <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${ENQUIRY_STATUS_STYLE[enquiry.status]}`}>
+          <span className={`text-xs px-2.5 py-1 border font-medium ${ENQUIRY_STATUS_STYLE[enquiry.status]}`}>
             {ENQUIRY_STATUS_LABEL[enquiry.status]}
           </span>
           {busy && <Loader2 className="w-3 h-3 animate-spin text-stone-400" />}
@@ -271,7 +271,7 @@ export default function EnquiryDetailPage() {
           <Card title={`Reference images (${enquiry.reference_image_urls?.length || 0})`}
             action={
               <button onClick={() => fileInputRef.current?.click()}
-                className="text-xs inline-flex items-center gap-1 text-[#1E3A5F] hover:text-[#172d49]">
+                className="text-xs inline-flex items-center gap-1 text-stone-800 hover:text-stone-900">
                 <ImagePlus className="w-3.5 h-3.5" /> Add (or paste)
               </button>
             }>
@@ -303,7 +303,7 @@ export default function EnquiryDetailPage() {
                 placeholder="Add an internal note (visible to the team only)…"
                 className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm" />
               <button onClick={addNote} disabled={busy || !noteText.trim()}
-                className="px-3 py-2 bg-[#1E3A5F] text-white text-sm rounded-lg disabled:opacity-50 inline-flex items-center gap-1.5">
+                className="px-3 py-2 bg-stone-800 text-white text-sm rounded-lg disabled:opacity-50 inline-flex items-center gap-1.5">
                 <Send className="w-3.5 h-3.5" /> Post
               </button>
             </div>
@@ -335,7 +335,7 @@ export default function EnquiryDetailPage() {
         <div className="space-y-5">
           <Card title="Customer">
             <Link href={`/customers/${customer.id}`} className="block group">
-              <p className="font-semibold text-stone-900 group-hover:text-[#1E3A5F]">{customer.full_name}</p>
+              <p className="font-semibold text-stone-900 group-hover:text-stone-800">{customer.full_name}</p>
               <p className="text-xs text-stone-500 mt-0.5">View profile →</p>
             </Link>
             <div className="mt-3 space-y-1.5 text-sm">

@@ -117,7 +117,7 @@ export default function OrderChangeRequestsInboxPage() {
               <Link
                 key={r.id}
                 href={r.order ? `/orders/${r.order.id}` : '#'}
-                className="block bg-white border border-stone-200 hover:border-[#1E3A5F]/40 hover:shadow-sm transition rounded-2xl p-4"
+                className="block bg-white border border-stone-200 hover:border-stone-800/40 hover:shadow-sm transition rounded-2xl p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -130,7 +130,7 @@ export default function OrderChangeRequestsInboxPage() {
                         {r.partner?.store_name || 'Retailer'}
                         {r.partner?.city ? `, ${r.partner.city}` : ''}
                       </span>
-                      <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+                      <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 font-medium">
                         Pending
                       </span>
                     </div>

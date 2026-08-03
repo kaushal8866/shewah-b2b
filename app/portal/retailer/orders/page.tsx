@@ -73,7 +73,7 @@ export default function RetailerOrdersPage() {
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#1E3A5F]/15 text-[#1E3A5F] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-stone-800/15 text-stone-800 flex items-center justify-center">
           <ShoppingBag className="w-5 h-5" />
         </div>
         <div>
@@ -106,7 +106,7 @@ export default function RetailerOrdersPage() {
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-stone-200 p-10 text-center">
           <p className="text-stone-400 text-sm mb-3">No orders to show.</p>
-          <Link href="/portal/retailer" className="text-sm text-[#1E3A5F] hover:underline">Browse the catalog →</Link>
+          <Link href="/portal/retailer" className="text-sm text-stone-800 hover:underline">Browse the catalog →</Link>
         </div>
       ) : (
         <div className="space-y-2">
@@ -114,7 +114,7 @@ export default function RetailerOrdersPage() {
             const photo = o.product?.photo_urls?.[0]
             return (
               <Link key={o.id} href={`/portal/retailer/orders/${o.id}`}
-                className="flex items-center gap-3 bg-white border border-stone-200 hover:border-[#1E3A5F] rounded-xl p-3 transition-colors">
+                className="flex items-center gap-3 bg-white border border-stone-200 hover:border-stone-800 rounded-xl p-3 transition-colors">
                 <div className="w-14 h-14 rounded-lg bg-stone-50 overflow-hidden shrink-0 flex items-center justify-center">
                   {photo ? (
                     <img src={photo} alt="" className="w-full h-full object-cover" />
@@ -125,11 +125,11 @@ export default function RetailerOrdersPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
                     <span className="font-medium text-stone-900 text-sm">{o.order_number}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[o.status] || 'bg-stone-100 text-stone-600'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 font-medium ${STATUS_STYLES[o.status] || 'bg-stone-100 text-stone-600'}`}>
                       {STATUS_LABEL[o.status] || o.status?.replace(/_/g, ' ')}
                     </span>
                     {o.type === 'custom' && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 font-medium">CUSTOM</span>
+                      <span className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 font-medium">CUSTOM</span>
                     )}
                   </div>
                   <p className="text-sm text-stone-700 truncate">

@@ -104,7 +104,7 @@ export default function VendorDetailPage() {
     router.push('/vendors')
   }
 
-  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] outline-none bg-white"
+  const inp = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 outline-none bg-white"
   const lbl = "block text-xs font-medium text-stone-500 mb-1"
 
   if (loading) return <div className="p-4 lg:p-7 text-stone-400 text-sm">Loading...</div>
@@ -140,7 +140,7 @@ export default function VendorDetailPage() {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#1E3A5F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50">
                 <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
               </button>
             </>
@@ -175,7 +175,7 @@ export default function VendorDetailPage() {
               </a>
             )}
             <Link href="/vendors/inventory/new"
-              className="flex items-center gap-2 bg-[#1E3A5F] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#162B47]">
+              className="flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-xl text-sm hover:bg-stone-900">
               <Plus className="w-4 h-4" /> Add inventory
             </Link>
           </div>
@@ -228,7 +228,7 @@ export default function VendorDetailPage() {
             <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
               <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
                 <h2 className="font-medium text-stone-900">Inventory ({inventory.length})</h2>
-                <Link href="/vendors/inventory/new" className="text-xs text-[#1E3A5F] hover:underline">+ Add item</Link>
+                <Link href="/vendors/inventory/new" className="text-xs text-stone-800 hover:underline">+ Add item</Link>
               </div>
               <div className="divide-y divide-stone-50">
                 {inventory.map(item => (

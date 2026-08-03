@@ -65,8 +65,8 @@ function NewPartnerForm() {
     router.push(`/partners/${data.id}`)
   }
 
-  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F] outline-none"
-  const select = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-[#1E3A5F] outline-none"
+  const input = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:border-stone-800 focus:ring-1 focus:ring-stone-800 outline-none"
+  const select = "w-full border border-stone-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-stone-800 outline-none"
   const label = "block text-xs font-medium text-stone-500 mb-1"
 
   return (
@@ -218,7 +218,7 @@ function NewPartnerForm() {
             Cancel
           </Link>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 bg-[#1E3A5F] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#162B47] disabled:opacity-50 transition-colors">
+            className="flex items-center gap-2 bg-stone-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Save partner'}
           </button>
