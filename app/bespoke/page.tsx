@@ -30,7 +30,7 @@ const GST_RATE = 0.03
 
 const ENTRY_COSTS = [
   { item: '9KT rose gold (1.76g)', amount: 9532 },
-  { item: 'Diamonds (0.23ct)',     amount: 3500 },
+  { item: 'Lab-grown diamonds (0.23ct)', amount: 3500 },
   { item: 'Making charges',        amount: 1346 },
 ]
 
@@ -48,8 +48,8 @@ const ENTRY_QUOTE = [
 const PRICING = {
   from: inr(ENTRY_TOTAL),
   tiers: [
-    { label: 'Solitaire rings', from: inr(ENTRY_TOTAL), note: '9KT rose gold, 0.23ct certified diamonds' },
-    { label: 'Natural diamond', from: '₹45,000', note: 'IGI / GIA certified stone' },
+    { label: 'Lab-grown diamond', from: inr(ENTRY_TOTAL), note: '9KT rose gold, 0.23ct, IGI certified' },
+    { label: 'Natural diamond',   from: '₹45,000',        note: 'Same settings, mined stone, GIA certified' },
   ],
 }
 
@@ -59,16 +59,16 @@ const WHATSAPP_INTRO = 'Hi Shewah — I would like a price for a bespoke piece.'
 // "BIS 916" denotes 22K specifically — the entry piece is 9KT, so the
 // generic hallmark claim is the accurate one to make here.
 const TRUST = [
-  { k: 'IGI & GIA',    v: 'Certified stones' },
+  { k: 'Lab-grown',    v: 'IGI certified stones' },
   { k: 'BIS',          v: 'Hallmarked gold' },
   { k: '12 days',      v: 'Design to doorstep' },
   { k: 'Insured',      v: 'Doorstep delivery' },
 ]
 
 const PROOF = [
-  { n: '12,000+', l: 'Pieces delivered' },
-  { n: '4,000+',  l: 'Customers served' },
-  { n: '64+',     l: 'Cities' },
+  { n: '12,000+', l: 'Pieces made for jewellers' },
+  { n: '180+',    l: 'Karigars in our workshop' },
+  { n: '64',      l: 'Cities supplied' },
 ]
 
 const STEPS = [
@@ -81,7 +81,7 @@ const STEPS = [
 const FAQ = [
   {
     q: 'What does a bespoke ring actually cost?',
-    a: `Solitaire rings start at ${PRICING.tiers[0].from} — that is 9KT rose gold (1.76g) with 0.23ct certified diamonds, making charges and GST all in. Natural certified diamonds start at ${PRICING.tiers[1].from}. Every quote is itemised the same way before anything is made.`,
+    a: `Solitaire rings start at ${PRICING.tiers[0].from} — 9KT rose gold (1.76g) with 0.23ct of IGI-certified lab-grown diamonds, making charges and GST all in. Mined diamonds start at ${PRICING.tiers[1].from} for the same settings. Every quote is itemised the same way before anything is made.`,
   },
   {
     q: 'How long does it take?',
@@ -89,7 +89,7 @@ const FAQ = [
   },
   {
     q: 'Are the diamonds certified?',
-    a: `Yes — IGI or GIA certified, and the certificate ships with the piece. Gold is BIS hallmarked at its stated purity: the ${PRICING.from} ring is 9KT rose gold, and higher karatages are quoted on request.`,
+    a: `Yes. Lab-grown stones are IGI certified, mined stones GIA certified, and the certificate ships with the piece — check its number on the lab's own site before you pay. Gold is BIS hallmarked at its stated purity: the ${PRICING.from} ring is 9KT rose gold, and higher karatages are quoted on request.`,
   },
   {
     q: 'What if I do not like the design?',
@@ -390,7 +390,7 @@ export default function BespokePage() {
                 Your design, made to order — from {PRICING.from}.
               </h1>
               <p className="mt-5 max-w-xl text-sm leading-relaxed text-white/75 sm:text-base">
-                Certified diamonds, hallmarked gold, an itemised quote before anything is
+                IGI-certified lab-grown diamonds, hallmarked gold, an itemised quote before anything is
                 made. See real prices without booking a call.
               </p>
               <a
@@ -625,7 +625,9 @@ export default function BespokePage() {
       <footer className="border-t border-stone-200">
         <div className="mx-auto max-w-5xl px-5 py-10">
           <p className="text-[10px] uppercase tracking-micro text-stone-400">
-            © 2026 Shewah · Private jewellery atelier
+            © 2026 Shewah · Private jewellery atelier · Surat, Gujarat, India
+            <br />
+            Questions or complaints: WhatsApp +91 96622 66360
           </p>
         </div>
       </footer>
