@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import Image from 'next/image'
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -118,6 +118,187 @@ const empty = {
   first_name: '', whatsapp: '', city: '',
   budget: '', occasion: '', jewellery_type: 'ring',
   website: '', // honeypot
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Price calculator — the transitional call to action.
+
+   It hands over the thing the visitor came for, in full, before asking for
+   anything at all. No name, no number: the obligation has to run toward the
+   visitor first, which is precisely what the previous ad spend got backwards.
+
+   The arithmetic happens server-side in /api/public/ring-price, on the same
+   engine and the same live rates the internal quoting system uses, so a price
+   shown here cannot drift from the price actually quoted. Keeping it on the
+   server also means the rate tables are never shipped to the browser, where
+   they would amount to a current price list for anyone who opened devtools.
+   ────────────────────────────────────────────────────────────────────────── */
+
+const CARATS = [
+  { v: 0.25, label: '0.25 ct' },
+  { v: 0.5,  label: '0.50 ct' },
+  { v: 0.75, label: '0.75 ct' },
+  { v: 1,    label: '1.00 ct' },
+]
+const KARATS = [
+  { v: 9,  label: '9KT' },
+  { v: 14, label: '14KT' },
+  { v: 18, label: '18KT' },
+]
+const SETTINGS = [
+  { v: 'solitaire',   label: 'Solitaire' },
+  { v: 'halo',        label: 'Halo' },
+  { v: 'three_stone', label: 'Three stone' },
+]
+
+type PriceLine = { item: string; amount: number }
+type PriceResult = {
+  ok: true
+  lines: PriceLine[]
+  subtotal: number
+  gst: number
+  total: number
+  note: string
+}
+
+const rupees = (n: number) => `₹${n.toLocaleString('en-IN')}`
+
+function Choice({
+  options, value, onChange, label,
+}: {
+  options: { v: any; label: string }[]
+  value: any
+  onChange: (v: any) => void
+  label: string
+}) {
+  return (
+    <fieldset className="flex flex-col gap-3">
+      <legend className="text-[10px] uppercase tracking-micro text-stone-500">{label}</legend>
+      <div className="flex flex-wrap gap-2">
+        {options.map((o) => {
+          const active = o.v === value
+          return (
+            <button
+              key={String(o.v)}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(o.v)}
+              className={`border px-4 py-2.5 text-[11px] uppercase tracking-cta transition-colors ${
+                active
+                  ? 'border-stone-900 bg-stone-900 text-white'
+                  : 'border-stone-300 text-stone-600 hover:border-stone-900 hover:text-stone-900'
+              }`}
+            >
+              {o.label}
+            </button>
+          )
+        })}
+      </div>
+    </fieldset>
+  )
+}
+
+function PriceCalculator() {
+  const [carat, setCarat] = useState(0.25)
+  const [karat, setKarat] = useState(9)
+  const [setting, setSetting] = useState('solitaire')
+  const [result, setResult] = useState<PriceResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    fetch('/api/public/ring-price', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ carat, karat, setting, stone: 'lgd' }),
+    })
+      .then(async (r) => {
+        const j = await r.json().catch(() => ({}))
+        if (cancelled) return
+        if (!r.ok || !j?.ok) {
+          setResult(null)
+          setError(j?.error || 'Could not price that combination just now.')
+          return
+        }
+        setResult(j)
+      })
+      .catch(() => { if (!cancelled) setError('Network error. Please try again.') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [carat, karat, setting])
+
+  const spec = `${CARATS.find((c) => c.v === carat)?.label}, ${karat}KT, ${
+    SETTINGS.find((s) => s.v === setting)?.label
+  }`
+  const waHref = `https://wa.me/${WHATSAPP_E164}?text=${encodeURIComponent(
+    `Hi Shewah — I priced a ring on your site: ${spec}${
+      result ? ` (about ${rupees(result.total)})` : ''
+    }. I'd like the full itemised quote.`,
+  )}`
+
+  return (
+    <div className="mt-10 border border-stone-200 px-6 py-8 sm:px-10 sm:py-10">
+      <p className="text-[10px] uppercase tracking-eyebrow text-stone-400">
+        Price it yourself &mdash; no phone number
+      </p>
+      <h3 className="mt-3 font-serif text-2xl leading-tight text-stone-900 sm:text-3xl">
+        Build the ring. See the price change.
+      </h3>
+
+      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
+        <div className="flex flex-col gap-7">
+          <Choice label="Centre stone" options={CARATS} value={carat} onChange={setCarat} />
+          <Choice label="Gold" options={KARATS} value={karat} onChange={setKarat} />
+          <Choice label="Setting" options={SETTINGS} value={setting} onChange={setSetting} />
+          <p className="max-w-md text-[12px] leading-relaxed text-stone-500">
+            Lab-grown diamonds, IGI certified. Gold is BIS hallmarked at the purity you
+            pick. Prices move with the daily gold rate, so this is what the ring costs
+            today.
+          </p>
+        </div>
+
+        <div className="border border-stone-200 bg-stone-50 p-6" aria-live="polite" aria-busy={loading}>
+          {error ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-[13px] leading-relaxed text-stone-600">{error}</p>
+              <a href="#brief" className="text-[11px] uppercase tracking-cta text-stone-900 underline underline-offset-4">
+                Send a brief instead
+              </a>
+            </div>
+          ) : result ? (
+            <div className={loading ? 'opacity-50 transition-opacity' : 'transition-opacity'}>
+              <dl>
+                {result.lines.map((l) => (
+                  <div key={l.item} className="flex items-baseline justify-between gap-4 border-b border-stone-200 py-2.5">
+                    <dt className="text-[13px] text-stone-600">{l.item}</dt>
+                    <dd className="font-mono text-[13px] tabular-nums text-stone-900">{rupees(l.amount)}</dd>
+                  </div>
+                ))}
+                <div className="flex items-baseline justify-between gap-4 pt-4">
+                  <dt className="text-[10px] uppercase tracking-micro text-stone-900">Total</dt>
+                  <dd className="font-serif text-2xl text-stone-900 tabular-nums">{rupees(result.total)}</dd>
+                </div>
+              </dl>
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 block border border-stone-900 bg-stone-900 px-5 py-3 text-center text-[11px] uppercase tracking-cta text-white transition-colors hover:bg-accent hover:border-accent"
+              >
+                Get this itemised on WhatsApp
+              </a>
+              <p className="mt-3 text-[11px] leading-relaxed text-stone-500">{result.note}</p>
+            </div>
+          ) : (
+            <p className="text-[13px] text-stone-500">Pricing&hellip;</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function BespokePage() {
@@ -294,6 +475,8 @@ export default function BespokePage() {
             gold rate on the day you order.
           </p>
         </div>
+
+        <PriceCalculator />
       </section>
 
       {/* ── Process ────────────────────────────────────────────────── */}
