@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { buildItemBreakdown, computeQuoteAdvance } from '@/lib/quoteCompute'
 
 export const dynamic = 'force-dynamic'
 
@@ -100,6 +101,58 @@ export async function GET(
     return NextResponse.json({ error: itemsError.message }, { status: 500 })
   }
 
+  // 4b. Backfill shape names so the break-up table can name each stone. Older
+  // diamond rows store only shape_id.
+  const { data: shapes } = await supabaseAdmin.from('diamond_shapes').select('id, name')
+  const shapeMap = new Map((shapes || []).map((s: any) => [s.id, s.name]))
+  const namedItems = (items || []).map((item: any) => ({
+    ...item,
+    diamonds: Array.isArray(item.diamonds)
+      ? item.diamonds.map((d: any) => ({
+          ...d,
+          shape_name: d.shape_name || (d.shape_id ? shapeMap.get(d.shape_id) : null) || null,
+        }))
+      : [],
+  }))
+
+  // 4c. Advance. Once the customer has approved, the stored figures are the
+  // agreed ones and must not be recomputed — the gold rate moves daily and the
+  // amount they committed to cannot move under them.
+  const isFrozen = quote.advance_status && quote.advance_status !== 'not_requested'
+  const computed = computeQuoteAdvance(namedItems, quote.margin_pct || 0, quote.grand_total)
+  const advance = {
+    status: quote.advance_status || 'not_requested',
+    due: isFrozen ? Number(quote.advance_due) : computed.advance_due,
+    gold_value: isFrozen ? Number(quote.advance_gold_value) : computed.gold_value,
+    diamond_value: isFrozen ? Number(quote.advance_diamond_value) : computed.diamond_value,
+    gold_pct: isFrozen ? Number(quote.advance_gold_pct) : computed.gold_pct,
+    diamond_pct: isFrozen ? Number(quote.advance_diamond_pct) : computed.diamond_pct,
+    balance_due: isFrozen
+      ? Math.max(Number(quote.grand_total) - Number(quote.advance_due), 0)
+      : computed.balance_due,
+    reference: quote.advance_reference || null,
+    proof_url: quote.advance_proof_url || null,
+    paid_amount: quote.advance_paid_amount ?? null,
+    submitted_at: quote.advance_submitted_at || null,
+    verified_at: quote.advance_verified_at || null,
+    note: quote.advance_note || null,
+  }
+
+  // Bank details only once money is actually due — no reason to publish them
+  // on a quote the customer has not approved.
+  let bank: Record<string, string> | null = null
+  if (advance.status === 'awaiting_payment' || advance.status === 'proof_submitted') {
+    const { data: settings } = await supabaseAdmin.from('settings').select('*')
+    const settingMap = new Map((settings || []).map((s: any) => [s.key, s.value]))
+    bank = {
+      account_name: settingMap.get('bank_details_account_name') || 'Shewah',
+      bank_name: settingMap.get('bank_details_bank_name') || '',
+      account_no: settingMap.get('bank_details_account_no') || '',
+      ifsc: settingMap.get('bank_details_ifsc') || '',
+      upi: settingMap.get('bank_details_upi') || '',
+    }
+  }
+
   // 5. Sanitize payload (remove COGS, margins, and karigar details)
   const sanitizedQuote = {
     id: quote.id,
@@ -130,7 +183,7 @@ export async function GET(
     } : null,
   }
 
-  const sanitizedItems = items.map((item: any) => {
+  const sanitizedItems = namedItems.map((item: any) => {
     // Sanitize diamonds specs to avoid leaking diamond margin or COGS if any
     const sanitizedDiamonds = (item.diamonds || []).map((d: any) => ({
       shape_id: d.shape_id,
@@ -163,8 +216,21 @@ export async function GET(
       line_trade: item.line_trade,
       line_total: item.line_total,
       reference_images: item.reference_images,
+      // The same line-level arithmetic the PDF renders, so the digital quote
+      // shows an identical breakdown without shipping a PDF to the customer.
+      // Every figure here is a price the customer pays — no COGS, no margin.
+      ...(quote.show_breakup ? {
+        breakdown: buildItemBreakdown(
+          item, quote.margin_pct || 0, quote.gst_treatment, quote.gst_rate_pct,
+        ),
+      } : {}),
     }
   })
 
-  return NextResponse.json({ quote: sanitizedQuote, items: sanitizedItems })
+  return NextResponse.json({
+    quote: sanitizedQuote,
+    items: sanitizedItems,
+    advance,
+    bank,
+  })
 }

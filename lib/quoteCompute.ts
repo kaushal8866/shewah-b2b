@@ -1,4 +1,4 @@
-import { pure24kt, getMetalWeight, pureGoldMass, DEFAULT_MIN_MARGIN_PCT } from './karat'
+import { pure24kt, getMetalWeight, pureGoldMass, DEFAULT_MIN_MARGIN_PCT, KARAT_FACTORS } from './karat'
 
 export interface DiamondSpec {
   shape_id: string
@@ -175,5 +175,235 @@ export function computeQuoteTotals(
     subtotal: netSubtotal,
     gst_amount: gstAmount,
     grand_total: grandTotal,
+  }
+}
+
+// ── Per-item breakdown ───────────────────────────────────────────────────────
+//
+// Lives here rather than in quotePdf.ts because it is pure arithmetic that both
+// the PDF and the customer-facing digital quote need, and importing quotePdf
+// would drag PDFKit into every JSON route that wants a gold/diamond split.
+
+/** The subset of a stored quote_item this breakdown reads. */
+export interface QuoteItemBreakdownInput {
+  quantity: number
+  karat: string | number
+  gross_gold_weight_g: number
+  gold_rate_24k: number
+  /** ALREADY line-level: labourPerPc × quantity, as computeQuoteItem returns it. */
+  labour_total: number
+  diamonds: any[]
+  making_charges: number
+  hallmarking: number
+  other_charges: number
+  line_total: number
+}
+
+export interface DiamondBreakupRow {
+  size: string
+  color: string
+  clarity: string
+  shape: string
+  /** Stones across the whole line = per-piece count × quantity. */
+  pieces: number
+  /** ₹ per carat, marked up. A rate, so it is NOT scaled by quantity. */
+  rate: number
+  /** Carats in one stone. A per-stone figure, so NOT scaled by quantity. */
+  ct_per_pc: number
+  /** Total carats across the line = pieces × ct_per_pc. */
+  weight: number
+  total: number
+}
+
+export interface ItemBreakdown {
+  quantity: number
+  /** Price of a single piece. */
+  unit_trade: number
+  gold_component: string
+  gold_rate: number
+  gold_weight: number
+  gold_val: number
+  diamond_label: string
+  dia_count: number
+  dia_weight: number
+  dia_val: number
+  making_charges: number
+  total_raw: number
+  discount: number
+  sub_total: number
+  gst: number
+  /** False when tax belongs to the document footer rather than the item box. */
+  show_gst: boolean
+  gst_label: string
+  final_value: number
+  rows: DiamondBreakupRow[]
+}
+
+/**
+ * Every number the per-item cost box and diamond break-up table render.
+ *
+ * Kept pure and separate from the PDFKit draw calls because this arithmetic was
+ * previously inlined among ~200 lines of `doc.text()` and no test could reach
+ * it. It silently mixed per-piece and line-level values: gold and diamond were
+ * per-piece while `labour_total` is per-LINE, so on a qty-2 item the box
+ * double-counted labour and its "Final Value" matched neither the unit price
+ * nor the line total.
+ *
+ * Everything here is LINE-level, so `final_value === item.line_total` and the
+ * box reconciles with both the headline and the footer subtotal.
+ */
+export function buildItemBreakdown(
+  item: QuoteItemBreakdownInput,
+  marginPct: number,
+  gstTreatment: 'exclusive' | 'inclusive' | 'none',
+  gstRatePct: number,
+): ItemBreakdown {
+  const qty = Math.max(Number(item.quantity) || 1, 1)
+  const margin = 1 + (Number(marginPct) || 0) / 100
+
+  const isSilver = String(item.karat).toLowerCase() === 'silver'
+  const itemKaratStr = typeof item.karat === 'number' ? `${item.karat}K` : String(item.karat)
+  const karatNum = parseInt(String(item.karat).replace(/[^\d]/g, '')) || 24
+  const karatFactor = isSilver ? 1 : (KARAT_FACTORS[karatNum] || 1)
+
+  // computeQuoteItem sets BOTH line_trade and line_total to unitTrade × quantity,
+  // so neither column carries the per-piece price — derive it.
+  const unit_trade = Math.round((Number(item.line_total) || 0) / qty)
+
+  const gold_component = `${itemKaratStr} Gold`
+  const gold_rate = Math.round(item.gold_rate_24k * karatFactor)
+  const gold_weight = item.gross_gold_weight_g * qty
+  const gold_val = Math.round(item.gross_gold_weight_g * item.gold_rate_24k * karatFactor) * qty
+
+  const diamonds = Array.isArray(item.diamonds) ? item.diamonds : []
+  const dia_count = diamonds.reduce((sum, d) => sum + (parseInt(d.pieces) || 0), 0) * qty
+  const dia_weight = diamonds.reduce(
+    (sum, d) => sum + (parseInt(d.pieces) || 1) * (parseFloat(d.approx_carats || d.weight) || 0), 0,
+  ) * qty
+  const dia_val = diamonds.reduce((sum, d) => {
+    const wt = parseFloat(d.approx_carats || d.weight) || 0
+    const rate = parseFloat(d.rate_per_pc || d.cost) || 0
+    const pieces = parseInt(d.pieces) || 0
+    const igi = parseFloat(d.igi_charge) || 0
+    return sum + Math.round(((wt * pieces * rate) + igi) * margin)
+  }, 0) * qty
+
+  // labour_total is ALREADY line-level (labourPerPc × quantity, see
+  // computeQuoteItem). Only the other three are per-piece and get scaled.
+  const making_charges = Math.round(
+    item.labour_total + (item.making_charges + item.hallmarking + item.other_charges) * qty,
+  )
+
+  const total_raw = gold_val + dia_val + making_charges
+  const discount = 0
+  const sub_total = total_raw - discount
+  const final_value = sub_total
+
+  // On an `exclusive` quote the tax is a document-level line in the footer, so
+  // the item box stays pre-tax instead of printing a flat "GST 0" beside a
+  // Final Value the footer then adds 3% to.
+  const gstRate = Math.max(Number(gstRatePct) || 0, 0) / 100
+  const show_gst = gstTreatment === 'inclusive'
+  // Inclusive line totals already contain the tax, so extract it by division —
+  // matching computeQuoteTotals. Multiplying (the old behaviour) overstated it.
+  const gst = show_gst ? sub_total - Math.round(sub_total / (1 + gstRate)) : 0
+
+  const rows: DiamondBreakupRow[] = diamonds.map((d) => {
+    const pieces = (parseInt(d.pieces) || 0) * qty
+    const ct_per_pc = parseFloat(d.approx_carats || d.weight) || 0
+    const weight = pieces * ct_per_pc
+    const rate = d.rate_per_pc ? Math.round(parseFloat(d.rate_per_pc) * margin) : 0
+    return {
+      size: d.size_label || '—',
+      color: d.color_label || d.color || '—',
+      clarity: d.clarity_label || d.quality || '—',
+      shape: d.shape_name || d.shape_label || d.name || '—',
+      pieces,
+      rate,
+      ct_per_pc,
+      weight,
+      total: Math.round(weight * rate),
+    }
+  })
+
+  return {
+    quantity: qty,
+    unit_trade,
+    gold_component,
+    gold_rate,
+    gold_weight,
+    gold_val,
+    diamond_label: diamonds[0]?.clarity_label || diamonds[0]?.quality || 'VVS/VS-EF',
+    dia_count,
+    dia_weight,
+    dia_val,
+    making_charges,
+    total_raw,
+    discount,
+    sub_total,
+    gst,
+    show_gst,
+    gst_label: show_gst ? 'GST (incl.)' : 'GST',
+    final_value,
+    rows,
+  }
+}
+
+// ── Advance ──────────────────────────────────────────────────────────────────
+
+/**
+ * Advance covers the metal and stone the workshop must buy up front. Gold moves
+ * daily, so it is taken in full; diamonds are half, leaving the rest with the
+ * balance. Making, labour, hallmarking and GST are NOT in the advance — they
+ * fall due on the final invoice.
+ */
+export const ADVANCE_GOLD_PCT = 100
+export const ADVANCE_DIAMOND_PCT = 50
+
+export interface QuoteAdvance {
+  gold_value: number
+  diamond_value: number
+  gold_pct: number
+  diamond_pct: number
+  /** Payable now, clamped to the grand total. */
+  advance_due: number
+  /** Everything else, including making charges and GST. */
+  balance_due: number
+}
+
+export function computeQuoteAdvance(
+  items: QuoteItemBreakdownInput[],
+  marginPct: number,
+  grandTotal: number,
+  goldPct: number = ADVANCE_GOLD_PCT,
+  diamondPct: number = ADVANCE_DIAMOND_PCT,
+): QuoteAdvance {
+  const list = Array.isArray(items) ? items : []
+
+  let goldValue = 0
+  let diamondValue = 0
+  for (const item of list) {
+    // GST treatment is irrelevant to the gold/diamond split, and 'exclusive'
+    // keeps the components pre-tax — which is what the advance is taken on.
+    const bd = buildItemBreakdown(item, marginPct, 'exclusive', 0)
+    goldValue += bd.gold_val
+    diamondValue += bd.dia_val
+  }
+
+  const total = Math.max(Number(grandTotal) || 0, 0)
+  const raw = Math.round(
+    goldValue * (Math.max(goldPct, 0) / 100) + diamondValue * (Math.max(diamondPct, 0) / 100),
+  )
+  // A quote can be discounted below its raw component cost; never ask for more
+  // up front than the whole quote is worth.
+  const advanceDue = Math.min(Math.max(raw, 0), total)
+
+  return {
+    gold_value: goldValue,
+    diamond_value: diamondValue,
+    gold_pct: goldPct,
+    diamond_pct: diamondPct,
+    advance_due: advanceDue,
+    balance_due: total - advanceDue,
   }
 }

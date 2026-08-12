@@ -35,6 +35,20 @@ export async function POST(
     return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
   }
 
+  // 1b. An outstanding advance blocks production. The admin must either verify
+  // the payment or waive it explicitly via /api/quotes/[id]/advance — the UI
+  // disables the button, but that is not a guard on its own.
+  if (quote.advance_status === 'awaiting_payment' || quote.advance_status === 'proof_submitted') {
+    return NextResponse.json(
+      {
+        error: quote.advance_status === 'proof_submitted'
+          ? 'Verify the submitted advance payment before converting this quote.'
+          : 'This quote is awaiting an advance payment. Verify or waive it before converting.',
+      },
+      { status: 409 }
+    )
+  }
+
   // 2. Fetch items
   const { data: items, error: itemsError } = await supabaseAdmin
     .from('quote_items')

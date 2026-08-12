@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Download, Share2, Copy, RefreshCw, ShoppingBag, Calendar, User, Info, FileText, Trash2 } from 'lucide-react'
+import { ArrowLeft, Download, Share2, Copy, RefreshCw, ShoppingBag, Calendar, User, Info, FileText, Trash2, CircleDollarSign, ShieldCheck, XCircle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 interface QuoteDetail {
@@ -33,6 +33,17 @@ interface QuoteDetail {
   customer_response_note: string | null
   parent_quote_id: string | null
   converted_order_id: string | null
+  advance_status: 'not_requested' | 'awaiting_payment' | 'proof_submitted' | 'verified' | 'waived' | null
+  advance_due: number | null
+  advance_gold_value: number | null
+  advance_diamond_value: number | null
+  advance_gold_pct: number | null
+  advance_diamond_pct: number | null
+  advance_reference: string | null
+  advance_proof_url: string | null
+  advance_paid_amount: number | null
+  advance_submitted_at: string | null
+  advance_verified_at: string | null
   partners: {
     id: string
     name: string
@@ -173,6 +184,38 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
     }
   }
 
+  // Advance decisions: verify the money landed, waive it to start production
+  // anyway, send a bad submission back, or ask for one after the fact.
+  async function handleAdvance(action: 'verify' | 'waive' | 'reject' | 'request') {
+    if (!quote) return
+    const confirms: Record<typeof action, string> = {
+      verify: 'Confirm the advance has landed in the account? This releases the order for production.',
+      waive: 'Proceed without an advance? Production starts with nothing collected up front.',
+      reject: 'Send this payment proof back to the customer as unverified?',
+      request: 'Request an advance on this quote?',
+    }
+    if (!confirm(confirms[action])) return
+
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/quotes/${quote.id}/advance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      if (res.ok) {
+        await loadQuoteDetails()
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Could not update the advance')
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   async function handleDelete() {
     if (!quote) return
     if (!confirm('Are you sure you want to permanently delete this quotation? This action cannot be undone.')) return
@@ -266,13 +309,24 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
             <Share2 className="w-3.5 h-3.5" /> Share WhatsApp
           </button>
 
-          {/* Convert to order */}
-          {(quote.status === 'accepted' || quote.status === 'sent' || quote.status === 'viewed') && (
-            <button onClick={handleConvertToOrder} disabled={actionLoading}
-              className="flex items-center gap-1.5 bg-emerald-600 text-white px-3.5 py-2 rounded-lg text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50">
-              <ShoppingBag className="w-3.5 h-3.5" /> Convert to Order
-            </button>
-          )}
+          {/* Convert to order. Blocked while an advance is still outstanding —
+              the desk must either verify the payment or explicitly waive it. */}
+          {(quote.status === 'accepted' || quote.status === 'sent' || quote.status === 'viewed') && (() => {
+            const advancePending =
+              quote.advance_status === 'awaiting_payment' || quote.advance_status === 'proof_submitted'
+            return (
+              <button
+                onClick={handleConvertToOrder}
+                disabled={actionLoading || advancePending}
+                title={advancePending
+                  ? 'Verify or waive the advance before converting this quote'
+                  : undefined}
+                className="flex items-center gap-1.5 bg-emerald-600 text-white px-3.5 py-2 rounded-lg text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                <ShoppingBag className="w-3.5 h-3.5" />
+                {advancePending ? 'Awaiting advance' : 'Convert to Order'}
+              </button>
+            )
+          })()}
 
           {/* Create new revision */}
           <button onClick={handleRevise} disabled={actionLoading}
@@ -402,6 +456,125 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
           </div>
+
+          {/* Advance payment — the gate between an accepted quote and production */}
+          {quote.advance_status && quote.advance_status !== 'not_requested' && (
+            <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
+              <h2 className="font-semibold text-stone-900 text-sm border-b border-stone-100 pb-2 flex items-center gap-1.5">
+                <CircleDollarSign className="w-4 h-4 text-stone-400" /> Advance Payment
+              </h2>
+
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-stone-500">Status</span>
+                <span className={`px-2 py-0.5 font-semibold border rounded ${
+                  quote.advance_status === 'verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : quote.advance_status === 'waived' ? 'bg-stone-100 text-stone-600 border-stone-300'
+                  : quote.advance_status === 'proof_submitted' ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}>
+                  {quote.advance_status.replace(/_/g, ' ')}
+                </span>
+              </div>
+
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between text-stone-500">
+                  <span>Advance due</span>
+                  <span className="font-bold text-stone-800 tabular-nums">
+                    ₹ {Math.round(quote.advance_due || 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="flex justify-between text-stone-400">
+                  <span>Gold ({quote.advance_gold_pct}%)</span>
+                  <span className="tabular-nums">
+                    ₹ {Math.round((quote.advance_gold_value || 0) * (quote.advance_gold_pct || 0) / 100).toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="flex justify-between text-stone-400">
+                  <span>Diamond ({quote.advance_diamond_pct}%)</span>
+                  <span className="tabular-nums">
+                    ₹ {Math.round((quote.advance_diamond_value || 0) * (quote.advance_diamond_pct || 0) / 100).toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="flex justify-between text-stone-500 pt-1.5 border-t border-stone-100">
+                  <span>Balance on delivery</span>
+                  <span className="tabular-nums">
+                    ₹ {Math.round(Math.max((quote.grand_total || 0) - (quote.advance_due || 0), 0)).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
+              {/* What the customer submitted */}
+              {(quote.advance_reference || quote.advance_proof_url || quote.advance_submitted_at) && (
+                <div className="bg-stone-50 border border-stone-200 rounded p-2.5 text-[11px] space-y-1.5">
+                  <p className="font-semibold text-stone-500">Customer submitted</p>
+                  {quote.advance_paid_amount != null && (
+                    <div className="flex justify-between text-stone-600">
+                      <span>Amount</span>
+                      <span className="font-bold tabular-nums">
+                        ₹ {Math.round(quote.advance_paid_amount).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
+                  {quote.advance_reference && (
+                    <div className="flex justify-between text-stone-600 gap-2">
+                      <span className="shrink-0">Reference</span>
+                      <span className="font-mono truncate">{quote.advance_reference}</span>
+                    </div>
+                  )}
+                  {quote.advance_submitted_at && (
+                    <div className="flex justify-between text-stone-500">
+                      <span>Submitted</span>
+                      <span>{new Date(quote.advance_submitted_at).toLocaleString('en-IN', {
+                        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                      })}</span>
+                    </div>
+                  )}
+                  {quote.advance_proof_url && (
+                    <a href={quote.advance_proof_url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-stone-700 font-semibold hover:underline pt-0.5">
+                      <ExternalLink className="w-3 h-3" /> View payment screenshot
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {quote.advance_verified_at && (
+                <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
+                  {quote.advance_status === 'waived' ? 'Waived' : 'Verified'} on{' '}
+                  {new Date(quote.advance_verified_at).toLocaleDateString('en-IN')}
+                </p>
+              )}
+
+              {/* Decisions */}
+              {(quote.advance_status === 'proof_submitted' || quote.advance_status === 'awaiting_payment') && (
+                <div className="space-y-2 pt-1">
+                  <button onClick={() => handleAdvance('verify')} disabled={actionLoading}
+                    className="w-full flex items-center justify-center gap-1.5 bg-emerald-600 text-white py-2 rounded text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Verify &amp; release for production
+                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleAdvance('waive')} disabled={actionLoading}
+                      className="flex-1 flex items-center justify-center gap-1.5 border border-stone-300 text-stone-600 py-2 rounded text-xs font-semibold hover:bg-stone-50 disabled:opacity-50">
+                      Proceed without advance
+                    </button>
+                    {quote.advance_status === 'proof_submitted' && (
+                      <button onClick={() => handleAdvance('reject')} disabled={actionLoading}
+                        className="flex items-center justify-center gap-1.5 border border-red-200 text-red-600 px-3 py-2 rounded text-xs font-semibold hover:bg-red-50 disabled:opacity-50">
+                        <XCircle className="w-3.5 h-3.5" /> Send back
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {(quote.advance_status === 'verified' || quote.advance_status === 'waived') && (
+                <button onClick={() => handleAdvance('request')} disabled={actionLoading}
+                  className="w-full border border-stone-200 text-stone-500 py-1.5 rounded text-[11px] font-semibold hover:bg-stone-50 disabled:opacity-50">
+                  Re-request advance
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Revisions tree timeline */}
           {revisions.length > 1 && (
