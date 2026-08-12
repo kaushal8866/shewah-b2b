@@ -197,3 +197,91 @@ export async function notifyInternalQuoteResponse(opts: {
     console.error('[quoteShareNotify:internal] unexpected error', err?.message || err)
   }
 }
+
+/**
+ * Tells the desk a customer has paid an advance and is waiting on verification.
+ * The order does not move until someone acts on this, so it is worth an alert
+ * rather than leaving it to be spotted in the dashboard.
+ */
+export async function notifyInternalAdvanceSubmitted(opts: {
+  quoteId: string
+  customerName: string
+  amount: number
+  reference?: string | null
+  proofUrl?: string | null
+}): Promise<void> {
+  try {
+    const { quoteId, customerName, amount, reference, proofUrl } = opts
+    const settings = await loadSettings()
+
+    const { data: settingRows } = await supabaseAdmin
+      .from('settings')
+      .select('key, value')
+      .in('key', [
+        'whatsapp_number',
+        'owner_name',
+        'lead_notify_email_to',
+        'reconciliation_alert_email_from',
+      ])
+    const cfg: Record<string, string> = {}
+    for (const row of settingRows || []) cfg[(row as any).key] = (row as any).value || ''
+
+    const phone = (cfg.whatsapp_number || '').toString().replace(/\D/g, '')
+    const emailTo = cfg.lead_notify_email_to || process.env.LEAD_NOTIFY_EMAIL || ''
+    const emailFrom = cfg.reconciliation_alert_email_from || process.env.RESEND_FROM || ''
+
+    const { data: quote } = await supabaseAdmin
+      .from('quotes')
+      .select('id, quote_number')
+      .eq('id', quoteId)
+      .maybeSingle()
+    if (!quote) return
+
+    const baseUrl = (settings.publicBaseUrl || '').replace(/\/$/, '')
+    const adminUrl = `${baseUrl}/quotes/${quoteId}`
+    const greet = cfg.owner_name ? `Hi ${cfg.owner_name.split(' ')[0]}` : 'Heads up'
+    const qNum = (quote as any).quote_number
+    const amountStr = `Rs. ${Math.round(amount).toLocaleString('en-IN')}`
+
+    const message = [
+      `${greet}, ${customerName} has submitted an advance of ${amountStr} for quote ${qNum}.`,
+      reference ? `Reference: ${reference}` : '',
+      proofUrl ? `Proof: ${proofUrl}` : '',
+      `Verify to release production: ${adminUrl}`,
+    ].filter(Boolean).join('\n')
+
+    if (settings.enabled && settings.webhookUrl && phone) {
+      await postToWebhook(settings, {
+        phone,
+        message,
+        quoteId,
+        trigger: 'quote_advance_submitted',
+      })
+    }
+
+    if (process.env.RESEND_API_KEY && emailFrom && emailTo) {
+      try {
+        const recipients = emailTo.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean)
+        if (recipients.length > 0) {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            },
+            body: JSON.stringify({
+              from: emailFrom,
+              to: recipients,
+              subject: `Advance ${amountStr} submitted — Quote ${qNum} (${customerName})`,
+              text: message,
+            }),
+          })
+        }
+      } catch (emailErr: any) {
+        console.error('[quoteShareNotify:email] failed to send email', emailErr?.message || emailErr)
+      }
+    }
+  } catch (err: any) {
+    console.error('[quoteShareNotify:advance] unexpected error', err?.message || err)
+  }
+}

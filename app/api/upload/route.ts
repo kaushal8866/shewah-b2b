@@ -26,7 +26,7 @@ function pickResourceType(filename: string): 'image' | 'raw' {
 // Middleware would bounce both to /login, so this route is the single
 // authority — every path below must resolve to a real identity or 401.
 type Uploader = {
-  kind: 'app_user' | 'storefront_customer' | 'invitee'
+  kind: 'app_user' | 'storefront_customer' | 'invitee' | 'quote_advance'
   id: string
   username: string | null
   role: string | null
@@ -56,6 +56,27 @@ async function resolveUploader(scopeToken: string | null): Promise<Uploader | nu
       .maybeSingle()
     if (invite && invite.status === 'pending' && new Date(invite.expiry_date) >= new Date()) {
       return { kind: 'invitee', id: invite.id, username: null, role: 'invitee' }
+    }
+  }
+
+  // 4. Customers attaching proof of an advance transfer to a shared quote.
+  //    Narrow on purpose: the link must be live AND the quote must actually be
+  //    waiting on that payment, so the token stops working once it is settled.
+  if (scopeToken) {
+    const { data: shareLink } = await supabaseAdmin
+      .from('quote_share_links')
+      .select('id, quote_id, revoked_at, expires_at')
+      .eq('token', scopeToken)
+      .maybeSingle()
+    if (shareLink && !shareLink.revoked_at && new Date(shareLink.expires_at) >= new Date()) {
+      const { data: quote } = await supabaseAdmin
+        .from('quotes')
+        .select('id, advance_status')
+        .eq('id', shareLink.quote_id)
+        .maybeSingle()
+      if (quote && (quote.advance_status === 'awaiting_payment' || quote.advance_status === 'proof_submitted')) {
+        return { kind: 'quote_advance', id: shareLink.quote_id, username: null, role: 'quote_customer' }
+      }
     }
   }
 

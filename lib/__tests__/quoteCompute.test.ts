@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { computeQuoteItem, computeQuoteTotals } from '../quoteCompute'
+import {
+  computeQuoteItem,
+  computeQuoteTotals,
+  computeQuoteAdvance,
+  type QuoteItemBreakdownInput,
+} from '../quoteCompute'
 
 // These assertions previously lived in app/api/quotes/test-compute/route.ts —
 // a publicly reachable, unauthenticated endpoint that ran them in production
@@ -65,6 +70,18 @@ describe('computeQuoteItem', () => {
     const strict = computeQuoteItem(input, 28, 25)
     expect(strict.unit_trade).toBe(Math.round(strict.unit_cogs * 1.25))
   })
+
+  // lib/quotePdf.ts read `line_trade` as a per-piece price and printed it as
+  // "₹X / pc". It is not: BOTH line fields are line-level and identical, so on
+  // a qty-2 item the PDF stated double the true unit price. Nothing persists
+  // the per-unit figure — consumers must divide by quantity (or read
+  // `unit_trade` off this return value).
+  it('reports line_trade and line_total at LINE level, never per piece', () => {
+    expect(result.line_trade).toBe(result.unit_trade * input.quantity)
+    expect(result.line_total).toBe(result.unit_trade * input.quantity)
+    expect(result.line_trade).toBe(result.line_total)
+    expect(result.line_trade).not.toBe(result.unit_trade)
+  })
 })
 
 describe('computeQuoteTotals', () => {
@@ -107,5 +124,74 @@ describe('computeQuoteTotals', () => {
     const t = computeQuoteTotals(items, 'none', 3)
     expect(t.gst_amount).toBe(0)
     expect(t.grand_total).toBe(100000)
+  })
+})
+
+describe('computeQuoteAdvance', () => {
+  // The Q-260811-001 item: gold ₹10,646 and stones ₹16,800 across the line,
+  // making/labour/hallmarking ₹2,090, grand total ₹30,422 incl. 3% GST.
+  const item: QuoteItemBreakdownInput = {
+    quantity: 2,
+    karat: '9K',
+    gross_gold_weight_g: 0.9,
+    gold_rate_24k: 15773,
+    labour_total: 1980,
+    diamonds: [{ pieces: 1, weight: 1.0, rate_per_pc: 8400 }],
+    making_charges: 0,
+    hallmarking: 55,
+    other_charges: 0,
+    line_total: 29536,
+  }
+
+  const adv = computeQuoteAdvance([item], 0, 30422)
+
+  it('takes all of the gold and half of the stones', () => {
+    expect(adv.gold_value).toBe(10646)
+    expect(adv.diamond_value).toBe(16800)
+    expect(adv.advance_due).toBe(19046)   // 10,646 + 8,400
+  })
+
+  it('leaves making charges and GST to the balance', () => {
+    expect(adv.balance_due).toBe(11376)
+    expect(adv.advance_due + adv.balance_due).toBe(30422)
+  })
+
+  it('excludes making, labour and hallmarking from the advance base', () => {
+    // 2,090 of making/labour/hallmarking is in the line total but not the base.
+    expect(adv.gold_value + adv.diamond_value).toBe(27446)
+    expect(adv.gold_value + adv.diamond_value + 2090).toBe(item.line_total)
+  })
+
+  it('sums across multiple items', () => {
+    const two = computeQuoteAdvance([item, item], 0, 60844)
+    expect(two.gold_value).toBe(21292)
+    expect(two.diamond_value).toBe(33600)
+    expect(two.advance_due).toBe(38092)
+  })
+
+  it('takes the advance on marked-up stone value, as quoted', () => {
+    // At 28% the customer is quoted 21,504 of diamond, so half of THAT is due.
+    const marked = computeQuoteAdvance([item], 28, 35247)
+    expect(marked.diamond_value).toBe(21504)
+    expect(marked.advance_due).toBe(10646 + 10752)
+  })
+
+  it('never asks for more up front than the quote is worth', () => {
+    // A quote discounted below its component cost must not invert the balance.
+    const capped = computeQuoteAdvance([item], 0, 15000)
+    expect(capped.advance_due).toBe(15000)
+    expect(capped.balance_due).toBe(0)
+  })
+
+  it('handles a stone-free item', () => {
+    const noStones = computeQuoteAdvance([{ ...item, diamonds: [] }], 0, 13126)
+    expect(noStones.diamond_value).toBe(0)
+    expect(noStones.advance_due).toBe(10646)
+  })
+
+  it('returns zeroes for an empty quote', () => {
+    const empty = computeQuoteAdvance([], 0, 0)
+    expect(empty.advance_due).toBe(0)
+    expect(empty.balance_due).toBe(0)
   })
 })

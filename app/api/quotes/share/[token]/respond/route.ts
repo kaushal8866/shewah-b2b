@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { notifyInternalQuoteResponse } from '@/lib/quoteShareNotify'
 import { runInBackground } from '@/lib/backgroundTask'
+import { computeQuoteAdvance } from '@/lib/quoteCompute'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,6 +87,30 @@ export async function POST(
   if (action === 'accept') {
     updates.status = 'accepted'
     updates.accepted_at = nowStr
+
+    // Freeze the advance at the moment of approval. Gold moves daily, so the
+    // amount the customer commits to here must not be recomputed later against
+    // a newer rate.
+    const { data: quoteItems, error: itemsError } = await supabaseAdmin
+      .from('quote_items')
+      .select('*')
+      .eq('quote_id', quote.id)
+
+    if (itemsError) {
+      return NextResponse.json({ error: itemsError.message }, { status: 500 })
+    }
+
+    const advance = computeQuoteAdvance(
+      quoteItems || [], quote.margin_pct || 0, quote.grand_total,
+    )
+    updates.advance_due = advance.advance_due
+    updates.advance_gold_value = advance.gold_value
+    updates.advance_diamond_value = advance.diamond_value
+    updates.advance_gold_pct = advance.gold_pct
+    updates.advance_diamond_pct = advance.diamond_pct
+    // Nothing to collect on a zero-value quote — don't park it in a payment
+    // state an admin would then have to clear by hand.
+    updates.advance_status = advance.advance_due > 0 ? 'awaiting_payment' : 'waived'
   }
 
   const { data: updatedQuote, error: updateError } = await supabaseAdmin
@@ -119,5 +144,16 @@ export async function POST(
     success: true,
     status: updatedQuote.status,
     customer_response_note: updatedQuote.customer_response_note,
+    advance: {
+      status: updatedQuote.advance_status,
+      due: Number(updatedQuote.advance_due) || 0,
+      gold_value: Number(updatedQuote.advance_gold_value) || 0,
+      diamond_value: Number(updatedQuote.advance_diamond_value) || 0,
+      gold_pct: Number(updatedQuote.advance_gold_pct) || 0,
+      diamond_pct: Number(updatedQuote.advance_diamond_pct) || 0,
+      balance_due: Math.max(
+        (Number(updatedQuote.grand_total) || 0) - (Number(updatedQuote.advance_due) || 0), 0,
+      ),
+    },
   })
 }

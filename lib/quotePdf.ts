@@ -1,6 +1,6 @@
 import PDFDocument from 'pdfkit'
 import { fmtDate, fetchImage } from './pdfHelpers'
-import { KARAT_FACTORS } from './karat'
+import { buildItemBreakdown, type DiamondBreakupRow } from './quoteCompute'
 
 // Helper to convert numbers to words in Indian numbering system
 export function numToWordsIndian(num: number): string {
@@ -78,6 +78,11 @@ export interface QuoteItemPDFData {
   reference_images?: string[]
 }
 
+// The per-item breakdown arithmetic lives in the pricing engine, so JSON
+// routes and the digital quote can use it without importing PDFKit.
+export { buildItemBreakdown } from './quoteCompute'
+export type { DiamondBreakupRow, ItemBreakdown } from './quoteCompute'
+
 export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFData[]): Promise<Buffer> {
   // 1. Fetch images for all items in parallel
   const itemImages = await Promise.all(
@@ -122,8 +127,9 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
 
       // Draw standard top header (Logo and title)
       const drawHeader = () => {
+        // No "B2B Fine Jewellery Platform" strapline — quotes go to D2C
+        // customers as well as trade partners, and the label misread there.
         doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(24).text('SHEWAH', 48, 40)
-        doc.fillColor(lightText).font('Helvetica').fontSize(9).text('B2B Fine Jewellery Platform', 48, 65)
 
         doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(16).text('QUOTATION', 48, 40, { align: 'right' })
         doc.fillColor(textColor).font('Helvetica').fontSize(10).text(`Quote #: ${quote.quote_number}`, 48, 60, { align: 'right' })
@@ -174,9 +180,16 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
       doc.strokeColor('#E2E8F0').lineWidth(0.5).moveTo(48, doc.y).lineTo(rightMarginX, doc.y).stroke()
       doc.moveDown(0.8)
 
-      // Cover note if any
-      if (quote.cover_note) {
-        doc.fillColor(textColor).font('Helvetica-Oblique').fontSize(9).text(quote.cover_note, { width: contentWidth })
+      // Remarks. The x MUST be passed explicitly: the "QUOTE DETAILS" column
+      // above leaves doc.x at 320, so a contentWidth (499pt) text box started
+      // there ran ~270pt past the right margin and silently clipped every line
+      // long enough to reach it — customers received truncated remarks.
+      if (quote.cover_note && String(quote.cover_note).trim()) {
+        doc.fillColor(lightText).font('Helvetica-Bold').fontSize(8)
+           .text('REMARKS', 48, doc.y)
+        doc.moveDown(0.35)
+        doc.fillColor(textColor).font('Helvetica-Oblique').fontSize(9)
+           .text(String(quote.cover_note).trim(), 48, doc.y, { width: contentWidth, lineGap: 1.5 })
         doc.moveDown(1)
       }
 
@@ -231,54 +244,41 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
         const sizeStr = item.ring_size ? ` · Size: ${item.ring_size}` : ''
         doc.text(`${itemKaratStr}${sizeStr} · Qty: ${item.quantity}`, textStartX, itemStartY + 24)
 
+        const bd = buildItemBreakdown(item, quote.margin_pct || 0, quote.gst_treatment, quote.gst_rate_pct)
+
         // Line item total on the far right
         doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(11)
            .text(`Rs. ${item.line_total.toLocaleString('en-IN')}`, rightMarginX - 120, itemStartY + 10, { width: 100, align: 'right' })
-        
-        doc.fillColor(lightText).font('Helvetica').fontSize(8)
-        doc.text(`(Rs. ${item.line_trade.toLocaleString('en-IN')} / pc)`, rightMarginX - 120, itemStartY + 24, { width: 100, align: 'right' })
+
+        // Per-piece price. Omitted at qty 1, where it only restates the headline.
+        if (bd.quantity > 1) {
+          doc.fillColor(lightText).font('Helvetica').fontSize(8)
+          doc.text(`(Rs. ${bd.unit_trade.toLocaleString('en-IN')} / pc)`, rightMarginX - 120, itemStartY + 24, { width: 100, align: 'right' })
+        }
 
         // Detailed Cost Breakup Table (if show_breakup is enabled)
         if (quote.show_breakup) {
           const tableY = itemStartY + 45
-          
-          const isSilver = String(item.karat).toLowerCase() === 'silver'
-          const itemKaratStr = typeof item.karat === 'number' ? `${item.karat}K` : String(item.karat)
-          
-          // 1. Calculate values
-          const karatNum = parseInt(String(item.karat).replace(/[^\d]/g, '')) || 24
-          const karatFactor = isSilver ? 1 : (KARAT_FACTORS[karatNum] || 1)
-          
-          const gold_component = `${itemKaratStr} Gold`
-          const gold_rate = Math.round(item.gold_rate_24k * karatFactor)
-          const gold_val = Math.round(item.gross_gold_weight_g * item.gold_rate_24k * karatFactor)
-          
-          const margin = 1 + (quote.margin_pct || 0) / 100
-          const dia_count = item.diamonds?.reduce((sum, d) => sum + (parseInt(d.pieces) || 0), 0) || 0
-          const dia_weight = item.diamonds?.reduce((sum, d) => sum + (parseInt(d.pieces) || 1) * (parseFloat(d.approx_carats || d.weight) || 0), 0) || 0
-          const dia_val = item.diamonds?.reduce((sum, d) => {
-            const wt = parseFloat(d.approx_carats || d.weight) || 0
-            const rate = parseFloat(d.rate_per_pc || d.cost) || 0
-            const pieces = parseInt(d.pieces) || 0
-            const igi = parseFloat(d.igi_charge) || 0
-            const cogsCost = (wt * pieces * rate) + igi
-            const tradeCost = Math.round(cogsCost * margin)
-            return sum + tradeCost
-          }, 0) || 0
-          
-          const making_charges = Math.round(item.labour_total + item.making_charges + item.hallmarking + item.other_charges)
-          const total_raw = gold_val + dia_val + making_charges
-          const discount = 0
-          const sub_total = total_raw - discount
-          const final_value = sub_total
-          
+
+          // 1. Values — all LINE-level, so the box closes on item.line_total.
+          const {
+            gold_component, gold_rate, gold_weight, gold_val,
+            dia_count, dia_weight, dia_val,
+            making_charges, total_raw, discount, sub_total, final_value,
+          } = bd
+
           // 2. Draw Left Column (Gold & Diamond)
           const leftX = 56
           const leftColWidth = 205
           
-          // Gold Block
+          // Gold Block. The "for N pcs" tag states the basis on the page, so a
+          // reader never has to infer whether these are per-piece or per-line.
           doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(8).text('GOLD', leftX, tableY)
-          
+          if (bd.quantity > 1) {
+            doc.fillColor(lightText).font('Helvetica').fontSize(7)
+               .text(`for ${bd.quantity} pcs`, leftX + 30, tableY + 1)
+          }
+
           // Gold Table Header
           const goldHeaderY = tableY + 12
           doc.fillColor(lightText).font('Helvetica-Bold').fontSize(7)
@@ -294,7 +294,7 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
           doc.fillColor(textColor).font('Helvetica').fontSize(8)
           doc.text(gold_component, leftX, goldDataY, { width: 65, height: 10, ellipsis: true })
           doc.text(gold_rate.toLocaleString('en-IN'), leftX + 65, goldDataY, { width: 35, align: 'right' })
-          doc.text(`${item.gross_gold_weight_g.toFixed(2)}g`, leftX + 105, goldDataY, { width: 45, align: 'right' })
+          doc.text(`${gold_weight.toFixed(2)}g`, leftX + 105, goldDataY, { width: 45, align: 'right' })
           doc.text(gold_val.toLocaleString('en-IN'), leftX + 155, goldDataY, { width: 50, align: 'right' })
           
           // Diamond Block
@@ -314,8 +314,7 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
           // Diamond Data Row
           const diaDataY = diaHeaderY + 13
           doc.fillColor(textColor).font('Helvetica').fontSize(8)
-          const diamondLabel = item.diamonds?.[0]?.clarity_label || item.diamonds?.[0]?.quality || 'VVS/VS-EF'
-          doc.text(diamondLabel, leftX, diaDataY, { width: 65, height: 10, ellipsis: true })
+          doc.text(bd.diamond_label, leftX, diaDataY, { width: 65, height: 10, ellipsis: true })
           doc.text(dia_count.toString(), leftX + 65, diaDataY, { width: 35, align: 'right' })
           doc.text(`${dia_weight.toFixed(2)}ct`, leftX + 105, diaDataY, { width: 45, align: 'right' })
           doc.text(dia_val.toLocaleString('en-IN'), leftX + 155, diaDataY, { width: 50, align: 'right' })
@@ -352,10 +351,13 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
           drawTotalsBoxRow('Diamond Discount', discount > 0 ? `-${discount.toLocaleString('en-IN')}` : '0')
           drawTotalsBoxRow('Sub-total', sub_total.toLocaleString('en-IN'))
           
-          // GST row
-          const itemGst = quote.gst_treatment === 'inclusive' ? Math.round(sub_total * (quote.gst_rate_pct / 100)) : 0
-          drawTotalsBoxRow('GST', itemGst > 0 ? itemGst.toLocaleString('en-IN') : '0')
-          
+          // GST row — only when the tax sits INSIDE this line. On an exclusive
+          // quote the footer is the tax line, and printing "GST 0" here beside a
+          // Final Value the footer then adds 3% to just misleads the reader.
+          if (bd.show_gst) {
+            drawTotalsBoxRow(bd.gst_label, bd.gst.toLocaleString('en-IN'))
+          }
+
           // Divider line before Final Value
           doc.strokeColor('#CBD5E1').lineWidth(0.5).moveTo(rightX + 6, totalRowY - 1).lineTo(rightX + rightColWidth - 6, totalRowY - 1).stroke()
           totalRowY += 2
@@ -402,32 +404,23 @@ export async function renderQuotePdf(quote: QuotePDFData, items: QuoteItemPDFDat
             
             let rowY = breakupHeaderY + 13
             let grandDiaTotal = 0   // accumulate TOTAL across all rows
-            item.diamonds.forEach((d) => {
-              const dShape   = d.shape_name || d.shape_label || d.name || '—'
-              const dPieces  = d.pieces || 0
-              const dCtPc    = parseFloat(d.approx_carats || d.weight) || 0   // carats per piece
-              const dWeight  = dPieces * dCtPc                                // total carats for this row
-              const dRate    = d.rate_per_pc ? Math.round(parseFloat(d.rate_per_pc) * margin) : 0
-              const dTotal   = Math.round(dWeight * dRate)                   // total_carats × rate_per_carat
-              const dSize    = d.size_label || '—'
-              const dColor   = d.color_label || d.color || '—'
-              const dClarity = d.clarity_label || d.quality || '—'
-
-              grandDiaTotal += dTotal
+            // Count and Weight span the whole line; CT/PC and Price stay per-unit.
+            bd.rows.forEach((r: DiamondBreakupRow) => {
+              grandDiaTotal += r.total
 
               doc.fillColor(textColor).font('Helvetica').fontSize(7.5)
-              doc.text(dSize,                          colPositions[0], rowY, { width: colWidths[0], height: 9, ellipsis: true })
-              doc.text(dColor,                         colPositions[1], rowY, { width: colWidths[1], height: 9, ellipsis: true })
-              doc.text(dClarity,                       colPositions[2], rowY, { width: colWidths[2], height: 9, ellipsis: true })
-              doc.text(dShape,                         colPositions[3], rowY, { width: colWidths[3], height: 9, ellipsis: true })
-              doc.text(dPieces.toString(),              colPositions[4], rowY, { width: colWidths[4], align: 'right' })
-              doc.text(dRate.toLocaleString('en-IN'),   colPositions[5], rowY, { width: colWidths[5], align: 'right' })
-              doc.text(`${dWeight.toFixed(2)}ct`,       colPositions[6], rowY, { width: colWidths[6], align: 'right' })
+              doc.text(r.size,                         colPositions[0], rowY, { width: colWidths[0], height: 9, ellipsis: true })
+              doc.text(r.color,                        colPositions[1], rowY, { width: colWidths[1], height: 9, ellipsis: true })
+              doc.text(r.clarity,                      colPositions[2], rowY, { width: colWidths[2], height: 9, ellipsis: true })
+              doc.text(r.shape,                        colPositions[3], rowY, { width: colWidths[3], height: 9, ellipsis: true })
+              doc.text(r.pieces.toString(),            colPositions[4], rowY, { width: colWidths[4], align: 'right' })
+              doc.text(r.rate.toLocaleString('en-IN'), colPositions[5], rowY, { width: colWidths[5], align: 'right' })
+              doc.text(`${r.weight.toFixed(2)}ct`,     colPositions[6], rowY, { width: colWidths[6], align: 'right' })
               // CT/PC and TOTAL in red
               doc.fillColor('#E74C3C').font('Helvetica').fontSize(7.5)
-              doc.text(dCtPc > 0 ? dCtPc.toFixed(3) : '—', colPositions[7], rowY, { width: colWidths[7], align: 'right' })
-              doc.text(dTotal > 0 ? dTotal.toLocaleString('en-IN') : '—', colPositions[8], rowY, { width: colWidths[8], align: 'right' })
-              
+              doc.text(r.ct_per_pc > 0 ? r.ct_per_pc.toFixed(3) : '—', colPositions[7], rowY, { width: colWidths[7], align: 'right' })
+              doc.text(r.total > 0 ? r.total.toLocaleString('en-IN') : '—', colPositions[8], rowY, { width: colWidths[8], align: 'right' })
+
               doc.strokeColor('#E2E8F0').lineWidth(0.3).moveTo(leftX, rowY + 9).lineTo(rightMarginX - 8, rowY + 9).stroke()
               rowY += 12
             })
