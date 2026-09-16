@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCart } from './CartContext'
@@ -20,11 +21,32 @@ import {
 export default function StoreHeader() {
   const pathname = usePathname()
   const { market, setMarketCode, itemCount, openCart } = useCart()
+  const [mounted, setMounted] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [marketDropdownOpen, setMarketDropdownOpen] = useState(false)
   const [shopDropdownOpen, setShopDropdownOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Auto-close mobile drawer when user navigates
+  useEffect(() => {
+    setMobileNavOpen(false)
+  }, [pathname])
+
+  // Prevent background scrolling when mobile nav is open
+  useEffect(() => {
+    if (mobileNavOpen) {
+      const originalOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = originalOverflow
+      }
+    }
+  }, [mobileNavOpen])
 
   const handleMarketChange = (code: MarketCode) => {
     setMarketCode(code)
@@ -241,36 +263,50 @@ export default function StoreHeader() {
         </div>
       )}
 
-      {/* Mobile Drawer Navigation */}
-      {mobileNavOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setMobileNavOpen(false)} />
-          <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-[#FBF7F0] shadow-xl p-6 flex flex-col justify-between">
-            <div>
+      {/* Mobile Drawer Navigation (Rendered in Body Portal to escape header backdrop-filter stacking context) */}
+      {mounted && mobileNavOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100] lg:hidden">
+          {/* Dimmed backdrop overlay */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileNavOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Solid Drawer Panel */}
+          <div
+            className="fixed inset-y-0 left-0 max-w-xs w-full bg-[#FBF7F0] text-[#2A241B] shadow-2xl p-6 flex flex-col justify-between z-10 overflow-y-auto"
+            style={{ backgroundColor: '#FBF7F0' }}
+          >
+            <div className="space-y-6">
               <div className="flex items-center justify-between pb-6 border-b border-[#E8DFC9]">
                 <span className="font-serif text-xl tracking-[0.2em] font-medium text-[#2A241B]">
                   SHEWAH
                 </span>
-                <button onClick={() => setMobileNavOpen(false)} aria-label="Close menu">
-                  <X className="w-6 h-6 text-[#2A241B]" />
+                <button
+                  onClick={() => setMobileNavOpen(false)}
+                  className="p-1 text-[#2A241B] hover:text-[#A88A4F] transition-colors"
+                  aria-label="Close menu"
+                >
+                  <X className="w-6 h-6" />
                 </button>
               </div>
 
-              <div className="py-6 space-y-4 text-xs uppercase tracking-widest font-medium">
+              <div className="py-2 space-y-4 text-xs uppercase tracking-widest font-medium">
                 <Link
                   href="/jewellery"
                   onClick={() => setMobileNavOpen(false)}
-                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F]"
+                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F] transition-colors"
                 >
                   Explore Collection
                 </Link>
-                <div className="pl-4 space-y-2 border-l border-[#E8DFC9] text-[#5C5347]">
+                <div className="pl-4 space-y-2.5 border-l border-[#E8DFC9] text-[#5C5347]">
                   {shopCategories.slice(1).map((c) => (
                     <Link
                       key={c.href}
                       href={c.href}
                       onClick={() => setMobileNavOpen(false)}
-                      className="block py-1 text-[11px]"
+                      className="block py-1 text-[11px] hover:text-[#2A241B] transition-colors"
                     >
                       {c.label}
                     </Link>
@@ -280,35 +316,35 @@ export default function StoreHeader() {
                 <Link
                   href="/bespoke"
                   onClick={() => setMobileNavOpen(false)}
-                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F]"
+                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F] transition-colors"
                 >
                   Bespoke Atelier
                 </Link>
                 <Link
                   href="/craftsmanship"
                   onClick={() => setMobileNavOpen(false)}
-                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F]"
+                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F] transition-colors"
                 >
                   Craftsmanship
                 </Link>
                 <Link
                   href="/diamonds"
                   onClick={() => setMobileNavOpen(false)}
-                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F]"
+                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F] transition-colors"
                 >
                   Diamonds
                 </Link>
                 <Link
                   href="/business"
                   onClick={() => setMobileNavOpen(false)}
-                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F]"
+                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F] transition-colors"
                 >
                   Trade & B2B
                 </Link>
               </div>
             </div>
 
-            <div className="pt-6 border-t border-[#E8DFC9] space-y-4">
+            <div className="pt-6 border-t border-[#E8DFC9] space-y-4 shrink-0">
               <div className="text-xs text-[#5C5347]">
                 <div className="font-medium text-[#2A241B] mb-1">Delivering to:</div>
                 <div className="flex items-center justify-between">
@@ -320,13 +356,14 @@ export default function StoreHeader() {
               <Link
                 href="/login"
                 onClick={() => setMobileNavOpen(false)}
-                className="block text-center py-2.5 text-xs uppercase tracking-wider border border-[#2A241B] rounded-lg text-[#2A241B]"
+                className="block text-center py-2.5 text-xs uppercase tracking-wider border border-[#2A241B] rounded-lg text-[#2A241B] hover:bg-[#2A241B] hover:text-[#FBF7F0] transition-colors"
               >
                 Trade Portal Sign In
               </Link>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   )

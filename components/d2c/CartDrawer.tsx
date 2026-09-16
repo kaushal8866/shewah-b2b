@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from './CartContext'
@@ -18,18 +19,39 @@ export default function CartDrawer() {
     itemCount,
   } = useCart()
 
-  if (!isCartOpen) return null
+  const [mounted, setMounted] = useState(false)
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Lock body scrolling when cart drawer is open
+  useEffect(() => {
+    if (isCartOpen) {
+      const originalOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = originalOverflow
+      }
+    }
+  }, [isCartOpen])
+
+  if (!isCartOpen || !mounted || typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] overflow-hidden">
       {/* Dimmed backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={closeCart}
+        aria-hidden="true"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-[#FBF7F0] text-[#2A241B] shadow-2xl flex flex-col border-l border-[#E8DFC9]">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10 z-10">
+        <div
+          className="w-screen max-w-md bg-[#FBF7F0] text-[#2A241B] shadow-2xl flex flex-col border-l border-[#E8DFC9]"
+          style={{ backgroundColor: '#FBF7F0' }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-[#E8DFC9] bg-white">
             <div className="flex items-center gap-2">
@@ -191,6 +213,7 @@ export default function CartDrawer() {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
