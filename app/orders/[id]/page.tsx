@@ -11,7 +11,6 @@ import {
   FINISH_FACTOR
 } from '@/lib/cadWeight'
 import { KARAT_FACTORS, SELLABLE_KARATS, pureMassByKarat, computeKaratPricing, getMetalWeight } from '@/lib/karat'
-import { cascadeOrderStatusToMfg } from '@/lib/mfgOrderLifecycle'
 import { nextSteps, orderFlow } from '@/lib/process'
 import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, ChevronRight, Check, Package, Layers, AlertTriangle, MessageSquare, CreditCard, Bell, Plus, Download, FileText } from 'lucide-react'
@@ -1152,7 +1151,15 @@ export default function OrderDetailPage() {
 
     if (form.status !== order.status && (form.status === 'cancelled' || form.status === 'returned')) {
       try {
-        await cascadeOrderStatusToMfg({ orderId: id, newStatus: form.status })
+        const res = await fetch(`/api/orders/${id}/cascade-mfg`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newStatus: form.status }),
+        })
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}))
+          console.error('cascade to mfg failed', j?.error)
+        }
       } catch (e) {
         console.error('cascade to mfg failed', e)
       }

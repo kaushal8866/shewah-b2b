@@ -20,3 +20,4 @@ scripts/check-db-*.js
 scripts/test-prod-pdf.js
 scripts/test-catalog-pdf.js
 scripts/test-pdf-response.out
+.claude/

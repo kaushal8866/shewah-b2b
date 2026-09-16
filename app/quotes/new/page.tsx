@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense, useMemo } from 'react'
+import { useEffect, useState, Suspense, useMemo, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
@@ -399,7 +399,27 @@ function QuoteBuilderForm() {
         } else {
           // If creating new, default the gold rate on the first blank item
           if (resGold.data?.[0]) {
-            setItems([createBlankItem(Number(resGold.data[0].rate_24k))])
+            const defaultRate = Number(resGold.data[0].rate_24k) || 0
+            setItems([{
+              id: Math.random().toString(36).substring(7),
+              product_id: null,
+              name: '',
+              category: 'Ring',
+              ring_size: '',
+              quantity: '1',
+              karat: '18K',
+              gross_gold_weight_g: '',
+              gold_rate_24k: defaultRate ? String(defaultRate) : '',
+              labour_source: 'partner',
+              labour_partner_id: null,
+              labour_rate_per_g: '',
+              making_charges: '',
+              hallmarking: '45',
+              other_charges: '',
+              other_charges_label: '',
+              reference_images: [],
+              diamonds: []
+            }])
           }
         }
       } catch (err) {
@@ -411,16 +431,7 @@ function QuoteBuilderForm() {
     loadData()
   }, [editId])
 
-  // Recalculate live preview whenever form details modify
-  useEffect(() => {
-    if (loadingInitial) return
-    const timeout = setTimeout(() => {
-      runLivePreview()
-    }, 300)
-    return () => clearTimeout(timeout)
-  }, [items, marginPct, gstTreatment, gstRatePct, loadingInitial])
-
-  async function runLivePreview() {
+  const runLivePreview = useCallback(async () => {
     try {
       const payload = {
         margin_pct: parseFloat(marginPct) || 0,
@@ -476,7 +487,16 @@ function QuoteBuilderForm() {
     } catch (err) {
       console.error('Failed to run preview calculator:', err)
     }
-  }
+  }, [items, marginPct, gstTreatment, gstRatePct])
+
+  // Recalculate live preview whenever form details modify
+  useEffect(() => {
+    if (loadingInitial) return
+    const timeout = setTimeout(() => {
+      runLivePreview()
+    }, 300)
+    return () => clearTimeout(timeout)
+  }, [loadingInitial, runLivePreview])
 
   function createBlankItem(goldRate: number = latestGoldRate): QuoteItem {
     return {

@@ -1,5 +1,6 @@
 import './globals.css'
 import SessionProvider from '@/components/SessionProvider'
+import { CartProvider } from '@/components/d2c/CartContext'
 import AppShell from '@/components/AppShell'
 import Script from 'next/script'
 import { Metadata } from 'next'
@@ -133,9 +134,11 @@ fbq('track', 'PageView');
         {/* End Google Tag Manager (noscript) */}
 
         <SessionProvider>
-          <AppShell>
-            {children}
-          </AppShell>
+          <CartProvider>
+            <AppShell>
+              {children}
+            </AppShell>
+          </CartProvider>
         </SessionProvider>
       </body>
     </html>

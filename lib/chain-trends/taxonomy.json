@@ -1,0 +1,370 @@
+{
+  "_meta": {
+    "purpose": "Men's chain pattern vocabulary. Everything downstream is keyed on this.",
+    "status": "choco chain defined by Kaushal. 'jents chain' = Gujarati for gents chain (category word). Remaining pattern names still to confirm.",
+    "confidence": "weight_band / hollow / making are ESTIMATES for 18kt men's chain, not measured. Correct before relying on.",
+    "created": "2026-08-20",
+    "evidence": [
+      "@shree_arbuda_jewellers_ 2026-08-14 (Gujarati) \"ગોલ્ડ Jents Chain\" #jentschain #jentsjwellery, wt 12.000-25.000 g, 33 likes",
+      "@krishnajewellers_satellite 2026-08-17 (Gujarati, Ahmedabad) \"Gold Jens Chain\", 26 likes"
+    ],
+    "out_of_category": [
+      "kada / bracelet / bangle — wrist, not neck (Kaushal)",
+      "dokiya — women's (Kaushal)",
+      "all silver / 925 — we do gold only (Kaushal)",
+      "gold-plated, 1-gram, forming, steel, alloy",
+      "tali / thali / mangalya / mangalsutra / black-beaded — women's",
+      "kanti, butti, jhumka, nath, payal, choker, haram, tikka, cocktail ring"
+    ],
+    "unconfirmed_chain_terms": {
+      "cocoa": "3 posts — likely same as choco?",
+      "barrel": "3 posts",
+      "stampado": "2 posts — probably Italian 'stampato' (flat stamped chain)",
+      "oval": "2 posts",
+      "greek": "2 posts — r.k.ornaments 'Two-Tone Greek'",
+      "bar": "6 posts — may be bar pendant not chain"
+    }
+  },
+  "patterns": [
+    {
+      "id": "choco",
+      "name": "Choco chain",
+      "surat_name": "choco",
+      "aliases": [
+        "choco chain",
+        "chocolate chain"
+      ],
+      "match": [
+        "choco",
+        "chocolate chain"
+      ],
+      "definition": "Italian (machine-made) chain with geometrical faceted links — reads like a chocolate-bar segment, a kaju-katri diamond, or squares in a grid.",
+      "weight_band_g": [
+        25,
+        40
+      ],
+      "form": "both",
+      "make": "machine",
+      "making_tunch": null,
+      "source": "Kaushal, 2026-08-20. Observed: @rh___jewellers 22K/916 HUID, 35 g."
+    },
+    {
+      "id": "rope",
+      "name": "Rope",
+      "surat_name": null,
+      "aliases": [
+        "rope chain",
+        "twist",
+        "rassi"
+      ],
+      "match": [
+        "rope",
+        "rassi",
+        "twist"
+      ],
+      "weight_band_g": [
+        20,
+        45
+      ],
+      "form": "both",
+      "make": "machine",
+      "making_tunch": [
+        3.0,
+        5.0
+      ]
+    },
+    {
+      "id": "curb",
+      "name": "Curb",
+      "surat_name": "jents chain (generic, see note)",
+      "aliases": [
+        "curb chain",
+        "kerb"
+      ],
+      "match": [
+        "curb",
+        "kerb"
+      ],
+      "weight_band_g": [
+        25,
+        60
+      ],
+      "form": "solid",
+      "make": "machine",
+      "making_tunch": [
+        3.0,
+        4.5
+      ]
+    },
+    {
+      "id": "cuban",
+      "name": "Cuban link",
+      "surat_name": null,
+      "aliases": [
+        "miami cuban",
+        "cuban link"
+      ],
+      "match": [
+        "cuban",
+        "miami"
+      ],
+      "weight_band_g": [
+        30,
+        80
+      ],
+      "form": "both",
+      "make": "both",
+      "making_tunch": [
+        3.5,
+        6.0
+      ]
+    },
+    {
+      "id": "figaro",
+      "name": "Figaro",
+      "surat_name": null,
+      "aliases": [
+        "figaro chain"
+      ],
+      "match": [
+        "figaro",
+        "figro"
+      ],
+      "weight_band_g": [
+        18,
+        40
+      ],
+      "form": "both",
+      "make": "machine",
+      "making_tunch": [
+        3.0,
+        4.5
+      ]
+    },
+    {
+      "id": "box",
+      "name": "Box",
+      "surat_name": null,
+      "aliases": [
+        "box chain",
+        "square link"
+      ],
+      "match": [
+        "box chain",
+        "boxchain"
+      ],
+      "weight_band_g": [
+        15,
+        30
+      ],
+      "form": "solid",
+      "make": "machine",
+      "making_tunch": [
+        3.0,
+        4.0
+      ]
+    },
+    {
+      "id": "franco",
+      "name": "Franco",
+      "surat_name": null,
+      "aliases": [
+        "franco chain"
+      ],
+      "match": [
+        "franco",
+        "franko"
+      ],
+      "weight_band_g": [
+        25,
+        50
+      ],
+      "form": "solid",
+      "make": "machine",
+      "making_tunch": [
+        4.0,
+        6.0
+      ]
+    },
+    {
+      "id": "byzantine",
+      "name": "Byzantine",
+      "surat_name": null,
+      "aliases": [
+        "byzantine chain",
+        "king chain"
+      ],
+      "match": [
+        "byzantine",
+        "byzantium",
+        "king chain"
+      ],
+      "weight_band_g": [
+        30,
+        60
+      ],
+      "form": "solid",
+      "make": "hand",
+      "making_tunch": [
+        6.0,
+        10.0
+      ]
+    },
+    {
+      "id": "snake",
+      "name": "Snake",
+      "surat_name": null,
+      "aliases": [
+        "snake chain"
+      ],
+      "match": [
+        "snake"
+      ],
+      "weight_band_g": [
+        12,
+        25
+      ],
+      "form": "hollow",
+      "make": "machine",
+      "making_tunch": [
+        4.0,
+        6.0
+      ]
+    },
+    {
+      "id": "wheat",
+      "name": "Wheat / Spiga",
+      "surat_name": null,
+      "aliases": [
+        "spiga",
+        "wheat chain"
+      ],
+      "match": [
+        "wheat",
+        "spiga"
+      ],
+      "weight_band_g": [
+        18,
+        35
+      ],
+      "form": "solid",
+      "make": "machine",
+      "making_tunch": [
+        4.0,
+        5.5
+      ]
+    },
+    {
+      "id": "mariner",
+      "name": "Mariner",
+      "surat_name": null,
+      "aliases": [
+        "anchor",
+        "gucci link"
+      ],
+      "match": [
+        "mariner",
+        "anchor chain",
+        "gucci link"
+      ],
+      "weight_band_g": [
+        20,
+        45
+      ],
+      "form": "both",
+      "make": "machine",
+      "making_tunch": [
+        3.5,
+        5.0
+      ]
+    },
+    {
+      "id": "singapore",
+      "name": "Singapore",
+      "surat_name": null,
+      "aliases": [
+        "singapore chain"
+      ],
+      "match": [
+        "singapore"
+      ],
+      "weight_band_g": [
+        10,
+        22
+      ],
+      "form": "solid",
+      "make": "machine",
+      "making_tunch": [
+        3.5,
+        5.0
+      ]
+    },
+    {
+      "id": "ball",
+      "name": "Ball / Bead",
+      "surat_name": null,
+      "aliases": [
+        "bead chain",
+        "moti chain"
+      ],
+      "match": [
+        "ball chain",
+        "bead",
+        "moti"
+      ],
+      "weight_band_g": [
+        15,
+        35
+      ],
+      "form": "hollow",
+      "make": "machine",
+      "making_tunch": [
+        3.5,
+        5.0
+      ]
+    }
+  ],
+  "observed_unmapped": [
+    {
+      "term": "lotus chain",
+      "source": "@jyoti_gold_and_silver #lotuschain",
+      "likes": 12
+    },
+    {
+      "term": "roseball chain",
+      "source": "@sri__jewellers, 100 grams",
+      "likes": 14,
+      "region": "Karnataka"
+    },
+    {
+      "term": "paperclip / two-tone greek",
+      "source": "@r.k.ornaments Junagadh",
+      "likes": 3
+    },
+    {
+      "term": "coreanna chain",
+      "source": "@wwwjewelry1000com, 3mm sterling",
+      "likes": 12
+    },
+    {
+      "term": "coffee bean / gemici",
+      "source": "@cmtsilverchain (Turkey)",
+      "likes": 6
+    },
+    {
+      "term": "veyron snake",
+      "source": "@crystal_blac_ (steel)",
+      "likes": 3
+    },
+    {
+      "term": "royal chains",
+      "source": "@vaibhav.jewelles",
+      "likes": 7
+    },
+    {
+      "term": "fruitful chains",
+      "source": "@rr_zaveri",
+      "likes": 1
+    }
+  ]
+}
