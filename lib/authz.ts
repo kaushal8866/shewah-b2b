@@ -184,6 +184,7 @@ export const TABLE_MODULES: Record<string, ModuleId> = {
   partners: 'partners',
   visits: 'partners',
   partner_signups: 'partners',
+  catalog_access_requests: 'partners',
   // resellers
   resellers: 'resellers',
   reseller_invitations: 'resellers',
@@ -217,6 +218,7 @@ export const TABLE_MODULES: Record<string, ModuleId> = {
   quote_share_links: 'orders',
   // cad
   cad_requests: 'cad_requests',
+  cad_revisions: 'cad_requests',
   // manufacturing
   manufacturing_partners: 'manufacturing',
   manufacturing_orders: 'manufacturing',
@@ -231,6 +233,10 @@ export const TABLE_MODULES: Record<string, ModuleId> = {
   design_interests: 'catalog',
   showcase_views: 'catalog',
   cfg_stone_prices: 'catalog',
+  diamond_shapes: 'catalog',
+  diamond_sizes: 'catalog',
+  d2c_market_prices: 'catalog',
+  product_slug_redirects: 'catalog',
   // rates & lots
   gold_rates: 'gold_rates',
   purchase_lots: 'gold_rates',
@@ -238,6 +244,7 @@ export const TABLE_MODULES: Record<string, ModuleId> = {
   // inventory
   vendors: 'vendors',
   inventory: 'vendors',
+  inventory_transactions: 'vendors',
   // circuits
   circuits: 'circuits',
   // cash

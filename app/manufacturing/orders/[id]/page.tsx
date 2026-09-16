@@ -7,7 +7,6 @@ import { formatDate, getStatusColor } from '@/lib/utils'
 import { ArrowLeft, Save, Trash2, Edit2, X, Printer, Send, Copy, RefreshCw, FileDown, Check, Clock, Link2, FileUp, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { uploadFileToCloudinary } from '@/lib/cloudinaryUpload'
-import { applyMfgStatusChange } from '@/lib/mfgOrderLifecycle'
 import CancelMfgOrderModal from '@/components/CancelMfgOrderModal'
 
 const MFG_STATUSES = ['issued', 'in_progress', 'quality_check', 'completed', 'returned', 'cancelled', 'received_after_cancel']
@@ -202,16 +201,23 @@ export default function ManufacturingOrderDetailPage() {
 
     if (prevStatus !== newStatus) {
       try {
-        await applyMfgStatusChange({
-          mfgOrderId: id,
-          prevStatus: prevStatus ?? '',
-          newStatus,
-          goldWeightRequired: parseFloat(order.gold_weight_required) || null,
-          goldWeightActual: parseFloat(form.gold_weight_actual) || null,
-          goldKarat: parseInt(form.gold_karat) || order?.gold_karat || null,
-          materialFromFloat: !!order?.material_from_float,
-          partnerId: order?.manufacturing_partner_id,
+        const res = await fetch(`/api/manufacturing/orders/${id}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prevStatus: prevStatus ?? '',
+            newStatus,
+            goldWeightRequired: parseFloat(order.gold_weight_required) || null,
+            goldWeightActual: parseFloat(form.gold_weight_actual) || null,
+            goldKarat: parseInt(form.gold_karat) || order?.gold_karat || null,
+            materialFromFloat: !!order?.material_from_float,
+            partnerId: order?.manufacturing_partner_id,
+          }),
         })
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}))
+          console.error('lifecycle transition failed', j?.error)
+        }
       } catch (e) {
         console.error('lifecycle transition failed', e)
       }

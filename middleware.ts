@@ -15,6 +15,22 @@ function isPublicMarketing(pathname: string): boolean {
     pathname.startsWith('/bespoke') ||
     pathname.startsWith('/thank-you') ||
     pathname.startsWith('/frames') ||
+    pathname.startsWith('/jewellery') ||
+    pathname.startsWith('/collections') ||
+    pathname.startsWith('/cart') ||
+    pathname.startsWith('/checkout') ||
+    pathname.startsWith('/order-confirmation') ||
+    pathname.startsWith('/business') ||
+    pathname.startsWith('/about') ||
+    pathname.startsWith('/craftsmanship') ||
+    pathname.startsWith('/diamonds') ||
+    pathname.startsWith('/shipping') ||
+    pathname.startsWith('/returns') ||
+    pathname.startsWith('/warranty') ||
+    pathname.startsWith('/care') ||
+    pathname.startsWith('/contact') ||
+    pathname.startsWith('/wishlist') ||
+    pathname.startsWith('/api/d2c') ||
     pathname === '/api/public/partner-signup' ||
     pathname === '/api/public/consultation'
   )
@@ -195,6 +211,6 @@ export default withAuth(
 export const config = {
   matcher: [
     // SECURITY: anything matched here is excluded from NextAuth middleware.
-    '/((?!login|partner-signup|consultation|bespoke|frames/|setup|showcase|track|m/|cad-share/|q/|c/|accept-invite/|r/|api/r/|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|api/cad-share/|api/quotes/share/|api/c/|api/public|api/upload|_next|_vercel|favicon\\.ico|opengraph-image|.*\\.).*)',
+    '/((?!login|partner-signup|consultation|bespoke|jewellery|collections|cart|checkout|order-confirmation|business|about|craftsmanship|diamonds|shipping|returns|warranty|care|contact|wishlist|frames/|setup|showcase|track|m/|cad-share/|q/|c/|accept-invite/|r/|api/r/|api/d2c|api/auth|api/setup|api/showcase|api/track|api/cron|api/whatsapp|api/m/|api/cad-share/|api/quotes/share/|api/c/|api/public|api/upload|_next|_vercel|favicon\\.ico|opengraph-image|.*\\.).*)',
   ],
 }

@@ -1,0 +1,33 @@
+{
+"source":"authenticated session, navigation reads, 2026-08-20",
+"account_universe":{"ciyazachains":297,"inventoried_shortcodes":168},
+"posts_read":[
+{"sc":"DcP3XtnjLkP","d":"2026-08-19","l":15,"c":0},{"sc":"DcKuAr-iJCI","d":"2026-08-17","l":29,"c":0},
+{"sc":"Dbmr9a2CLfv","d":"2026-08-03","l":47,"c":0},{"sc":"Dbcay7eke3h","d":"2026-07-30","l":53,"c":0},
+{"sc":"DbXRNbVFa1H","d":"2026-07-28","l":51,"c":0},{"sc":"DbNOiT-j8J_","d":"2026-07-24","l":36,"c":0},
+{"sc":"DbIPsSTCJBR","d":"2026-07-23","l":52,"c":0},{"sc":"DbAlUL9lMXN","d":"2026-07-20","l":49,"c":0},
+{"sc":"Da4Y6fZjclX","d":"2026-07-16","l":51,"c":0},{"sc":"DamQYNUlINW","d":"2026-07-09","l":8,"c":0},
+{"sc":"DahGq8JiFKI","d":"2026-07-07","l":28,"c":1},{"sc":"Dab89pLnCal","d":"2026-07-05","l":9,"c":0},
+{"sc":"DaWzCMGjJpI","d":"2026-07-03","l":32,"c":0},{"sc":"DaUN5Fcis4w","d":"2026-07-02","l":9,"c":0},
+{"sc":"DaPEE5jD66o","d":"2026-06-30","l":29,"c":0},{"sc":"DaJ72zkG9BY","d":"2026-06-28","l":9,"c":0},
+{"sc":"DaEyCablWnR","d":"2026-06-26","l":28,"c":0},{"sc":"DaAJ4WjjWEQ","d":"2026-06-25","l":77,"c":0},
+{"sc":"DZ9DiKxjQiK","d":"2026-06-23","l":8,"c":1},{"sc":"DZ351wxEf1h","d":"2026-06-21","l":29,"c":0},
+{"sc":"DZwWPS6AOtd","d":"2026-06-18","l":50,"c":0},{"sc":"DZrGcELjvHs","d":"2026-06-16","l":15,"c":0},
+{"sc":"DZl8u9hj_Pq","d":"2026-06-14","l":35,"c":0},{"sc":"DZgzmakEgH1","d":"2026-06-12","l":17,"c":0},
+{"sc":"DZbp5VulFlF","d":"2026-06-10","l":31,"c":0},{"sc":"DZWgMHbkSNg","d":"2026-06-08","l":9,"c":0},
+{"sc":"DZRWfNmjuS8","d":"2026-06-06","l":31,"c":0},{"sc":"DZMNuHzjRx-","d":"2026-06-04","l":17,"c":0},
+{"sc":"DLTi-c1K1OU","d":"2025-06-25","l":null,"c":2},{"sc":"DNksBLYP8rD","d":"2025-08-20","l":null,"c":1},
+{"sc":"DNrtxgdWiQ5","d":"2025-08-23","l":null,"c":1},{"sc":"DNpI3kdS5Pt","d":"2025-08-22","l":null,"c":1},
+{"sc":"DO0H2UMgAFU","d":"2025-09-20","l":null,"c":1},{"sc":"DPVjXCfD-59","d":"2025-10-03","l":null,"c":1},
+{"sc":"DOuyQQQgqNg","d":"2025-09-18","l":null,"c":1}
+],
+"comment_events":[
+{"post":"DLTi-c1K1OU","posted":"2025-06-25T01:31:16Z","at":"2026-07-13T17:14:31Z","lag_d":383.7,"text":"pp","intent":"price"},
+{"post":"DLTi-c1K1OU","posted":"2025-06-25T01:31:16Z","at":"2025-07-01T18:42:47Z","lag_d":6.7,"text":"fire emoji","intent":"praise"},
+{"post":"DNksBLYP8rD","posted":"2025-08-20T10:20:08Z","at":"2025-11-23T08:29:20Z","lag_d":94.9,"text":"Mention. Weight in every design","intent":"feedback"},
+{"post":"DNrtxgdWiQ5","posted":"2025-08-23T03:50:09Z","at":"2025-11-23T08:28:34Z","lag_d":92.2,"text":"Plz mention weight in every design","intent":"feedback"},
+{"post":"DNpI3kdS5Pt","posted":"2025-08-22T03:49:12Z","at":"2025-11-23T08:28:53Z","lag_d":93.2,"text":"Plz mention weight in every Design","intent":"feedback"},
+{"post":"DO0H2UMgAFU","posted":"2025-09-20T06:43:42Z","at":"2025-09-20T10:45:28Z","lag_d":0.2,"text":"Deler number","intent":"wholesale"},
+{"post":"DPVjXCfD-59","posted":"2025-10-03T06:19:03Z","at":"2025-10-03T17:44:53Z","lag_d":0.5,"text":"heart emoji","intent":"praise"},
+{"post":"DOuyQQQgqNg","posted":"2025-09-18T04:58:56Z","at":"2025-09-18T06:30:26Z","lag_d":0.1,"text":"praise emoji","intent":"praise"}
+]}

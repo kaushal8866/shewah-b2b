@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Plus, Search, Copy, Download, Share2, RefreshCw, ShoppingBag, Eye, Trash2, Calendar, FileText, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -36,11 +36,7 @@ export default function QuotesPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadQuotes()
-  }, [page, statusFilter, search])
-
-  async function loadQuotes() {
+  const loadQuotes = useCallback(async () => {
     setLoading(true)
     try {
       const qParams = new URLSearchParams()
@@ -64,7 +60,11 @@ export default function QuotesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, limit, statusFilter, search])
+
+  useEffect(() => {
+    loadQuotes()
+  }, [loadQuotes])
 
   // Action: Send Quote & get WhatsApp URL
   async function handleSend(quoteId: string) {

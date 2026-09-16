@@ -159,7 +159,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/q/') ||
     pathname.startsWith('/r/') ||
     pathname.startsWith('/accept-invite/') ||
-    pathname.startsWith('/cad-share/')
+    pathname.startsWith('/cad-share/') ||
+    pathname.startsWith('/jewellery') ||
+    pathname.startsWith('/collections') ||
+    pathname.startsWith('/cart') ||
+    pathname.startsWith('/checkout') ||
+    pathname.startsWith('/order-confirmation') ||
+    pathname.startsWith('/business') ||
+    pathname.startsWith('/about') ||
+    pathname.startsWith('/craftsmanship') ||
+    pathname.startsWith('/diamonds') ||
+    pathname.startsWith('/shipping') ||
+    pathname.startsWith('/returns') ||
+    pathname.startsWith('/warranty') ||
+    pathname.startsWith('/care') ||
+    pathname.startsWith('/contact') ||
+    pathname.startsWith('/wishlist')
 
   // Client-side authentication guard for private admin pages
   useEffect(() => {

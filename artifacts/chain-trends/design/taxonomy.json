@@ -1,0 +1,26 @@
+{
+"source":"@arunchainsllp — 'Types of Gold Chains' chart, posted 2026-07-18. Verified account, Bhagal Char Rasta Surat, gold chain manufacturing factory since 2001. Read from the post image.",
+"types":[
+{"n":1,"name":"Curb","stars":5,"strength":"Very Strong","use":"Daily wear, Men's chains","seg":"MENS"},
+{"n":2,"name":"Figaro","stars":4,"strength":"Strong","use":"Daily wear, Men's & Unisex","seg":"MENS/UNISEX"},
+{"n":3,"name":"Rope","stars":5,"strength":"Very Strong","use":"Daily wear, Men's chains, Pendants","seg":"MENS"},
+{"n":4,"name":"Box","stars":4,"strength":"Strong","use":"Pendants, Daily wear","seg":"PENDANT"},
+{"n":5,"name":"Snake","stars":3,"strength":"Moderate","use":"Pendants, Lightweight wear","seg":"PENDANT"},
+{"n":6,"name":"Singapore","stars":3,"strength":"Moderate","use":"Stylish wear, Women's chains","seg":"WOMENS"},
+{"n":7,"name":"Twisted","stars":3,"strength":"Moderate","use":"Fashion wear, Light pendants","seg":"FASHION"},
+{"n":8,"name":"Bead","stars":3,"strength":"Moderate","use":"Pendants, Lightweight wear","seg":"PENDANT"},
+{"n":9,"name":"Belcher","stars":4,"strength":"Strong","use":"Pendants, Daily wear","seg":"PENDANT"},
+{"n":10,"name":"Byzantine","stars":5,"strength":"Very Strong","use":"Men's chains, Heavy pendants","seg":"MENS"},
+{"n":11,"name":"Omega","stars":3,"strength":"Moderate","use":"Stylish wear, Women's chains","seg":"WOMENS"},
+{"n":12,"name":"Herringbone","stars":3,"strength":"Moderate","use":"Fashion wear, Occasional wear","seg":"FASHION"},
+{"n":13,"name":"Venetian","stars":4,"strength":"Strong","use":"Pendants, Daily wear","seg":"PENDANT"},
+{"n":14,"name":"Satellite","stars":3,"strength":"Moderate","use":"Stylish wear, Layering","seg":"FASHION"},
+{"n":15,"name":"Anchor","stars":4,"strength":"Strong","use":"Daily wear, Men's & Unisex","seg":"MENS/UNISEX"}
+],
+"observed_designs":[
+{"name":"Choco Chain","karat":"22K / 916 HUID","weight_g":35,"seller":"rh___jewellers","city":"Kengeri, Bangalore",
+ "note":"Not in the Arun taxonomy. Regional name. Kaushal's definition: Italian machine-made, geometric faceted links reading like a chocolate segment / kaju-katri grid.",
+ "likes_t0":708,"comments_t0":53,"likes_t1":982,"comments_t1":71,"shares":4,"window_hours":6},
+{"name":"Cocoa Chain","karat":null,"weight_g":30,"seller":"rh___jewellers","city":"Kengeri, Bangalore",
+ "note":"Same account, adjacent name. Likely the same family as Choco."}
+]}

@@ -172,4 +172,26 @@ describe('route resolution', () => {
       expect(moduleForPath(representative[id])).toBe(id)
     }
   })
+
+  it('maps the newly added client tables to the correct modules', () => {
+    expect(TABLE_MODULES['cad_revisions']).toBe('cad_requests')
+    expect(TABLE_MODULES['diamond_shapes']).toBe('catalog')
+    expect(TABLE_MODULES['diamond_sizes']).toBe('catalog')
+    expect(TABLE_MODULES['catalog_access_requests']).toBe('partners')
+    expect(TABLE_MODULES['inventory_transactions']).toBe('vendors')
+
+    const subCad = { role: 'sub', permissions: ['cad_requests'] }
+    expect(canAccessTable(subCad, 'cad_revisions', 'select').allowed).toBe(true)
+    expect(canAccessTable(subCad, 'cad_revisions', 'insert').allowed).toBe(true)
+
+    const subCatalog = { role: 'sub', permissions: ['catalog'] }
+    expect(canAccessTable(subCatalog, 'diamond_shapes', 'select').allowed).toBe(true)
+    expect(canAccessTable(subCatalog, 'diamond_sizes', 'select').allowed).toBe(true)
+
+    const subPartners = { role: 'sub', permissions: ['partners'] }
+    expect(canAccessTable(subPartners, 'catalog_access_requests', 'select').allowed).toBe(true)
+
+    const subVendors = { role: 'sub', permissions: ['vendors'] }
+    expect(canAccessTable(subVendors, 'inventory_transactions', 'select').allowed).toBe(true)
+  })
 })

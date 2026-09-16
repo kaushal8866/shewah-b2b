@@ -1,0 +1,1260 @@
+{
+ "total": 1001,
+ "cats": [
+  [
+   "other / unclassified",
+   365
+  ],
+  [
+   "ladies",
+   165
+  ],
+  [
+   "GOLD MEN'S CHAIN",
+   159
+  ],
+  [
+   "silver",
+   133
+  ],
+  [
+   "wrist (kada/bracelet)",
+   100
+  ],
+  [
+   "rings",
+   41
+  ],
+  [
+   "pendant / locket",
+   25
+  ],
+  [
+   "plated / 1-gram / steel",
+   13
+  ]
+ ],
+ "scored": 987,
+ "hidden": 14,
+ "likes": {
+  "median": 12,
+  "mean": 578,
+  "max": 460925,
+  "p90": 93,
+  "zero": 25
+ },
+ "comm": {
+  "median": 0,
+  "mean": 18.6,
+  "max": 10581,
+  "zero": 787,
+  "ge10": 51
+ },
+ "price": {
+  "captured": 904,
+  "intent": 321,
+  "pct": 35.5,
+  "posts_with": 81
+ },
+ "accounts": [
+  {
+   "u": "r.k.ornaments",
+   "n": 32,
+   "chain": 27,
+   "foll": null,
+   "med": 3,
+   "mx": 12,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "shreebalajichainnjewels",
+   "n": 32,
+   "chain": 25,
+   "foll": null,
+   "med": 4,
+   "mx": 1571,
+   "comm": 7,
+   "pq": 1,
+   "ncap": 10
+  },
+  {
+   "u": "nakodagoldsurat",
+   "n": 32,
+   "chain": 12,
+   "foll": null,
+   "med": 23,
+   "mx": 3126,
+   "comm": 555,
+   "pq": 6,
+   "ncap": 35
+  },
+  {
+   "u": "jainchainrajkotllp",
+   "n": 32,
+   "chain": 12,
+   "foll": null,
+   "med": 6,
+   "mx": 113,
+   "comm": 1,
+   "pq": 0,
+   "ncap": 1
+  },
+  {
+   "u": "arunchainsllp",
+   "n": 32,
+   "chain": 10,
+   "foll": null,
+   "med": 13,
+   "mx": 173,
+   "comm": 7,
+   "pq": 1,
+   "ncap": 6
+  },
+  {
+   "u": "sivenjewels",
+   "n": 32,
+   "chain": 10,
+   "foll": null,
+   "med": 28,
+   "mx": 751,
+   "comm": 50,
+   "pq": 0,
+   "ncap": 29
+  },
+  {
+   "u": "_loukyachains",
+   "n": 32,
+   "chain": 9,
+   "foll": null,
+   "med": 56,
+   "mx": 5721,
+   "comm": 165,
+   "pq": 4,
+   "ncap": 63
+  },
+  {
+   "u": "bhagyalakshmi_gold_palace_916",
+   "n": 32,
+   "chain": 7,
+   "foll": null,
+   "med": 54,
+   "mx": 1002,
+   "comm": 33,
+   "pq": 1,
+   "ncap": 23
+  },
+  {
+   "u": "ciyazachains",
+   "n": 32,
+   "chain": 7,
+   "foll": null,
+   "med": 29,
+   "mx": 89,
+   "comm": 3,
+   "pq": 0,
+   "ncap": 1
+  },
+  {
+   "u": "jewellerygardenpvtltd",
+   "n": 31,
+   "chain": 5,
+   "foll": null,
+   "med": 53,
+   "mx": 218,
+   "comm": 46,
+   "pq": 14,
+   "ncap": 28
+  },
+  {
+   "u": "shreedhanlaxmi.jewellers",
+   "n": 32,
+   "chain": 4,
+   "foll": null,
+   "med": 9,
+   "mx": 346,
+   "comm": 13,
+   "pq": 2,
+   "ncap": 18
+  },
+  {
+   "u": "maharaja_chains",
+   "n": 31,
+   "chain": 4,
+   "foll": null,
+   "med": 17,
+   "mx": 47,
+   "comm": 19,
+   "pq": 0,
+   "ncap": 19
+  },
+  {
+   "u": "vaibhav.jewelles",
+   "n": 31,
+   "chain": 4,
+   "foll": null,
+   "med": 9,
+   "mx": 19,
+   "comm": 9,
+   "pq": 0,
+   "ncap": 9
+  },
+  {
+   "u": "rh___jewellers",
+   "n": 31,
+   "chain": 4,
+   "foll": null,
+   "med": 174,
+   "mx": 20689,
+   "comm": 851,
+   "pq": 107,
+   "ncap": 197
+  },
+  {
+   "u": "kapishjewelsretail",
+   "n": 25,
+   "chain": 3,
+   "foll": null,
+   "med": 2,
+   "mx": 4,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "jyoti_gold_and_silver",
+   "n": 32,
+   "chain": 2,
+   "foll": null,
+   "med": 24,
+   "mx": 55,
+   "comm": 23,
+   "pq": 4,
+   "ncap": 11
+  },
+  {
+   "u": "sri__jewellers",
+   "n": 19,
+   "chain": 2,
+   "foll": null,
+   "med": 20,
+   "mx": 36,
+   "comm": 3,
+   "pq": 1,
+   "ncap": 2
+  },
+  {
+   "u": "dhara_jewellers",
+   "n": 32,
+   "chain": 2,
+   "foll": null,
+   "med": 3,
+   "mx": 31,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "tulsijewellershoskote",
+   "n": 32,
+   "chain": 2,
+   "foll": null,
+   "med": 4,
+   "mx": 13,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "padmavatijew__gold",
+   "n": 3,
+   "chain": 1,
+   "foll": null,
+   "med": 22,
+   "mx": 1027,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "ashutosh_gold",
+   "n": 32,
+   "chain": 1,
+   "foll": null,
+   "med": 7,
+   "mx": 17,
+   "comm": 3,
+   "pq": 1,
+   "ncap": 3
+  },
+  {
+   "u": "krishnajewellers_satellite",
+   "n": 4,
+   "chain": 1,
+   "foll": null,
+   "med": 65,
+   "mx": 133,
+   "comm": 6,
+   "pq": 0,
+   "ncap": 6
+  },
+  {
+   "u": "rajwadijewellers",
+   "n": 32,
+   "chain": 1,
+   "foll": null,
+   "med": 62,
+   "mx": 3151,
+   "comm": 302,
+   "pq": 46,
+   "ncap": 73
+  },
+  {
+   "u": "mahadev_jewellers_2025",
+   "n": 32,
+   "chain": 1,
+   "foll": null,
+   "med": 14,
+   "mx": 29,
+   "comm": 12,
+   "pq": 0,
+   "ncap": 7
+  },
+  {
+   "u": "vasudev_creation",
+   "n": 32,
+   "chain": 1,
+   "foll": null,
+   "med": 4,
+   "mx": 10,
+   "comm": 2,
+   "pq": 0,
+   "ncap": 1
+  },
+  {
+   "u": "shree_arbuda_jewellers_",
+   "n": 32,
+   "chain": 1,
+   "foll": null,
+   "med": 97,
+   "mx": 785,
+   "comm": 41,
+   "pq": 7,
+   "ncap": 30
+  },
+  {
+   "u": "__shop.hemorajewellery__",
+   "n": 16,
+   "chain": 1,
+   "foll": null,
+   "med": 31,
+   "mx": 54,
+   "comm": 1,
+   "pq": 0,
+   "ncap": 1
+  },
+  {
+   "u": "nsjewellerych",
+   "n": 32,
+   "chain": 0,
+   "foll": null,
+   "med": 2,
+   "mx": 5,
+   "comm": 1,
+   "pq": 0,
+   "ncap": 1
+  },
+  {
+   "u": "amey_jewellers_29",
+   "n": 32,
+   "chain": 0,
+   "foll": null,
+   "med": 8,
+   "mx": 16,
+   "comm": 1,
+   "pq": 0,
+   "ncap": 1
+  },
+  {
+   "u": "ss_jewellers_gotri",
+   "n": 32,
+   "chain": 0,
+   "foll": null,
+   "med": 1,
+   "mx": 6,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "achala_more",
+   "n": 1,
+   "chain": 0,
+   "foll": null,
+   "med": 485,
+   "mx": 485,
+   "comm": 11,
+   "pq": 0,
+   "ncap": 10
+  },
+  {
+   "u": "mayurajewellersvirar",
+   "n": 32,
+   "chain": 0,
+   "foll": null,
+   "med": 4,
+   "mx": 73,
+   "comm": 2,
+   "pq": 0,
+   "ncap": 2
+  },
+  {
+   "u": "kapishgoldanddiamonds",
+   "n": 7,
+   "chain": 0,
+   "foll": null,
+   "med": 13,
+   "mx": 48,
+   "comm": 25,
+   "pq": 1,
+   "ncap": 25
+  },
+  {
+   "u": "rr_zaveri",
+   "n": 32,
+   "chain": 0,
+   "foll": null,
+   "med": 1,
+   "mx": 4,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "rajeshsilverpvtltd",
+   "n": 32,
+   "chain": 0,
+   "foll": null,
+   "med": 13,
+   "mx": 1095,
+   "comm": 19,
+   "pq": 1,
+   "ncap": 18
+  },
+  {
+   "u": "glambox_official_india",
+   "n": 1,
+   "chain": 0,
+   "foll": null,
+   "med": 14,
+   "mx": 14,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "n": 32,
+   "chain": 0,
+   "foll": null,
+   "med": 54,
+   "mx": 460925,
+   "comm": 16099,
+   "pq": 124,
+   "ncap": 272
+  },
+  {
+   "u": "bongoplus.bp",
+   "n": 1,
+   "chain": 0,
+   "foll": null,
+   "med": 112,
+   "mx": 112,
+   "comm": 2,
+   "pq": 0,
+   "ncap": 2
+  }
+ ],
+ "ratio_bands": [
+  {
+   "band": "<2%",
+   "n": 14,
+   "pq": 23
+  },
+  {
+   "band": "2-5%",
+   "n": 16,
+   "pq": 28
+  },
+  {
+   "band": "5-15%",
+   "n": 27,
+   "pq": 37
+  },
+  {
+   "band": "15-40%",
+   "n": 19,
+   "pq": 38
+  },
+  {
+   "band": ">40%",
+   "n": 8,
+   "pq": 37
+  }
+ ],
+ "weights": {
+  "n": 143,
+  "median": 8.0,
+  "bands": [
+   {
+    "b": "0-10",
+    "n": 75
+   },
+   {
+    "b": "10-20",
+    "n": 24
+   },
+   {
+    "b": "20-30",
+    "n": 15
+   },
+   {
+    "b": "30-40",
+    "n": 10
+   },
+   {
+    "b": "40-50",
+    "n": 7
+   },
+   {
+    "b": "50-60",
+    "n": 3
+   },
+   {
+    "b": "60-70",
+    "n": 1
+   },
+   {
+    "b": "70-80",
+    "n": 3
+   },
+   {
+    "b": "80-90",
+    "n": 2
+   },
+   {
+    "b": "100-110",
+    "n": 2
+   },
+   {
+    "b": "150-160",
+    "n": 1
+   }
+  ]
+ },
+ "terms": [
+  [
+   "italian",
+   7
+  ],
+  [
+   "bar",
+   6
+  ],
+  [
+   "indo",
+   4
+  ],
+  [
+   "dokiya",
+   4
+  ],
+  [
+   "tali",
+   3
+  ],
+  [
+   "cocktail",
+   3
+  ],
+  [
+   "fruitful",
+   3
+  ],
+  [
+   "barrel",
+   3
+  ],
+  [
+   "stampado",
+   2
+  ],
+  [
+   "choco",
+   2
+  ],
+  [
+   "bond",
+   2
+  ],
+  [
+   "cocoa",
+   2
+  ],
+  [
+   "mangalya",
+   2
+  ],
+  [
+   "beaded",
+   2
+  ],
+  [
+   "oval",
+   2
+  ],
+  [
+   "lotus",
+   2
+  ],
+  [
+   "mangalsutra",
+   2
+  ],
+  [
+   "layered",
+   1
+  ],
+  [
+   "jens",
+   1
+  ],
+  [
+   "multi-strand",
+   1
+  ],
+  [
+   "signature",
+   1
+  ],
+  [
+   "rose-gold",
+   1
+  ],
+  [
+   "lucky",
+   1
+  ],
+  [
+   "roseball",
+   1
+  ]
+ ],
+ "top_chain_likes": [
+  {
+   "u": "_loukyachains",
+   "sc": "DW5yTOeiQvy",
+   "likes": 5721,
+   "comments": 13,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 1,
+   "ncap": 13,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "LKC Chains*: *Stylish / Luxury:* - LKC Chains — pure gold, pure attitude 🔗✨ - Not just a chain, it’s an LKC statement 💛 WearGold *",
+   "foll": null
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DRUXxLhkhTH",
+   "likes": 2412,
+   "comments": 110,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 0,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "From melting pure 22k gold to polishing every link — your Laukya chain is crafted with precision, strength, and shine in every step. ✨ Lightweight, durable, and made for everyday elegance. . . . . . [",
+   "foll": null
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DXBbL7wEhbS",
+   "likes": 2026,
+   "comments": 14,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 2,
+   "ncap": 9,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "LKC Chains*:LKCChains ChainGoals PremiumPick - Swag chahiye? Seedha LKC Chains pehno 🛍️ LKCChains DesiLuxury GoldChainLove - Shaadi ho ya entry, LKC Chain ke saath sab heavy 👑 LKCChains FestiveFlex Je",
+   "foll": null
+  },
+  {
+   "u": "shreebalajichainnjewels",
+   "sc": "DbNLvuhOIMj",
+   "likes": 1571,
+   "comments": 1,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 1,
+   "ncap": 4,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "It begins as a beautiful pendant—but wait until it opens! From the detailed Hanuman-inspired front to the divine figures revealed inside, this exceptional creation from Shree Balaji Chain & Jewels bri",
+   "foll": null
+  },
+  {
+   "u": "padmavatijew__gold",
+   "sc": "Db-wJjIj-FX",
+   "likes": 1027,
+   "comments": 0,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 0,
+   "ncap": 0,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "✨ Elegance that speaks for itself. ✨ A timeless gold chain, crafted to add a royal touch to every look. 💛👑 ✨ Padmavati Jewellers ✨",
+   "foll": null
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DcEKh5qpkTj",
+   "likes": 702,
+   "comments": 51,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 15,
+   "ncap": 15,
+   "wts": [
+    35.0
+   ],
+   "ts": "",
+   "img": null,
+   "cap": "✨ Customer’s Honest Review ❤️ Our happy customer chose a 22K | 916 HUID Hallmark Choco Chain weighing 35 grams. ✨ Thank you for trusting RH Jewellers! Your satisfaction is our biggest reward. 💛 📍 Visi",
+   "foll": null
+  },
+  {
+   "u": "shreebalajichainnjewels",
+   "sc": "DaFhCQAOZyt",
+   "likes": 290,
+   "comments": 0,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 0,
+   "ncap": 0,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Mumbai is ready. The stage is set. ✨ Shree Balaji Chain & Jewels invites you to experience a refined collection of premium chain designs at IIJS Bharat Premiere Mumbai 2026. Discover craftsmanship, de",
+   "foll": null
+  },
+  {
+   "u": "bhagyalakshmi_gold_palace_916",
+   "sc": "DakqIQoKHW4",
+   "likes": 229,
+   "comments": 10,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 1,
+   "ncap": 5,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "🔥 Style that speaks before you do. Upgrade your look with our premium gents gold chains—crafted for confidence, built to shine. ✨ Whether it’s for everyday wear or a special occasion, find the perfect",
+   "foll": null
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "Dbhu2f4pXRV",
+   "likes": 225,
+   "comments": 0,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 0,
+   "ncap": 0,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Ek customer bina chain liye chala gaya... agle customer ne bina negotiation ke chain pack karwa li. 😂💀 📍 45–46, 2nd Floor, Kucha Mahajani, Delhi 📞 +91-9990005550",
+   "foll": null
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DcBUQjIAV9o",
+   "likes": 210,
+   "comments": 11,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 1,
+   "ncap": 11,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Men’s Collection 🔥 Jai Ambey Chains brings you a wide variety of stylish chains for men — from classic to trending designs. ✨ Customization also available to make your chain truly yours! 💎 📩 DM us for",
+   "foll": null
+  },
+  {
+   "u": "arunchainsllp",
+   "sc": "DXRKwjuxzxm",
+   "likes": 173,
+   "comments": 0,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 0,
+   "ncap": 0,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "From manufacturing to market — all under one roof 🔗 Arun Chain opens its new store for premium wholesale collections! DM or visit now for wholesale inquiries & best deals! [Wholesale jewellery, manufa",
+   "foll": null
+  },
+  {
+   "u": "bhagyalakshmi_gold_palace_916",
+   "sc": "DbUyZTOxmp6",
+   "likes": 126,
+   "comments": 2,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 0,
+   "ncap": 2,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "✨ Elevate your style with timeless elegance. ✨ A men’s fancy gold chain isn’t just jewellery—it’s a statement of confidence, class, and success. Crafted to shine, designed to impress. Visit Bhagyalaks",
+   "foll": null
+  }
+ ],
+ "top_price": [
+  {
+   "u": "rh___jewellers",
+   "sc": "DcEKh5qpkTj",
+   "likes": 702,
+   "comments": 51,
+   "plays": null,
+   "cat": "GOLD MEN'S CHAIN",
+   "pq": 15,
+   "ncap": 15,
+   "wts": [
+    35.0
+   ],
+   "ts": "",
+   "img": null,
+   "cap": "✨ Customer’s Honest Review ❤️ Our happy customer chose a 22K | 916 HUID Hallmark Choco Chain weighing 35 grams. ✨ Thank you for trusting RH Jewellers! Your satisfaction is our biggest reward. 💛 📍 Visi",
+   "foll": null
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DcBD91gSjM2",
+   "likes": 568,
+   "comments": 40,
+   "plays": null,
+   "cat": "wrist (kada/bracelet)",
+   "pq": 13,
+   "ncap": 15,
+   "wts": [
+    12.0,
+    30.0
+   ],
+   "ts": "",
+   "img": null,
+   "cap": "✨ Men’s Kada Collection — Bold. Premium. Timeless. ✨ Introducing our latest Men’s Kada Collection, crafted in 22K Gold | 916 HUID Hallmarked 💛 ⚡ Available from 12 grams to 30 grams ✨ Electroform optio",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "DUA2e9BDLw_",
+   "likes": 12554,
+   "comments": 4669,
+   "plays": null,
+   "cat": "silver",
+   "pq": 12,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Pendant ;L:450 Made in pure silver ✅ Quantity + purity. ✅ Plating available ✅ Prepaid + cod available ✅ Daily wearable ✅ Perfect for your daily wear ✅ SHOP LOCATION:- 38, saurastra soc., p",
+   "foll": null
+  },
+  {
+   "u": "rajwadijewellers",
+   "sc": "DbGU3B1jkIU",
+   "likes": 1171,
+   "comments": 93,
+   "plays": null,
+   "cat": "pendant / locket",
+   "pq": 12,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "A celebration of heritage, handcrafted in gold. ✨ Delicate latticework, intricate granulation, and rich crimson enamel accents come together to create a necklace that radiates timeless elegance. The b",
+   "foll": null
+  },
+  {
+   "u": "rajwadijewellers",
+   "sc": "DbtJ672jOO7",
+   "likes": 1560,
+   "comments": 28,
+   "plays": null,
+   "cat": "pendant / locket",
+   "pq": 12,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "A masterpiece woven in gold, crafted to be remembered forever. ✨ Every intricate motif, every delicate bead, and every handcrafted detail comes together in this breathtaking necklace set. The layered ",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "DUAwdELjF7E",
+   "likes": 460925,
+   "comments": 10581,
+   "plays": null,
+   "cat": "silver",
+   "pq": 10,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 pendant L:450 Made in 92.5 silver ✅ Quantity + purity. ✅ Plating available ✅ Prepaid + cod available ✅ Daily wearable ✅ Perfect for your daily wear ✅ SHOP LOCATION:- 38, saurastra soc., pa",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "DZeb5iDsHq6",
+   "likes": 15921,
+   "comments": 431,
+   "plays": null,
+   "cat": "silver",
+   "pq": 10,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Chain L:400 w:17.350 w:25.460 Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywearable✅ Cod and pre",
+   "foll": null
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "Db54s1ypVQG",
+   "likes": 718,
+   "comments": 98,
+   "plays": null,
+   "cat": "ladies",
+   "pq": 10,
+   "ncap": 15,
+   "wts": [
+    8.0,
+    50.0,
+    50.0
+   ],
+   "ts": "",
+   "img": null,
+   "cap": "✨ Mangalya Chains – Elegant & Timeless! ✨ Our beautiful 22 Karat | 916 HUID Hallmarked Mangalya Chains are now available from 8 grams up to 50 grams, ready in stock. 💛 💫 8–50 grams available 💫 22K Gol",
+   "foll": null
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "Db9tjHHJQQv",
+   "likes": 283,
+   "comments": 72,
+   "plays": null,
+   "cat": "other / unclassified",
+   "pq": 10,
+   "ncap": 13,
+   "wts": [
+    15.0
+   ],
+   "ts": "",
+   "img": null,
+   "cap": "✨ NEW ELECTROFORM COLLECTION IS HERE! ✨ Introducing our latest Electroform Jewellery Collection, starting from just 2 grams to 15 grams! 💛 💎 22K Gold | 916 HUID Hallmark ✨ Lightweight • Elegant • Prem",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "DcBcy17MEui",
+   "likes": 68,
+   "comments": 30,
+   "plays": null,
+   "cat": "silver",
+   "pq": 10,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Bracelet L:350 Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywearable✅ Cod and prepaid ✅ Perfect ",
+   "foll": null
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DcNREBaprlh",
+   "likes": 96,
+   "comments": 20,
+   "plays": null,
+   "cat": "ladies",
+   "pq": 10,
+   "ncap": 10,
+   "wts": [
+    29.0
+   ],
+   "ts": "",
+   "img": null,
+   "cap": "✨ Electroform Kanti Necklace Collection ✨ Elegant • Lightweight • Stunningly Crafted 💛 Our Electroform Kanti Necklaces are available from 19 to 29 grams, featuring beautiful finishing and timeless des",
+   "foll": null
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DU0a0lLEu-2",
+   "likes": 20689,
+   "comments": 240,
+   "plays": null,
+   "cat": "other / unclassified",
+   "pq": 9,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Royal look starts from the wrist 👑 Heavy design, premium finish, pure gold. Come & try our Lion Collection today",
+   "foll": null
+  },
+  {
+   "u": "rajwadijewellers",
+   "sc": "DbBUoLIjLOb",
+   "likes": 3151,
+   "comments": 103,
+   "plays": null,
+   "cat": "ladies",
+   "pq": 9,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Crafted to honour tradition. Designed to command attention. ♥️ This statement long mangalsutra is a celebration of meticulous craftsmanship; from its beautifully structured gold panels and perfectly b",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "DcA656ZsZt9",
+   "likes": 24,
+   "comments": 30,
+   "plays": null,
+   "cat": "silver",
+   "pq": 9,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Rakhi Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywearable✅ Cod and prepaid ✅ Perfect for your ",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "Db8OJRUMYH0",
+   "likes": 19,
+   "comments": 26,
+   "plays": null,
+   "cat": "silver",
+   "pq": 9,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Rakhi Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywearable✅ Cod and prepaid ✅ Perfect for your ",
+   "foll": null
+  }
+ ],
+ "top_ratio": [
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "Db8OJRUMYH0",
+   "likes": 19,
+   "comments": 26,
+   "plays": null,
+   "cat": "silver",
+   "pq": 9,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Rakhi Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywearable✅ Cod and prepaid ✅ Perfect for your ",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "DcA656ZsZt9",
+   "likes": 24,
+   "comments": 30,
+   "plays": null,
+   "cat": "silver",
+   "pq": 9,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Rakhi Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywearable✅ Cod and prepaid ✅ Perfect for your ",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "Db5vGHxsF-Q",
+   "likes": 41,
+   "comments": 39,
+   "plays": null,
+   "cat": "silver",
+   "pq": 8,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Rakhi Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywearable✅ Cod and prepaid ✅ Perfect for your ",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "DcOCmaPM3uO",
+   "likes": 13,
+   "comments": 10,
+   "plays": null,
+   "cat": "silver",
+   "pq": 0,
+   "ncap": 4,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Earrings c:355 w:13.270; c:625 w:7.450; c:385 Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailyweara",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "Db7_YggMKfQ",
+   "likes": 47,
+   "comments": 34,
+   "plays": null,
+   "cat": "silver",
+   "pq": 2,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Bangles w:15.570 Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywearable✅ Cod and prepaid ✅ Perfec",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "DcJQhAQMHLy",
+   "likes": 54,
+   "comments": 28,
+   "plays": null,
+   "cat": "silver",
+   "pq": 1,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Kada c:825 w:14.670; c:685 Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywearable✅ Cod and prepai",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "Db7xw50syf7",
+   "likes": 87,
+   "comments": 41,
+   "plays": null,
+   "cat": "silver",
+   "pq": 5,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Watch L:350 w:10.610 w:12.820 w:10.060 w:20.220 Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywea",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "DcBcy17MEui",
+   "likes": 68,
+   "comments": 30,
+   "plays": null,
+   "cat": "silver",
+   "pq": 10,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Bracelet L:350 Made in 92.5 silver well Stamped ✅ AAA + Quality Zirconia Diamond ✅ Anti Tarnsihed ✅ Suitable to all skin types ✅ Smooth finished ✅ Dailywearable✅ Cod and prepaid ✅ Perfect ",
+   "foll": null
+  },
+  {
+   "u": "vishaljewellerssurat",
+   "sc": "DUA2e9BDLw_",
+   "likes": 12554,
+   "comments": 4669,
+   "plays": null,
+   "cat": "silver",
+   "pq": 12,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "Silver 92.5 Pendant ;L:450 Made in pure silver ✅ Quantity + purity. ✅ Plating available ✅ Prepaid + cod available ✅ Daily wearable ✅ Perfect for your daily wear ✅ SHOP LOCATION:- 38, saurastra soc., p",
+   "foll": null
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "Db8euGbprmg",
+   "likes": 440,
+   "comments": 131,
+   "plays": null,
+   "cat": "other / unclassified",
+   "pq": 8,
+   "ncap": 15,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "✨ Your Favourite Electroform Collection, Coming Your Way from IIJS2026 very soon✨ From elegant Electroform Malas & Bracelets to stunning Chains & Jhumkas — we’re personally sourcing the latest and mos",
+   "foll": null
+  },
+  {
+   "u": "jyoti_gold_and_silver",
+   "sc": "Db9x3ajzLod",
+   "likes": 51,
+   "comments": 15,
+   "plays": null,
+   "cat": "other / unclassified",
+   "pq": 4,
+   "ncap": 7,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "",
+   "foll": null
+  },
+  {
+   "u": "sivenjewels",
+   "sc": "DbozbV1jbwn",
+   "likes": 70,
+   "comments": 19,
+   "plays": null,
+   "cat": "other / unclassified",
+   "pq": 0,
+   "ncap": 10,
+   "wts": [],
+   "ts": "",
+   "img": null,
+   "cap": "The latest Siven Italian Collection is here—crafted for retailers who value luxury, elegance, and timeless design. ✨ . 👉 Comment \"SIVEN\" to explore the collection and get our stall details.",
+   "foll": null
+  }
+ ]
+}

@@ -1,0 +1,190 @@
+{
+ "n": 62,
+ "source": "authenticated session, full threads",
+ "intents": [
+  {
+   "k": "price",
+   "n": 29,
+   "pct": 47
+  },
+  {
+   "k": "wastage/making",
+   "n": 11,
+   "pct": 18
+  },
+  {
+   "k": "weight",
+   "n": 9,
+   "pct": 15
+  },
+  {
+   "k": "manufacturing",
+   "n": 6,
+   "pct": 10
+  },
+  {
+   "k": "praise/other",
+   "n": 6,
+   "pct": 10
+  },
+  {
+   "k": "stock/delivery",
+   "n": 3,
+   "pct": 5
+  },
+  {
+   "k": "MOQ/wholesale",
+   "n": 3,
+   "pct": 5
+  },
+  {
+   "k": "contact",
+   "n": 3,
+   "pct": 5
+  },
+  {
+   "k": "purity",
+   "n": 2,
+   "pct": 3
+  }
+ ],
+ "audience": {
+  "trade": 20,
+  "buyer": 37,
+  "noise": 6
+ },
+ "trade_quotes": [
+  {
+   "t": "Moq hum chhote dukandar bhi aake le sakte hai kya ek do pc",
+   "u": "_loukyachains",
+   "tag": "MOQ/wholesale"
+  },
+  {
+   "t": "Kitni taref kari kam hogi ge",
+   "u": "_loukyachains",
+   "tag": "wastage/making"
+  },
+  {
+   "t": "Wastage kya hai mam ?",
+   "u": "_loukyachains",
+   "tag": "wastage/making"
+  },
+  {
+   "t": "Puri duniya me milti he... kitni Making per grm he...? Or kitni purity he wo bolo",
+   "u": "_loukyachains",
+   "tag": "wastage/making"
+  },
+  {
+   "t": "Tax kitna dete ho",
+   "u": "_loukyachains",
+   "tag": "wastage/making"
+  },
+  {
+   "t": "Hisab",
+   "u": "_loukyachains",
+   "tag": "wastage/making"
+  },
+  {
+   "t": "Wastage?",
+   "u": "_loukyachains",
+   "tag": "wastage/making"
+  },
+  {
+   "t": "Bhai ji kya %",
+   "u": "_loukyachains",
+   "tag": "wastage/making"
+  },
+  {
+   "t": "Bhai is sabme koi kharcha nhi aata kya?? Log 1-2% va pe maal bech rahe hain...",
+   "u": "_loukyachains",
+   "tag": "wastage/making"
+  },
+  {
+   "t": "I m operator this machine",
+   "u": "_loukyachains",
+   "tag": "manufacturing"
+  },
+  {
+   "t": "Kitne percent lete ho 100 gm pe",
+   "u": "_loukyachains",
+   "tag": "wastage/making"
+  },
+  {
+   "t": "Share pdf",
+   "u": "arunchainsllp",
+   "tag": "MOQ/wholesale"
+  }
+ ],
+ "buyer_quotes": [
+  {
+   "t": "Approx price",
+   "u": "rh___jewellers",
+   "tag": "price"
+  },
+  {
+   "t": "Price brother",
+   "u": "rh___jewellers",
+   "tag": "price"
+  },
+  {
+   "t": "Is this gold or silver",
+   "u": "rh___jewellers",
+   "tag": "purity"
+  },
+  {
+   "t": "Online delivery available",
+   "u": "rh___jewellers",
+   "tag": "stock/delivery"
+  },
+  {
+   "t": "Is stock available?",
+   "u": "rh___jewellers",
+   "tag": "stock/delivery"
+  },
+  {
+   "t": "Earrings price and weight",
+   "u": "rh___jewellers",
+   "tag": "price, weight"
+  },
+  {
+   "t": "Price of necklace",
+   "u": "rh___jewellers",
+   "tag": "price"
+  },
+  {
+   "t": "Price and weight please",
+   "u": "rh___jewellers",
+   "tag": "price, weight"
+  },
+  {
+   "t": "Chain ka weight",
+   "u": "_loukyachains",
+   "tag": "weight"
+  },
+  {
+   "t": "Chain ka weight",
+   "u": "_loukyachains",
+   "tag": "weight"
+  },
+  {
+   "t": "Address and price rate 10 grm",
+   "u": "bhagyalakshmi_gold_palace_916",
+   "tag": "price, weight"
+  },
+  {
+   "t": "Kitne gram ka hai ?",
+   "u": "jainchainllp",
+   "tag": "price, weight"
+  }
+ ],
+ "feedback": [
+  {
+   "t": "Plz mention weight in every design",
+   "u": "ciyazachains"
+  },
+  {
+   "t": "Kitne gram ka hai ?  →  seller replied: 17grm",
+   "u": "jainchainllp"
+  }
+ ]
+}

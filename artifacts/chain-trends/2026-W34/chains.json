@@ -1,0 +1,1534 @@
+{
+ "total": 399,
+ "scored": 397,
+ "hidden": 2,
+ "accounts_n": 36,
+ "likes": {
+  "median": 8,
+  "mean": 59,
+  "max": 5721,
+  "p90": 62
+ },
+ "comm": {
+  "median": 0,
+  "mean": 1.1,
+  "max": 131,
+  "zero": 344,
+  "ge10": 9
+ },
+ "price": {
+  "captured": 168,
+  "intent": 36,
+  "pct": 21.4,
+  "posts_with": 14
+ },
+ "src": [
+  [
+   "chain-only account",
+   278
+  ],
+  [
+   "caption says chain",
+   121
+  ]
+ ],
+ "patterns": [
+  {
+   "name": "italian (unspec)",
+   "n": 102,
+   "accts": 7,
+   "med": 15,
+   "mx": 96,
+   "pq": 33
+  },
+  {
+   "name": "cuban",
+   "n": 8,
+   "accts": 5,
+   "med": 12,
+   "mx": 32,
+   "pq": 0
+  },
+  {
+   "name": "two-tone",
+   "n": 8,
+   "accts": 3,
+   "med": 12,
+   "mx": 64,
+   "pq": 25
+  },
+  {
+   "name": "lotus",
+   "n": 5,
+   "accts": 4,
+   "med": 12,
+   "mx": 113,
+   "pq": 0
+  },
+  {
+   "name": "rope",
+   "n": 5,
+   "accts": 4,
+   "med": 3,
+   "mx": 77,
+   "pq": 0
+  },
+  {
+   "name": "greek",
+   "n": 4,
+   "accts": 2,
+   "med": 4,
+   "mx": 10,
+   "pq": 0
+  },
+  {
+   "name": "choco",
+   "n": 3,
+   "accts": 2,
+   "med": 72,
+   "mx": 702,
+   "pq": 94
+  },
+  {
+   "name": "byzantine",
+   "n": 3,
+   "accts": 1,
+   "med": 4,
+   "mx": 12,
+   "pq": 0
+  },
+  {
+   "name": "barrel",
+   "n": 2,
+   "accts": 1,
+   "med": 4,
+   "mx": 4,
+   "pq": 0
+  },
+  {
+   "name": "figaro",
+   "n": 2,
+   "accts": 2,
+   "med": 54,
+   "mx": 77,
+   "pq": 0
+  },
+  {
+   "name": "stampado",
+   "n": 1,
+   "accts": 1,
+   "med": 17,
+   "mx": 17,
+   "pq": 0
+  },
+  {
+   "name": "nawabi",
+   "n": 1,
+   "accts": 1,
+   "med": 56,
+   "mx": 56,
+   "pq": 0
+  },
+  {
+   "name": "curb",
+   "n": 1,
+   "accts": 1,
+   "med": 77,
+   "mx": 77,
+   "pq": 0
+  }
+ ],
+ "ratio_bands": [
+  {
+   "band": "<2%",
+   "n": 3,
+   "pq": 18
+  },
+  {
+   "band": "2-5%",
+   "n": 2,
+   "pq": 10
+  },
+  {
+   "band": "5-15%",
+   "n": 6,
+   "pq": 18
+  },
+  {
+   "band": "15-40%",
+   "n": 3,
+   "pq": 18
+  }
+ ],
+ "weights": {
+  "n": 21,
+  "median": 3.04,
+  "posts": 13,
+  "bands": [
+   {
+    "b": "0-10",
+    "n": 15
+   },
+   {
+    "b": "20-30",
+    "n": 2
+   },
+   {
+    "b": "30-40",
+    "n": 2
+   },
+   {
+    "b": "40-50",
+    "n": 1
+   },
+   {
+    "b": "100-110",
+    "n": 1
+   }
+  ]
+ },
+ "accounts": [
+  {
+   "u": "ciyazachains",
+   "n": 60,
+   "foll": 2943,
+   "wts": 0,
+   "med": 30,
+   "mx": 96,
+   "comm": 11,
+   "pq": 3,
+   "ncap": 8
+  },
+  {
+   "u": "jainchainllp",
+   "n": 49,
+   "foll": 1203,
+   "wts": 0,
+   "med": 5,
+   "mx": 17,
+   "comm": 2,
+   "pq": 1,
+   "ncap": 2
+  },
+  {
+   "u": "shreebalajichainnjewels",
+   "n": 37,
+   "foll": 5016,
+   "wts": 0,
+   "med": 4,
+   "mx": 1571,
+   "comm": 6,
+   "pq": 1,
+   "ncap": 8
+  },
+  {
+   "u": "jainchainrajkotllp",
+   "n": 31,
+   "foll": 583,
+   "wts": 0,
+   "med": 5,
+   "mx": 113,
+   "comm": 1,
+   "pq": 0,
+   "ncap": 1
+  },
+  {
+   "u": "r.k.ornaments",
+   "n": 27,
+   "foll": null,
+   "wts": 0,
+   "med": 3,
+   "mx": 12,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "_loukyachains",
+   "n": 26,
+   "foll": null,
+   "wts": 0,
+   "med": 61,
+   "mx": 5721,
+   "comm": 161,
+   "pq": 4,
+   "ncap": 60
+  },
+  {
+   "u": "nakodachainpvtltd",
+   "n": 26,
+   "foll": 807,
+   "wts": 0,
+   "med": 2,
+   "mx": 3,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "maharaja_chains",
+   "n": 24,
+   "foll": 230,
+   "wts": 0,
+   "med": 14,
+   "mx": 47,
+   "comm": 8,
+   "pq": 0,
+   "ncap": 8
+  },
+  {
+   "u": "arunchainsllp",
+   "n": 18,
+   "foll": 3197,
+   "wts": 0,
+   "med": 16,
+   "mx": 173,
+   "comm": 7,
+   "pq": 0,
+   "ncap": 6
+  },
+  {
+   "u": "omigajewellers",
+   "n": 15,
+   "foll": 19325,
+   "wts": 0,
+   "med": 1,
+   "mx": 503,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "nakodagoldsurat",
+   "n": 12,
+   "foll": null,
+   "wts": 0,
+   "med": 9,
+   "mx": 49,
+   "comm": 1,
+   "pq": 1,
+   "ncap": 1
+  },
+  {
+   "u": "sivenjewels",
+   "n": 11,
+   "foll": 1044,
+   "wts": 0,
+   "med": 16,
+   "mx": 34,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "bhagyalakshmi_gold_palace_916",
+   "n": 8,
+   "foll": 206,
+   "wts": 0,
+   "med": 50,
+   "mx": 229,
+   "comm": 12,
+   "pq": 1,
+   "ncap": 7
+  },
+  {
+   "u": "v.u.chains",
+   "n": 6,
+   "foll": 1016,
+   "wts": 0,
+   "med": 27,
+   "mx": 91,
+   "comm": 28,
+   "pq": 0,
+   "ncap": 28
+  },
+  {
+   "u": "rh___jewellers",
+   "n": 5,
+   "foll": null,
+   "wts": 4,
+   "med": 72,
+   "mx": 702,
+   "comm": 186,
+   "pq": 24,
+   "ncap": 33
+  },
+  {
+   "u": "jewellerygardenpvtltd",
+   "n": 5,
+   "foll": null,
+   "wts": 5,
+   "med": 48,
+   "mx": 64,
+   "comm": 7,
+   "pq": 1,
+   "ncap": 4
+  },
+  {
+   "u": "shreedhanlaxmi.jewellers",
+   "n": 4,
+   "foll": null,
+   "wts": 0,
+   "med": 8,
+   "mx": 10,
+   "comm": 1,
+   "pq": 0,
+   "ncap": 1
+  },
+  {
+   "u": "vaibhav.jewelles",
+   "n": 4,
+   "foll": 806,
+   "wts": 0,
+   "med": 9,
+   "mx": 13,
+   "comm": 1,
+   "pq": 0,
+   "ncap": 1
+  },
+  {
+   "u": "vasudev_creation",
+   "n": 3,
+   "foll": null,
+   "wts": 0,
+   "med": 3,
+   "mx": 5,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "kapishjewelsretail",
+   "n": 3,
+   "foll": null,
+   "wts": 0,
+   "med": 2,
+   "mx": 3,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "rr_zaveri",
+   "n": 3,
+   "foll": null,
+   "wts": 0,
+   "med": 1,
+   "mx": 2,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "dhara_jewellers",
+   "n": 3,
+   "foll": 265,
+   "wts": 2,
+   "med": 3,
+   "mx": 3,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "amey_jewellers_29",
+   "n": 2,
+   "foll": null,
+   "wts": 0,
+   "med": 0,
+   "mx": 0,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "jyoti_gold_and_silver",
+   "n": 2,
+   "foll": null,
+   "wts": 0,
+   "med": 15,
+   "mx": 18,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "sri__jewellers",
+   "n": 2,
+   "foll": null,
+   "wts": 1,
+   "med": 18,
+   "mx": 23,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "__shop.hemorajewellery__",
+   "n": 2,
+   "foll": null,
+   "wts": 0,
+   "med": 41,
+   "mx": 42,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "tulsijewellershoskote",
+   "n": 2,
+   "foll": null,
+   "wts": 0,
+   "med": 2,
+   "mx": 3,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "padmavatijew__gold",
+   "n": 1,
+   "foll": null,
+   "wts": 0,
+   "med": 1027,
+   "mx": 1027,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "ashutosh_gold",
+   "n": 1,
+   "foll": null,
+   "wts": 0,
+   "med": 7,
+   "mx": 7,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "krishnajewellers_satellite",
+   "n": 1,
+   "foll": null,
+   "wts": 0,
+   "med": 26,
+   "mx": 26,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "glambox_official_india",
+   "n": 1,
+   "foll": null,
+   "wts": 0,
+   "med": 14,
+   "mx": 14,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "ss_jewellers_gotri",
+   "n": 1,
+   "foll": null,
+   "wts": 0,
+   "med": 0,
+   "mx": 0,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "rajwadijewellers",
+   "n": 1,
+   "foll": null,
+   "wts": 0,
+   "med": 67,
+   "mx": 67,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "mahadev_jewellers_2025",
+   "n": 1,
+   "foll": null,
+   "wts": 0,
+   "med": 12,
+   "mx": 12,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "shree_arbuda_jewellers_",
+   "n": 1,
+   "foll": null,
+   "wts": 1,
+   "med": 33,
+   "mx": 33,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  },
+  {
+   "u": "chainnchains",
+   "n": 1,
+   "foll": 9080,
+   "wts": 0,
+   "med": 0,
+   "mx": 0,
+   "comm": 0,
+   "pq": 0,
+   "ncap": 0
+  }
+ ],
+ "top_likes": [
+  {
+   "u": "_loukyachains",
+   "sc": "DW5yTOeiQvy",
+   "likes": 5721,
+   "comments": 13,
+   "plays": null,
+   "pq": 1,
+   "ncap": 13,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://scontent-nrt1-2.cdninstagram.com/v/t51.82787-15/670629719_17876254293575083_1250480925927134525_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=107&ig_cache_key=Mzg3MTM0NjU3ODI0MTk0ODY1ODE3ODc2MjU0Mjg3NTc1MDgz.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjU0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=CaxQEbkppX4Q7kNvwGLVtxO&_nc_oc=Adr8DMNYmICEgLvBkn8EZVnkeaYlZ8zWpuUqP2tHXJkT8cM55tURt7k5_9yB5rje_wjvKAc0wU1iYXy-YhVA-Q7A&_nc_zt=23&_nc_ht=scontent-nrt1-2.cdninstagram.com&_nc_gid=lyDJNx49A-thrlek58vpDQ&_nc_ss=7ca8c&oh=00_AQHN9ILbtmwx9pGuPZx1kD61QkJzG1bd5NyCGZ4DNZdkYA&oe=6A8C6969",
+   "ts": "",
+   "foll": null,
+   "cap": "LKC Chains*: *Stylish / Luxury:* - LKC Chains — pure gold, pure attitude 🔗✨ - Not just a chain, it’s an LKC statement 💛 WearGold *",
+   "pqtext": [
+    "Kitne percent lete ho 100 gm pe"
+   ]
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DRUXxLhkhTH",
+   "likes": 2412,
+   "comments": 110,
+   "plays": null,
+   "pq": 0,
+   "ncap": 15,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://instagram.fmex1-2.fna.fbcdn.net/v/t51.71878-15/584395213_1196026849089214_8875493645147627362_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=105&_nc_map=urlgen_bucketless&ig_cache_key=Mzc3MDc0MzMyMjcxNDQ0NDk5OQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjY0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=Xw39jQ5Y69IQ7kNvwHqVapO&_nc_oc=AdqzhmGKF5Lzo4Du3_rECYQM5POS85bIJofDDndJWP8ZE_CsE1zhYzf_rlI8ZHFLTKvHBqmn2yXvtruE1k0wzy1p&_nc_zt=23&_nc_ht=instagram.fmex1-2.fna&_nc_gid=6IxYynFYaAsuumqORioGoA&_nc_ss=72a8c&oh=00_AQGVHWC8Td4isOX0MPQgZJ1DuQRWSeadU4rGsRyqwUrtyg&oe=6A8C600C",
+   "ts": "",
+   "foll": null,
+   "cap": "From melting pure 22k gold to polishing every link — your Laukya chain is crafted with precision, strength, and shine in every step. ✨ Lightweight, durable, and made for everyday elegance. .",
+   "pqtext": []
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DXBbL7wEhbS",
+   "likes": 2026,
+   "comments": 14,
+   "plays": null,
+   "pq": 2,
+   "ncap": 9,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://instagram.fqsc1-1.fna.fbcdn.net/v/t51.71878-15/671027374_1011964141269501_6241610203940543058_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=109&ig_cache_key=Mzg3MzQ5NjcyMTg0MjY0MDU5NDE3ODc2MDU2ODc1NTc1MDgz.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjY0MC5zZHIudmlkZW9fbmZyYW1lX2NvdmVyX2ZyYW1lLkMzIn0%3D&_nc_ohc=9hL7RDwgM8kQ7kNvwGVfrBJ&_nc_oc=AdqLVxU8j5UOxVMbZKzsTCXskG_S6RPfnAH5G7BOiWhMX-0NdGakRIYXtlpXJabDGfo&_nc_zt=23&_nc_ht=instagram.fqsc1-1.fna&_nc_gid=-v5Jld0FtE4TLr5lh9OaKA&_nc_ss=72a8c&oh=00_AQEKe2u5UIEVs_Thtj-MZ1CBbavyhJ5NA5cfnJgDObj_TA&oe=6A8C5DA3",
+   "ts": "",
+   "foll": null,
+   "cap": "LKC Chains*:LKCChains ChainGoals PremiumPick - Swag chahiye? Seedha LKC Chains pehno 🛍️ LKCChains DesiLuxury GoldChainLove - Shaadi ho ya entry, LKC Chain ke saath sab heavy 👑 LKCChains Fest",
+   "pqtext": [
+    "Chain ka weight",
+    "Chain ka weight"
+   ]
+  },
+  {
+   "u": "shreebalajichainnjewels",
+   "sc": "DbNLvuhOIMj",
+   "likes": 1571,
+   "comments": 1,
+   "plays": 11963,
+   "pq": 1,
+   "ncap": 4,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://scontent-mia3-2.cdninstagram.com/v/t51.71878-15/753206419_1027913792977336_6002829480884469376_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=103&ig_cache_key=Mzk0ODg2NDEwNjU1MDI5NzM3OTEwMDY5NDE1NjU2NzkzMzc%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjY0MC5zZHIudmlkZW9fbmZyYW1lX2NvdmVyX2ZyYW1lLkMzIn0%3D&_nc_ohc=R_u8H5on9dAQ7kNvwFCsYex&_nc_oc=AdooOvwD3-IlbE9Z-8THt35wtPoUAlEKmMcbzxsXfL09bKeQLlErSdEZ1-OB-vVkyOg&_nc_zt=23&_nc_ht=scontent-mia3-2.cdninstagram.com&_nc_gid=A8qICmXqzMFuTJJ1KxB3uQ&_nc_ss=72a8c&oh=00_AQFgKZMKfFQLHADCgTZN4esLS4-4VNE_lqyzxMYJ-nSwCA&oe=6A8C7379",
+   "ts": "2026-07-25",
+   "foll": 5016,
+   "cap": "It begins as a beautiful pendant—but wait until it opens! From the detailed Hanuman-inspired front to the divine figures revealed inside, this exceptional creation from Shree Balaji Chain & ",
+   "pqtext": [
+    "Weight??"
+   ]
+  },
+  {
+   "u": "padmavatijew__gold",
+   "sc": "Db-wJjIj-FX",
+   "likes": 1027,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://scontent-mad1-1.cdninstagram.com/v/t51.82787-15/774777176_18085884281299329_8390136418731679327_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=107&ig_cache_key=Mzk2MjgxNTc3NzE4MjAyNTI2NQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMTAyNC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=RiVPZ3xQjEMQ7kNvwHuxW7p&_nc_oc=AdqthRSnpizqcZP2zdFJCC79VuNreuMd90EI-ierhunOUlDZ0vzQwbLqLv84ACu2N1k&_nc_zt=23&_nc_ht=scontent-mad1-1.cdninstagram.com&_nc_gid=JjLIQzJdSudcdSKP6Pz32Q&_nc_ss=7ca8c&oh=00_AQEP42JX--T8vl3TVmVSYXppiivuCiivFE5M_5yTUUT18w&oe=6A8C5DD5",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Elegance that speaks for itself. ✨ A timeless gold chain, crafted to add a royal touch to every look. 💛👑 ✨ Padmavati Jewellers ✨",
+   "pqtext": []
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DcEKh5qpkTj",
+   "likes": 702,
+   "comments": 51,
+   "plays": null,
+   "pq": 15,
+   "ncap": 15,
+   "wts": [
+    35.0
+   ],
+   "pats": [
+    "choco"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-yyz1-1.cdninstagram.com/v/t51.82787-15/774469175_18071679269719582_7222238048922448908_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=110&ig_cache_key=Mzk2NDMzOTg4MjExOTU0NjA4MzE4MDcxNjc5MjYzNzE5NTgy.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjExNzkuc2RyLnZpZGVvX2RlZmF1bHRfY292ZXJfZnJhbWUuQzMifQ%3D%3D&_nc_ohc=LML0jxJidpYQ7kNvwG2vi08&_nc_oc=Ado19w7Fm8fCqDcCgT61WMqRDGSLjZbc3ZTJaDTEDIz-hDjLCXdU7D0J5mvGzHxMR_4&_nc_zt=23&_nc_ht=scontent-yyz1-1.cdninstagram.com&_nc_gid=LwxdAu8d6fDeIJ-o2IeynA&_nc_ss=72a8c&oh=00_AQEJRqKdi8T-AUPNBriKVxKvLOC2k0vN3ReYRE6_N_9g1w&oe=6A8C749D",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Customer’s Honest Review ❤️ Our happy customer chose a 22K | 916 HUID Hallmark Choco Chain weighing 35 grams. ✨ Thank you for trusting RH Jewellers! Your satisfaction is our biggest reward",
+   "pqtext": [
+    "Price",
+    "Price",
+    "Price",
+    "Price"
+   ]
+  },
+  {
+   "u": "omigajewellers",
+   "sc": "DcIS9msiVMU",
+   "likes": 503,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://instagram.fymq3-1.fna.fbcdn.net/v/t51.82787-15/778835758_18139883782597266_8514173922505799846_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=102&ig_cache_key=Mzk2NTUwMjg3MDE3NDM4OTAxMg%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTA4MC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=v78iJvY-Ig0Q7kNvwFa4QWt&_nc_oc=AdpCtfJVzxMviC5u9JxXbp3RnX90JH-ApKqdGH8s32u5uuamX041vZDSNMTa-kGWRd0&_nc_zt=23&_nc_ht=instagram.fymq3-1.fna&_nc_gid=j_inSbSzzSz9bbTGlabSGQ&_nc_ss=7ca8c&oh=00_AQHID5Sm681-WleEWlVO2JtfLHFMiZLmdl0TZ9ft1Dy7pg&oe=6A8C6705",
+   "ts": "2026-08-17",
+   "foll": 19325,
+   "cap": "9K Gold Infinity Pendant Necklace | Omiga Jewellers, Thrissur Crafted in 9K gold, BIS Hallmarked for guaranteed purity. An infinity-heart design set with sparkling stones on a fine chain. Be",
+   "pqtext": []
+  },
+  {
+   "u": "omigajewellers",
+   "sc": "DcLFVHvieDL",
+   "likes": 501,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://instagram.fbhx4-2.fna.fbcdn.net/v/t51.82787-15/779201542_18140124034597266_8246163656882416678_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=102&ig_cache_key=Mzk2NjI4NzMzODQ4NTE3ODU3MQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTA4MC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=OZ-e3-ZeKiUQ7kNvwHSY-qs&_nc_oc=Adrutrk4hnJ0MjHTPqzu1KK8UMVNh6j4aVOLBHX-YtntTrRpJ-m33t36WaNJgvp3SuN_Rr2hIgYruvmjk4CHH214&_nc_zt=23&_nc_ht=instagram.fbhx4-2.fna&_nc_gid=mlZa9nl7veXL1zemvJfB6A&_nc_ss=72689&oh=00_AQE1rfwcuftZCIw6zoO0_-Quj_JK1KEKGDupUaQKMrRu7A&oe=6A8C7FAF",
+   "ts": "2026-08-18",
+   "foll": 19325,
+   "cap": "9K Gold Jewellery in Kerala | Omiga Jewellers, Thrissur BIS Hallmarked. Wear Your Style in 9K Gold. A fine double chain with bezel-set emerald-hued stones spaced along its length. Shop this ",
+   "pqtext": []
+  },
+  {
+   "u": "omigajewellers",
+   "sc": "DcLqfaNiuMF",
+   "likes": 500,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://scontent-ssn1-1.cdninstagram.com/v/t51.82787-15/778915759_18140178940597266_1791642558163376802_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=105&ig_cache_key=Mzk2NjQ1MDc3MzIzMTU5MjE5Nw%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTA4MC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=ZRejeA-ySooQ7kNvwFHHIOT&_nc_oc=Adqf_dqci3FRtJg4WM0XoiyIgiw6RbNAJ9hryEniIOWkXY1UVVf-QpCPay6ceKAE9XIGrHFmHWICH_c8u2gvXYwc&_nc_zt=23&_nc_ht=scontent-ssn1-1.cdninstagram.com&_nc_gid=Mk__hqrpsvqJvTaW0XZzWA&_nc_ss=7c689&oh=00_AQG4xcvS9wkUplWvva_e2OBgojktrXCil2DL1XfZiXE6ag&oe=6A8C7A76",
+   "ts": "2026-08-18",
+   "foll": 19325,
+   "cap": "9K Jewellery in Kerala — Pearl-Studded Chain Necklace | Omiga Jewellers, Thrissur Celebrate life's joyful moments in style with this delicate pearl-studded chain, crafted in 9K gold for effo",
+   "pqtext": []
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "Db8euGbprmg",
+   "likes": 440,
+   "comments": 131,
+   "plays": null,
+   "pq": 8,
+   "ncap": 15,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://scontent-ham3-1.cdninstagram.com/v/t51.82787-15/772714699_18071262164719582_8565143995084865936_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=105&ig_cache_key=Mzk2MjE3Njg4MTU3NjgxOTEwNDE4MDcxMjYyMTU4NzE5NTgy.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjcyMC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=g1N04qR19xcQ7kNvwH8c5kr&_nc_oc=Adr-67I-b6gVJU6tXK10Gjz9KtphJqCv7JD-WE-gYmba98LJspVBr6oNTVfS3DWWUc1WuB5nVO-rn2xrXEZNHZHB&_nc_zt=23&_nc_ht=scontent-ham3-1.cdninstagram.com&_nc_gid=2ENqv-1Mjvl1FwTOhn8jfg&_nc_ss=72689&oh=00_AQG4wxTitU9lDg0I8TlGiAI-3cYc5MPfqiuOqzfmTfp3Vg&oe=6A8C5F94",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Your Favourite Electroform Collection, Coming Your Way from IIJS2026 very soon✨ From elegant Electroform Malas & Bracelets to stunning Chains & Jhumkas — we’re personally sourcing the late",
+   "pqtext": [
+    "Price",
+    "Nim hand ge hakiro kadga pic mathe weight bagge heli sir",
+    "Bracelet price",
+    "Price"
+   ]
+  },
+  {
+   "u": "shreebalajichainnjewels",
+   "sc": "DaFhCQAOZyt",
+   "likes": 290,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://scontent-mia3-3.cdninstagram.com/v/t51.71878-15/730894383_1545095093905253_2030626177933603692_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=108&ig_cache_key=MzkyODY5MTU0MDEwODA5MDU0MTI3MzM0ODMyNDQyODc3MjM1.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjY0MC5zZHIudmlkZW9fbmZyYW1lX2NvdmVyX2ZyYW1lLkMzIn0%3D&_nc_ohc=5B2XgTxfo8MQ7kNvwH_oH1S&_nc_oc=AdqLFF3UuQ6AErpenHFa0ZjviUelf8pvU5Z76iUKdRyfkR9cZ9ldN7eanQwbG7rda_M5JAcZqnzcxMLS0HX_Jipz&_nc_zt=23&_nc_ht=scontent-mia3-3.cdninstagram.com&_nc_gid=QL42tRcozc2PQa_FWu3OoQ&_nc_ss=72a8c&oh=00_AQGzQyxHpTi1zHi0dIQPYy3gwepkMLhPSI4IoTWtTcGbqA&oe=6A8C7341",
+   "ts": "",
+   "foll": null,
+   "cap": "Mumbai is ready. The stage is set. ✨ Shree Balaji Chain & Jewels invites you to experience a refined collection of premium chain designs at IIJS Bharat Premiere Mumbai 2026. Discover craftsm",
+   "pqtext": []
+  },
+  {
+   "u": "bhagyalakshmi_gold_palace_916",
+   "sc": "DakqIQoKHW4",
+   "likes": 229,
+   "comments": 10,
+   "plays": 4925,
+   "pq": 1,
+   "ncap": 5,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://instagram.fyyc3-1.fna.fbcdn.net/v/t51.82787-15/731632129_18109062613911197_8389617731158514157_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=106&ig_cache_key=MzkzNzQ1NzI1OTc5MTU0NTc4NDE4MTA5MDYyNjEwOTExMTk3.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjcyMC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=bfxogQjnraYQ7kNvwGPB2H8&_nc_oc=AdoPc7hE0eXLfI-JMFM33zs1RTCzimM5t1az3kmIxpIu7GD8RNysunr2sjRfUSXkCKP2XuYJp-oBYkuGAZHoyJxd&_nc_zt=23&_nc_ht=instagram.fyyc3-1.fna&_nc_gid=bSMaHKPOalfmh076mfah0g&_nc_ss=7ca8c&oh=00_AQEDWfOZh7lsED3GifiOrDqAwUQzo6qymQcKM-98BHGobA&oe=6A8C60EE",
+   "ts": "2026-07-09",
+   "foll": 206,
+   "cap": "🔥 Style that speaks before you do. Upgrade your look with our premium gents gold chains—crafted for confidence, built to shine. ✨ Whether it’s for everyday wear or a special occasion, find t",
+   "pqtext": [
+    "Address and price rate 10 grm"
+   ]
+  }
+ ],
+ "top_price": [
+  {
+   "u": "rh___jewellers",
+   "sc": "DcEKh5qpkTj",
+   "likes": 702,
+   "comments": 51,
+   "plays": null,
+   "pq": 15,
+   "ncap": 15,
+   "wts": [
+    35.0
+   ],
+   "pats": [
+    "choco"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-yyz1-1.cdninstagram.com/v/t51.82787-15/774469175_18071679269719582_7222238048922448908_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=110&ig_cache_key=Mzk2NDMzOTg4MjExOTU0NjA4MzE4MDcxNjc5MjYzNzE5NTgy.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjExNzkuc2RyLnZpZGVvX2RlZmF1bHRfY292ZXJfZnJhbWUuQzMifQ%3D%3D&_nc_ohc=LML0jxJidpYQ7kNvwG2vi08&_nc_oc=Ado19w7Fm8fCqDcCgT61WMqRDGSLjZbc3ZTJaDTEDIz-hDjLCXdU7D0J5mvGzHxMR_4&_nc_zt=23&_nc_ht=scontent-yyz1-1.cdninstagram.com&_nc_gid=LwxdAu8d6fDeIJ-o2IeynA&_nc_ss=72a8c&oh=00_AQEJRqKdi8T-AUPNBriKVxKvLOC2k0vN3ReYRE6_N_9g1w&oe=6A8C749D",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Customer’s Honest Review ❤️ Our happy customer chose a 22K | 916 HUID Hallmark Choco Chain weighing 35 grams. ✨ Thank you for trusting RH Jewellers! Your satisfaction is our biggest reward",
+   "pqtext": [
+    "Price",
+    "Price",
+    "Price",
+    "Price"
+   ]
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "Db8euGbprmg",
+   "likes": 440,
+   "comments": 131,
+   "plays": null,
+   "pq": 8,
+   "ncap": 15,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://scontent-ham3-1.cdninstagram.com/v/t51.82787-15/772714699_18071262164719582_8565143995084865936_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=105&ig_cache_key=Mzk2MjE3Njg4MTU3NjgxOTEwNDE4MDcxMjYyMTU4NzE5NTgy.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjcyMC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=g1N04qR19xcQ7kNvwH8c5kr&_nc_oc=Adr-67I-b6gVJU6tXK10Gjz9KtphJqCv7JD-WE-gYmba98LJspVBr6oNTVfS3DWWUc1WuB5nVO-rn2xrXEZNHZHB&_nc_zt=23&_nc_ht=scontent-ham3-1.cdninstagram.com&_nc_gid=2ENqv-1Mjvl1FwTOhn8jfg&_nc_ss=72689&oh=00_AQG4wxTitU9lDg0I8TlGiAI-3cYc5MPfqiuOqzfmTfp3Vg&oe=6A8C5F94",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Your Favourite Electroform Collection, Coming Your Way from IIJS2026 very soon✨ From elegant Electroform Malas & Bracelets to stunning Chains & Jhumkas — we’re personally sourcing the late",
+   "pqtext": [
+    "Price",
+    "Nim hand ge hakiro kadga pic mathe weight bagge heli sir",
+    "Bracelet price",
+    "Price"
+   ]
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DXBbL7wEhbS",
+   "likes": 2026,
+   "comments": 14,
+   "plays": null,
+   "pq": 2,
+   "ncap": 9,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://instagram.fqsc1-1.fna.fbcdn.net/v/t51.71878-15/671027374_1011964141269501_6241610203940543058_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=109&ig_cache_key=Mzg3MzQ5NjcyMTg0MjY0MDU5NDE3ODc2MDU2ODc1NTc1MDgz.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjY0MC5zZHIudmlkZW9fbmZyYW1lX2NvdmVyX2ZyYW1lLkMzIn0%3D&_nc_ohc=9hL7RDwgM8kQ7kNvwGVfrBJ&_nc_oc=AdqLVxU8j5UOxVMbZKzsTCXskG_S6RPfnAH5G7BOiWhMX-0NdGakRIYXtlpXJabDGfo&_nc_zt=23&_nc_ht=instagram.fqsc1-1.fna&_nc_gid=-v5Jld0FtE4TLr5lh9OaKA&_nc_ss=72a8c&oh=00_AQEKe2u5UIEVs_Thtj-MZ1CBbavyhJ5NA5cfnJgDObj_TA&oe=6A8C5DA3",
+   "ts": "",
+   "foll": null,
+   "cap": "LKC Chains*:LKCChains ChainGoals PremiumPick - Swag chahiye? Seedha LKC Chains pehno 🛍️ LKCChains DesiLuxury GoldChainLove - Shaadi ho ya entry, LKC Chain ke saath sab heavy 👑 LKCChains Fest",
+   "pqtext": [
+    "Chain ka weight",
+    "Chain ka weight"
+   ]
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DW5yTOeiQvy",
+   "likes": 5721,
+   "comments": 13,
+   "plays": null,
+   "pq": 1,
+   "ncap": 13,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://scontent-nrt1-2.cdninstagram.com/v/t51.82787-15/670629719_17876254293575083_1250480925927134525_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=107&ig_cache_key=Mzg3MTM0NjU3ODI0MTk0ODY1ODE3ODc2MjU0Mjg3NTc1MDgz.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjU0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=CaxQEbkppX4Q7kNvwGLVtxO&_nc_oc=Adr8DMNYmICEgLvBkn8EZVnkeaYlZ8zWpuUqP2tHXJkT8cM55tURt7k5_9yB5rje_wjvKAc0wU1iYXy-YhVA-Q7A&_nc_zt=23&_nc_ht=scontent-nrt1-2.cdninstagram.com&_nc_gid=lyDJNx49A-thrlek58vpDQ&_nc_ss=7ca8c&oh=00_AQHN9ILbtmwx9pGuPZx1kD61QkJzG1bd5NyCGZ4DNZdkYA&oe=6A8C6969",
+   "ts": "",
+   "foll": null,
+   "cap": "LKC Chains*: *Stylish / Luxury:* - LKC Chains — pure gold, pure attitude 🔗✨ - Not just a chain, it’s an LKC statement 💛 WearGold *",
+   "pqtext": [
+    "Kitne percent lete ho 100 gm pe"
+   ]
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DcBUQjIAV9o",
+   "likes": 210,
+   "comments": 11,
+   "plays": null,
+   "pq": 1,
+   "ncap": 11,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://scontent-nrt6-1.cdninstagram.com/v/t51.82787-15/772271956_17898277998575083_4058717793735313107_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=110&ig_cache_key=Mzk2MzUzODI0NTIxOTg2ODUyMA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjEwODAuc2RyLnZpZGVvX2RlZmF1bHRfY292ZXJfZnJhbWUuQzMifQ%3D%3D&_nc_ohc=drv0jYB3jt0Q7kNvwEFVnfO&_nc_oc=Adq81J8SnBpNDO2nObZQdFfwjYALpPob2aOziW2Tqfqo_RADW3D-lwrRyuKD9oShy8o&_nc_zt=23&_nc_ht=scontent-nrt6-1.cdninstagram.com&_nc_gid=AVK4ljDGvS63U9uZEOGCzw&_nc_ss=72a8c&oh=00_AQEly1MfUAXdp60lfU_BE9YZuxV5PMlSRc6choh4zjQvOA&oe=6A8C86EA",
+   "ts": "",
+   "foll": null,
+   "cap": "Men’s Collection 🔥 Jai Ambey Chains brings you a wide variety of stylish chains for men — from classic to trending designs. ✨ Customization also available to make your chain truly yours! 💎 📩",
+   "pqtext": [
+    "Tax kitna dete ho"
+   ]
+  },
+  {
+   "u": "bhagyalakshmi_gold_palace_916",
+   "sc": "DakqIQoKHW4",
+   "likes": 229,
+   "comments": 10,
+   "plays": 4925,
+   "pq": 1,
+   "ncap": 5,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://instagram.fyyc3-1.fna.fbcdn.net/v/t51.82787-15/731632129_18109062613911197_8389617731158514157_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=106&ig_cache_key=MzkzNzQ1NzI1OTc5MTU0NTc4NDE4MTA5MDYyNjEwOTExMTk3.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjcyMC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=bfxogQjnraYQ7kNvwGPB2H8&_nc_oc=AdoPc7hE0eXLfI-JMFM33zs1RTCzimM5t1az3kmIxpIu7GD8RNysunr2sjRfUSXkCKP2XuYJp-oBYkuGAZHoyJxd&_nc_zt=23&_nc_ht=instagram.fyyc3-1.fna&_nc_gid=bSMaHKPOalfmh076mfah0g&_nc_ss=7ca8c&oh=00_AQEDWfOZh7lsED3GifiOrDqAwUQzo6qymQcKM-98BHGobA&oe=6A8C60EE",
+   "ts": "2026-07-09",
+   "foll": 206,
+   "cap": "🔥 Style that speaks before you do. Upgrade your look with our premium gents gold chains—crafted for confidence, built to shine. ✨ Whether it’s for everyday wear or a special occasion, find t",
+   "pqtext": [
+    "Address and price rate 10 grm"
+   ]
+  },
+  {
+   "u": "jewellerygardenpvtltd",
+   "sc": "DcF0q9ODclB",
+   "likes": 48,
+   "comments": 3,
+   "plays": null,
+   "pq": 1,
+   "ncap": 2,
+   "wts": [
+    3.0,
+    3.0
+   ],
+   "pats": [
+    "two-tone"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-fra3-1.cdninstagram.com/v/t39.30808-6/774201682_1532911242208596_2769575473808014031_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=105&ig_cache_key=Mzk2NDgwNjY3ODk3NzUyODEzNA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMjA0OC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=4hWwJ0r3OI4Q7kNvwENLuNo&_nc_oc=AdoNmpzFcXCN4o5DzWDiwc5h2gqIxTO51mdSBNFzA_zeMzTl4nDQ9wMbs8pGyFQlBRfKTfo0EIbMLBSkkpaa-_kd&_nc_zt=23&_nc_ht=scontent-fra3-1.cdninstagram.com&_nc_gid=4lGVBwJox2CjhRCluVIVzw&_nc_ss=7c289&oh=00_AQHn43Oj-KW6X1PAuaNYway3bu9BXRDKKhOH0LA4EXgvMw&oe=6A8C8703",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ PURE SIMPLICITY. EVERYDAY ELEGANCE. Add a delicate touch of luxury to your daily style with our exquisite Gold Single Locket collection—crafted for effortless beauty, charm, and timeless g",
+   "pqtext": [
+    "1st lockt chain price"
+   ]
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DcIh_h7H87Q",
+   "likes": 72,
+   "comments": 2,
+   "plays": null,
+   "pq": 1,
+   "ncap": 1,
+   "wts": [
+    20.0,
+    30.0
+   ],
+   "pats": [
+    "choco"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-cdg4-3.cdninstagram.com/v/t39.30808-6/778972784_1358087109805266_6645835671493866472_n.jpg?stp=c0.0.1122.1401a_dst-jpg_e35_tt6&_nc_cat=110&ig_cache_key=Mzk2NTU2ODk0NDUyMzExNjgyNQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMTEyMi5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=_QAvUYVC_5MQ7kNvwHbMIxU&_nc_oc=Adr_JS7UPDoLZF2VCCre08rzgpyW2-HUyME77Dq5J6KbSjFK0C9cnwwJ02J84fIShnqhvFMu9HRp7BOvfVtM0u3E&_nc_zt=23&_nc_ht=scontent-cdg4-3.cdninstagram.com&_nc_gid=huCFAZSwkB_Kmp5JEksfPQ&_nc_ss=7c289&oh=00_AQGrTZ5VJMHs1NdrGFlGreiyQI-D3g_AjOjxyXwjthm_cw&oe=6A8C7331",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Crafted Cocoa Chains: Distinctive Elegance. Modern Sophistication. ✨ Make a bold yet refined statement with our \"Crafted Cocoa Chains\" collection. Expertly handcrafted in 22Kt gold, these ",
+   "pqtext": [
+    "Price"
+   ]
+  },
+  {
+   "u": "jainchainllp",
+   "sc": "DVqmp22CfAk",
+   "likes": 9,
+   "comments": 2,
+   "plays": 538,
+   "pq": 1,
+   "ncap": 2,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://scontent-ber1-1.cdninstagram.com/v/t51.82787-15/657880091_18001821962907714_7460890260086763438_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=101&ig_cache_key=Mzg0OTA1ODgzMzY5NjE1NzczMjE4MDAxODIxOTU5OTA3NzE0.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjgyOC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=W8tF5XP610MQ7kNvwGERgsG&_nc_oc=Adp_733zi2jwjzr3GcePH0aipyGJ5_tp0mgydCAMS0prnsrZZfuOWyalcLVgYmf4MjE&_nc_zt=23&_nc_ht=scontent-ber1-1.cdninstagram.com&_nc_gid=ko0oQXnX_BWHJmnaNrcKaA&_nc_ss=7ca8c&oh=00_AQG_Rc3Rlz3fK1-tHb013a6JRN3b5MbQWWS4oBdbWAa9HA&oe=6A8C945F",
+   "ts": "2026-03-09",
+   "foll": 1203,
+   "cap": "",
+   "pqtext": [
+    "Kitne gram ka hai ?"
+   ]
+  },
+  {
+   "u": "nakodagoldsurat",
+   "sc": "DbAEVVpEuCS",
+   "likes": 31,
+   "comments": 1,
+   "plays": null,
+   "pq": 1,
+   "ncap": 1,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://scontent-dus1-1.cdninstagram.com/v/t39.30808-6/749788719_1630096562458232_8227862360631616869_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=100&ig_cache_key=Mzk0NTE3MjMzMjEwOTI5MTY2Ng%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTYzOC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=AH7UFGVm6wsQ7kNvwEJMbVb&_nc_oc=AdpXCz4YCl-imgb2kLcB_M5XI-SyZebFRYEP0wejExHr0uKQOg8iMVhsBpPGi8SVtpN7B9i-aX2eq36b_IcusE91&_nc_zt=23&_nc_ht=scontent-dus1-1.cdninstagram.com&_nc_gid=plDy8pa1BSzcbsLzUlVm1g&_nc_ss=72689&oh=00_AQEEOpsz8TC56kIIiHNq3I9_exYcvmGAew9M8kVOCL797Q&oe=6A8C6BBE",
+   "ts": "",
+   "foll": null,
+   "cap": "Bold look. Premium finish. Designed for the modern man who values style and confidence. Wear your statement in gold. 💛",
+   "pqtext": [
+    "Price"
+   ]
+  },
+  {
+   "u": "shreebalajichainnjewels",
+   "sc": "DbNLvuhOIMj",
+   "likes": 1571,
+   "comments": 1,
+   "plays": 11963,
+   "pq": 1,
+   "ncap": 4,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://scontent-mia3-2.cdninstagram.com/v/t51.71878-15/753206419_1027913792977336_6002829480884469376_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=103&ig_cache_key=Mzk0ODg2NDEwNjU1MDI5NzM3OTEwMDY5NDE1NjU2NzkzMzc%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjY0MC5zZHIudmlkZW9fbmZyYW1lX2NvdmVyX2ZyYW1lLkMzIn0%3D&_nc_ohc=R_u8H5on9dAQ7kNvwFCsYex&_nc_oc=AdooOvwD3-IlbE9Z-8THt35wtPoUAlEKmMcbzxsXfL09bKeQLlErSdEZ1-OB-vVkyOg&_nc_zt=23&_nc_ht=scontent-mia3-2.cdninstagram.com&_nc_gid=A8qICmXqzMFuTJJ1KxB3uQ&_nc_ss=72a8c&oh=00_AQFgKZMKfFQLHADCgTZN4esLS4-4VNE_lqyzxMYJ-nSwCA&oe=6A8C7379",
+   "ts": "2026-07-25",
+   "foll": 5016,
+   "cap": "It begins as a beautiful pendant—but wait until it opens! From the detailed Hanuman-inspired front to the divine figures revealed inside, this exceptional creation from Shree Balaji Chain & ",
+   "pqtext": [
+    "Weight??"
+   ]
+  },
+  {
+   "u": "ciyazachains",
+   "sc": "DNksBLYP8rD",
+   "likes": 39,
+   "comments": 1,
+   "plays": null,
+   "pq": 1,
+   "ncap": 1,
+   "wts": [],
+   "pats": [
+    "italian (unspec)"
+   ],
+   "src": "chain-only account",
+   "img": "https://scontent-waw2-1.cdninstagram.com/v/t39.30808-6/535138249_122208594056104974_5081037623696293587_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=108&ig_cache_key=MzcwMzI3ODM4ODU4OTM0OTU3MQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTYzOC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=nO8W0Qfdrv8Q7kNvwGoX9Vj&_nc_oc=AdoVvoo4mnYSD-0m65tG-QGvgGkoSEpULs18F4IIcWwmr3RjIvdo2iqChvX6NSYqvNg&_nc_zt=23&_nc_ht=scontent-waw2-1.cdninstagram.com&_nc_gid=HdoQHIB9Xc0Db7-BXRmRMQ&_nc_ss=72689&oh=00_AQF0W4i5MLy-Mqmx0_AJ7D3aQTZOCQQlP_Yw_7X584r_kg&oe=6A8C9362",
+   "ts": "2025-08-20",
+   "foll": 2943,
+   "cap": "Elevate your style with the elegance of Italian gold. Every chain crafted to perfection, a statement of luxury. 💛",
+   "pqtext": [
+    "Mention. Weight in every design"
+   ]
+  }
+ ],
+ "top_ratio": [
+  {
+   "u": "rh___jewellers",
+   "sc": "Db8euGbprmg",
+   "likes": 440,
+   "comments": 131,
+   "plays": null,
+   "pq": 8,
+   "ncap": 15,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://scontent-ham3-1.cdninstagram.com/v/t51.82787-15/772714699_18071262164719582_8565143995084865936_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=105&ig_cache_key=Mzk2MjE3Njg4MTU3NjgxOTEwNDE4MDcxMjYyMTU4NzE5NTgy.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjcyMC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=g1N04qR19xcQ7kNvwH8c5kr&_nc_oc=Adr-67I-b6gVJU6tXK10Gjz9KtphJqCv7JD-WE-gYmba98LJspVBr6oNTVfS3DWWUc1WuB5nVO-rn2xrXEZNHZHB&_nc_zt=23&_nc_ht=scontent-ham3-1.cdninstagram.com&_nc_gid=2ENqv-1Mjvl1FwTOhn8jfg&_nc_ss=72689&oh=00_AQG4wxTitU9lDg0I8TlGiAI-3cYc5MPfqiuOqzfmTfp3Vg&oe=6A8C5F94",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Your Favourite Electroform Collection, Coming Your Way from IIJS2026 very soon✨ From elegant Electroform Malas & Bracelets to stunning Chains & Jhumkas — we’re personally sourcing the late",
+   "pqtext": [
+    "Price",
+    "Nim hand ge hakiro kadga pic mathe weight bagge heli sir",
+    "Bracelet price",
+    "Price"
+   ]
+  },
+  {
+   "u": "v.u.chains",
+   "sc": "DaXwfSAsLSq",
+   "likes": 77,
+   "comments": 12,
+   "plays": 4698,
+   "pq": 0,
+   "ncap": 12,
+   "wts": [],
+   "pats": [
+    "curb",
+    "figaro",
+    "rope"
+   ],
+   "src": "chain-only account",
+   "img": "https://instagram.fcxh2-1.fna.fbcdn.net/v/t51.82787-15/735429952_18092612369457171_381348899393547492_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=105&ig_cache_key=MzkzMzgyNjA1NTQwNjY2MjgyNjE4MDkyNjEyMzY2NDU3MTcx.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjU0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=POhhbOxmzS8Q7kNvwEeoadh&_nc_oc=AdrZ4cHlwO294-yPceOXxlbQQalKkaMVNHBC4Qz2ri7JCmQDzbypuZhtxHDqct5ATd1_8EBns66N2TqOStDHTHQm&_nc_zt=23&_nc_ht=instagram.fcxh2-1.fna&_nc_gid=cHtrprvSbuD8xuouorwjww&_nc_ss=72a8c&oh=00_AQG5F_B_WiEzrI23DvMfCrg65VVAtU1oM8hKIHySArTZew&oe=6A8C6E30",
+   "ts": "2026-07-04",
+   "foll": 1016,
+   "cap": "Let's spill the tea... ☕✨ The secret behind timeless chains? Precision, purity, and craftsmanship ✨ Discover what makes VU Chains the trusted choice for every jewellery business.✨ [gold chai",
+   "pqtext": []
+  },
+  {
+   "u": "v.u.chains",
+   "sc": "DaFuUktsYtE",
+   "likes": 91,
+   "comments": 10,
+   "plays": 6108,
+   "pq": 0,
+   "ncap": 10,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://scontent-qro1-2.cdninstagram.com/v/t51.71878-15/730561495_932541086526705_519744626171981862_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=107&ig_cache_key=MzkyODc0OTk3MzkwMDk4NzIwNA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjY0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=o3-VJYunGpsQ7kNvwEJCFmv&_nc_oc=Adr6XaHrJFb2S3qlnQfoEX9ARf-tHwUa7kcW1JtT83GjV9o2BuhundK05x-yAZNvzAQ&_nc_zt=23&_nc_ht=scontent-qro1-2.cdninstagram.com&_nc_gid=a9eTpzbeO2OptCGMKzCuuw&_nc_ss=7ca8c&oh=00_AQGZ3IpNqEAX96t9r-Fs-t9AwvQ02Jiwyj6aWbZDC52LEg&oe=6A8C6347",
+   "ts": "2026-06-27",
+   "foll": 1016,
+   "cap": "A legacy of trust. A vision for tomorrow. ✨ Meet the Founder behind VU Chains, where every chain is crafted with precision, quality and a commitment to helping jewellery businesses grow 🌟",
+   "pqtext": []
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DcEKh5qpkTj",
+   "likes": 702,
+   "comments": 51,
+   "plays": null,
+   "pq": 15,
+   "ncap": 15,
+   "wts": [
+    35.0
+   ],
+   "pats": [
+    "choco"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-yyz1-1.cdninstagram.com/v/t51.82787-15/774469175_18071679269719582_7222238048922448908_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=110&ig_cache_key=Mzk2NDMzOTg4MjExOTU0NjA4MzE4MDcxNjc5MjYzNzE5NTgy.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjExNzkuc2RyLnZpZGVvX2RlZmF1bHRfY292ZXJfZnJhbWUuQzMifQ%3D%3D&_nc_ohc=LML0jxJidpYQ7kNvwG2vi08&_nc_oc=Ado19w7Fm8fCqDcCgT61WMqRDGSLjZbc3ZTJaDTEDIz-hDjLCXdU7D0J5mvGzHxMR_4&_nc_zt=23&_nc_ht=scontent-yyz1-1.cdninstagram.com&_nc_gid=LwxdAu8d6fDeIJ-o2IeynA&_nc_ss=72a8c&oh=00_AQEJRqKdi8T-AUPNBriKVxKvLOC2k0vN3ReYRE6_N_9g1w&oe=6A8C749D",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Customer’s Honest Review ❤️ Our happy customer chose a 22K | 916 HUID Hallmark Choco Chain weighing 35 grams. ✨ Thank you for trusting RH Jewellers! Your satisfaction is our biggest reward",
+   "pqtext": [
+    "Price",
+    "Price",
+    "Price",
+    "Price"
+   ]
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DcBUQjIAV9o",
+   "likes": 210,
+   "comments": 11,
+   "plays": null,
+   "pq": 1,
+   "ncap": 11,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://scontent-nrt6-1.cdninstagram.com/v/t51.82787-15/772271956_17898277998575083_4058717793735313107_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=110&ig_cache_key=Mzk2MzUzODI0NTIxOTg2ODUyMA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjEwODAuc2RyLnZpZGVvX2RlZmF1bHRfY292ZXJfZnJhbWUuQzMifQ%3D%3D&_nc_ohc=drv0jYB3jt0Q7kNvwEFVnfO&_nc_oc=Adq81J8SnBpNDO2nObZQdFfwjYALpPob2aOziW2Tqfqo_RADW3D-lwrRyuKD9oShy8o&_nc_zt=23&_nc_ht=scontent-nrt6-1.cdninstagram.com&_nc_gid=AVK4ljDGvS63U9uZEOGCzw&_nc_ss=72a8c&oh=00_AQEly1MfUAXdp60lfU_BE9YZuxV5PMlSRc6choh4zjQvOA&oe=6A8C86EA",
+   "ts": "",
+   "foll": null,
+   "cap": "Men’s Collection 🔥 Jai Ambey Chains brings you a wide variety of stylish chains for men — from classic to trending designs. ✨ Customization also available to make your chain truly yours! 💎 📩",
+   "pqtext": [
+    "Tax kitna dete ho"
+   ]
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DRUXxLhkhTH",
+   "likes": 2412,
+   "comments": 110,
+   "plays": null,
+   "pq": 0,
+   "ncap": 15,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://instagram.fmex1-2.fna.fbcdn.net/v/t51.71878-15/584395213_1196026849089214_8875493645147627362_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=105&_nc_map=urlgen_bucketless&ig_cache_key=Mzc3MDc0MzMyMjcxNDQ0NDk5OQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjY0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=Xw39jQ5Y69IQ7kNvwHqVapO&_nc_oc=AdqzhmGKF5Lzo4Du3_rECYQM5POS85bIJofDDndJWP8ZE_CsE1zhYzf_rlI8ZHFLTKvHBqmn2yXvtruE1k0wzy1p&_nc_zt=23&_nc_ht=instagram.fmex1-2.fna&_nc_gid=6IxYynFYaAsuumqORioGoA&_nc_ss=72a8c&oh=00_AQGVHWC8Td4isOX0MPQgZJ1DuQRWSeadU4rGsRyqwUrtyg&oe=6A8C600C",
+   "ts": "",
+   "foll": null,
+   "cap": "From melting pure 22k gold to polishing every link — your Laukya chain is crafted with precision, strength, and shine in every step. ✨ Lightweight, durable, and made for everyday elegance. .",
+   "pqtext": []
+  },
+  {
+   "u": "bhagyalakshmi_gold_palace_916",
+   "sc": "DakqIQoKHW4",
+   "likes": 229,
+   "comments": 10,
+   "plays": 4925,
+   "pq": 1,
+   "ncap": 5,
+   "wts": [],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://instagram.fyyc3-1.fna.fbcdn.net/v/t51.82787-15/731632129_18109062613911197_8389617731158514157_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=106&ig_cache_key=MzkzNzQ1NzI1OTc5MTU0NTc4NDE4MTA5MDYyNjEwOTExMTk3.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjcyMC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=bfxogQjnraYQ7kNvwGPB2H8&_nc_oc=AdoPc7hE0eXLfI-JMFM33zs1RTCzimM5t1az3kmIxpIu7GD8RNysunr2sjRfUSXkCKP2XuYJp-oBYkuGAZHoyJxd&_nc_zt=23&_nc_ht=instagram.fyyc3-1.fna&_nc_gid=bSMaHKPOalfmh076mfah0g&_nc_ss=7ca8c&oh=00_AQEDWfOZh7lsED3GifiOrDqAwUQzo6qymQcKM-98BHGobA&oe=6A8C60EE",
+   "ts": "2026-07-09",
+   "foll": 206,
+   "cap": "🔥 Style that speaks before you do. Upgrade your look with our premium gents gold chains—crafted for confidence, built to shine. ✨ Whether it’s for everyday wear or a special occasion, find t",
+   "pqtext": [
+    "Address and price rate 10 grm"
+   ]
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DXBbL7wEhbS",
+   "likes": 2026,
+   "comments": 14,
+   "plays": null,
+   "pq": 2,
+   "ncap": 9,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://instagram.fqsc1-1.fna.fbcdn.net/v/t51.71878-15/671027374_1011964141269501_6241610203940543058_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=109&ig_cache_key=Mzg3MzQ5NjcyMTg0MjY0MDU5NDE3ODc2MDU2ODc1NTc1MDgz.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjY0MC5zZHIudmlkZW9fbmZyYW1lX2NvdmVyX2ZyYW1lLkMzIn0%3D&_nc_ohc=9hL7RDwgM8kQ7kNvwGVfrBJ&_nc_oc=AdqLVxU8j5UOxVMbZKzsTCXskG_S6RPfnAH5G7BOiWhMX-0NdGakRIYXtlpXJabDGfo&_nc_zt=23&_nc_ht=instagram.fqsc1-1.fna&_nc_gid=-v5Jld0FtE4TLr5lh9OaKA&_nc_ss=72a8c&oh=00_AQEKe2u5UIEVs_Thtj-MZ1CBbavyhJ5NA5cfnJgDObj_TA&oe=6A8C5DA3",
+   "ts": "",
+   "foll": null,
+   "cap": "LKC Chains*:LKCChains ChainGoals PremiumPick - Swag chahiye? Seedha LKC Chains pehno 🛍️ LKCChains DesiLuxury GoldChainLove - Shaadi ho ya entry, LKC Chain ke saath sab heavy 👑 LKCChains Fest",
+   "pqtext": [
+    "Chain ka weight",
+    "Chain ka weight"
+   ]
+  },
+  {
+   "u": "_loukyachains",
+   "sc": "DW5yTOeiQvy",
+   "likes": 5721,
+   "comments": 13,
+   "plays": null,
+   "pq": 1,
+   "ncap": 13,
+   "wts": [],
+   "pats": [],
+   "src": "chain-only account",
+   "img": "https://scontent-nrt1-2.cdninstagram.com/v/t51.82787-15/670629719_17876254293575083_1250480925927134525_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=107&ig_cache_key=Mzg3MTM0NjU3ODI0MTk0ODY1ODE3ODc2MjU0Mjg3NTc1MDgz.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjU0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=CaxQEbkppX4Q7kNvwGLVtxO&_nc_oc=Adr8DMNYmICEgLvBkn8EZVnkeaYlZ8zWpuUqP2tHXJkT8cM55tURt7k5_9yB5rje_wjvKAc0wU1iYXy-YhVA-Q7A&_nc_zt=23&_nc_ht=scontent-nrt1-2.cdninstagram.com&_nc_gid=lyDJNx49A-thrlek58vpDQ&_nc_ss=7ca8c&oh=00_AQHN9ILbtmwx9pGuPZx1kD61QkJzG1bd5NyCGZ4DNZdkYA&oe=6A8C6969",
+   "ts": "",
+   "foll": null,
+   "cap": "LKC Chains*: *Stylish / Luxury:* - LKC Chains — pure gold, pure attitude 🔗✨ - Not just a chain, it’s an LKC statement 💛 WearGold *",
+   "pqtext": [
+    "Kitne percent lete ho 100 gm pe"
+   ]
+  }
+ ],
+ "with_weight": [
+  {
+   "u": "sri__jewellers",
+   "sc": "DcETwBpATUX",
+   "likes": 14,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [
+    100.0
+   ],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://scontent-muc2-1.cdninstagram.com/v/t51.82787-15/774314779_17902823661541314_689609360437828703_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=101&ig_cache_key=Mzk2NDM3OTQ0MjY5MTgxMDM0OQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuNzIwLnNkci52aWRlb19kZWZhdWx0X2NvdmVyX2ZyYW1lLkMzIn0%3D&_nc_ohc=wEcy_ozfSeIQ7kNvwFZHSRb&_nc_oc=AdoXBoTgtoeHjetwZi5nB-6bz5H8nyThQXbDIla_d8gRFSwgKn1PrBxIxTqZ8vyhGi8&_nc_zt=23&_nc_ht=scontent-muc2-1.cdninstagram.com&_nc_gid=utewn4ETHKuEiTvG42M3wg&_nc_ss=7ca8c&oh=00_AQEL-5nEjQg0hKZZIGmr9MHgYx94eUd_BSYGvEaCmvDyFQ&oe=6A8C6F2B",
+   "ts": "",
+   "foll": null,
+   "cap": "Roseball chain 100 grams Location 📍 SRI JEWELLERS MAIN ROAD RAMANAGARA NEAR BALMURI GANAPATI TEMPLE CONTACT NO : 07406881799",
+   "pqtext": []
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DcA1rVwn11q",
+   "likes": 25,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [
+    8.0,
+    40.0
+   ],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://scontent-ams2-1.cdninstagram.com/v/t39.30808-6/774301145_1355476703399640_1354510378296138794_n.jpg?stp=c0.0.1121.1402a_dst-jpg_e35_tt6&_nc_cat=106&ig_cache_key=Mzk2MzQwMzcwOTM5NzgyOTc2MA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMTEyMi5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=HdNRJEJrriwQ7kNvwHjJ8cJ&_nc_oc=AdoJLeLMd-2nMHZgEVEDPgpER0C_Gx5uzsix_7BVZnLePyb0PuKymL0ER-5OxYtqYbk&_nc_zt=23&_nc_ht=scontent-ams2-1.cdninstagram.com&_nc_gid=ZsowlViIABK61gocYu6SyA&_nc_ss=72a8c&oh=00_AQEi3uTuVa8G_ic1bZRxVA5iXbaabPnN6GpHQW1UvIpEjQ&oe=6A8C6B7A",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Graceful Daily Sparkle: Sleek Shine. Everyday Luxury. ✨ Elevate your everyday look with our \"Graceful Daily Sparkle\" gold chain collection. Masterfully crafted in 22Kt gold, these classic ",
+   "pqtext": []
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DcEKh5qpkTj",
+   "likes": 702,
+   "comments": 51,
+   "plays": null,
+   "pq": 15,
+   "ncap": 15,
+   "wts": [
+    35.0
+   ],
+   "pats": [
+    "choco"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-yyz1-1.cdninstagram.com/v/t51.82787-15/774469175_18071679269719582_7222238048922448908_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=110&ig_cache_key=Mzk2NDMzOTg4MjExOTU0NjA4MzE4MDcxNjc5MjYzNzE5NTgy.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjExNzkuc2RyLnZpZGVvX2RlZmF1bHRfY292ZXJfZnJhbWUuQzMifQ%3D%3D&_nc_ohc=LML0jxJidpYQ7kNvwG2vi08&_nc_oc=Ado19w7Fm8fCqDcCgT61WMqRDGSLjZbc3ZTJaDTEDIz-hDjLCXdU7D0J5mvGzHxMR_4&_nc_zt=23&_nc_ht=scontent-yyz1-1.cdninstagram.com&_nc_gid=LwxdAu8d6fDeIJ-o2IeynA&_nc_ss=72a8c&oh=00_AQEJRqKdi8T-AUPNBriKVxKvLOC2k0vN3ReYRE6_N_9g1w&oe=6A8C749D",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Customer’s Honest Review ❤️ Our happy customer chose a 22K | 916 HUID Hallmark Choco Chain weighing 35 grams. ✨ Thank you for trusting RH Jewellers! Your satisfaction is our biggest reward",
+   "pqtext": [
+    "Price",
+    "Price",
+    "Price",
+    "Price"
+   ]
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DcIh_h7H87Q",
+   "likes": 72,
+   "comments": 2,
+   "plays": null,
+   "pq": 1,
+   "ncap": 1,
+   "wts": [
+    20.0,
+    30.0
+   ],
+   "pats": [
+    "choco"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-cdg4-3.cdninstagram.com/v/t39.30808-6/778972784_1358087109805266_6645835671493866472_n.jpg?stp=c0.0.1122.1401a_dst-jpg_e35_tt6&_nc_cat=110&ig_cache_key=Mzk2NTU2ODk0NDUyMzExNjgyNQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMTEyMi5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=_QAvUYVC_5MQ7kNvwHbMIxU&_nc_oc=Adr_JS7UPDoLZF2VCCre08rzgpyW2-HUyME77Dq5J6KbSjFK0C9cnwwJ02J84fIShnqhvFMu9HRp7BOvfVtM0u3E&_nc_zt=23&_nc_ht=scontent-cdg4-3.cdninstagram.com&_nc_gid=huCFAZSwkB_Kmp5JEksfPQ&_nc_ss=7c289&oh=00_AQGrTZ5VJMHs1NdrGFlGreiyQI-D3g_AjOjxyXwjthm_cw&oe=6A8C7331",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Crafted Cocoa Chains: Distinctive Elegance. Modern Sophistication. ✨ Make a bold yet refined statement with our \"Crafted Cocoa Chains\" collection. Expertly handcrafted in 22Kt gold, these ",
+   "pqtext": [
+    "Price"
+   ]
+  },
+  {
+   "u": "shree_arbuda_jewellers_",
+   "sc": "DcBbJziiFkF",
+   "likes": 33,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [
+    25.0
+   ],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://scontent-ssn1-1.cdninstagram.com/v/t51.82787-15/773580638_17988389472030071_699199674355944159_n.webp?_nc_cat=100&ig_cache_key=Mzk2MjU0MDcwOTI2MTE0NTM2Mg%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMTQ0MC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=3IJipPEGwpMQ7kNvwG4H37L&_nc_oc=AdrFaM1c3iv8x5NQmI_KIy4NUIQxXBBOZv1TGcAEGjUOJkHNzs5_EPiubHMmFXensgE&_nc_zt=23&_nc_ht=scontent-ssn1-1.cdninstagram.com&_nc_gid=pZk3lSvjDIbxE9PZ00_bQw&_nc_ss=7c689&oh=00_AQErt1ZEaG5kChYrwuK0g6iUSrTwbrSKNq733Oept1DjFA&oe=6A8C59A8",
+   "ts": "",
+   "foll": null,
+   "cap": "🌟 શ્રી અર્બુદા જ્વેલર્સ 🌟 ✨ દશરથભાઈ (શો-રૂમ), ચિત્રોડીપુરા વાળા ✨ 💛 ગોલ્ડ Jents Chain💛 🔸 વજન: [12.000 To 25.000 ગ્રામ] ❤️\"A Promise of Purity & Trust!\"❤️ 🌼 અમારી પાસે આકર્ષક ડિઝાઇન અને શ્રેષ",
+   "pqtext": []
+  },
+  {
+   "u": "dhara_jewellers",
+   "sc": "DcNbK2vTdJY",
+   "likes": 2,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [
+    9.0
+   ],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://instagram.fmxp13-2.fna.fbcdn.net/v/t51.82787-15/770738446_18365984950208692_8356100128213479646_n.webp?_nc_cat=100&ig_cache_key=Mzk2Njk0NjM0MDAwOTUyOTk0NA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTQ0MC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=9VkblR21G7wQ7kNvwGv0cH5&_nc_oc=AdpmVZcIXGZGU16YgOYM-GMjzzO-U6jv-eSN2xtnVXtqc8CTl-sUP6qetml3J60PbZ9ErCS6rII6O6dS6ElXrU_j&_nc_zt=23&_nc_ht=instagram.fmxp13-2.fna&_nc_gid=hvyTVXh47-KVoQartNt2fw&_nc_ss=7c689&oh=00_AQFndL9GKG42KY1ZHoSt19KlVVOvnBdyzPnIdoUCDj-jDw&oe=6A8C7F9B",
+   "ts": "2026-08-19",
+   "foll": 265,
+   "cap": "✨ 18K Rose Gold Chain for Men ✨ ⚜️ Elegant. Bold. Timeless. 🔸 Weight – 9 Grams 💎 A perfect blend of modern style and classic luxury. ✨ Wear your confidence. Wear your style. 📍 Dhara Jeweller",
+   "pqtext": []
+  },
+  {
+   "u": "rh___jewellers",
+   "sc": "DcIw_HqH3aP",
+   "likes": 30,
+   "comments": 2,
+   "plays": null,
+   "pq": 0,
+   "ncap": 2,
+   "wts": [
+    3.04,
+    7.85
+   ],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://instagram.fsvq5-1.fna.fbcdn.net/v/t39.30808-6/777904392_1358169286463715_2080141200893847687_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=102&ig_cache_key=Mzk2NTYzNDg4NjcwNzkyOTAzMg%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMTEyMi5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=TNv-rmGStqkQ7kNvwGtvINi&_nc_oc=AdqmvWAnsxfoBm5ty4ZZyCzg7G6caTgjT1YFzemtkTu_4E_TY-Ab5esnWfVO7WAkEdQ&_nc_zt=23&_nc_ht=instagram.fsvq5-1.fna&_nc_gid=TL6HyRp7_mpmsTtw1sO9KQ&_nc_ss=72a8c&oh=00_AQFukmj9TpyZdmVHOPkkGsFcQJPaE5hKTFFT-0waF9iJLA&oe=6A8C8F0C",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ Antique Gold Pendant Collection: Sacred Grace. Timeless Heritage. ✨ Invite auspicious blessings and traditional opulence with our exclusive collections of antique gold pendants. Masterfull",
+   "pqtext": []
+  },
+  {
+   "u": "dhara_jewellers",
+   "sc": "DcBd1yMzjHI",
+   "likes": 3,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [
+    7.0
+   ],
+   "pats": [],
+   "src": "caption says chain",
+   "img": "https://scontent-lga3-2.cdninstagram.com/v/t51.82787-15/774597568_18365238205208692_2508375105519537023_n.webp?_nc_cat=105&ig_cache_key=Mzk2MzU4MDM4NjQ0NTc2NzExMg%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTQ0MC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=yfdePELlWmkQ7kNvwF_BtXI&_nc_oc=AdoDLUN64kYirt05nQI8CkFQEhBdUVXQ74W6oWsK5Cgg0fiZP83bQgzSoQ6x5k8k98A&_nc_zt=23&_nc_ht=scontent-lga3-2.cdninstagram.com&_nc_gid=Mw1QkoXSkidImytklPXbQg&_nc_ss=72a8c&oh=00_AQEnzwr37aAhbeiZd6xizND7vcO9DRuoNJYXaQs9k4o8zg&oe=6A8C6910",
+   "ts": "2026-08-14",
+   "foll": 265,
+   "cap": "Elevate your everyday elegance with this stunning 18K Rose Gold Chain by Dhara Jewellers Purity: 18K Rose Gold Weight: 7.00 grams Ideal For: Daily wear, special occasions, and gifting DM us ",
+   "pqtext": []
+  },
+  {
+   "u": "jewellerygardenpvtltd",
+   "sc": "DcPsZIICD54",
+   "likes": 17,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [
+    3.0,
+    3.0
+   ],
+   "pats": [
+    "two-tone"
+   ],
+   "src": "caption says chain",
+   "img": "https://instagram.fyqm1-1.fna.fbcdn.net/v/t39.30808-6/778870027_1535694398596947_7874281179071938150_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=111&ig_cache_key=Mzk2NzU4NTAwMTI4OTU5NDgzNA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMjA0OC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=w9qWQpCALoQQ7kNvwGOHkfk&_nc_oc=Adoi7jnrd-F02r96N_51Kucse-BfRz7dwD1peI4XXVpBH0feCm3671jb00A_0wAWa6rQ4nqgriBO1jGEY1bI8ZPS&_nc_zt=23&_nc_ht=instagram.fyqm1-1.fna&_nc_gid=4vHlXGwUqsp1DhDri8d8ww&_nc_ss=72a8c&oh=00_AQGkyZAPYCYbwfmN2KpBJq88PpfgC-zeu-VoIF_JadSUpg&oe=6A8C8CFC",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ VERSATILE ELEGANCE. DAILY RADIANCE. Accentuate your favorite chain with a touch of timeless brilliance from our Gold Pendant collection—crafted for effortless charm, beauty, and style. ✨ W",
+   "pqtext": []
+  },
+  {
+   "u": "jewellerygardenpvtltd",
+   "sc": "DcIZdrkgGOy",
+   "likes": 48,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [
+    3.0,
+    3.0
+   ],
+   "pats": [
+    "two-tone"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-man2-1.cdninstagram.com/v/t39.30808-6/774762157_1532967505536303_3975356216476496929_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=107&ig_cache_key=Mzk2NTUzMTQ0NTY5MDE2MzM3MQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMjA0OC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=KxB580Ibn0cQ7kNvwHcL7kL&_nc_oc=AdqVcmqDy9Qa2gxQJQ4dO-7YeSPgbTwVTqow_d5v_HQiL5hkLep-dHGgDGIjUOL7fuk&_nc_zt=23&_nc_ht=scontent-man2-1.cdninstagram.com&_nc_gid=gine5lCw6Wc8_mxZ75I60Q&_nc_ss=7ca8c&oh=00_AQHsLRhKE_LfP9fDtC43osbW7MfVvPkMUDupSebLW1beXA&oe=6A8C74E9",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ MODERN CHARM. EFFORTLESS LUXURY. Elevate your style with our stunning Gold Fancy Chain collection—crafted with unique artistic links, contemporary elegance, and brilliant shine. ✨ Why You'",
+   "pqtext": []
+  },
+  {
+   "u": "jewellerygardenpvtltd",
+   "sc": "DcH9__tkTPi",
+   "likes": 64,
+   "comments": 4,
+   "plays": null,
+   "pq": 0,
+   "ncap": 2,
+   "wts": [
+    3.0,
+    3.0
+   ],
+   "pats": [
+    "two-tone"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-mxp1-1.cdninstagram.com/v/t39.30808-6/774266421_1532965348869852_3550623532907786104_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=105&ig_cache_key=Mzk2NTQxMDY1ODY4NjY3MjIyNw%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMjA0OC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=vLphKEBvBNgQ7kNvwE4p8wL&_nc_oc=AdqcL9Q8QLAsDEkr0zVmtVZ3MZSxHR1e4PfMzvF8WuJ0QUXjYaIlofZYl90-sNf_PA4&_nc_zt=23&_nc_ht=scontent-mxp1-1.cdninstagram.com&_nc_gid=c8iixcRmPiCm45nJRxXcOg&_nc_ss=72a8c&oh=00_AQEuuKairTbrwdqmrRUsHM09dBnotxYQ5bA1F-yeSy-xpg&oe=6A8C8A92",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ PURE SIMPLICITY. EVERYDAY ELEGANCE. Add a delicate touch of luxury to your daily style with our exquisite Gold Single Locket collection—crafted for effortless beauty, charm, and timeless g",
+   "pqtext": []
+  },
+  {
+   "u": "jewellerygardenpvtltd",
+   "sc": "DcF0q9ODclB",
+   "likes": 48,
+   "comments": 3,
+   "plays": null,
+   "pq": 1,
+   "ncap": 2,
+   "wts": [
+    3.0,
+    3.0
+   ],
+   "pats": [
+    "two-tone"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-fra3-1.cdninstagram.com/v/t39.30808-6/774201682_1532911242208596_2769575473808014031_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=105&ig_cache_key=Mzk2NDgwNjY3ODk3NzUyODEzNA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMjA0OC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=4hWwJ0r3OI4Q7kNvwENLuNo&_nc_oc=AdoNmpzFcXCN4o5DzWDiwc5h2gqIxTO51mdSBNFzA_zeMzTl4nDQ9wMbs8pGyFQlBRfKTfo0EIbMLBSkkpaa-_kd&_nc_zt=23&_nc_ht=scontent-fra3-1.cdninstagram.com&_nc_gid=4lGVBwJox2CjhRCluVIVzw&_nc_ss=7c289&oh=00_AQHn43Oj-KW6X1PAuaNYway3bu9BXRDKKhOH0LA4EXgvMw&oe=6A8C8703",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ PURE SIMPLICITY. EVERYDAY ELEGANCE. Add a delicate touch of luxury to your daily style with our exquisite Gold Single Locket collection—crafted for effortless beauty, charm, and timeless g",
+   "pqtext": [
+    "1st lockt chain price"
+   ]
+  },
+  {
+   "u": "jewellerygardenpvtltd",
+   "sc": "DcBGipYGkxw",
+   "likes": 32,
+   "comments": 0,
+   "plays": null,
+   "pq": 0,
+   "ncap": 0,
+   "wts": [
+    3.0,
+    3.0
+   ],
+   "pats": [
+    "cuban",
+    "figaro",
+    "rope"
+   ],
+   "src": "caption says chain",
+   "img": "https://scontent-nrt6-1.cdninstagram.com/v/t39.30808-6/767101588_1529799602519760_3339501458289215956_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=100&ig_cache_key=Mzk2MzQ3Nzg5Njk4ODM0MDI4NA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMjA0OC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=pvSOavFy9ysQ7kNvwHcdaIp&_nc_oc=AdoXx8HDz2lsrjZfiJWJ6BEYgtcZOlqrZ-2Wc9hcfibnF_YxVS3wopsD5_gK1CcRkcs&_nc_zt=23&_nc_ht=scontent-nrt6-1.cdninstagram.com&_nc_gid=WOia4xUqnn85EKvalfg6Xg&_nc_ss=7c689&oh=00_AQEe9B1_O7wyD8p8-cXZ1eA7xH733VqAdlKbPJJ5FteFOQ&oe=6A8C63E2",
+   "ts": "",
+   "foll": null,
+   "cap": "✨ STRONG STYLE. EFFORTLESS LUXURY. Upgrade your look with our exclusive Gents Gold Chain collection—crafted for ultimate strength, sleek sophistication, and timeless Appeal. ✨ Why You'll Lov",
+   "pqtext": []
+  }
+ ]
+}
