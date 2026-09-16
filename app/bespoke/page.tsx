@@ -1,179 +1,112 @@
 'use client'
 
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, useMemo, type FormEvent } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
+import StoreLayout from '@/components/d2c/StoreLayout'
+import { useCart } from '@/components/d2c/CartContext'
+import { formatCurrency, type CurrencyCode } from '@/lib/markets'
+import { Diamond, ShieldCheck, Clock, Truck, Sparkles, Check, ChevronDown, ChevronUp } from 'lucide-react'
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Pricing. The entry price is derived from the itemised costs below, so it is
-   whatever those actually add up to. The two higher tiers are estimates and
-   should be checked against real quotes before launch.
-
-   This is the most important content on the page. The Meta account spent ₹912
-   across ~5,600 engagements and produced zero conversations, running ads that
-   said "Chat With Us For Pricing" — i.e. they refused to answer the first
-   question an engagement-ring buyer asks. Publishing the floor price is what
-   turns that traffic into enquiries.
+   Multi-Market Bespoke Floor Rates
    ────────────────────────────────────────────────────────────────────────── */
-/* The entry quote is computed, never transcribed.
- *
- * The previous version hardcoded both the line items and the total, and they
- * drifted: the three costs sum to ₹14,378, on which 3% GST is ₹431 — but the
- * page printed ₹622 (4.33%) so the total would land on a round ₹15,000. On a
- * page whose entire promise is "here is the real price, check it yourself",
- * a customer with a calculator finds that in about ten seconds.
- *
- * Costs are now the single source of truth; GST and the total are derived, so
- * the line items cannot stop summing to the total again. To change the entry
- * price, edit a cost below — everything else follows.
- */
-const GST_RATE = 0.03
-
-const ENTRY_COSTS = [
-  { item: '9KT rose gold (1.76g)', amount: 9532 },
-  { item: 'Lab-grown diamonds (0.23ct)', amount: 3500 },
-  { item: 'Making charges',        amount: 1346 },
-]
-
-const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`
-
-const ENTRY_SUBTOTAL = ENTRY_COSTS.reduce((sum, r) => sum + r.amount, 0)
-const ENTRY_GST      = Math.round(ENTRY_SUBTOTAL * GST_RATE)
-const ENTRY_TOTAL    = ENTRY_SUBTOTAL + ENTRY_GST
-
-const ENTRY_QUOTE = [
-  ...ENTRY_COSTS.map((r) => ({ item: r.item, cost: inr(r.amount) })),
-  { item: `GST (${GST_RATE * 100}%)`, cost: inr(ENTRY_GST) },
-]
-
-const PRICING = {
-  from: inr(ENTRY_TOTAL),
-  tiers: [
-    { label: 'Lab-grown diamond', from: inr(ENTRY_TOTAL), note: '9KT rose gold, 0.23ct, IGI certified' },
-    { label: 'Natural diamond',   from: '₹45,000',        note: 'Same settings, mined stone, GIA certified' },
-  ],
+interface BespokeMarketPricing {
+  lgdFrom: number
+  naturalFrom: number
+  lgdFormatted: string
+  naturalFormatted: string
+  fxRateToInr: number
 }
 
-const WHATSAPP_E164 = '919662266360'
-const WHATSAPP_INTRO = 'Hi Shewah — I would like a price for a bespoke piece.'
+const MARKET_BESPOKE_RATES: Record<string, BespokeMarketPricing> = {
+  US: { lgdFrom: 450, naturalFrom: 1450, lgdFormatted: '$450', naturalFormatted: '$1,450', fxRateToInr: 87.0 },
+  GB: { lgdFrom: 380, naturalFrom: 1200, lgdFormatted: '£380', naturalFormatted: '£1,200', fxRateToInr: 110.0 },
+  EU: { lgdFrom: 420, naturalFrom: 1350, lgdFormatted: '€420', naturalFormatted: '€1,350', fxRateToInr: 94.0 },
+  DE: { lgdFrom: 420, naturalFrom: 1350, lgdFormatted: '€420', naturalFormatted: '€1,350', fxRateToInr: 94.0 },
+  FR: { lgdFrom: 420, naturalFrom: 1350, lgdFormatted: '€420', naturalFormatted: '€1,350', fxRateToInr: 94.0 },
+  AU: { lgdFrom: 680, naturalFrom: 2200, lgdFormatted: 'A$680', naturalFormatted: 'A$2,200', fxRateToInr: 56.0 },
+}
 
-// "BIS 916" denotes 22K specifically — the entry piece is 9KT, so the
-// generic hallmark claim is the accurate one to make here.
+const DEFAULT_MARKET_RATE = MARKET_BESPOKE_RATES.US
+
+const WHATSAPP_E164 = '919662266360'
+const WHATSAPP_INTRO = 'Hi Shewah Atelier — I would like an indicative price for a bespoke commission.'
+
 const TRUST = [
-  { k: 'Lab-grown',    v: 'IGI certified stones' },
-  { k: 'BIS',          v: 'Hallmarked gold' },
-  { k: '12 days',      v: 'Design to doorstep' },
-  { k: 'Insured',      v: 'Doorstep delivery' },
+  { k: 'Certified Stones', v: 'IGI & GIA certified diamonds' },
+  { k: 'Hallmarked Gold',  v: 'Independently assay hallmarked' },
+  { k: '12-14 Days',       v: 'Atelier design to doorstep' },
+  { k: 'Insured Shipping', v: 'Complimentary express delivery' },
 ]
 
 const PROOF = [
-  { n: '12,000+', l: 'Pieces made for jewellers' },
-  { n: '180+',    l: 'Karigars in our workshop' },
-  { n: '64',      l: 'Cities supplied' },
+  { n: '12,000+', l: 'Pieces crafted for international jewellers' },
+  { n: '180+',    l: 'Hereditary master artisans in our workshops' },
+  { n: '2',       l: 'Cutting & casting centres: Antwerp & Surat' },
 ]
 
 const STEPS = [
-  { n: '01', h: 'Tell us the brief',  p: 'Budget, stone, timeline. Two minutes, no call required.' },
-  { n: '02', h: 'See a CAD sketch',   p: 'Your design rendered in 3D, with the full price broken down. Revise it as many times as you like within a 3-day window.' },
-  { n: '03', h: 'Approve the quote',  p: 'Gold weight, labour and stone cost itemised. Nothing starts until you say yes.' },
-  { n: '04', h: 'Delivered in 12 days', p: 'Crafted by our karigars, certified, and delivered insured to your door — 12 days from design to doorstep.' },
+  { n: '01', h: 'Submit your brief',    p: 'Share your desired style, diamond parameters, and budget. Simple 2-minute form, no calls needed.' },
+  { n: '02', h: '3D CAD render',        p: 'Receive custom photorealistic 3D CAD renders of your design with unlimited revisions within 3 days.' },
+  { n: '03', h: 'Transparent approval', p: 'Complete itemised breakdown of pure gold weight, labour, and diamond specifications before crafting.' },
+  { n: '04', h: 'Insured delivery',     p: 'Individually hand-cast, hallmarked, and delivered in discreet armoured packaging to your doorstep.' },
 ]
-
-const FAQ = [
-  {
-    q: 'What does a bespoke ring actually cost?',
-    a: `Solitaire rings start at ${PRICING.tiers[0].from} — 9KT rose gold (1.76g) with 0.23ct of IGI-certified lab-grown diamonds, making charges and GST all in. Mined diamonds start at ${PRICING.tiers[1].from} for the same settings. Every quote is itemised the same way before anything is made.`,
-  },
-  {
-    q: 'How long does it take?',
-    a: '12 days from design to delivery. If you have a fixed date, tell us in the form and we will confirm whether it is possible before you commit.',
-  },
-  {
-    q: 'Are the diamonds certified?',
-    a: `Yes. Lab-grown stones are IGI certified, mined stones GIA certified, and the certificate ships with the piece — check its number on the lab's own site before you pay. Gold is BIS hallmarked at its stated purity: the ${PRICING.from} ring is 9KT rose gold, and higher karatages are quoted on request.`,
-  },
-  {
-    q: 'What if I do not like the design?',
-    a: 'Revise the CAD as many times as you like within a 3-day review window, free. Nothing goes into production until you approve both the render and the price.',
-  },
-  {
-    q: 'Do I have to talk to someone to get a price?',
-    a: 'No. Send the brief and we will reply on WhatsApp with an indicative price. A call only happens if you want one.',
-  },
-]
-
-// Values must stay in the "min - max" / "min+" shape that mapBudget() in
-// app/api/public/consultation/route.ts parses.
-const BUDGETS = [
-  // Label only — the value must keep the "min - max" shape. Worded as an upper
-  // bound so the band still covers the entry price, whatever it computes to.
-  { label: 'Up to ₹40,000',         value: '15000 - 40000' },
-  { label: '₹40,000 – ₹75,000',     value: '40000 - 75000' },
-  { label: '₹75,000 – ₹1,50,000',   value: '75000 - 150000' },
-  { label: '₹1,50,000+',            value: '150000+' },
-]
-
-const OCCASIONS = ['engagement', 'wedding', 'anniversary', 'gift', 'self', 'other']
 
 const empty = {
-  first_name: '', whatsapp: '', city: '',
-  budget: '', occasion: '', jewellery_type: 'ring',
-  website: '', // honeypot
+  first_name: '',
+  whatsapp: '',
+  city: '',
+  budget: '',
+  occasion: '',
+  jewellery_type: 'ring',
+  website: '',
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Price calculator — the transitional call to action.
-
-   It hands over the thing the visitor came for, in full, before asking for
-   anything at all. No name, no number: the obligation has to run toward the
-   visitor first, which is precisely what the previous ad spend got backwards.
-
-   The arithmetic happens server-side in /api/public/ring-price, on the same
-   engine and the same live rates the internal quoting system uses, so a price
-   shown here cannot drift from the price actually quoted. Keeping it on the
-   server also means the rate tables are never shipped to the browser, where
-   they would amount to a current price list for anyone who opened devtools.
-   ────────────────────────────────────────────────────────────────────────── */
-
 const CARATS = [
-  { v: 0.25, label: '0.25 ct' },
-  { v: 0.5,  label: '0.50 ct' },
-  { v: 0.75, label: '0.75 ct' },
-  { v: 1,    label: '1.00 ct' },
-]
-const KARATS = [
-  { v: 9,  label: '9KT' },
-  { v: 14, label: '14KT' },
-  { v: 18, label: '18KT' },
-]
-const SETTINGS = [
-  { v: 'solitaire',   label: 'Solitaire' },
-  { v: 'halo',        label: 'Halo' },
-  { v: 'three_stone', label: 'Three stone' },
+  { label: '0.25 ct', v: 0.25 },
+  { label: '0.50 ct', v: 0.5 },
+  { label: '0.75 ct', v: 0.75 },
+  { label: '1.00 ct', v: 1.0 },
 ]
 
-type PriceLine = { item: string; amount: number }
-type PriceResult = {
-  ok: true
-  lines: PriceLine[]
+const KARATS = [
+  { label: '9KT Solid Gold',  v: 9 },
+  { label: '14KT Solid Gold', v: 14 },
+  { label: '18KT Solid Gold', v: 18 },
+]
+
+const SETTINGS = [
+  { label: 'Solitaire',   v: 'solitaire' },
+  { label: 'Halo',        v: 'halo' },
+  { label: 'Three Stone', v: 'three_stone' },
+]
+
+interface PriceResult {
+  ok: boolean
+  lines: { item: string; amount: number }[]
   subtotal: number
   gst: number
   total: number
+  gold_rate_24k: number
   note: string
 }
 
-const rupees = (n: number) => `₹${n.toLocaleString('en-IN')}`
 
 function Choice({
-  options, value, onChange, label,
+  options,
+  value,
+  onChange,
+  label,
 }: {
-  options: { v: any; label: string }[]
+  options: { label: string; v: any }[]
   value: any
   onChange: (v: any) => void
   label: string
 }) {
   return (
-    <fieldset className="flex flex-col gap-3">
-      <legend className="text-[10px] uppercase tracking-micro text-stone-500">{label}</legend>
+    <fieldset className="flex flex-col gap-2.5">
+      <legend className="text-[10px] uppercase tracking-[0.25em] text-[#8C8275] font-semibold">{label}</legend>
       <div className="flex flex-wrap gap-2">
         {options.map((o) => {
           const active = o.v === value
@@ -183,10 +116,10 @@ function Choice({
               type="button"
               aria-pressed={active}
               onClick={() => onChange(o.v)}
-              className={`border px-4 py-2.5 text-[11px] uppercase tracking-cta transition-colors ${
+              className={`border px-4 py-2 text-xs uppercase tracking-wider transition-all rounded-lg font-medium ${
                 active
-                  ? 'border-stone-900 bg-stone-900 text-white'
-                  : 'border-stone-300 text-stone-600 hover:border-stone-900 hover:text-stone-900'
+                  ? 'border-[#2A241B] bg-[#2A241B] text-white shadow-sm'
+                  : 'border-[#E8DFC9] bg-white text-[#5C5347] hover:border-[#A88A4F] hover:text-[#2A241B]'
               }`}
             >
               {o.label}
@@ -198,9 +131,9 @@ function Choice({
   )
 }
 
-function PriceCalculator() {
+function PriceCalculator({ activePricing, currency }: { activePricing: BespokeMarketPricing; currency: CurrencyCode }) {
   const [carat, setCarat] = useState(0.25)
-  const [karat, setKarat] = useState(9)
+  const [karat, setKarat] = useState(18)
   const [setting, setSetting] = useState('solitaire')
   const [result, setResult] = useState<PriceResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -230,70 +163,85 @@ function PriceCalculator() {
     return () => { cancelled = true }
   }, [carat, karat, setting])
 
+  const fxRate = activePricing.fxRateToInr || 87.0
+  const convertAmount = (inrAmount: number) => {
+    const localVal = Math.round(inrAmount / fxRate)
+    return formatCurrency(localVal, currency)
+  }
+
   const spec = `${CARATS.find((c) => c.v === carat)?.label}, ${karat}KT, ${
     SETTINGS.find((s) => s.v === setting)?.label
   }`
   const waHref = `https://wa.me/${WHATSAPP_E164}?text=${encodeURIComponent(
-    `Hi Shewah — I priced a ring on your site: ${spec}${
-      result ? ` (about ${rupees(result.total)})` : ''
-    }. I'd like the full itemised quote.`,
+    `Hi Shewah Atelier — I configured a bespoke ring: ${spec}${
+      result ? ` (est. ${convertAmount(result.total)})` : ''
+    }. I would like to receive the full itemised quote.`,
   )}`
 
   return (
-    <div className="mt-10 border border-stone-200 px-6 py-8 sm:px-10 sm:py-10">
-      <p className="text-[10px] uppercase tracking-eyebrow text-stone-400">
-        Price it yourself &mdash; no phone number
-      </p>
-      <h3 className="mt-3 font-serif text-2xl leading-tight text-stone-900 sm:text-3xl">
-        Build the ring. See the price change.
+    <div className="mt-10 border border-[#E8DFC9] bg-white rounded-2xl p-6 sm:p-10 shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
+        <Sparkles className="w-4 h-4 text-[#A88A4F]" />
+        <p className="text-[10px] uppercase tracking-[0.25em] text-[#A88A4F] font-semibold">
+          Instant Atelier Estimator
+        </p>
+      </div>
+      <h3 className="font-serif text-2xl sm:text-3xl text-[#2A241B]">
+        Configure Your Ring. See Real Atelier Pricing.
       </h3>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
-        <div className="flex flex-col gap-7">
-          <Choice label="Centre stone" options={CARATS} value={carat} onChange={setCarat} />
-          <Choice label="Gold" options={KARATS} value={karat} onChange={setKarat} />
-          <Choice label="Setting" options={SETTINGS} value={setting} onChange={setSetting} />
-          <p className="max-w-md text-[12px] leading-relaxed text-stone-500">
-            Lab-grown diamonds, IGI certified. Gold is BIS hallmarked at the purity you
-            pick. Prices move with the daily gold rate, so this is what the ring costs
-            today.
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
+        <div className="flex flex-col gap-6">
+          <Choice label="Centre Diamond Size" options={CARATS} value={carat} onChange={setCarat} />
+          <Choice label="Gold Alloy & Purity" options={KARATS} value={karat} onChange={setKarat} />
+          <Choice label="Setting Style" options={SETTINGS} value={setting} onChange={setSetting} />
+          <p className="max-w-md text-xs leading-relaxed text-[#5C5347]">
+            IGI certified lab-grown diamonds, solid gold hand-cast in our workshops. Live pricing calculated server-side according to daily market metal spot rates.
           </p>
         </div>
 
-        <div className="border border-stone-200 bg-stone-50 p-6" aria-live="polite" aria-busy={loading}>
+        <div className="border border-[#E8DFC9] bg-[#FBF7F0] rounded-xl p-6" aria-live="polite" aria-busy={loading}>
           {error ? (
             <div className="flex flex-col gap-3">
-              <p className="text-[13px] leading-relaxed text-stone-600">{error}</p>
-              <a href="#brief" className="text-[11px] uppercase tracking-cta text-stone-900 underline underline-offset-4">
+              <p className="text-xs leading-relaxed text-red-600">{error}</p>
+              <a href="#brief" className="text-xs uppercase tracking-wider text-[#2A241B] font-semibold underline underline-offset-4">
                 Send a brief instead
               </a>
             </div>
           ) : result ? (
             <div className={loading ? 'opacity-50 transition-opacity' : 'transition-opacity'}>
-              <dl>
+              <dl className="space-y-3">
                 {result.lines.map((l) => (
-                  <div key={l.item} className="flex items-baseline justify-between gap-4 border-b border-stone-200 py-2.5">
-                    <dt className="text-[13px] text-stone-600">{l.item}</dt>
-                    <dd className="font-mono text-[13px] tabular-nums text-stone-900">{rupees(l.amount)}</dd>
+                  <div key={l.item} className="flex items-baseline justify-between gap-4 border-b border-[#E8DFC9]/60 pb-2">
+                    <dt className="text-xs text-[#5C5347]">{l.item}</dt>
+                    <dd className="font-mono text-xs font-semibold text-[#2A241B] tabular-nums">
+                      {convertAmount(l.amount)}
+                    </dd>
                   </div>
                 ))}
-                <div className="flex items-baseline justify-between gap-4 pt-4">
-                  <dt className="text-[10px] uppercase tracking-micro text-stone-900">Total</dt>
-                  <dd className="font-serif text-2xl text-stone-900 tabular-nums">{rupees(result.total)}</dd>
+                <div className="flex items-baseline justify-between gap-4 pt-3">
+                  <dt className="text-xs uppercase tracking-wider text-[#2A241B] font-semibold">Estimated Total</dt>
+                  <dd className="font-serif text-2xl text-[#2A241B] font-medium tabular-nums">
+                    {convertAmount(result.total)}
+                  </dd>
                 </div>
               </dl>
               <a
                 href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-6 block border border-stone-900 bg-stone-900 px-5 py-3 text-center text-[11px] uppercase tracking-cta text-white transition-colors hover:bg-accent hover:border-accent"
+                className="mt-6 block w-full bg-[#2A241B] py-3.5 text-center text-xs uppercase tracking-widest text-white rounded-xl transition-all hover:bg-[#A88A4F] font-semibold shadow-sm"
               >
-                Get this itemised on WhatsApp
+                Inquire on WhatsApp
               </a>
-              <p className="mt-3 text-[11px] leading-relaxed text-stone-500">{result.note}</p>
+              <p className="mt-3 text-[11px] leading-relaxed text-[#8C8275] text-center">
+                Indicative. Final quote locked upon 3D CAD approval.
+              </p>
             </div>
           ) : (
-            <p className="text-[13px] text-stone-500">Pricing&hellip;</p>
+            <div className="flex items-center justify-center py-12 text-xs text-[#8C8275]">
+              Calculating atelier estimate&hellip;
+            </div>
           )}
         </div>
       </div>
@@ -301,11 +249,97 @@ function PriceCalculator() {
   )
 }
 
+const inputCls =
+  'w-full border border-[#E8DFC9] bg-white px-4 py-3 text-xs text-[#2A241B] rounded-xl outline-none transition-all placeholder:text-stone-400 focus:border-[#A88A4F] focus:ring-1 focus:ring-[#A88A4F]'
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#8C8275]">
+        {label} {required && <span className="text-[#A88A4F]">*</span>}
+      </span>
+      {children}
+    </label>
+  )
+}
+
+const OCCASIONS = [
+  'Engagement Ring',
+  'Wedding Band',
+  'Anniversary Creation',
+  'Milestone Gift',
+  'Self-Purchase',
+  'Other Bespoke Design',
+]
+
 export default function BespokePage() {
+  const { market } = useCart()
+  const activePricing = MARKET_BESPOKE_RATES[market?.code] || DEFAULT_MARKET_RATE
+  const currency = market?.currency || 'USD'
+
   const [f, setF] = useState(empty)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+
+  const budgetOptions = useMemo(() => {
+    switch (currency) {
+      case 'GBP':
+        return [
+          { label: 'Up to £1,000', value: '400 - 1000' },
+          { label: '£1,000 – £2,500', value: '1000 - 2500' },
+          { label: '£2,500 – £6,000', value: '2500 - 6000' },
+          { label: '£6,000+', value: '6000+' },
+        ]
+      case 'EUR':
+        return [
+          { label: 'Up to €1,200', value: '500 - 1200' },
+          { label: '€1,200 – €3,000', value: '1200 - 3000' },
+          { label: '€3,000 – €7,000', value: '3000 - 7000' },
+          { label: '€7,000+', value: '7000+' },
+        ]
+      case 'AUD':
+        return [
+          { label: 'Up to A$1,800', value: '700 - 1800' },
+          { label: 'A$1,800 – A$4,500', value: '1800 - 4500' },
+          { label: 'A$4,500 – A$10,000', value: '4500 - 10000' },
+          { label: 'A$10,000+', value: '10000+' },
+        ]
+      default:
+        return [
+          { label: 'Up to $1,500', value: '500 - 1500' },
+          { label: '$1,500 – $3,500', value: '1500 - 3500' },
+          { label: '$3,500 – $8,000', value: '3500 - 8000' },
+          { label: '$8,000+', value: '8000+' },
+        ]
+    }
+  }, [currency])
+
+  const faqs = useMemo(
+    () => [
+      {
+        q: 'What does a bespoke commission actually cost?',
+        a: `Solitaire creations start from ${activePricing.lgdFormatted} with IGI-certified lab-grown diamonds in solid 18K gold. Natural mined diamonds with GIA certification start from ${activePricing.naturalFormatted}. Every commission is fully itemised before crafting begins.`,
+      },
+      {
+        q: 'How long does bespoke manufacturing take?',
+        a: 'Typically 12 to 14 business days from 3D CAD approval to insured international delivery. If you have an impending proposal or wedding date, please inform us in your brief.',
+      },
+      {
+        q: 'Are the diamonds and precious metals certified?',
+        a: 'Yes. All stones 0.30ct and above are accompanied by verifiable digital and physical dossiers from IGI or GIA. Gold alloys are independently assay-hallmarked to guarantee karat purity.',
+      },
+      {
+        q: 'What if I want design modifications after seeing the 3D CAD sketch?',
+        a: 'We offer complimentary 3D CAD design iterations within your design window. We never cast the piece until you approve the precise digital render and final itemised quote.',
+      },
+      {
+        q: 'Do I have to attend a mandatory video call?',
+        a: 'No. You can conduct your entire commission comfortably over WhatsApp or email with your dedicated jewellery specialist.',
+      },
+    ],
+    [activePricing]
+  )
 
   function set<K extends keyof typeof empty>(k: K, v: string) {
     setF((p) => ({ ...p, [k]: v }))
@@ -332,17 +366,18 @@ export default function BespokePage() {
       const res = await fetch('/api/public/consultation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(f),
+        body: JSON.stringify({
+          ...f,
+          source_page: '/bespoke',
+          market: market?.code || 'US',
+          currency,
+        }),
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || j?.ok === false) {
         setError(j?.error || `Could not send (${res.status}). Please try again.`)
         return
       }
-      // The Meta `Lead` event fires on /consultation/thank-you, not here — see
-      // app/LeadForm.tsx for why firing it before a hard navigation is unsafe.
-      // `eid` is the Conversions API event id minted server-side; the thank-you
-      // page reuses it so the browser and server events deduplicate.
       const eid = typeof j?.event_id === 'string' ? j.event_id : null
       window.location.href = eid
         ? `/consultation/thank-you?eid=${encodeURIComponent(eid)}`
@@ -355,296 +390,313 @@ export default function BespokePage() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-stone-900 font-sans">
-      {/* ── Header ─────────────────────────────────────────────────── */}
-      <header className="border-b border-stone-200">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-          <span className="font-serif text-xl tracking-[0.25em] text-stone-900">SHEWAH</span>
-          <a
-            href="#brief"
-            className="border border-stone-900 px-4 py-2 text-[10px] uppercase tracking-cta text-stone-900 transition-colors hover:bg-stone-900 hover:text-white"
-          >
-            Get a price
-          </a>
-        </div>
-      </header>
-
-      {/* ── Hero ───────────────────────────────────────────────────── */}
-      <section className="relative">
-        <div className="relative h-[62vh] min-h-[420px] w-full">
-          <Image
-            src="/consultation/hero_preview.jpg"
-            alt="A bespoke Shewah solitaire ring held in the hand"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-stone-950/55" />
-          <div className="absolute inset-0 flex items-center">
-            <div className="mx-auto w-full max-w-5xl px-5">
-              <p className="mb-4 text-[10px] uppercase tracking-eyebrow text-accent-soft">
-                Bespoke engagement rings · Made in India
-              </p>
-              <h1 className="max-w-2xl font-serif text-4xl leading-[1.1] text-white sm:text-6xl">
-                Your design, made to order — from {PRICING.from}.
-              </h1>
-              <p className="mt-5 max-w-xl text-sm leading-relaxed text-white/75 sm:text-base">
-                IGI-certified lab-grown diamonds, hallmarked gold, an itemised quote before anything is
-                made. See real prices without booking a call.
-              </p>
-              <a
-                href="#brief"
-                className="mt-8 inline-block bg-accent px-8 py-4 text-[11px] uppercase tracking-cta text-stone-950 transition-colors hover:bg-accent-soft"
-              >
-                Send your brief →
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Trust strip — moved above the fold-adjacent area, not buried ── */}
-      <section className="border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 sm:grid-cols-4">
-          {TRUST.map((t, i) => (
-            <div
-              key={t.k}
-              className={`px-5 py-5 ${i > 0 ? 'border-l border-stone-200' : ''} ${i < 2 ? 'border-b border-stone-200 sm:border-b-0' : ''}`}
-            >
-              <p className="text-[11px] uppercase tracking-micro text-stone-900">{t.k}</p>
-              <p className="mt-1 text-[11px] text-stone-500">{t.v}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Pricing — the single biggest fix vs the old page ────────── */}
-      <section className="mx-auto max-w-5xl px-5 py-16 sm:py-20">
-        <p className="text-[10px] uppercase tracking-eyebrow text-stone-400">What it costs</p>
-        <h2 className="mt-3 max-w-xl font-serif text-3xl leading-tight text-stone-900 sm:text-4xl">
-          Prices, before the conversation.
-        </h2>
-        <p className="mt-4 max-w-xl text-sm leading-relaxed text-stone-600">
-          Every quote is itemised — stone, gold weight, labour — so you can see exactly
-          what you are paying for.
-        </p>
-
-        <div className="mt-10 grid gap-px border border-stone-200 bg-stone-200 sm:grid-cols-2">
-          {PRICING.tiers.map((t) => (
-            <div key={t.label} className="bg-white px-6 py-8">
-              <p className="text-[11px] uppercase tracking-micro text-stone-500">{t.label}</p>
-              <p className="mt-3 font-serif text-3xl text-stone-900">
-                <span className="text-sm text-stone-400">from </span>
-                {t.from}
-              </p>
-              <p className="mt-3 text-[12px] leading-relaxed text-stone-500">{t.note}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-10 flex flex-wrap gap-x-12 gap-y-6 border-t border-stone-200 pt-8">
-          {PROOF.map((p) => (
-            <div key={p.l}>
-              <p className="font-serif text-3xl text-stone-900">{p.n}</p>
-              <p className="mt-1 text-[11px] uppercase tracking-micro text-stone-500">{p.l}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* The actual entry quote, line by line. This is the page's whole
-            argument made literal — competitors hide this, we print it. */}
-        <div className="mt-10 border border-stone-200 bg-stone-50 px-6 py-8 sm:px-10 sm:py-10">
-          <p className="text-[10px] uppercase tracking-eyebrow text-stone-400">
-            A real {PRICING.from} quote, line by line
-          </p>
-          <dl className="mt-6 max-w-md">
-            {ENTRY_QUOTE.map((r) => (
-              <div key={r.item} className="flex items-baseline justify-between gap-6 border-b border-stone-200 py-3">
-                <dt className="text-sm text-stone-600">{r.item}</dt>
-                <dd className="font-mono text-sm tabular-nums text-stone-900">{r.cost}</dd>
-              </div>
-            ))}
-            <div className="flex items-baseline justify-between gap-6 py-4">
-              <dt className="text-[11px] uppercase tracking-micro text-stone-900">Total</dt>
-              <dd className="font-serif text-2xl text-stone-900">{PRICING.from}</dd>
-            </div>
-          </dl>
-          <p className="mt-2 max-w-md text-[12px] leading-relaxed text-stone-500">
-            Nothing added at checkout. Your quote is itemised the same way, against the
-            gold rate on the day you order.
-          </p>
-        </div>
-
-        <PriceCalculator />
-      </section>
-
-      {/* ── Process ────────────────────────────────────────────────── */}
-      <section className="border-y border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-5xl px-5 py-16 sm:py-20">
-          <p className="text-[10px] uppercase tracking-eyebrow text-stone-400">How it works</p>
-          <h2 className="mt-3 font-serif text-3xl leading-tight text-stone-900 sm:text-4xl">
-            Four steps, twelve days.
-          </h2>
-          <div className="mt-10 grid gap-10 sm:grid-cols-2">
-            {STEPS.map((s) => (
-              <div key={s.n} className="border-t border-stone-300 pt-5">
-                <p className="font-mono text-[11px] tracking-micro text-accent">{s.n}</p>
-                <h3 className="mt-3 font-serif text-xl text-stone-900">{s.h}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-stone-600">{s.p}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── The brief form — 4 fields, one screen, no 5-step quiz ───── */}
-      <section id="brief" className="mx-auto max-w-5xl scroll-mt-4 px-5 py-16 sm:py-20">
-        <div className="grid gap-12 sm:grid-cols-2">
-          <div>
-            <p className="text-[10px] uppercase tracking-eyebrow text-stone-400">Send your brief</p>
-            <h2 className="mt-3 font-serif text-3xl leading-tight text-stone-900 sm:text-4xl">
-              Get an indicative price on WhatsApp.
-            </h2>
-            <p className="mt-4 text-sm leading-relaxed text-stone-600">
-              Four fields. We reply with a price range and a starting sketch — no call
-              unless you want one.
-            </p>
-            <div className="mt-8 border-t border-stone-200 pt-6">
-              <p className="text-[11px] uppercase tracking-micro text-stone-500">
-                Prefer to message directly?
-              </p>
-              <a
-                href={`https://wa.me/${WHATSAPP_E164}?text=${encodeURIComponent(WHATSAPP_INTRO)}`}
-                className="mt-2 inline-block border-b border-stone-900 pb-0.5 text-sm text-stone-900 transition-colors hover:border-accent hover:text-accent"
-              >
-                Open WhatsApp instead
-              </a>
-            </div>
-          </div>
-
-          <form onSubmit={onSubmit} noValidate className="space-y-5">
-            {/* honeypot */}
-            <input
-              type="text" tabIndex={-1} autoComplete="off" aria-hidden="true"
-              value={f.website} onChange={(e) => set('website', e.target.value)}
-              className="absolute left-[-9999px] h-0 w-0 opacity-0"
+    <StoreLayout>
+      <div className="bg-[#FBF7F0] text-[#2A241B] font-sans">
+        {/* ── Hero ───────────────────────────────────────────────────── */}
+        <section className="relative">
+          <div className="relative h-[65vh] min-h-[460px] w-full">
+            <Image
+              src="/consultation/hero_preview.jpg"
+              alt="A bespoke Shewah solitaire ring crafted in our atelier"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
             />
+            <div className="absolute inset-0 bg-stone-950/60" />
+            <div className="absolute inset-0 flex items-center">
+              <div className="mx-auto w-full max-w-5xl px-6 sm:px-8">
+                <p className="mb-4 text-[10px] uppercase tracking-[0.35em] text-[#D4AF37] font-semibold">
+                  Atelier Handcrafted · Antwerp & Surat Provenance
+                </p>
+                <h1 className="max-w-2xl font-serif text-4xl leading-[1.1] text-white sm:text-6xl font-light">
+                  Your Bespoke Design, <br />
+                  Crafted from {activePricing.lgdFormatted}.
+                </h1>
+                <p className="mt-5 max-w-xl text-xs sm:text-sm leading-relaxed text-white/80 font-light">
+                  Certified diamonds, solid 18K gold alloys, and an itemised transparent quote before crafting begins. Real atelier prices without booking a high-pressure sales call.
+                </p>
+                <div className="mt-8 flex flex-wrap gap-4">
+                  <a
+                    href="#brief"
+                    className="inline-block bg-[#D4AF37] px-8 py-3.5 text-xs uppercase tracking-widest text-[#2A241B] font-semibold rounded-full transition-all hover:bg-white shadow-lg"
+                  >
+                    Send Your Brief →
+                  </a>
+                  <a
+                    href="#calculator"
+                    className="inline-block border border-white/40 px-8 py-3.5 text-xs uppercase tracking-widest text-white font-semibold rounded-full transition-all hover:bg-white/10"
+                  >
+                    Estimate Cost
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <Field label="Your name" required>
-              <input
-                type="text" value={f.first_name} onChange={(e) => set('first_name', e.target.value)}
-                className={inputCls} autoComplete="given-name"
-              />
-            </Field>
-
-            <Field label="WhatsApp number" required>
-              <input
-                type="tel" inputMode="tel" value={f.whatsapp}
-                onChange={(e) => set('whatsapp', e.target.value)}
-                placeholder="10-digit mobile" className={inputCls} autoComplete="tel"
-              />
-            </Field>
-
-            <Field label="City" required>
-              <input
-                type="text" value={f.city} onChange={(e) => set('city', e.target.value)}
-                className={inputCls} autoComplete="address-level2"
-              />
-            </Field>
-
-            <Field label="Budget">
-              <select value={f.budget} onChange={(e) => set('budget', e.target.value)} className={inputCls}>
-                <option value="">Not sure yet</option>
-                {BUDGETS.map((b) => (
-                  <option key={b.value} value={b.value}>{b.label}</option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Occasion">
-              <select value={f.occasion} onChange={(e) => set('occasion', e.target.value)} className={inputCls}>
-                <option value="">Select</option>
-                {OCCASIONS.map((o) => (
-                  <option key={o} value={o}>{o[0].toUpperCase() + o.slice(1)}</option>
-                ))}
-              </select>
-            </Field>
-
-            {/* `red` is the system alias for the oxblood ramp (see tailwind.config.ts).
-                `oxblood-*` is not an exported color key and emits no CSS. */}
-            {error && (
-              <p role="alert" className="border border-red-200 bg-stone-50 px-4 py-3 text-[13px] text-status-danger-fg">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit" disabled={submitting}
-              className="w-full bg-stone-900 px-8 py-4 text-[11px] uppercase tracking-cta text-white transition-colors hover:bg-accent hover:text-stone-950 disabled:opacity-50"
-            >
-              {submitting ? 'Sending…' : 'Send brief →'}
-            </button>
-            <p className="text-[11px] leading-relaxed text-stone-400">
-              We reply on WhatsApp within one business day. We never share your details.
-            </p>
-          </form>
-        </div>
-      </section>
-
-      {/* ── FAQ ────────────────────────────────────────────────────── */}
-      <section className="border-t border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-3xl px-5 py-16 sm:py-20">
-          <p className="text-[10px] uppercase tracking-eyebrow text-stone-400">Questions</p>
-          <h2 className="mt-3 font-serif text-3xl leading-tight text-stone-900 sm:text-4xl">
-            The things people ask first.
-          </h2>
-          <div className="mt-10 border-t border-stone-300">
-            {FAQ.map((item, i) => (
-              <div key={item.q} className="border-b border-stone-300">
-                <button
-                  type="button"
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  aria-expanded={openFaq === i}
-                  className="flex w-full items-start justify-between gap-6 py-5 text-left"
-                >
-                  <span className="text-sm text-stone-900">{item.q}</span>
-                  <span className="mt-0.5 font-mono text-xs text-stone-400">
-                    {openFaq === i ? '−' : '+'}
-                  </span>
-                </button>
-                {openFaq === i && (
-                  <p className="pb-6 pr-10 text-sm leading-relaxed text-stone-600">{item.a}</p>
-                )}
+        {/* ── Trust Strip ────────────────────────────────────────────── */}
+        <section className="border-b border-[#E8DFC9] bg-white">
+          <div className="mx-auto grid max-w-5xl grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#E8DFC9]">
+            {TRUST.map((t) => (
+              <div key={t.k} className="p-6 text-center space-y-1">
+                <p className="text-xs uppercase tracking-wider font-semibold text-[#2A241B]">{t.k}</p>
+                <p className="text-[11px] text-[#5C5347] font-light">{t.v}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <footer className="border-t border-stone-200">
-        <div className="mx-auto max-w-5xl px-5 py-10">
-          <p className="text-[10px] uppercase tracking-micro text-stone-400">
-            © 2026 Shewah · Private jewellery atelier · Surat, Gujarat, India
-            <br />
-            Questions or complaints: WhatsApp +91 96622 66360
-          </p>
-        </div>
-      </footer>
-    </main>
-  )
-}
+        {/* ── Transparent Pricing Overview ───────────────────────────── */}
+        <section className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
+          <div className="text-center space-y-3 mb-12">
+            <span className="text-[10px] uppercase tracking-[0.35em] text-[#A88A4F] font-semibold">
+              Transparent Economics
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl text-[#2A241B]">
+              Atelier Direct Pricing, Before The Conversation.
+            </h2>
+            <p className="text-xs sm:text-sm text-[#5C5347] max-w-lg mx-auto leading-relaxed font-light">
+              Every commission is broken down into pure metal weight, certified diamond cost, and master artisan labour. Zero distributor markups.
+            </p>
+          </div>
 
-const inputCls =
-  'w-full border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-900'
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="bg-white border border-[#E8DFC9] rounded-2xl p-8 shadow-sm space-y-4">
+              <span className="text-[10px] uppercase tracking-[0.25em] text-[#A88A4F] font-semibold">
+                Option 1 · Conscious Luxury
+              </span>
+              <h3 className="font-serif text-2xl text-[#2A241B]">Lab-Grown Diamonds</h3>
+              <p className="font-serif text-4xl text-[#2A241B] font-light">
+                <span className="text-sm font-sans text-[#8C8275]">from </span>
+                {activePricing.lgdFormatted}
+              </p>
+              <p className="text-xs text-[#5C5347] leading-relaxed font-light">
+                Handcrafted in solid 18K gold with 0.25ct+ IGI-certified lab-grown diamonds. Perfect optical and chemical equivalence.
+              </p>
+            </div>
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-[11px] uppercase tracking-micro text-stone-500">
-        {label} {required && <span className="text-accent">*</span>}
-      </span>
-      {children}
-    </label>
+            <div className="bg-white border border-[#E8DFC9] rounded-2xl p-8 shadow-sm space-y-4">
+              <span className="text-[10px] uppercase tracking-[0.25em] text-[#A88A4F] font-semibold">
+                Option 2 · Rare Heritage
+              </span>
+              <h3 className="font-serif text-2xl text-[#2A241B]">Natural Mined Diamonds</h3>
+              <p className="font-serif text-4xl text-[#2A241B] font-light">
+                <span className="text-sm font-sans text-[#8C8275]">from </span>
+                {activePricing.naturalFormatted}
+              </p>
+              <p className="text-xs text-[#5C5347] leading-relaxed font-light">
+                Handcrafted in solid 18K gold with ethically sourced GIA-certified mined diamonds with full Kimberley Process provenance.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 pt-10 border-t border-[#E8DFC9] text-center">
+            {PROOF.map((p) => (
+              <div key={p.l} className="space-y-1">
+                <p className="font-serif text-3xl sm:text-4xl text-[#2A241B] font-light">{p.n}</p>
+                <p className="text-[11px] uppercase tracking-wider text-[#8C8275]">{p.l}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Interactive Calculator Anchor ── */}
+          <div id="calculator" className="pt-12 scroll-mt-24">
+            <PriceCalculator activePricing={activePricing} currency={currency} />
+          </div>
+        </section>
+
+        {/* ── How Bespoke Works ──────────────────────────────────────── */}
+        <section className="bg-white border-y border-[#E8DFC9] py-16 sm:py-24">
+          <div className="mx-auto max-w-5xl px-6">
+            <div className="text-center space-y-3 mb-16">
+              <span className="text-[10px] uppercase tracking-[0.35em] text-[#A88A4F] font-semibold">
+                The Journey
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl text-[#2A241B]">
+                Four Steps From Idea to Heirloom
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {STEPS.map((s) => (
+                <div key={s.n} className="space-y-3">
+                  <span className="font-serif text-3xl text-[#A88A4F] font-light">{s.n}</span>
+                  <h4 className="font-serif text-lg text-[#2A241B]">{s.h}</h4>
+                  <p className="text-xs text-[#5C5347] leading-relaxed font-light">{s.p}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Brief Submission Form ──────────────────────────────────── */}
+        <section id="brief" className="mx-auto max-w-5xl scroll-mt-24 px-6 py-16 sm:py-24">
+          <div className="grid gap-12 lg:grid-cols-2 items-start">
+            <div className="space-y-6">
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.35em] text-[#A88A4F] font-semibold">
+                  Private Consultation
+                </span>
+                <h2 className="font-serif text-3xl sm:text-4xl text-[#2A241B] mt-2">
+                  Send Your Design Brief
+                </h2>
+                <p className="mt-4 text-xs sm:text-sm text-[#5C5347] leading-relaxed font-light">
+                  Tell us what you envision. Our atelier will reply with an indicative price estimate and 3D CAD preview within one business day.
+                </p>
+              </div>
+
+              <div className="bg-white border border-[#E8DFC9] rounded-2xl p-6 space-y-3">
+                <p className="text-xs uppercase tracking-wider text-[#2A241B] font-semibold">
+                  Prefer direct messaging?
+                </p>
+                <p className="text-xs text-[#5C5347]">
+                  Chat live with our diamond gemologists on WhatsApp with your reference photos.
+                </p>
+                <div className="pt-2">
+                  <a
+                    href={`https://wa.me/${WHATSAPP_E164}?text=${encodeURIComponent(WHATSAPP_INTRO)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-xs font-semibold text-[#A88A4F] underline hover:text-[#2A241B]"
+                  >
+                    Open WhatsApp Concierge →
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-[#E8DFC9] rounded-2xl p-8 shadow-sm">
+              <form onSubmit={onSubmit} noValidate className="space-y-4">
+                {/* Honeypot */}
+                <input
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  value={f.website}
+                  onChange={(e) => set('website', e.target.value)}
+                  className="absolute left-[-9999px] h-0 w-0 opacity-0"
+                />
+
+                <Field label="Your Full Name" required>
+                  <input
+                    type="text"
+                    value={f.first_name}
+                    onChange={(e) => set('first_name', e.target.value)}
+                    placeholder="e.g. Catherine Howard"
+                    className={inputCls}
+                    autoComplete="given-name"
+                  />
+                </Field>
+
+                <Field label="Phone / WhatsApp (with country code)" required>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    value={f.whatsapp}
+                    onChange={(e) => set('whatsapp', e.target.value)}
+                    placeholder="e.g. +1 (555) 234-5678"
+                    className={inputCls}
+                    autoComplete="tel"
+                  />
+                </Field>
+
+                <Field label="City & Country" required>
+                  <input
+                    type="text"
+                    value={f.city}
+                    onChange={(e) => set('city', e.target.value)}
+                    placeholder="e.g. New York, USA"
+                    className={inputCls}
+                    autoComplete="address-level2"
+                  />
+                </Field>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Estimated Budget">
+                    <select value={f.budget} onChange={(e) => set('budget', e.target.value)} className={inputCls}>
+                      <option value="">Flexible / Undecided</option>
+                      {budgetOptions.map((b) => (
+                        <option key={b.value} value={b.value}>{b.label}</option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Creation Type">
+                    <select value={f.occasion} onChange={(e) => set('occasion', e.target.value)} className={inputCls}>
+                      <option value="">Select type</option>
+                      {OCCASIONS.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                {error && (
+                  <p role="alert" className="border border-red-200 bg-red-50 p-3 rounded-lg text-xs text-red-600">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full bg-[#2A241B] py-3.5 text-xs uppercase tracking-widest text-white rounded-xl transition-all hover:bg-[#A88A4F] font-semibold disabled:opacity-50 shadow-sm"
+                >
+                  {submitting ? 'Submitting Brief…' : 'Submit Bespoke Brief →'}
+                </button>
+                <p className="text-[11px] leading-relaxed text-[#8C8275] text-center">
+                  Confidential. Direct atelier communication with zero spam.
+                </p>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        {/* ── FAQ Accordions ─────────────────────────────────────────── */}
+        <section className="bg-white border-t border-[#E8DFC9] py-16 sm:py-24">
+          <div className="mx-auto max-w-3xl px-6">
+            <div className="text-center space-y-3 mb-12">
+              <span className="text-[10px] uppercase tracking-[0.35em] text-[#A88A4F] font-semibold">
+                Client Inquiries
+              </span>
+              <h2 className="font-serif text-3xl text-[#2A241B]">
+                Bespoke Atelier FAQ
+              </h2>
+            </div>
+
+            <div className="divide-y divide-[#E8DFC9] border-y border-[#E8DFC9]">
+              {faqs.map((faq, idx) => {
+                const isOpen = openFaq === idx
+                return (
+                  <div key={idx} className="py-5">
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? null : idx)}
+                      className="flex w-full items-center justify-between text-left"
+                    >
+                      <span className="font-serif text-base text-[#2A241B] font-medium pr-4">
+                        {faq.q}
+                      </span>
+                      {isOpen ? (
+                        <ChevronUp className="w-4 h-4 text-[#A88A4F] shrink-0" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-[#8C8275] shrink-0" />
+                      )}
+                    </button>
+                    {isOpen && (
+                      <p className="mt-3 text-xs sm:text-sm leading-relaxed text-[#5C5347] font-light">
+                        {faq.a}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      </div>
+    </StoreLayout>
   )
 }

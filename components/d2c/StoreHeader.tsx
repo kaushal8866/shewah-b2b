@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCart } from './CartContext'
+import { useWishlist } from '@/lib/wishlistStore'
 import { MARKETS, type MarketCode } from '@/lib/markets'
 import {
   ShoppingBag,
@@ -21,6 +22,7 @@ import {
 export default function StoreHeader() {
   const pathname = usePathname()
   const { market, setMarketCode, itemCount, openCart } = useCart()
+  const { wishlistCount } = useWishlist()
   const [mounted, setMounted] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [marketDropdownOpen, setMarketDropdownOpen] = useState(false)
@@ -60,6 +62,7 @@ export default function StoreHeader() {
     { label: 'Earrings', href: '/jewellery?category=earrings' },
     { label: 'Tennis Bracelets', href: '/jewellery?category=bracelets' },
     { label: 'Men’s Heritage', href: '/jewellery?category=mens' },
+    { label: 'Ring Size Guide & Sizer', href: '/ring-size-guide' },
   ]
 
   return (
@@ -214,10 +217,15 @@ export default function StoreHeader() {
 
           <Link
             href="/wishlist"
-            className="p-1.5 hover:text-[#A88A4F] transition-colors relative"
+            className="p-1.5 hover:text-[#A88A4F] transition-colors relative flex items-center"
             aria-label="Wishlist"
           >
             <Heart className="w-5 h-5" />
+            {mounted && wishlistCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#A88A4F] text-white text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
+                {wishlistCount}
+              </span>
+            )}
           </Link>
 
           <button

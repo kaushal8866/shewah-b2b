@@ -1,6 +1,7 @@
 import './globals.css'
 import SessionProvider from '@/components/SessionProvider'
 import { CartProvider } from '@/components/d2c/CartContext'
+import { WishlistProvider } from '@/lib/wishlistStore'
 import AppShell from '@/components/AppShell'
 import Script from 'next/script'
 import { Metadata } from 'next'
@@ -135,9 +136,11 @@ fbq('track', 'PageView');
 
         <SessionProvider>
           <CartProvider>
-            <AppShell>
-              {children}
-            </AppShell>
+            <WishlistProvider>
+              <AppShell>
+                {children}
+              </AppShell>
+            </WishlistProvider>
           </CartProvider>
         </SessionProvider>
       </body>

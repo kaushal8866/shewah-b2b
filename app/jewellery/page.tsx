@@ -5,7 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import StoreLayout from '@/components/d2c/StoreLayout'
 import { useCart } from '@/components/d2c/CartContext'
-import { Diamond, Filter, ArrowUpDown, ShieldCheck } from 'lucide-react'
+import { useWishlist } from '@/lib/wishlistStore'
+import { Diamond, Filter, ArrowUpDown, ShieldCheck, Heart } from 'lucide-react'
 
 interface D2CProductItem {
   id: string
@@ -33,6 +34,7 @@ function JewelleryCatalogContent() {
   const queryParam = searchParams.get('q') || ''
 
   const { market } = useCart()
+  const { isInWishlist, toggleWishlist } = useWishlist()
   const [products, setProducts] = useState<D2CProductItem[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState(categoryParam)
@@ -199,6 +201,32 @@ function JewelleryCatalogContent() {
                   <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider text-[#2A241B] font-medium border border-[#E8DFC9]">
                     Made to Order
                   </div>
+
+                  {/* Wishlist toggle button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      toggleWishlist({
+                        id: p.id,
+                        slug: p.slug,
+                        name: p.name,
+                        category: p.category,
+                        priceFormatted: p.price.formatted,
+                        photoUrl: p.primaryPhotoUrl,
+                        subtitle: p.subtitle,
+                      })
+                    }}
+                    className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all shadow-sm ${
+                      isInWishlist(p.id)
+                        ? 'bg-[#2A241B] text-[#D4AF37]'
+                        : 'bg-white/80 text-[#5C5347] hover:bg-white hover:text-[#2A241B]'
+                    }`}
+                    aria-label={isInWishlist(p.id) ? 'Remove from Wishlist' : 'Save to Wishlist'}
+                  >
+                    <Heart className={`w-3.5 h-3.5 ${isInWishlist(p.id) ? 'fill-[#D4AF37]' : ''}`} />
+                  </button>
                 </div>
 
                 {/* Details */}

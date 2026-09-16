@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import StoreLayout from '@/components/d2c/StoreLayout'
 import { useCart } from '@/components/d2c/CartContext'
+import { useWishlist } from '@/lib/wishlistStore'
 import {
   Diamond,
   ShieldCheck,
@@ -16,6 +17,7 @@ import {
   ArrowRight,
   Check,
   HelpCircle,
+  Heart,
 } from 'lucide-react'
 
 interface ProductDetail {
@@ -66,6 +68,7 @@ export default function ProductDetailPage() {
   const router = useRouter()
   const slug = (params?.slug as string) || ''
   const { market, addItem } = useCart()
+  const { isInWishlist, toggleWishlist } = useWishlist()
 
   const [product, setProduct] = useState<ProductDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -213,12 +216,12 @@ export default function ProductDetailPage() {
     <StoreLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
         {/* Breadcrumbs */}
-        <div className="text-[11px] uppercase tracking-wider text-[#8C8275] mb-8 flex items-center gap-2">
-          <Link href="/" className="hover:text-[#2A241B]">Home</Link>
-          <span>/</span>
-          <Link href="/jewellery" className="hover:text-[#2A241B]">Jewellery</Link>
-          <span>/</span>
-          <span className="text-[#2A241B]">{product.category}</span>
+        <div className="text-[11px] uppercase tracking-wider text-[#8C8275] mb-6 sm:mb-8 flex items-center gap-2 whitespace-nowrap overflow-x-auto no-scrollbar">
+          <Link href="/" className="hover:text-[#2A241B] transition-colors shrink-0">Home</Link>
+          <span className="text-stone-300 select-none shrink-0">/</span>
+          <Link href="/jewellery" className="hover:text-[#2A241B] transition-colors shrink-0">Jewellery</Link>
+          <span className="text-stone-300 select-none shrink-0">/</span>
+          <span className="text-[#2A241B] font-medium shrink-0">{product.category}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
@@ -251,7 +254,9 @@ export default function ProductDetailPage() {
                     key={idx}
                     onClick={() => setSelectedPhoto(url)}
                     className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
-                      selectedPhoto === url ? 'border-[#C9A86A] shadow-md' : 'border-[#E8DFC9] hover:border-stone-400'
+                      selectedPhoto === url
+                        ? 'border-[#A88A4F] ring-2 ring-[#A88A4F] ring-offset-2 ring-offset-[#FBF7F0] shadow-md scale-[1.02]'
+                        : 'border-[#E8DFC9] opacity-70 hover:opacity-100 hover:border-stone-400'
                     }`}
                   >
                     <img src={url} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-cover" />
@@ -407,13 +412,39 @@ export default function ProductDetailPage() {
 
             {/* Action Buttons */}
             <div className="space-y-2 pt-2">
-              <button
-                onClick={handleAddToBag}
-                className="w-full py-4 px-6 bg-[#2A241B] text-white text-xs uppercase tracking-[0.2em] font-medium rounded-xl hover:bg-stone-800 transition-all shadow-lg active:scale-[0.99] flex items-center justify-center gap-2"
-              >
-                <span>Add to Shopping Bag</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleAddToBag}
+                  className="flex-1 py-4 px-6 bg-[#2A241B] text-white text-xs uppercase tracking-[0.2em] font-medium rounded-xl hover:bg-stone-800 transition-all shadow-lg active:scale-[0.99] flex items-center justify-center gap-2"
+                >
+                  <span>Add to Shopping Bag</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!product) return
+                    toggleWishlist({
+                      id: product.id,
+                      slug: product.slug,
+                      name: product.name,
+                      category: product.category,
+                      priceFormatted: dynamicPrice?.formatted || product.price.formatted,
+                      photoUrl: selectedPhoto || product.primaryPhotoUrl,
+                      subtitle: product.subtitle,
+                    })
+                  }}
+                  className={`p-4 rounded-xl border transition-all shadow-sm flex items-center justify-center ${
+                    isInWishlist(product.id)
+                      ? 'border-[#A88A4F] bg-[#2A241B] text-[#D4AF37]'
+                      : 'border-[#E8DFC9] bg-white text-[#5C5347] hover:border-[#A88A4F] hover:text-[#2A241B]'
+                  }`}
+                  aria-label={isInWishlist(product.id) ? 'Remove from Saved Pieces' : 'Save to Wishlist'}
+                >
+                  <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? 'fill-[#D4AF37]' : ''}`} />
+                </button>
+              </div>
 
               {addedNotice && (
                 <div className="text-center text-xs text-[#5C7F5F] font-medium flex items-center justify-center gap-1.5 pt-1 animate-in fade-in">

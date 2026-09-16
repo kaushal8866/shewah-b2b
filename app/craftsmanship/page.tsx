@@ -26,8 +26,8 @@ export default function CraftsmanshipPage() {
     },
     {
       num: '04',
-      title: 'Hand Mirror Polishing & BIS Hallmarking',
-      desc: 'The piece undergoes multi-stage polishing with natural rouge and diamond paste before being hallmarked for legal fineness.',
+      title: 'Hand Mirror Polishing & Certified Assay Hallmarking',
+      desc: 'The piece undergoes multi-stage polishing with natural rouge and diamond paste before being independently assay-hallmarked by accredited precious metal offices for legal fineness.',
     },
   ]
 
