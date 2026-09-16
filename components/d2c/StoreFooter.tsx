@@ -90,6 +90,11 @@ export default function StoreFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/ring-size-guide" className="hover:text-white transition-colors text-[#C9A86A]">
+                  Complimentary Sizer & Guide
+                </Link>
+              </li>
+              <li>
                 <Link href="/warranty" className="hover:text-white transition-colors">
                   Warranty & Servicing
                 </Link>

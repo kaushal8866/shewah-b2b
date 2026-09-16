@@ -366,9 +366,14 @@ export default function ProductDetailPage() {
                   <span className="uppercase tracking-wider font-semibold text-[#2A241B]">
                     Ring Size (US)
                   </span>
-                  <span className="text-[#A88A4F] text-[11px] underline cursor-pointer">
+                  <Link
+                    href="/ring-size-guide"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#A88A4F] text-[11px] underline hover:text-[#2A241B] transition-colors"
+                  >
                     Complimentary Sizer & Guide
-                  </span>
+                  </Link>
                 </div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
                   {product.configurationSchema.sizes.map((sz) => (

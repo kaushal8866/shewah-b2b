@@ -335,6 +335,13 @@ export default function StoreHeader() {
                   Diamonds
                 </Link>
                 <Link
+                  href="/ring-size-guide"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="block py-2 text-[#2A241B] hover:text-[#A88A4F] transition-colors"
+                >
+                  Ring Sizer & Guide
+                </Link>
+                <Link
                   href="/business"
                   onClick={() => setMobileNavOpen(false)}
                   className="block py-2 text-[#2A241B] hover:text-[#A88A4F] transition-colors"
