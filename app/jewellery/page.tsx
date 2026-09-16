@@ -125,7 +125,7 @@ function JewelleryCatalogContent() {
         {/* Filter and Sort Bar */}
         <div className="flex items-center justify-between py-4 border-y border-[#E8DFC9] text-xs text-[#5C5347] mb-8">
           <div>
-            <span>Showing {filteredProducts.length} pieces</span>
+            <span>{loading ? 'Curating creations...' : `Showing ${filteredProducts.length} pieces`}</span>
           </div>
 
           <div className="flex items-center gap-4">

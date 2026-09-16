@@ -30,9 +30,10 @@ function isPublicMarketing(pathname: string): boolean {
     pathname.startsWith('/care') ||
     pathname.startsWith('/contact') ||
     pathname.startsWith('/wishlist') ||
+    pathname.startsWith('/ring-size-guide') ||
+    pathname.startsWith('/pages') ||
     pathname.startsWith('/api/d2c') ||
-    pathname === '/api/public/partner-signup' ||
-    pathname === '/api/public/consultation'
+    pathname.startsWith('/api/public/')
   )
 }
 
