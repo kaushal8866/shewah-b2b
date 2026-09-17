@@ -50,7 +50,7 @@ describe('Jewellery Suites & Sets Architecture', () => {
       { id: '5', code: 'SH-003-EARRINGS', category: 'earrings', d2c_details: { is_component_of_set: true } },
     ]
 
-    const category = 'earrings'
+    const category: string = 'earrings'
     const visibleProducts = (!category || category === 'all')
       ? mockProducts.filter(p => !(p.d2c_details as any)?.is_component_of_set)
       : mockProducts.filter(p => p.category === category)

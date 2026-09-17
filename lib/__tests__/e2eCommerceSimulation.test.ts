@@ -19,6 +19,8 @@ describe('End-to-End International D2C Commerce Journey Simulation', () => {
     expect(getMarket('DE').taxModel).toBe('inclusive')
     expect(getMarket('FR').taxRate).toBe(0.20)
     expect(getMarket('AU').currency).toBe('AUD')
+    expect(getMarket('IN').currency).toBe('INR')
+    expect(getMarket('IN').taxRate).toBe(0.03)
     // Fallback for unsupported or unknown country
     expect(getMarket('SG').code).toBe('US')
   })
@@ -45,6 +47,11 @@ describe('End-to-End International D2C Commerce Journey Simulation', () => {
     expect(getHighValueReviewThreshold('DE')).toBe(9000)
     expect(isHighValueOrder(8999, 'DE')).toBe(false)
     expect(isHighValueOrder(9000, 'DE')).toBe(true)
+
+    // IN: ₹2,00,000 threshold
+    expect(getHighValueReviewThreshold('IN')).toBe(200000)
+    expect(isHighValueOrder(199999, 'IN')).toBe(false)
+    expect(isHighValueOrder(200000, 'IN')).toBe(true)
   })
 
   // 3. Tax & Duty Calculation Models

@@ -61,6 +61,37 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 const CART_STORAGE_KEY = 'shewah_d2c_cart_v2'
 const MARKET_COOKIE_KEY = 'shewah_market'
+const MARKET_MANUAL_FLAG = 'shewah_market_manual_v1'
+
+const VALID_MARKETS: MarketCode[] = ['US', 'GB', 'AU', 'DE', 'FR', 'IN']
+
+/**
+ * Fast client-side location heuristic from browser environment (timezone & language).
+ * Guaranteed synchronous and zero-latency before edge geo refinement resolves.
+ */
+function detectMarketFromBrowser(): MarketCode {
+  if (typeof window === 'undefined') return 'US'
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+    if (tz.includes('Kolkata') || tz.includes('Calcutta') || tz === 'IST' || tz.includes('Asia/Colombo')) return 'IN'
+    if (tz.includes('London') || tz === 'GMT' || tz === 'BST') return 'GB'
+    if (tz.includes('Sydney') || tz.includes('Melbourne') || tz.includes('Brisbane') || tz.includes('Perth') || tz.includes('Adelaide')) return 'AU'
+    if (tz.includes('Berlin') || tz.includes('Vienna') || tz.includes('Zurich')) return 'DE'
+    if (tz.includes('Paris') || tz.includes('Brussels')) return 'FR'
+    if (tz.includes('New_York') || tz.includes('Los_Angeles') || tz.includes('Chicago') || tz.includes('Denver') || tz.includes('Phoenix')) return 'US'
+
+    // Secondary heuristic: browser languages
+    const langs = navigator.languages || [navigator.language]
+    for (const lang of langs) {
+      if (/-IN\b/i.test(lang) || /^(hi|gu|mr|ta|te|kn|bn|pa)\b/i.test(lang)) return 'IN'
+      if (/-GB\b/i.test(lang)) return 'GB'
+      if (/-AU\b/i.test(lang)) return 'AU'
+      if (/-DE\b/i.test(lang)) return 'DE'
+      if (/-FR\b/i.test(lang)) return 'FR'
+    }
+  } catch {}
+  return 'US'
+}
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [marketCode, setMarketCodeState] = useState<MarketCode>('US')
@@ -68,13 +99,37 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isValidating, setIsValidating] = useState(false)
 
-  // Initialize market from cookie / localStorage
+  // Initialize market with automatic location detection & manual preference support
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    const isManual = localStorage.getItem(MARKET_MANUAL_FLAG) === 'true'
     const storedMarket = localStorage.getItem(MARKET_COOKIE_KEY) as MarketCode | null
-    if (storedMarket && ['US', 'GB', 'AU', 'DE', 'FR'].includes(storedMarket)) {
+
+    if (isManual && storedMarket && VALID_MARKETS.includes(storedMarket)) {
+      // Respect explicit user manual selection from header dropdown
       setMarketCodeState(storedMarket)
+    } else {
+      // Auto-detect based on user location:
+      // Step 1: Immediate zero-latency heuristic from browser environment
+      const detected = detectMarketFromBrowser()
+      setMarketCodeState(detected)
+      localStorage.setItem(MARKET_COOKIE_KEY, detected)
+      document.cookie = `${MARKET_COOKIE_KEY}=${detected}; path=/; max-age=31536000; SameSite=Lax`
+
+      // Step 2: Refine via server edge geolocation headers
+      fetch('/api/d2c/geo')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.marketCode && VALID_MARKETS.includes(data.marketCode)) {
+            setMarketCodeState(data.marketCode)
+            localStorage.setItem(MARKET_COOKIE_KEY, data.marketCode)
+            document.cookie = `${MARKET_COOKIE_KEY}=${data.marketCode}; path=/; max-age=31536000; SameSite=Lax`
+          }
+        })
+        .catch(() => {})
     }
+
     const storedCart = localStorage.getItem(CART_STORAGE_KEY)
     if (storedCart) {
       try {
@@ -96,6 +151,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setMarketCodeState(code)
     if (typeof window !== 'undefined') {
       localStorage.setItem(MARKET_COOKIE_KEY, code)
+      localStorage.setItem(MARKET_MANUAL_FLAG, 'true') // Flag that user manually chose this market
       document.cookie = `${MARKET_COOKIE_KEY}=${code}; path=/; max-age=31536000; SameSite=Lax`
     }
   }

@@ -105,10 +105,13 @@ export async function resolveProductMarketPrice(
       GBP: 0.0095,
       AUD: 0.018,
       EUR: 0.011,
+      INR: 1.0,
     }
-    const rawConverted = inrBase * (rates[market.currency] || 0.012)
-    // Round to standard luxury price endings (e.g. $1,450 or $1,490)
-    basePrice = Math.round(rawConverted / 10) * 10
+    const rawConverted = inrBase * (rates[market.currency] ?? 0.012)
+    // Round to standard luxury price endings (e.g. $1,450 or ₹1,25,000)
+    basePrice = market.currency === 'INR'
+      ? Math.round(rawConverted / 500) * 500
+      : Math.round(rawConverted / 10) * 10
   }
 
   // 3. If configurable, apply valid product-specific delta increments

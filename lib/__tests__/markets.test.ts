@@ -15,6 +15,9 @@ describe('International Market Architecture (lib/markets.ts)', () => {
     expect(getMarket('AU').currency).toBe('AUD')
     expect(getMarket('DE').currency).toBe('EUR')
     expect(getMarket('FR').currency).toBe('EUR')
+    expect(getMarket('IN').currency).toBe('INR')
+    expect(getMarket('IND').currency).toBe('INR') // India alias
+    expect(getMarket('INDIA').currency).toBe('INR')
     expect(getMarket('UNKNOWN').currency).toBe('USD') // default fallback
   })
 
@@ -23,6 +26,7 @@ describe('International Market Architecture (lib/markets.ts)', () => {
     expect(formatCurrency(1250, 'GBP')).toBe('£1,250')
     expect(formatCurrency(1250, 'AUD')).toBe('A$1,250')
     expect(formatCurrency(1250, 'EUR')).toBe('€1,250')
+    expect(formatCurrency(125000, 'INR')).toBe('₹1,25,000')
   })
 
   it('calculates inclusive VAT correctly for UK (20%)', () => {
@@ -52,6 +56,16 @@ describe('International Market Architecture (lib/markets.ts)', () => {
     expect(res.grossPrice).toBe(1100)
     expect(res.netPrice).toBe(1000)
     expect(res.taxAmount).toBe(100)
+    expect(res.taxLabel).toContain('GST')
+  })
+
+  it('calculates inclusive GST correctly for India (3%)', () => {
+    const market = MARKETS.IN
+    const res = calculateMarketTax(103000, market)
+    expect(res.isInclusive).toBe(true)
+    expect(res.grossPrice).toBe(103000)
+    expect(res.netPrice).toBe(100000)
+    expect(res.taxAmount).toBe(3000)
     expect(res.taxLabel).toContain('GST')
   })
 

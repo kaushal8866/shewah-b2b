@@ -7,8 +7,8 @@
  * configuration-driven and explicitly decoupled from presentation logic.
  */
 
-export type MarketCode = 'US' | 'GB' | 'AU' | 'DE' | 'FR'
-export type CurrencyCode = 'USD' | 'GBP' | 'AUD' | 'EUR'
+export type MarketCode = 'US' | 'GB' | 'AU' | 'DE' | 'FR' | 'IN'
+export type CurrencyCode = 'USD' | 'GBP' | 'AUD' | 'EUR' | 'INR'
 
 export type TaxModel = 'inclusive' | 'exclusive' | 'uncollected'
 
@@ -176,6 +176,33 @@ export const MARKETS: Record<MarketCode, MarketConfig> = {
     dutyDisclaimer: 'Frais de douane et TVA à l’importation inclus.',
     highValueReviewThreshold: 9000,
   },
+  IN: {
+    code: 'IN',
+    name: 'India',
+    defaultCountry: 'IN',
+    countryName: 'India',
+    currency: 'INR',
+    currencySymbol: '₹',
+    currencyDecimals: 0,
+    taxModel: 'inclusive',
+    taxRate: 0.03, // 3% Indian GST on fine jewellery
+    taxLabel: '3% GST Included',
+    taxDisclaimer: 'Prices include 3% GST and certified BIS Hallmarking.',
+    shippingMethods: [
+      {
+        id: 'express_insured_in',
+        name: 'Sequel / BlueDart Armored Express',
+        description: 'Direct door-to-door insured transit with OTP verification on delivery',
+        baseCost: 0,
+        transitDaysMin: 2,
+        transitDaysMax: 4,
+        isDefault: true,
+      },
+    ],
+    dutyStrategy: 'duty_free',
+    dutyDisclaimer: 'Handcrafted in Surat & Mumbai ateliers. Complimentary domestic insured delivery.',
+    highValueReviewThreshold: 200000, // PAN card compliance gate for transactions >= ₹2,00,000 (Section 269ST)
+  },
 }
 
 export const DEFAULT_MARKET_CODE: MarketCode = 'US'
@@ -190,6 +217,7 @@ export function getMarket(codeOrCountry?: string | null): MarketConfig {
     return MARKETS[upper as MarketCode]
   }
   // Country to Market mapping fallbacks:
+  if (['IN', 'IND', 'INDIA'].includes(upper)) return MARKETS.IN
   if (['GB', 'UK'].includes(upper)) return MARKETS.GB
   if (['AU', 'NZ'].includes(upper)) return MARKETS.AU
   if (['DE', 'AT', 'CH'].includes(upper)) return MARKETS.DE
@@ -233,8 +261,9 @@ export function formatCurrency(
 ): string {
   const n = typeof amount === 'number' && !isNaN(amount) ? amount : 0
   const market = Object.values(MARKETS).find(m => m.currency === currency) || MARKETS.US
+  const locale = currency === 'INR' ? 'en-IN' : 'en-US'
   
-  const formatted = new Intl.NumberFormat('en-US', {
+  const formatted = new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: market.currencyDecimals,

@@ -222,8 +222,9 @@ export async function GET(
         diamondWeightCarats: product.diamond_weight || null,
         diamondShape: product.diamond_shape || 'Round Brilliant',
         diamondColor: product.diamond_color || 'F-G',
-        diamondClarity: product.diamond_quality || 'VS',
-        hallmark: 'Certified Assay 750 / Solid 18K Gold',
+        hallmark: market.code === 'IN'
+          ? 'Certified Assay 750 / BIS Hallmark with HUID'
+          : 'Certified Assay 750 / Solid 18K Gold',
         certification: 'IGI / GIA Certified Solitaire',
       },
       configurationSchema: {

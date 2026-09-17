@@ -111,7 +111,9 @@ export default function StoreHeader() {
           <span>Atelier Handcrafted • Antwerp & Surat Certified Diamonds</span>
         </div>
         <div className="w-full sm:w-auto text-center sm:text-right flex items-center justify-between sm:justify-end gap-4">
-          <span className="text-[#C9A86A]">Complimentary Insured International Shipping</span>
+          <span className="text-[#C9A86A]">
+            {market.code === 'IN' ? 'Complimentary Insured Delivery Across India' : 'Complimentary Insured International Shipping'}
+          </span>
 
           {/* Market & Currency Selector */}
           <div className="relative inline-block text-left">
