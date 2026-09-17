@@ -1,12 +1,35 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Diamond, ShieldCheck, Mail, ArrowRight, Check } from 'lucide-react'
+import { DEFAULT_NON_EMPTY_CATEGORIES } from '@/lib/categories'
 
 export default function StoreFooter() {
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
+  const [collections, setCollections] = useState(DEFAULT_NON_EMPTY_CATEGORIES)
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/d2c/categories')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled && Array.isArray(data.categories)) {
+          const nonEmpties = data.categories.filter((c: any) => c.key !== 'all' && c.count > 0)
+          if (nonEmpties.length > 0) {
+            setCollections(nonEmpties)
+          }
+        }
+      } catch (err) {
+        // Safe fallback already active
+      }
+    }
+    loadCategories()
+    return () => { cancelled = true }
+  }, [])
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,26 +68,13 @@ export default function StoreFooter() {
               Collections
             </h4>
             <ul className="space-y-2 text-xs text-[#8C8275]">
-              <li>
-                <Link href="/jewellery?category=rings" className="hover:text-white transition-colors">
-                  Solitaire Rings & Bands
-                </Link>
-              </li>
-              <li>
-                <Link href="/jewellery?category=necklaces" className="hover:text-white transition-colors">
-                  Necklaces & Pendants
-                </Link>
-              </li>
-              <li>
-                <Link href="/jewellery?category=earrings" className="hover:text-white transition-colors">
-                  Diamond Earrings
-                </Link>
-              </li>
-              <li>
-                <Link href="/jewellery?category=bracelets" className="hover:text-white transition-colors">
-                  Tennis Bracelets
-                </Link>
-              </li>
+              {collections.map((col) => (
+                <li key={col.key}>
+                  <Link href={col.href} className="hover:text-white transition-colors">
+                    {col.label}
+                  </Link>
+                </li>
+              ))}
               <li>
                 <Link href="/bespoke" className="hover:text-white transition-colors">
                   Bespoke Commissions

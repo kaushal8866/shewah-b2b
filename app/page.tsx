@@ -1,6 +1,7 @@
 import StoreLayout from '@/components/d2c/StoreLayout'
 import Link from 'next/link'
 import { Diamond, ShieldCheck, Sparkles, ArrowRight, Clock, Award, Hammer } from 'lucide-react'
+import { fetchNonEmptyD2CCategories } from '@/lib/categories'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,33 +16,46 @@ export const metadata = {
 }
 
 export default async function HomePage() {
+  const activeCategories = await fetchNonEmptyD2CCategories()
+  const activeKeys = new Set(activeCategories.map((c) => c.key))
 
-  const collections = [
+  const allCategoryCollections = [
     {
+      key: 'rings',
       title: 'Solitaire & Engagement',
       subtitle: 'Antwerp-Cut Solitaires in Solid 18K Gold',
       href: '/jewellery?category=rings',
       image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80',
     },
     {
-      title: 'Tennis Bracelets',
-      subtitle: 'Seamless Pavé & Bezel Settings',
-      href: '/jewellery?category=bracelets',
-      image: 'https://images.unsplash.com/photo-1611591475870-760a927a4e69?auto=format&fit=crop&w=800&q=80',
-    },
-    {
+      key: 'necklaces',
       title: 'Necklaces & Pendants',
       subtitle: 'Timeless Cascades & Minimalist Icons',
       href: '/jewellery?category=necklaces',
       image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80',
     },
     {
+      key: 'earrings',
       title: 'Diamond Earrings',
       subtitle: 'Studs, Huggies & Architectural Drops',
       href: '/jewellery?category=earrings',
       image: 'https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=800&q=80',
     },
+    {
+      key: 'bracelets',
+      title: 'Tennis Bracelets',
+      subtitle: 'Seamless Pavé & Bezel Settings',
+      href: '/jewellery?category=bracelets',
+      image: 'https://images.unsplash.com/photo-1611591475870-760a927a4e69?auto=format&fit=crop&w=800&q=80',
+    },
   ]
+
+  const collections = allCategoryCollections.filter((col) => activeKeys.has(col.key))
+  const gridColsClass = collections.length === 3
+    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+    : collections.length === 2
+      ? 'grid-cols-1 sm:grid-cols-2'
+      : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
 
   return (
     <StoreLayout>
@@ -139,7 +153,7 @@ export default async function HomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className={`grid ${gridColsClass} gap-6`}>
           {collections.map((col) => (
             <Link
               key={col.title}

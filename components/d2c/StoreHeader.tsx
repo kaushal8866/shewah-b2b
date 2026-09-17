@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useCart } from './CartContext'
 import { useWishlist } from '@/lib/wishlistStore'
 import { MARKETS, type MarketCode } from '@/lib/markets'
+import { DEFAULT_NON_EMPTY_CATEGORIES } from '@/lib/categories'
 import {
   ShoppingBag,
   Search,
@@ -92,15 +93,36 @@ export default function StoreHeader() {
     setMarketDropdownOpen(false)
   }
 
-  const shopCategories = [
+  const [shopCategories, setShopCategories] = useState([
     { label: 'All Jewellery', href: '/jewellery' },
-    { label: 'Rings & Bands', href: '/jewellery?category=rings' },
-    { label: 'Necklaces & Pendants', href: '/jewellery?category=necklaces' },
-    { label: 'Earrings', href: '/jewellery?category=earrings' },
-    { label: 'Tennis Bracelets', href: '/jewellery?category=bracelets' },
-    { label: 'Men’s Heritage', href: '/jewellery?category=mens' },
+    ...DEFAULT_NON_EMPTY_CATEGORIES.map((c) => ({ label: c.label, href: c.href })),
     { label: 'Ring Size Guide & Sizer', href: '/ring-size-guide' },
-  ]
+  ])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/d2c/categories')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled && Array.isArray(data.categories)) {
+          const activeOnly = data.categories.filter((c: any) => c.key !== 'all' && c.count > 0)
+          if (activeOnly.length > 0) {
+            setShopCategories([
+              { label: 'All Jewellery', href: '/jewellery' },
+              ...activeOnly.map((c: any) => ({ label: c.label, href: c.href })),
+              { label: 'Ring Size Guide & Sizer', href: '/ring-size-guide' },
+            ])
+          }
+        }
+      } catch (err) {
+        // Fallback already provides safe non-empty defaults
+      }
+    }
+    loadCategories()
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E8DFC9] transition-all">
@@ -419,8 +441,8 @@ export default function StoreHeader() {
                 </span>
                 {[
                   { label: 'Solitaire Rings', href: '/jewellery?category=rings' },
-                  { label: 'Tennis Bracelets', href: '/jewellery?category=bracelets' },
-                  { label: 'Necklaces', href: '/jewellery?category=necklaces' },
+                  { label: 'Necklaces & Pendants', href: '/jewellery?category=necklaces' },
+                  { label: 'Diamond Earrings', href: '/jewellery?category=earrings' },
                   { label: 'Ring Size Guide', href: '/ring-size-guide' },
                   { label: 'Bespoke Atelier', href: '/bespoke' },
                 ].map((tag) => (

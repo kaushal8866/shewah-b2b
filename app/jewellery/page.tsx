@@ -8,6 +8,8 @@ import { useCart } from '@/components/d2c/CartContext'
 import { useWishlist } from '@/lib/wishlistStore'
 import { Diamond, Filter, ArrowUpDown, ShieldCheck, Heart, Sparkles } from 'lucide-react'
 
+import { DEFAULT_NON_EMPTY_CATEGORIES, KNOWN_CATEGORIES } from '@/lib/categories'
+
 interface D2CProductItem {
   id: string
   code: string
@@ -43,6 +45,10 @@ function JewelleryCatalogContent() {
   const [products, setProducts] = useState<D2CProductItem[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState(categoryParam)
+  const [categories, setCategories] = useState<Array<{ key: string; label: string; count?: number }>>([
+    { key: 'all', label: 'All Creations' },
+    ...DEFAULT_NON_EMPTY_CATEGORIES,
+  ])
   const [sortBy, setSortBy] = useState<'featured' | 'price_asc' | 'price_desc' | 'name'>('featured')
 
   useEffect(() => {
@@ -61,6 +67,9 @@ function JewelleryCatalogContent() {
         if (!cancelled && Array.isArray(data.products)) {
           setProducts(data.products)
         }
+        if (!cancelled && Array.isArray(data.categories) && data.categories.length > 0) {
+          setCategories(data.categories)
+        }
       } catch (err) {
         console.warn('[JewelleryCatalogPage] Error:', err)
       } finally {
@@ -70,15 +79,6 @@ function JewelleryCatalogContent() {
     loadCatalog()
     return () => { cancelled = true }
   }, [market.code, activeCategory])
-
-  const categories = [
-    { key: 'all', label: 'All Creations' },
-    { key: 'rings', label: 'Rings & Bands' },
-    { key: 'necklaces', label: 'Necklaces & Pendants' },
-    { key: 'earrings', label: 'Earrings' },
-    { key: 'bracelets', label: 'Tennis Bracelets' },
-    { key: 'mens', label: 'Men’s Heritage' },
-  ]
 
   const filteredProducts = useMemo(() => {
     let list = [...products]
@@ -96,6 +96,10 @@ function JewelleryCatalogContent() {
     return list
   }, [products, queryParam, sortBy])
 
+  const activeCategoryLabel = activeCategory === 'all'
+    ? 'All Masterworks'
+    : (categories.find(c => c.key === activeCategory)?.label || KNOWN_CATEGORIES[activeCategory]?.label || 'Fine Jewellery')
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header Title */}
@@ -104,7 +108,7 @@ function JewelleryCatalogContent() {
             Fine Jewellery Collection
           </span>
           <h1 className="font-serif text-3xl sm:text-5xl font-light text-[#2A241B]">
-            {activeCategory === 'all' ? 'All Masterworks' : categories.find(c => c.key === activeCategory)?.label}
+            {activeCategoryLabel}
           </h1>
           <p className="text-xs sm:text-sm text-[#5C5347] font-light leading-relaxed">
             Handcrafted in solid gold alloys and handset with certified diamonds.
@@ -165,16 +169,22 @@ function JewelleryCatalogContent() {
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-[#E8DFC9] space-y-4">
+          <div className="text-center py-20 bg-white rounded-2xl border border-[#E8DFC9] space-y-4 px-6">
             <Diamond className="w-10 h-10 text-[#A88A4F] mx-auto" />
             <h3 className="font-serif text-xl text-[#2A241B]">No pieces found in this category</h3>
             <p className="text-xs text-[#5C5347] max-w-sm mx-auto">
-              Our atelier introduces new collections periodically. You may also commission a bespoke creation tailored to your desires.
+              Our atelier is actively crafting new masterworks for upcoming collections. You may explore all current creations or commission a bespoke piece tailored to your desires.
             </p>
-            <div className="pt-2">
+            <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={() => setActiveCategory('all')}
+                className="px-6 py-2.5 bg-[#2A241B] text-white text-xs uppercase tracking-widest font-medium rounded-full hover:bg-[#A88A4F] transition-colors"
+              >
+                View All Creations
+              </button>
               <Link
                 href="/bespoke"
-                className="inline-block px-6 py-2.5 bg-[#2A241B] text-white text-xs uppercase tracking-widest font-medium rounded-full"
+                className="px-6 py-2.5 border border-[#E8DFC9] text-[#2A241B] text-xs uppercase tracking-widest font-medium rounded-full hover:bg-[#FBF7F0] transition-colors"
               >
                 Commission Bespoke
               </Link>

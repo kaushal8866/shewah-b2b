@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getMarket, type MarketCode } from '@/lib/markets'
 import { resolveProductMarketPrice } from '@/lib/d2cPricing'
+import { fetchNonEmptyD2CCategories } from '@/lib/categories'
 
 export const dynamic = 'force-dynamic'
 
@@ -88,10 +89,18 @@ export async function GET(req: NextRequest) {
       })
     )
 
+    const activeCategories = await fetchNonEmptyD2CCategories()
+    const totalPieces = activeCategories.reduce((sum, c) => sum + c.count, 0)
+    const categoryOptions = [
+      { key: 'all', label: 'All Creations', shortLabel: 'All', count: totalPieces, href: '/jewellery' },
+      ...activeCategories,
+    ]
+
     return NextResponse.json({
       market: market.code,
       currency: market.currency,
       count: sanitizedProducts.length,
+      categories: categoryOptions,
       products: sanitizedProducts,
     })
   } catch (err: any) {
