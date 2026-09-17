@@ -86,6 +86,120 @@ export async function GET(
 
     const isStandardReturn = product.return_policy_type === 'standard'
 
+    // 6. Resolve Set / Suite hierarchy if applicable
+    let setInfo: any = null
+    let parentSetInfo: any = null
+
+    if (details.is_set && Array.isArray(details.component_codes) && details.component_codes.length > 0) {
+      const { data: componentProds } = await supabaseAdmin
+        .from('products')
+        .select('*')
+        .in('code', details.component_codes)
+        .eq('is_active', true)
+        .eq('d2c_status', 'published')
+
+      if (componentProds && componentProds.length > 0) {
+        const componentsWithPricing = await Promise.all(
+          componentProds.map(async (c) => {
+            const cPricing = await resolveProductMarketPrice(c.id, market.code)
+            const cDetails = (c.d2c_details || {}) as Record<string, any>
+            return {
+              id: c.id,
+              code: c.code,
+              name: c.d2c_title || c.name,
+              slug: c.slug || c.code.toLowerCase(),
+              subtitle: c.d2c_subtitle || '',
+              category: c.category,
+              role: cDetails.component_type || (c.category === 'earrings' ? 'earrings' : 'pendant'),
+              roleLabel: cDetails.component_label || (c.code.includes('PEND') ? 'Pendant & Chain' : 'Matched Drop Earrings'),
+              photoUrls: c.photo_urls || [],
+              primaryPhotoUrl: c.photo_urls?.[0] || null,
+              approxGoldWeight: c.gold_weight_18k || c.gold_weight_g || null,
+              diamondWeightCarats: c.diamond_weight || null,
+              price: {
+                amount: cPricing.unitPrice,
+                compareAt: cPricing.compareAtPrice,
+                currency: cPricing.currency,
+                formatted: cPricing.formattedPrice,
+              },
+            }
+          })
+        )
+
+        const sumComponentPrices = componentsWithPricing.reduce((sum, c) => sum + c.price.amount, 0)
+        const suiteSavingsAmount = Math.max(0, sumComponentPrices - pricing.unitPrice)
+
+        setInfo = {
+          isSet: true,
+          setName: product.d2c_title || product.name,
+          savingsLabel: details.suite_savings_label || 'Save on Complete Suite',
+          sumComponentPrices,
+          suiteSavingsAmount,
+          formattedSavings: suiteSavingsAmount > 0 ? `${market.currencySymbol}${suiteSavingsAmount.toLocaleString('en-US')}` : null,
+          components: componentsWithPricing,
+        }
+      }
+    } else if (details.is_component_of_set && details.parent_set_code) {
+      const { data: parentProd } = await supabaseAdmin
+        .from('products')
+        .select('*')
+        .eq('code', details.parent_set_code)
+        .eq('is_active', true)
+        .eq('d2c_status', 'published')
+        .maybeSingle()
+
+      if (parentProd) {
+        const parentPricing = await resolveProductMarketPrice(parentProd.id, market.code)
+        const parentDetails = (parentProd.d2c_details || {}) as Record<string, any>
+        const siblingCodes = (parentDetails.component_codes || []).filter((c: string) => c !== product.code)
+
+        let siblings: any[] = []
+        if (siblingCodes.length > 0) {
+          const { data: sibProds } = await supabaseAdmin
+            .from('products')
+            .select('*')
+            .in('code', siblingCodes)
+            .eq('is_active', true)
+            .eq('d2c_status', 'published')
+
+          if (sibProds) {
+            siblings = await Promise.all(
+              sibProds.map(async (s) => {
+                const sPricing = await resolveProductMarketPrice(s.id, market.code)
+                const sDetails = (s.d2c_details || {}) as Record<string, any>
+                return {
+                  id: s.id,
+                  code: s.code,
+                  name: s.d2c_title || s.name,
+                  slug: s.slug || s.code.toLowerCase(),
+                  roleLabel: sDetails.component_label || s.name,
+                  photoUrl: s.photo_urls?.[0] || null,
+                  approxGoldWeight: s.gold_weight_18k || s.gold_weight_g || null,
+                  price: {
+                    amount: sPricing.unitPrice,
+                    formatted: sPricing.formattedPrice,
+                  },
+                }
+              })
+            )
+          }
+        }
+
+        parentSetInfo = {
+          parentId: parentProd.id,
+          parentCode: parentProd.code,
+          parentName: parentProd.d2c_title || parentProd.name,
+          parentSlug: parentProd.slug,
+          parentPhotoUrl: parentProd.photo_urls?.[0] || null,
+          parentPrice: {
+            amount: parentPricing.unitPrice,
+            formatted: parentPricing.formattedPrice,
+          },
+          siblings,
+        }
+      }
+    }
+
     const responseData = {
       id: product.id,
       code: product.code,
@@ -109,7 +223,7 @@ export async function GET(
         diamondShape: product.diamond_shape || 'Round Brilliant',
         diamondColor: product.diamond_color || 'F-G',
         diamondClarity: product.diamond_quality || 'VS',
-        hallmark: 'BIS Hallmark / Solid 18K Gold',
+        hallmark: 'Certified Assay 750 / Solid 18K Gold',
         certification: 'IGI / GIA Certified Solitaire',
       },
       configurationSchema: {
@@ -128,6 +242,8 @@ export async function GET(
         isAvailable: pricing.isAvailable,
       },
       market: market.code,
+      setInfo,
+      parentSetInfo,
     }
 
     return NextResponse.json(responseData)

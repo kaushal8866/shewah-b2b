@@ -6,7 +6,7 @@ import Link from 'next/link'
 import StoreLayout from '@/components/d2c/StoreLayout'
 import { useCart } from '@/components/d2c/CartContext'
 import { useWishlist } from '@/lib/wishlistStore'
-import { Diamond, Filter, ArrowUpDown, ShieldCheck, Heart } from 'lucide-react'
+import { Diamond, Filter, ArrowUpDown, ShieldCheck, Heart, Sparkles } from 'lucide-react'
 
 interface D2CProductItem {
   id: string
@@ -18,6 +18,11 @@ interface D2CProductItem {
   primaryPhotoUrl: string | null
   secondaryPhotoUrl: string | null
   craftingLeadDays: number
+  isFeatured?: boolean
+  isSet?: boolean
+  isSetComponent?: boolean
+  setParentCode?: string | null
+  setLabel?: string | null
   price: {
     amount: number
     compareAt: number | null
@@ -197,10 +202,17 @@ function JewelleryCatalogContent() {
                     </div>
                   )}
 
-                  {/* Made to order badge */}
-                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider text-[#2A241B] font-medium border border-[#E8DFC9]">
-                    Made to Order
-                  </div>
+                  {/* Badge: Suite vs Made to Order */}
+                  {p.isSet ? (
+                    <div className="absolute top-3 left-3 bg-[#2A241B] text-[#D4AF37] px-2.5 py-1 rounded-full text-[10px] uppercase tracking-widest font-semibold border border-[#D4AF37]/30 shadow-md flex items-center gap-1.5">
+                      <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                      <span>Jewellery Suite</span>
+                    </div>
+                  ) : (
+                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider text-[#2A241B] font-medium border border-[#E8DFC9]">
+                      Made to Order
+                    </div>
+                  )}
 
                   {/* Wishlist toggle button */}
                   <button
@@ -232,15 +244,27 @@ function JewelleryCatalogContent() {
                 {/* Details */}
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
                   <div>
-                    <span className="text-[10px] uppercase tracking-wider text-[#A88A4F] font-medium">
-                      {p.category || 'Fine Jewellery'}
-                    </span>
-                    <h3 className="font-serif text-base font-medium text-[#2A241B] group-hover:text-[#A88A4F] transition-colors leading-snug line-clamp-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] uppercase tracking-wider text-[#A88A4F] font-medium">
+                        {p.isSet ? 'Curated Suite' : (p.category || 'Fine Jewellery')}
+                      </span>
+                      {p.isSet && (
+                        <span className="text-[9px] uppercase tracking-widest text-[#5C7F5F] font-semibold bg-[#E8F0EA] px-2 py-0.5 rounded-full">
+                          Suite Privilege
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-serif text-base font-medium text-[#2A241B] group-hover:text-[#A88A4F] transition-colors leading-snug line-clamp-1 mt-1">
                       {p.name}
                     </h3>
                     <p className="text-xs text-[#5C5347] line-clamp-1 font-light mt-0.5">
                       {p.subtitle}
                     </p>
+                    {p.isSet && (
+                      <p className="text-[10px] text-[#A88A4F] font-medium mt-1.5 flex items-center gap-1">
+                        <span>Available together as a suite or individually</span>
+                      </p>
+                    )}
                   </div>
 
                   <div className="pt-2 border-t border-[#E8DFC9] flex items-center justify-between">
