@@ -152,15 +152,15 @@ export default function StoreHeader() {
       </div>
 
       {/* 2. Main Brand Navigation Bar */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between">
         {/* Left Side: Mobile Menu Trigger + Primary Left Nav */}
         <div className="flex items-center gap-6">
           <button
             onClick={() => setMobileNavOpen(true)}
-            className="lg:hidden p-2 text-[#2A241B] hover:text-[#A88A4F]"
+            className="lg:hidden p-1.5 sm:p-2 text-[#2A241B] hover:text-[#A88A4F]"
             aria-label="Open menu"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           {/* Left Desktop Nav */}
@@ -216,13 +216,13 @@ export default function StoreHeader() {
           </nav>
         </div>
 
-        {/* Center: Brand Logo (Guaranteed Absolute Center on all viewports) */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-auto">
+        {/* Center: Brand Logo (Guaranteed Absolute Center on all viewports, scaled gracefully on mobile to prevent icon collisions) */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-auto z-10">
           <Link href="/" className="inline-block group">
-            <span className="font-serif text-2xl sm:text-3xl tracking-[0.25em] font-medium text-[#2A241B] block whitespace-nowrap">
+            <span className="font-serif text-lg sm:text-2xl lg:text-3xl tracking-[0.16em] sm:tracking-[0.25em] font-medium text-[#2A241B] block whitespace-nowrap">
               SHEWAH
             </span>
-            <span className="text-[9px] uppercase tracking-[0.35em] text-[#A88A4F] block mt-0.5 whitespace-nowrap">
+            <span className="text-[7.5px] sm:text-[9px] uppercase tracking-[0.22em] sm:tracking-[0.35em] text-[#A88A4F] block mt-0.5 whitespace-nowrap">
               High Jewellery
             </span>
           </Link>
@@ -251,23 +251,23 @@ export default function StoreHeader() {
           </nav>
 
           {/* Utility Icons */}
-          <div className="flex items-center gap-4 sm:gap-5">
+          <div className="flex items-center gap-2 sm:gap-4 lg:gap-5">
             <button
               onClick={() => setSearchOpen((prev) => !prev)}
-              className="p-1.5 hover:text-[#A88A4F] transition-colors"
+              className="p-1 sm:p-1.5 hover:text-[#A88A4F] transition-colors"
               aria-label="Search"
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
             <Link
               href="/wishlist"
-              className="p-1.5 hover:text-[#A88A4F] transition-colors relative flex items-center"
+              className="p-1 sm:p-1.5 hover:text-[#A88A4F] transition-colors relative flex items-center"
               aria-label="Wishlist"
             >
-              <Heart className="w-5 h-5" />
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
               {mounted && wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#A88A4F] text-white text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#A88A4F] text-white text-[8px] sm:text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
                   {wishlistCount}
                 </span>
               )}
@@ -275,12 +275,12 @@ export default function StoreHeader() {
 
             <button
               onClick={openCart}
-              className="p-1.5 hover:text-[#A88A4F] transition-colors relative flex items-center gap-1.5"
+              className="p-1 sm:p-1.5 hover:text-[#A88A4F] transition-colors relative flex items-center gap-1 sm:gap-1.5"
               aria-label="Open Shopping Bag"
             >
-              <ShoppingBag className="w-5 h-5" />
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
               {itemCount > 0 && (
-                <span className="w-4 h-4 rounded-full bg-[#2A241B] text-white text-[10px] font-mono font-medium flex items-center justify-center">
+                <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#2A241B] text-white text-[8px] sm:text-[10px] font-mono font-medium flex items-center justify-center">
                   {itemCount}
                 </span>
               )}

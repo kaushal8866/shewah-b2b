@@ -371,13 +371,23 @@ export default function ProductDetailPage() {
     <StoreLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
         {/* Breadcrumbs */}
-        <div className="text-[11px] uppercase tracking-wider text-[#8C8275] mb-6 sm:mb-8 flex items-center gap-2 whitespace-nowrap overflow-x-auto no-scrollbar">
-          <Link href="/" className="hover:text-[#2A241B] transition-colors shrink-0">Home</Link>
-          <span className="text-stone-300 select-none shrink-0">/</span>
-          <Link href="/jewellery" className="hover:text-[#2A241B] transition-colors shrink-0">Jewellery</Link>
-          <span className="text-stone-300 select-none shrink-0">/</span>
-          <span className="text-[#2A241B] font-medium shrink-0">{product.category}</span>
-        </div>
+        <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-wider text-[#8C8275] mb-6 sm:mb-8 flex items-center flex-wrap gap-x-2 gap-y-1">
+          <Link href="/" className="hover:text-[#2A241B] transition-colors shrink-0 inline-flex items-center min-h-0 leading-none">
+            Home
+          </Link>
+          <span className="text-stone-300 select-none shrink-0 inline-flex items-center leading-none" aria-hidden="true">
+            /
+          </span>
+          <Link href="/jewellery" className="hover:text-[#2A241B] transition-colors shrink-0 inline-flex items-center min-h-0 leading-none">
+            Jewellery
+          </Link>
+          <span className="text-stone-300 select-none shrink-0 inline-flex items-center leading-none" aria-hidden="true">
+            /
+          </span>
+          <span className="text-[#2A241B] font-medium shrink-0 inline-flex items-center leading-none capitalize" aria-current="page">
+            {product.category}
+          </span>
+        </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
           {/* Left: Gallery Column (7 cols) */}

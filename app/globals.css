@@ -224,7 +224,6 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
 }
 
 @media (max-width: 1023px) {
-  a, button { min-height: 44px; }
   .status-pill { padding: 4px 10px; font-size: 10px; min-height: 0; }
 }
 

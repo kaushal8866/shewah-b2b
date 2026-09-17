@@ -60,9 +60,9 @@ export default function CategoriesDashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 text-stone-500 text-xs mb-1.5 font-medium">
-            <Link href="/catalog" className="hover:text-stone-700 transition-colors">Catalog</Link>
-            <span>/</span>
-            <span className="text-stone-700">Categories</span>
+            <Link href="/catalog" className="hover:text-stone-700 transition-colors inline-flex items-center min-h-0">Catalog</Link>
+            <span className="inline-flex items-center">/</span>
+            <span className="text-stone-700 inline-flex items-center">Categories</span>
           </div>
           <h1 className="text-xl lg:text-2xl font-semibold text-stone-900 tracking-tight flex items-center gap-2">
             <Settings className="w-5 h-5 text-stone-500" />
