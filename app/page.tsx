@@ -1,6 +1,3 @@
-import { redirect } from 'next/navigation'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import StoreLayout from '@/components/d2c/StoreLayout'
 import Link from 'next/link'
 import { Diamond, ShieldCheck, Sparkles, ArrowRight, Clock, Award, Hammer } from 'lucide-react'
@@ -17,17 +14,7 @@ export const metadata = {
   },
 }
 
-function dashboardForRole(role: string | undefined): string {
-  if (role === 'manufacturer') return '/portal/manufacturer'
-  if (role === 'retailer')     return '/portal/retailer'
-  return '/dashboard'
-}
-
 export default async function HomePage() {
-  const session = await getServerSession(authOptions)
-  if (session?.user) {
-    redirect(dashboardForRole((session.user as any).role))
-  }
 
   const collections = [
     {
@@ -204,7 +191,7 @@ export default async function HomePage() {
                 <div className="text-xs text-[#5C5347] mt-0.5">Ethically Sourced & Conflict-Free</div>
               </div>
               <div>
-                <div className="font-serif text-2xl text-[#2A241B] font-medium">BIS 750</div>
+                <div className="font-serif text-2xl text-[#2A241B] font-medium">Assay 750</div>
                 <div className="text-xs text-[#5C5347] mt-0.5">Solid 18K Gold Hallmarking</div>
               </div>
             </div>

@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     const market = getMarket(marketParam)
     const category = searchParams.get('category')
     const featured = searchParams.get('featured')
+    const search = searchParams.get('q')
     const limit = Math.min(Number(searchParams.get('limit')) || 24, 100)
 
     let query = supabaseAdmin
@@ -25,6 +26,10 @@ export async function GET(req: NextRequest) {
     }
     if (featured === 'true') {
       query = query.eq('d2c_featured', true)
+    }
+    if (search && search.trim()) {
+      const term = `%${search.trim()}%`
+      query = query.or(`name.ilike.${term},d2c_title.ilike.${term},code.ilike.${term}`)
     }
 
     query = query.order('name', { ascending: true }).limit(limit)

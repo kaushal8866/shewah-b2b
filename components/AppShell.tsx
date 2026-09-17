@@ -173,8 +173,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/returns') ||
     pathname.startsWith('/warranty') ||
     pathname.startsWith('/care') ||
-    pathname.startsWith('/contact') ||
-    pathname.startsWith('/wishlist')
+    pathname.startsWith('/wishlist') ||
+    pathname.startsWith('/ring-size-guide') ||
+    pathname.startsWith('/pages') ||
+    pathname.startsWith('/m/') ||
+    pathname.startsWith('/frames') ||
+    pathname.startsWith('/shared-design')
 
   // Client-side authentication guard for private admin pages
   useEffect(() => {

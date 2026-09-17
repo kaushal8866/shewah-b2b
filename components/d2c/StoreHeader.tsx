@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useCart } from './CartContext'
 import { useWishlist } from '@/lib/wishlistStore'
 import { MARKETS, type MarketCode } from '@/lib/markets'
@@ -17,10 +17,12 @@ import {
   Globe,
   Diamond,
   ArrowRight,
+  Ruler,
 } from 'lucide-react'
 
 export default function StoreHeader() {
   const pathname = usePathname()
+  const router = useRouter()
   const { market, setMarketCode, itemCount, openCart } = useCart()
   const { wishlistCount } = useWishlist()
   const [mounted, setMounted] = useState(false)
@@ -29,15 +31,50 @@ export default function StoreHeader() {
   const [shopDropdownOpen, setShopDropdownOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Auto-close mobile drawer when user navigates
+  // Auto-close search & mobile drawer when user navigates
   useEffect(() => {
     setMobileNavOpen(false)
+    setSearchOpen(false)
   }, [pathname])
+
+  // Real-time typeahead search debouncer
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+      setSearchResults([])
+      setSearchLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setSearchLoading(true)
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/d2c/products?market=${market.code}&q=${encodeURIComponent(searchQuery.trim())}&limit=4`
+        )
+        if (!res.ok) throw new Error('Search failed')
+        const data = await res.json()
+        if (!cancelled) {
+          setSearchResults(data.products || [])
+          setSearchLoading(false)
+        }
+      } catch {
+        if (!cancelled) setSearchLoading(false)
+      }
+    }, 200)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [searchQuery, market.code])
 
   // Prevent background scrolling when mobile nav is open
   useEffect(() => {
@@ -243,30 +280,152 @@ export default function StoreHeader() {
         </div>
       </div>
 
-      {/* Search Input Bar (Toggled) */}
+      {/* Search Input Drawer (Toggled) */}
       {searchOpen && (
-        <div className="border-t border-[#E8DFC9] bg-[#FBF7F0] px-4 py-3 animate-in fade-in">
-          <div className="max-w-3xl mx-auto flex items-center gap-3">
-            <Search className="w-5 h-5 text-[#8C8275]" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && searchQuery.trim()) {
-                  window.location.href = `/jewellery?q=${encodeURIComponent(searchQuery.trim())}`
-                }
-              }}
-              placeholder="Search solitaire rings, tennis bracelets, pendants..."
-              className="flex-1 bg-transparent border-none outline-none text-sm text-[#2A241B] placeholder-[#8C8275]"
-              autoFocus
-            />
-            <button
-              onClick={() => setSearchOpen(false)}
-              className="text-xs uppercase tracking-wider text-[#8C8275] hover:text-[#2A241B]"
-            >
-              Cancel
-            </button>
+        <div className="border-t border-[#E8DFC9] bg-[#FBF7F0] px-4 py-4 animate-in fade-in shadow-xl">
+          <div className="max-w-3xl mx-auto space-y-4">
+            <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-[#E8DFC9] shadow-sm">
+              <Search className="w-5 h-5 text-[#8C8275]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    router.push(`/jewellery?q=${encodeURIComponent(searchQuery.trim())}`)
+                    setSearchOpen(false)
+                  }
+                  if (e.key === 'Escape') {
+                    setSearchOpen(false)
+                  }
+                }}
+                placeholder="Search solitaire rings, tennis bracelets, pendants..."
+                className="flex-1 bg-transparent border-none outline-none text-sm text-[#2A241B] placeholder-[#8C8275]"
+                autoFocus
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-stone-400 hover:text-stone-600 p-1"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                onClick={() => setSearchOpen(false)}
+                className="text-xs uppercase tracking-wider text-[#8C8275] hover:text-[#2A241B] pl-2 border-l border-stone-200"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Suggestions & Live Results Panel */}
+            {searchQuery.trim().length >= 2 ? (
+              <div className="bg-white rounded-xl border border-[#E8DFC9] p-4 shadow-sm">
+                {searchLoading ? (
+                  <div className="py-6 text-center text-xs text-stone-500 font-mono tracking-wider flex items-center justify-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#A88A4F] animate-ping" />
+                    Searching atelier collection...
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="text-[10px] uppercase tracking-widest font-semibold text-stone-400">
+                      Matching Pieces ({searchResults.length})
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {searchResults.map((item) => (
+                        <Link
+                          key={item.id}
+                          href={`/jewellery/${item.slug}`}
+                          onClick={() => setSearchOpen(false)}
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#FBF7F0] border border-transparent hover:border-[#E8DFC9] transition-all group"
+                        >
+                          <div className="w-12 h-12 rounded-md overflow-hidden bg-stone-100 shrink-0 border border-stone-200">
+                            {item.primaryPhotoUrl ? (
+                              <img
+                                src={item.primaryPhotoUrl}
+                                alt={item.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-stone-400">
+                                <Diamond className="w-5 h-5" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-[#2A241B] truncate group-hover:text-[#A88A4F] transition-colors">
+                              {item.name}
+                            </p>
+                            <p className="text-[11px] font-mono font-medium text-[#A88A4F]">
+                              {item.price?.formatted}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="pt-2 border-t border-stone-100 flex justify-end">
+                      <button
+                        onClick={() => {
+                          router.push(`/jewellery?q=${encodeURIComponent(searchQuery.trim())}`)
+                          setSearchOpen(false)
+                        }}
+                        className="text-xs font-medium text-[#2A241B] hover:text-[#A88A4F] inline-flex items-center gap-1 uppercase tracking-wider"
+                      >
+                        <span>View all matching results</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-6 text-center space-y-2">
+                    <p className="text-xs text-[#5C5347]">
+                      No creations found matching &quot;{searchQuery}&quot;.
+                    </p>
+                    <div className="flex items-center justify-center gap-4 text-xs font-medium pt-1">
+                      <Link
+                        href="/jewellery"
+                        onClick={() => setSearchOpen(false)}
+                        className="text-[#A88A4F] hover:underline"
+                      >
+                        Browse all pieces
+                      </Link>
+                      <span className="text-stone-300">•</span>
+                      <Link
+                        href="/bespoke"
+                        onClick={() => setSearchOpen(false)}
+                        className="text-[#A88A4F] hover:underline"
+                      >
+                        Custom Bespoke
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-stone-500 mr-2">
+                  Popular:
+                </span>
+                {[
+                  { label: 'Solitaire Rings', href: '/jewellery?category=rings' },
+                  { label: 'Tennis Bracelets', href: '/jewellery?category=bracelets' },
+                  { label: 'Necklaces', href: '/jewellery?category=necklaces' },
+                  { label: 'Ring Size Guide', href: '/ring-size-guide' },
+                  { label: 'Bespoke Atelier', href: '/bespoke' },
+                ].map((tag) => (
+                  <Link
+                    key={tag.label}
+                    href={tag.href}
+                    onClick={() => setSearchOpen(false)}
+                    className="text-xs px-3 py-1 rounded-full bg-white border border-[#E8DFC9] text-[#5C5347] hover:text-[#2A241B] hover:border-[#A88A4F] transition-colors"
+                  >
+                    {tag.label}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
