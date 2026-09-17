@@ -5,7 +5,8 @@
 
 import { CurrencyCode } from '../markets'
 
-export type PaymentProviderType = 'stripe' | 'test'
+export type PaymentProviderType = 'stripe' | 'test' | 'concierge_wire'
+export type PaymentMethodChoice = 'card' | 'concierge_wire'
 
 export interface CreatePaymentSessionParams {
   orderId: string
@@ -16,6 +17,15 @@ export interface CreatePaymentSessionParams {
   customerName: string
   successUrl: string
   cancelUrl: string
+  paymentMethod?: PaymentMethodChoice
+  billingAddress?: {
+    line1: string
+    line2?: string | null
+    city: string
+    state?: string | null
+    postalCode: string
+    country: string
+  }
   metadata?: Record<string, string>
 }
 

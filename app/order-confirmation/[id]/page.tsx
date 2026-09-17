@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import StoreLayout from '@/components/d2c/StoreLayout'
 import { formatCurrency, type CurrencyCode } from '@/lib/markets'
-import { CheckCircle2, Diamond, Truck, ShieldCheck, ArrowRight, Clock } from 'lucide-react'
+import { CheckCircle2, Diamond, Truck, ShieldCheck, ArrowRight, Clock, Building } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -118,6 +118,44 @@ export default async function OrderConfirmationPage({
             </div>
           )}
         </div>
+
+        {/* Atelier Wire & Concierge Settlement Instructions */}
+        {order.payment_status === 'pending_wire' && (
+          <div className="py-8 border-b border-[#E8DFC9]">
+            <div className="p-6 bg-[#FBF7F0] border border-[#C9A86A] rounded-2xl space-y-4">
+              <div className="flex items-center gap-2.5 text-[#A88A4F]">
+                <Building className="w-5 h-5" />
+                <h3 className="font-serif text-lg font-medium text-[#2A241B]">
+                  Atelier Bank Wire & Concierge Settlement
+                </h3>
+              </div>
+              <p className="text-xs text-[#5C5347] leading-relaxed">
+                Your creation has been reserved exclusively for you under commission <strong className="text-[#2A241B]">{order.order_number}</strong>. To complete settlement via wire transfer / NEFT / RTGS, please use the verified atelier details below:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-white p-4 rounded-xl border border-[#E8DFC9]">
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-[#8C8275] block">Beneficiary Name</span>
+                  <span className="font-medium text-[#2A241B]">SHEWAH HIGH JEWELLERY PVT LTD</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-[#8C8275] block">Order Reference</span>
+                  <span className="font-mono font-bold text-[#A88A4F]">{order.order_number}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-[#8C8275] block">Bank Name</span>
+                  <span className="font-medium text-[#2A241B]">HDFC Bank Ltd / ICICI Bank</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-[#8C8275] block">Settlement Total</span>
+                  <span className="font-bold text-[#2A241B]">{formatCurrency(order.total_amount, currency)}</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-[#8C8275]">
+                Our private client concierge will also reach out to your email and phone to confirm receipt and provide insured dispatch tracking.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Order Details & Summary */}
         <div className="py-8 space-y-6">

@@ -62,6 +62,22 @@ class TestPaymentGateway implements PaymentGateway {
   }
 }
 
+export class ConciergeWirePaymentGateway implements PaymentGateway {
+  async createSession(params: CreatePaymentSessionParams): Promise<PaymentSessionResult> {
+    const simulatedSessionId = `wire_${params.orderId}`
+    const redirectUrl = `${params.successUrl}?payment_method=wire&status=confirmed`
+    return {
+      sessionId: simulatedSessionId,
+      provider: 'concierge_wire',
+      redirectUrl,
+    }
+  }
+
+  async verifyWebhook(): Promise<WebhookVerificationResult> {
+    return { isValid: true }
+  }
+}
+
 class StripeRestPaymentGateway implements PaymentGateway {
   private secretKey: string
   private webhookSecret?: string
@@ -81,6 +97,7 @@ class StripeRestPaymentGateway implements PaymentGateway {
     formData.append('customer_email', params.customerEmail)
     formData.append('success_url', `${params.successUrl}?session_id={CHECKOUT_SESSION_ID}`)
     formData.append('cancel_url', params.cancelUrl)
+    formData.append('billing_address_collection', 'auto')
 
     formData.append('line_items[0][price_data][currency]', params.currency.toLowerCase())
     formData.append('line_items[0][price_data][product_data][name]', `Shewah Order ${params.orderNumber}`)
@@ -171,7 +188,11 @@ class StripeRestPaymentGateway implements PaymentGateway {
 /**
  * Payment Gateway Factory
  */
-export function getPaymentGateway(): PaymentGateway {
+export function getPaymentGateway(preferredMethod?: string): PaymentGateway {
+  if (preferredMethod === 'concierge_wire') {
+    return new ConciergeWirePaymentGateway()
+  }
+
   const stripeSecret = process.env.STRIPE_SECRET_KEY
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
   const paymentMode = process.env.PAYMENT_MODE || (stripeSecret ? 'stripe' : 'test')

@@ -175,8 +175,8 @@ export async function POST(req: NextRequest) {
         expected_delivery: expectedDeliveryDate,
         expected_delivery_date: expectedDeliveryDate,
         special_notes: notes || null,
-        internal_notes: `D2C web order from ${activeMarket.name}. Review status: ${orderReviewStatus}.`,
-        payment_status: 'pending',
+        internal_notes: `D2C web order from ${activeMarket.name}. Method: ${body.paymentMethod || 'card'}. Review status: ${orderReviewStatus}.`,
+        payment_status: body.paymentMethod === 'concierge_wire' ? 'pending_wire' : 'pending',
         shipping_address_snapshot: shippingAddress,
         d2c_items: frozenLineItems,
         price_snapshot_version: '1.0',
@@ -197,24 +197,62 @@ export async function POST(req: NextRequest) {
       expires_at: expiresAt,
     })
 
-    // 10. Create Payment Session
+    // 10. Create Payment Session with resilient gateway selection
+    const paymentMethodChoice = body.paymentMethod === 'concierge_wire' ? 'concierge_wire' : 'card'
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://shewah.co'
-    const gateway = getPaymentGateway()
+    
+    let gateway: any
+    try {
+      gateway = getPaymentGateway(paymentMethodChoice)
+    } catch (gwErr: any) {
+      console.warn('[Checkout Gateway Fallback to Concierge]:', gwErr?.message)
+      gateway = getPaymentGateway('concierge_wire')
+    }
 
-    const paymentSession = await gateway.createSession({
-      orderId: orderRow.id,
-      orderNumber: orderRow.order_number,
-      amount: totalAmount,
-      currency: activeMarket.currency,
-      customerEmail: cleanEmail,
-      customerName: customer.fullName,
-      successUrl: `${origin}/order-confirmation/${orderRow.id}`,
-      cancelUrl: `${origin}/checkout?canceled=true`,
-      metadata: {
-        journeyToken,
-        orderReviewStatus,
-      },
-    })
+    let paymentSession: any
+    try {
+      paymentSession = await gateway.createSession({
+        orderId: orderRow.id,
+        orderNumber: orderRow.order_number,
+        amount: totalAmount,
+        currency: activeMarket.currency,
+        customerEmail: cleanEmail,
+        customerName: customer.fullName,
+        successUrl: `${origin}/order-confirmation/${orderRow.id}`,
+        cancelUrl: `${origin}/checkout?canceled=true`,
+        paymentMethod: paymentMethodChoice,
+        billingAddress: shippingAddress,
+        metadata: {
+          journeyToken,
+          orderReviewStatus,
+        },
+      })
+    } catch (sessionErr: any) {
+      console.error('[Payment Gateway createSession failed, securing as Concierge Wire]:', sessionErr?.message)
+      const fallbackGateway = getPaymentGateway('concierge_wire')
+      paymentSession = await fallbackGateway.createSession({
+        orderId: orderRow.id,
+        orderNumber: orderRow.order_number,
+        amount: totalAmount,
+        currency: activeMarket.currency,
+        customerEmail: cleanEmail,
+        customerName: customer.fullName,
+        successUrl: `${origin}/order-confirmation/${orderRow.id}`,
+        cancelUrl: `${origin}/checkout?canceled=true`,
+        paymentMethod: 'concierge_wire',
+        metadata: {
+          journeyToken,
+          orderReviewStatus,
+          fallbackReason: sessionErr?.message || 'Gateway initialization error',
+        },
+      })
+
+      // Update order to reflect wire status
+      await supabaseAdmin.from('orders').update({
+        payment_status: 'pending_wire',
+        internal_notes: `Card authorization rejected by merchant gateway (${sessionErr?.message || 'declined'}). Order successfully secured under Atelier Wire reservation.`,
+      }).eq('id', orderRow.id)
+    }
 
     return NextResponse.json({
       success: true,

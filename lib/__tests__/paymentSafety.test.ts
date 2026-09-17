@@ -56,4 +56,24 @@ describe('Payment Safety & Environment Guards (lib/payments)', () => {
 
     expect(() => getPaymentGateway()).toThrow(/Production environment must configure a live payment provider/)
   })
+
+  it('supports concierge wire payment gateway in both development and production', async () => {
+    ;(process.env as any).NODE_ENV = 'production'
+    const gateway = getPaymentGateway('concierge_wire')
+    const session = await gateway.createSession({
+      orderId: 'ord_wire_123',
+      orderNumber: 'SH-D2C-2026-W01',
+      amount: 250000,
+      currency: 'INR',
+      customerEmail: 'client@example.com',
+      customerName: 'High Net Client',
+      successUrl: 'https://shewah.co/order-confirmation/ord_wire_123',
+      cancelUrl: 'https://shewah.co/checkout',
+      paymentMethod: 'concierge_wire',
+    })
+
+    expect(session.provider).toBe('concierge_wire')
+    expect(session.redirectUrl).toContain('payment_method=wire')
+    expect(session.sessionId).toContain('wire_ord_wire_123')
+  })
 })

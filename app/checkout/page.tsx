@@ -14,6 +14,8 @@ import {
   Diamond,
   AlertCircle,
   CheckCircle2,
+  CreditCard,
+  Building,
 } from 'lucide-react'
 
 export default function CheckoutPage() {
@@ -31,6 +33,7 @@ export default function CheckoutPage() {
   const [postalCode, setPostalCode] = useState('')
   const [country, setCountry] = useState(market.defaultCountry)
   const [notes, setNotes] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'concierge_wire'>('card')
 
   // Consents
   const [privacyPolicyAgreed, setPrivacyPolicyAgreed] = useState(true)
@@ -102,6 +105,7 @@ export default function CheckoutPage() {
             config: it.config,
           })),
           notes: notes.trim() || null,
+          paymentMethod,
         }),
       })
 
@@ -174,9 +178,23 @@ export default function CheckoutPage() {
 
         {/* Error banner */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-3">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-            <span>{error}</span>
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              <span>{error}</span>
+            </div>
+            {paymentMethod === 'card' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentMethod('concierge_wire')
+                  setError(null)
+                }}
+                className="px-3.5 py-1.5 bg-[#2A241B] text-white text-[11px] uppercase tracking-wider font-medium rounded-lg hover:bg-stone-800 transition-colors whitespace-nowrap shrink-0 shadow-sm"
+              >
+                Reserve via Atelier Wire Instead →
+              </button>
+            )}
           </div>
         )}
 
@@ -249,11 +267,11 @@ export default function CheckoutPage() {
                     onChange={(e) => handleCountryChange(e.target.value)}
                     className="w-full px-3.5 py-2.5 text-xs bg-[#FBF7F0] border border-[#E8DFC9] rounded-lg outline-none focus:border-[#2A241B] cursor-pointer"
                   >
-                    <option value="US">United States (USD $)</option>
-                    <option value="GB">United Kingdom (GBP £)</option>
-                    <option value="AU">Australia (AUD A$)</option>
-                    <option value="DE">Germany (EUR €)</option>
-                    <option value="FR">France (EUR €)</option>
+                    {Object.values(MARKETS).map((m) => (
+                      <option key={m.code} value={m.code}>
+                        {m.name} ({m.currency} {m.currencySymbol})
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -330,7 +348,81 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 3. Consent & Privacy Checkboxes */}
+            {/* 3. Payment Method Selection */}
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-[#E8DFC9] space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E8DFC9]">
+                <h3 className="font-serif text-lg font-medium text-[#2A241B]">
+                  3. Payment Method
+                </h3>
+                <span className="text-[11px] text-[#A88A4F] flex items-center gap-1 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Encrypted Checkout
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Option 1: Card */}
+                <div
+                  onClick={() => setPaymentMethod('card')}
+                  className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                    paymentMethod === 'card'
+                      ? 'border-[#2A241B] bg-[#FBF7F0] shadow-sm ring-1 ring-[#2A241B]'
+                      : 'border-[#E8DFC9] hover:border-stone-400 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="pay-card"
+                        name="paymentMethod"
+                        checked={paymentMethod === 'card'}
+                        onChange={() => setPaymentMethod('card')}
+                        className="text-[#2A241B] focus:ring-[#2A241B]"
+                      />
+                      <label htmlFor="pay-card" className="text-xs font-semibold text-[#2A241B] cursor-pointer">
+                        Credit / Debit Card
+                      </label>
+                    </div>
+                    <CreditCard className="w-4 h-4 text-[#A88A4F]" />
+                  </div>
+                  <p className="text-[11px] text-[#5C5347] pl-5 leading-relaxed">
+                    Instant authorization via 256-bit encrypted checkout (Visa, Mastercard, Amex, Apple Pay).
+                  </p>
+                </div>
+
+                {/* Option 2: Concierge Wire */}
+                <div
+                  onClick={() => setPaymentMethod('concierge_wire')}
+                  className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                    paymentMethod === 'concierge_wire'
+                      ? 'border-[#2A241B] bg-[#FBF7F0] shadow-sm ring-1 ring-[#2A241B]'
+                      : 'border-[#E8DFC9] hover:border-stone-400 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="pay-wire"
+                        name="paymentMethod"
+                        checked={paymentMethod === 'concierge_wire'}
+                        onChange={() => setPaymentMethod('concierge_wire')}
+                        className="text-[#2A241B] focus:ring-[#2A241B]"
+                      />
+                      <label htmlFor="pay-wire" className="text-xs font-semibold text-[#2A241B] cursor-pointer">
+                        Atelier Bank Wire & Concierge
+                      </label>
+                    </div>
+                    <Building className="w-4 h-4 text-[#A88A4F]" />
+                  </div>
+                  <p className="text-[11px] text-[#5C5347] pl-5 leading-relaxed">
+                    Direct wire (NEFT/RTGS/Swift). Zero card limits. Immediate piece reservation.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Consent & Privacy Checkboxes */}
             <div className="bg-white p-6 rounded-2xl border border-[#E8DFC9] space-y-3">
               <label className="flex items-start gap-2.5 cursor-pointer">
                 <input
@@ -432,6 +524,11 @@ export default function CheckoutPage() {
                 >
                   {submitting ? (
                     <span>Securing Order...</span>
+                  ) : paymentMethod === 'concierge_wire' ? (
+                    <>
+                      <span>Confirm Atelier Reservation</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
                   ) : (
                     <>
                       <span>Authorize Payment</span>
