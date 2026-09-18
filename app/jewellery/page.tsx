@@ -6,7 +6,8 @@ import Link from 'next/link'
 import StoreLayout from '@/components/d2c/StoreLayout'
 import { useCart } from '@/components/d2c/CartContext'
 import { useWishlist } from '@/lib/wishlistStore'
-import { Diamond, Filter, ArrowUpDown, ShieldCheck, Heart, Sparkles } from 'lucide-react'
+import { Diamond, Filter, ArrowUpDown, ShieldCheck, Heart, Sparkles, X } from 'lucide-react'
+import ProductCard from '@/components/d2c/ProductCard'
 
 import { DEFAULT_NON_EMPTY_CATEGORIES, KNOWN_CATEGORIES } from '@/lib/categories'
 
@@ -38,10 +39,12 @@ interface D2CProductItem {
 function JewelleryCatalogContent() {
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get('category') || 'all'
+  const shapeParam = searchParams.get('shape') || ''
+  const diamondTypeParam = searchParams.get('diamondType') || ''
+  const styleParam = searchParams.get('style') || ''
   const queryParam = searchParams.get('q') || ''
 
   const { market } = useCart()
-  const { isInWishlist, toggleWishlist } = useWishlist()
   const [products, setProducts] = useState<D2CProductItem[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState(categoryParam)
@@ -60,7 +63,15 @@ function JewelleryCatalogContent() {
     async function loadCatalog() {
       setLoading(true)
       try {
-        const url = `/api/d2c/products?market=${market.code}&category=${encodeURIComponent(activeCategory)}`
+        const params = new URLSearchParams()
+        params.set('market', market.code)
+        if (activeCategory && activeCategory !== 'all') params.set('category', activeCategory)
+        if (shapeParam) params.set('shape', shapeParam)
+        if (diamondTypeParam) params.set('diamondType', diamondTypeParam)
+        if (styleParam) params.set('style', styleParam)
+        if (queryParam) params.set('q', queryParam)
+
+        const url = `/api/d2c/products?${params.toString()}`
         const res = await fetch(url)
         if (!res.ok) throw new Error('Catalog fetch failed')
         const data = await res.json()
@@ -78,14 +89,10 @@ function JewelleryCatalogContent() {
     }
     loadCatalog()
     return () => { cancelled = true }
-  }, [market.code, activeCategory])
+  }, [market.code, activeCategory, shapeParam, diamondTypeParam, styleParam, queryParam])
 
   const filteredProducts = useMemo(() => {
     let list = [...products]
-    if (queryParam) {
-      const q = queryParam.toLowerCase()
-      list = list.filter(p => p.name.toLowerCase().includes(q) || p.subtitle.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q))
-    }
     if (sortBy === 'price_asc') {
       list.sort((a, b) => a.price.amount - b.price.amount)
     } else if (sortBy === 'price_desc') {
@@ -94,7 +101,7 @@ function JewelleryCatalogContent() {
       list.sort((a, b) => a.name.localeCompare(b.name))
     }
     return list
-  }, [products, queryParam, sortBy])
+  }, [products, sortBy])
 
   const activeCategoryLabel = activeCategory === 'all'
     ? 'All Masterworks'
@@ -193,106 +200,22 @@ function JewelleryCatalogContent() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredProducts.map((p) => (
-              <Link
+              <ProductCard
                 key={p.id}
-                href={`/jewellery/${p.slug}`}
-                className="group flex flex-col bg-white rounded-2xl border border-[#E8DFC9] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
-              >
-                {/* Photo container */}
-                <div className="relative aspect-square bg-[#FBF7F0] overflow-hidden">
-                  {p.primaryPhotoUrl ? (
-                    <img
-                      src={p.primaryPhotoUrl}
-                      alt={p.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-serif text-stone-300 text-sm">
-                      SHEWAH ATELIER
-                    </div>
-                  )}
-
-                  {/* Badge: Suite vs Made to Order */}
-                  {p.isSet ? (
-                    <div className="absolute top-3 left-3 bg-[#2A241B] text-[#D4AF37] px-2.5 py-1 rounded-full text-[10px] uppercase tracking-widest font-semibold border border-[#D4AF37]/30 shadow-md flex items-center gap-1.5">
-                      <Sparkles className="w-3 h-3 text-[#D4AF37]" />
-                      <span>Jewellery Suite</span>
-                    </div>
-                  ) : (
-                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider text-[#2A241B] font-medium border border-[#E8DFC9]">
-                      Made to Order
-                    </div>
-                  )}
-
-                  {/* Wishlist toggle button */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      toggleWishlist({
-                        id: p.id,
-                        slug: p.slug,
-                        name: p.name,
-                        category: p.category,
-                        priceFormatted: p.price.formatted,
-                        photoUrl: p.primaryPhotoUrl,
-                        subtitle: p.subtitle,
-                      })
-                    }}
-                    className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all shadow-sm ${
-                      isInWishlist(p.id)
-                        ? 'bg-[#2A241B] text-[#D4AF37]'
-                        : 'bg-white/80 text-[#5C5347] hover:bg-white hover:text-[#2A241B]'
-                    }`}
-                    aria-label={isInWishlist(p.id) ? 'Remove from Wishlist' : 'Save to Wishlist'}
-                  >
-                    <Heart className={`w-3.5 h-3.5 ${isInWishlist(p.id) ? 'fill-[#D4AF37]' : ''}`} />
-                  </button>
-                </div>
-
-                {/* Details */}
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] uppercase tracking-wider text-[#A88A4F] font-medium">
-                        {p.isSet ? 'Curated Suite' : (p.category || 'Fine Jewellery')}
-                      </span>
-                      {p.isSet && (
-                        <span className="text-[9px] uppercase tracking-widest text-[#5C7F5F] font-semibold bg-[#E8F0EA] px-2 py-0.5 rounded-full">
-                          Suite Privilege
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-serif text-base font-medium text-[#2A241B] group-hover:text-[#A88A4F] transition-colors leading-snug line-clamp-1 mt-1">
-                      {p.name}
-                    </h3>
-                    <p className="text-xs text-[#5C5347] line-clamp-1 font-light mt-0.5">
-                      {p.subtitle}
-                    </p>
-                    {p.isSet && (
-                      <p className="text-[10px] text-[#A88A4F] font-medium mt-1.5 flex items-center gap-1">
-                        <span>Available together as a suite or individually</span>
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="pt-2 border-t border-[#E8DFC9] flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-[#2A241B]">
-                        {p.price.formatted}
-                      </div>
-                      <div className="text-[10px] text-[#8C8275]">
-                        {p.price.taxLabel}
-                      </div>
-                    </div>
-
-                    <span className="text-[11px] uppercase tracking-wider text-[#A88A4F] font-semibold group-hover:translate-x-1 transition-transform">
-                      View Piece →
-                    </span>
-                  </div>
-                </div>
-              </Link>
+                id={p.id}
+                code={p.code}
+                name={p.name}
+                slug={p.slug}
+                subtitle={p.subtitle}
+                category={p.category}
+                primaryPhotoUrl={p.primaryPhotoUrl}
+                secondaryPhotoUrl={p.secondaryPhotoUrl}
+                craftingLeadDays={p.craftingLeadDays}
+                isFeatured={p.isFeatured}
+                isSet={p.isSet}
+                setLabel={p.setLabel}
+                price={p.price}
+              />
             ))}
           </div>
         )}

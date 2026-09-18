@@ -13,6 +13,9 @@ export async function GET(req: NextRequest) {
     const market = getMarket(marketParam)
     const category = searchParams.get('category')
     const featured = searchParams.get('featured')
+    const shape = searchParams.get('shape')
+    const diamondType = searchParams.get('diamondType')
+    const style = searchParams.get('style')
     const search = searchParams.get('q')
     const limit = Math.min(Number(searchParams.get('limit')) || 24, 100)
 
@@ -27,6 +30,18 @@ export async function GET(req: NextRequest) {
     }
     if (featured === 'true') {
       query = query.eq('d2c_featured', true)
+    }
+    if (shape && shape.trim()) {
+      const term = `%${shape.trim()}%`
+      query = query.or(`diamond_shape.ilike.${term},name.ilike.${term},d2c_title.ilike.${term}`)
+    }
+    if (diamondType && diamondType.trim()) {
+      const term = `%${diamondType.trim()}%`
+      query = query.or(`diamond_type.ilike.${term},d2c_subtitle.ilike.${term}`)
+    }
+    if (style && style.trim()) {
+      const term = `%${style.trim()}%`
+      query = query.or(`name.ilike.${term},d2c_title.ilike.${term},d2c_subtitle.ilike.${term},d2c_description.ilike.${term}`)
     }
     if (search && search.trim()) {
       const term = `%${search.trim()}%`

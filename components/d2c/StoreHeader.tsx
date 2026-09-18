@@ -7,7 +7,9 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useCart } from './CartContext'
 import { useWishlist } from '@/lib/wishlistStore'
 import { MARKETS, type MarketCode } from '@/lib/markets'
-import { DEFAULT_NON_EMPTY_CATEGORIES } from '@/lib/categories'
+import { DEFAULT_NON_EMPTY_CATEGORIES, type D2CCategoryItem } from '@/lib/categories'
+import AnnouncementBar from './AnnouncementBar'
+import MegaMenu from './MegaMenu'
 import {
   ShoppingBag,
   Search,
@@ -93,6 +95,7 @@ export default function StoreHeader() {
     setMarketDropdownOpen(false)
   }
 
+  const [d2cCategories, setD2cCategories] = useState<D2CCategoryItem[]>(DEFAULT_NON_EMPTY_CATEGORIES)
   const [shopCategories, setShopCategories] = useState([
     { label: 'All Jewellery', href: '/jewellery' },
     ...DEFAULT_NON_EMPTY_CATEGORIES.map((c) => ({ label: c.label, href: c.href })),
@@ -109,6 +112,7 @@ export default function StoreHeader() {
         if (!cancelled && Array.isArray(data.categories)) {
           const activeOnly = data.categories.filter((c: any) => c.key !== 'all' && c.count > 0)
           if (activeOnly.length > 0) {
+            setD2cCategories(activeOnly)
             setShopCategories([
               { label: 'All Jewellery', href: '/jewellery' },
               ...activeOnly.map((c: any) => ({ label: c.label, href: c.href })),
@@ -125,53 +129,9 @@ export default function StoreHeader() {
   }, [])
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E8DFC9] transition-all">
-      {/* 1. Global Announcement & Market Bar */}
-      <div className="bg-[#2A241B] text-[#FBF7F0] text-[11px] uppercase tracking-widest px-4 py-2 flex items-center justify-between">
-        <div className="hidden sm:flex items-center gap-2">
-          <Diamond className="w-3 h-3 text-[#C9A86A]" />
-          <span>Atelier Handcrafted • Antwerp & Surat Certified Diamonds</span>
-        </div>
-        <div className="w-full sm:w-auto text-center sm:text-right flex items-center justify-between sm:justify-end gap-4">
-          <span className="text-[#C9A86A]">
-            {market.code === 'IN' ? 'Complimentary Insured Delivery Across India' : 'Complimentary Insured International Shipping'}
-          </span>
-
-          {/* Market & Currency Selector */}
-          <div className="relative inline-block text-left">
-            <button
-              onClick={() => setMarketDropdownOpen((prev) => !prev)}
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-white/10 transition-colors text-white font-medium"
-            >
-              <Globe className="w-3 h-3 text-[#C9A86A]" />
-              <span>{market.currency} ({market.code})</span>
-              <ChevronDown className="w-2.5 h-2.5" />
-            </button>
-
-            {marketDropdownOpen && (
-              <div
-                className="absolute right-0 mt-1 w-44 bg-[#2A241B] border border-[#5C5347] rounded-lg shadow-xl py-1 z-50 text-xs"
-                onMouseLeave={() => setMarketDropdownOpen(false)}
-              >
-                {Object.values(MARKETS).map((m) => (
-                  <button
-                    key={m.code}
-                    onClick={() => handleMarketChange(m.code)}
-                    className={`w-full text-left px-3 py-1.5 hover:bg-white/10 flex items-center justify-between ${
-                      market.code === m.code ? 'text-[#C9A86A] font-bold' : 'text-stone-300'
-                    }`}
-                  >
-                    <span>{m.name}</span>
-                    <span className="font-mono text-[10px] text-stone-400">
-                      {m.currencySymbol} {m.currency}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E8DFC9] transition-all relative">
+      {/* 1. Global Market-Aware Announcement Bar */}
+      <AnnouncementBar market={market} onSelectMarket={handleMarketChange} />
 
       {/* 2. Main Brand Navigation Bar */}
       <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between">
@@ -187,7 +147,7 @@ export default function StoreHeader() {
 
           {/* Left Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-7 text-xs uppercase tracking-widest font-medium text-[#2A241B]">
-            {/* Shop with dropdown */}
+            {/* Shop with MegaMenu Trigger */}
             <div
               className="relative py-6"
               onMouseEnter={() => setShopDropdownOpen(true)}
@@ -200,22 +160,8 @@ export default function StoreHeader() {
                 }`}
               >
                 <span>Shop</span>
-                <ChevronDown className="w-3 h-3" />
+                <ChevronDown className={`w-3 h-3 transition-transform ${shopDropdownOpen ? 'rotate-180' : ''}`} />
               </Link>
-
-              {shopDropdownOpen && (
-                <div className="absolute left-0 top-full w-56 bg-white border border-[#E8DFC9] shadow-xl rounded-b-xl py-3 px-2 z-50">
-                  {shopCategories.map((cat) => (
-                    <Link
-                      key={cat.href}
-                      href={cat.href}
-                      className="block px-4 py-2 text-xs text-[#5C5347] hover:text-[#2A241B] hover:bg-[#FBF7F0] rounded-md transition-colors"
-                    >
-                      {cat.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
             </div>
 
             <Link
@@ -310,6 +256,19 @@ export default function StoreHeader() {
           </div>
         </div>
       </div>
+
+      {/* 3. MegaMenu Dropdown (Full Width) */}
+      {shopDropdownOpen && (
+        <div
+          onMouseEnter={() => setShopDropdownOpen(true)}
+          onMouseLeave={() => setShopDropdownOpen(false)}
+        >
+          <MegaMenu
+            categories={d2cCategories}
+            onClose={() => setShopDropdownOpen(false)}
+          />
+        </div>
+      )}
 
       {/* Search Input Drawer (Toggled) */}
       {searchOpen && (
