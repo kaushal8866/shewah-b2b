@@ -1,13 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500;600&display=swap');
+@import '../styles/tokens.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ============================================================
-   Shewah Design System — tokens
-   Measured values. Greys are pure (no hue bias); that neutrality
-   is what lets a single accent read as the only color in the app.
+   Shewah Design System — tokens & Bijoux integration
    ============================================================ */
 :root {
   --ground:        #FFFFFF;
@@ -17,7 +15,7 @@
   --ink:           #222222;
   --ink-strong:    #111111;
   --ink-muted:     #666666;
-  --ink-meta:      #767676;   /* 4.54:1 — clears AA; see tailwind.config note */
+  --ink-meta:      #767676;
   --ink-inverse:   #FFFFFF;
 
   --rule:          #E6E6E6;
@@ -34,7 +32,7 @@
   --ease:          cubic-bezier(0.4, 0, 0.2, 1);
   --dur:           240ms;
 
-  /* Legacy aliases — kept so any stray var() reference still resolves. */
+  /* Legacy aliases */
   --primary:        #222222;
   --primary-strong: #111111;
   --surface-base:   #FFFFFF;
@@ -47,23 +45,19 @@
 }
 
 html, body {
-  background-color: var(--ground);
-  color: var(--ink);
-  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans), 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* The serif is reserved for editorial headlines and the names of pieces —
-   it is opted into with `font-serif`, never applied to headings wholesale. */
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-weight: 400;
-  letter-spacing: normal;
+/* Editorial display serif and body font overrides */
+.font-serif, .font-display, .display {
+  font-family: var(--font-serif), 'Sorts Mill Goudy', Georgia, serif;
 }
 
-.font-display, .display {
-  font-family: 'Cormorant Garamond', 'Hoefler Text', Baskerville, Georgia, serif;
-  font-weight: 400;
+.font-sans {
+  font-family: var(--font-sans), 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* ============================================================

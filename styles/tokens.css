@@ -1,0 +1,78 @@
+/**
+ * SHEWAH x BIJOUX Design System Tokens
+ * File: styles/tokens.css
+ *
+ * Source: Live Bijoux Reference Inspection (bijoux.vamtam.com)
+ * Verified against .elementor-kit-4
+ */
+
+:root {
+  /* 1. Color Palette (Semantic Tokens) */
+  --color-background: #F6F4F2;          /* Warm luxury stone neutral (Bijoux accent_8) */
+  --color-background-alt: #FFFFFF;      /* Crisp white alternate section background */
+  --color-surface: #FFFFFF;             /* Pure white card and element surface */
+  --color-surface-muted: #EFECE8;       /* Soft subdued neutral surface */
+  --color-text: #051F34;                /* Deep midnight charcoal / near black (Bijoux accent_3) */
+  --color-text-secondary: #30373E;      /* Soft charcoal body copy (Bijoux primary font color) */
+  --color-text-muted: #69727D;          /* Restrained secondary grey metadata (Bijoux muted) */
+  --color-text-inverse: #FFFFFF;        /* Crisp white text for dark containers */
+  --color-border: #E3DBD4;              /* Subtle warm hairline border (Bijoux accent_4) */
+  --color-border-light: #EDEDED;        /* Very light divider hairline (Bijoux accent_7) */
+  --color-accent: #CB9274;              /* Muted terracotta rose-gold (Bijoux accent_1) */
+  --color-accent-gold: #A88A4F;         /* SHEWAH antique champagne gold */
+  --color-accent-hover: #000000;        /* Pure black interactive hover (Bijoux accent_6) */
+  --color-accent-foreground: #FFFFFF;   /* White text on accent fill */
+  --color-success: #4A6B32;             /* Desaturated olive */
+  --color-warning: #8A6410;             /* Desaturated ochre */
+  --color-error: #8C3A32;               /* Desaturated oxblood */
+
+  /* 2. Container & Layout Widths */
+  --container-max-width: 1440px;
+  --container-narrow-width: 1140px;
+  --container-padding-desktop: 48px;
+  --container-padding-tablet: 32px;
+  --container-padding-mobile: 20px;
+
+  /* 3. Section Vertical Rhythm (Whitespace) */
+  --section-spacing-desktop: 140px;
+  --section-spacing-tablet: 100px;
+  --section-spacing-mobile: 70px;
+
+  /* 4. Editorial Typography Scale (px & rem) */
+  --font-display-xl: clamp(48px, 6.5vw, 92px);
+  --font-display-l: clamp(38px, 4.5vw, 68px);
+  --font-heading-1: clamp(32px, 3.8vw, 52px);
+  --font-heading-2: clamp(26px, 2.8vw, 38px);
+  --font-heading-3: clamp(20px, 2.2vw, 28px);
+  --font-heading-4: clamp(17px, 1.8vw, 22px);
+  --font-body-large: 18px;
+  --font-body: 15px;
+  --font-body-small: 13px;
+  --font-ui: 12px;
+  --font-metadata: 11px;
+
+  /* 5. Letter Spacing (Tracking) */
+  --tracking-tight: -0.03em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.10em;
+  --tracking-widest: 0.18em;
+  --tracking-ui: 2px;                  /* Bijoux exact button and nav tracking */
+
+  /* 6. Motion & Transitions */
+  --duration-fast: 200ms;
+  --duration-normal: 400ms;
+  --duration-editorial: 650ms;
+  --duration-image-reveal: 900ms;
+  --ease-luxury: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-hover: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* 7. Elevation & Shadows (Deliberately restrained) */
+  --shadow-subtle: 0 4px 20px rgba(5, 31, 52, 0.04);
+  --shadow-hover: 0 12px 35px rgba(5, 31, 52, 0.08);
+
+  /* 8. Radius (Sharp architectural luxury, no rounded pills) */
+  --radius-sharp: 0px;
+  --radius-subtle: 2px;
+  --radius-card: 0px;
+}

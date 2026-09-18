@@ -119,48 +119,48 @@ export default function RingSizeGuidePage() {
 
   return (
     <StoreLayout>
-      <div className="bg-[#FBF7F0] text-[#2A241B]">
+      <div className="bg-[#F6F4F2] text-[#051F34]">
         {/* ================= HERO HEADER ================= */}
-        <section className="border-b border-[#E8DFC9] bg-white/50 pt-14 pb-16 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
+        <section className="border-b border-[#E3DBD4] bg-white/50 pt-14 pb-16 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
           <div className="max-w-3xl mx-auto space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F4ECDD] border border-[#E8DFC9] rounded-full text-[10px] uppercase tracking-[0.25em] text-[#A88A4F] font-medium">
-              <Diamond className="w-3 h-3 text-[#A88A4F]" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F6F4F2] border border-[#E3DBD4] text-[10px] uppercase tracking-[0.25em] text-[#CB9274] font-medium font-sans">
+              <Diamond className="w-3 h-3 text-[#CB9274]" />
               <span>Atelier Sizing & Concierge</span>
             </div>
 
-            <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-normal text-[#2A241B] tracking-tight leading-tight">
+            <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-normal text-[#051F34] tracking-tight leading-tight">
               Find Your Ring Size at Home
             </h1>
 
-            <p className="text-xs sm:text-sm text-[#5C5347] font-light leading-relaxed max-w-2xl mx-auto">
+            <p className="text-xs sm:text-sm text-[#69727D] font-light leading-relaxed max-w-2xl mx-auto font-sans">
               Every SHEWAH creation is individually cast and handcrafted in solid gold to your exact
               measurements. Use our master interactive converter, DIY ribbon guide, printable 1:1 scale
               chart, or request a complimentary physical multi-sizer kit delivered directly to your home.
             </p>
 
             {/* Quick Navigation Anchors */}
-            <div className="pt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
+            <div className="pt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-sans">
               <a
                 href="#converter"
-                className="px-4 py-2 bg-[#2A241B] text-white rounded-full hover:bg-stone-800 transition-colors uppercase tracking-wider font-medium text-[11px]"
+                className="px-5 py-2.5 bg-[#051F34] hover:bg-[#CB9274] text-white transition-colors uppercase tracking-[0.2em] font-medium text-[11px]"
               >
                 Size Converter
               </a>
               <a
                 href="#diy-method"
-                className="px-4 py-2 bg-white border border-[#E8DFC9] text-[#5C5347] rounded-full hover:border-[#2A241B] hover:text-[#2A241B] transition-colors uppercase tracking-wider font-medium text-[11px]"
+                className="px-5 py-2.5 bg-white border border-[#E3DBD4] text-[#051F34] hover:border-[#051F34] transition-colors uppercase tracking-[0.2em] font-medium text-[11px]"
               >
                 DIY Measurement
               </a>
               <a
                 href="#request-sizer"
-                className="px-4 py-2 bg-[#F4ECDD] border border-[#C9A86A] text-[#2A241B] rounded-full hover:bg-[#E8DFC9] transition-colors uppercase tracking-wider font-medium text-[11px]"
+                className="px-5 py-2.5 bg-[#F6F4F2] border border-[#CB9274] text-[#051F34] hover:bg-[#CB9274] hover:text-white transition-colors uppercase tracking-[0.2em] font-medium text-[11px]"
               >
                 Free Sizer Kit
               </a>
               <a
                 href="#size-matrix"
-                className="px-4 py-2 bg-white border border-[#E8DFC9] text-[#5C5347] rounded-full hover:border-[#2A241B] hover:text-[#2A241B] transition-colors uppercase tracking-wider font-medium text-[11px]"
+                className="px-5 py-2.5 bg-white border border-[#E3DBD4] text-[#051F34] hover:border-[#051F34] transition-colors uppercase tracking-[0.2em] font-medium text-[11px]"
               >
                 Full Matrix Table
               </a>
@@ -171,13 +171,13 @@ export default function RingSizeGuidePage() {
         {/* ================= 4-STEP DIY PAPER STRIP METHOD ================= */}
         <section id="diy-method" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-[#A88A4F] font-semibold">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-[#CB9274] font-semibold">
               Step-by-Step Method
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl text-[#2A241B] font-normal">
+            <h2 className="font-serif text-2xl sm:text-4xl text-[#051F34] font-normal">
               How to Measure Your Finger with a Strip of Paper
             </h2>
-            <p className="text-xs text-[#5C5347] leading-relaxed">
+            <p className="text-xs text-[#69727D] leading-relaxed">
               Jewellery crafting is a fine art. For an accurate measure at home, use a non-stretchy strip
               of paper, ribbon, or string.
             </p>
@@ -185,77 +185,77 @@ export default function RingSizeGuidePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Step 1 */}
-            <div className="bg-white border border-[#E8DFC9] rounded-2xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white border border-[#E3DBD4] rounded-none p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
               <div className="space-y-4">
-                <div className="w-10 h-10 rounded-full bg-[#F4ECDD] text-[#A88A4F] font-serif font-semibold flex items-center justify-center text-sm border border-[#E8DFC9]">
+                <div className="w-10 h-10 rounded-full bg-[#F6F4F2] text-[#CB9274] font-serif font-semibold flex items-center justify-center text-sm border border-[#E3DBD4]">
                   01
                 </div>
-                <h3 className="font-serif text-lg text-[#2A241B] font-medium">
+                <h3 className="font-serif text-lg text-[#051F34] font-medium">
                   Cut a Thin Strip of Paper
                 </h3>
-                <p className="text-xs text-[#5C5347] leading-relaxed">
+                <p className="text-xs text-[#69727D] leading-relaxed">
                   Cut a strip of paper approximately 1 cm (0.4 inches) wide and 10 cm long. Avoid elastic
                   threads or flexible tape that can stretch and distort your measurement.
                 </p>
               </div>
-              <div className="pt-6 border-t border-[#E8DFC9] text-[11px] text-[#A88A4F] font-medium">
+              <div className="pt-6 border-t border-[#E3DBD4] text-[11px] text-[#CB9274] font-medium">
                 Tip: Standard printer paper is ideal.
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="bg-white border border-[#E8DFC9] rounded-2xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white border border-[#E3DBD4] rounded-none p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
               <div className="space-y-4">
-                <div className="w-10 h-10 rounded-full bg-[#F4ECDD] text-[#A88A4F] font-serif font-semibold flex items-center justify-center text-sm border border-[#E8DFC9]">
+                <div className="w-10 h-10 rounded-full bg-[#F6F4F2] text-[#CB9274] font-serif font-semibold flex items-center justify-center text-sm border border-[#E3DBD4]">
                   02
                 </div>
-                <h3 className="font-serif text-lg text-[#2A241B] font-medium">
+                <h3 className="font-serif text-lg text-[#051F34] font-medium">
                   Wrap Snugly Around Finger
                 </h3>
-                <p className="text-xs text-[#5C5347] leading-relaxed">
+                <p className="text-xs text-[#69727D] leading-relaxed">
                   Wrap the paper around the base of the finger you plan to wear your ring on. Ensure the fit
                   is comfortable and slides smoothly over your knuckle without catching.
                 </p>
               </div>
-              <div className="pt-6 border-t border-[#E8DFC9] text-[11px] text-[#A88A4F] font-medium">
+              <div className="pt-6 border-t border-[#E3DBD4] text-[11px] text-[#CB9274] font-medium">
                 Tip: Measure at room temperature in the late afternoon.
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="bg-white border border-[#E8DFC9] rounded-2xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white border border-[#E3DBD4] rounded-none p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
               <div className="space-y-4">
-                <div className="w-10 h-10 rounded-full bg-[#F4ECDD] text-[#A88A4F] font-serif font-semibold flex items-center justify-center text-sm border border-[#E8DFC9]">
+                <div className="w-10 h-10 rounded-full bg-[#F6F4F2] text-[#CB9274] font-serif font-semibold flex items-center justify-center text-sm border border-[#E3DBD4]">
                   03
                 </div>
-                <h3 className="font-serif text-lg text-[#2A241B] font-medium">
+                <h3 className="font-serif text-lg text-[#051F34] font-medium">
                   Mark the Overlap Point
                 </h3>
-                <p className="text-xs text-[#5C5347] leading-relaxed">
+                <p className="text-xs text-[#69727D] leading-relaxed">
                   Using a fine-tip pen or sharp pencil, draw a precise line across the paper where it completes
                   the circle and overlaps itself.
                 </p>
               </div>
-              <div className="pt-6 border-t border-[#E8DFC9] text-[11px] text-[#A88A4F] font-medium">
+              <div className="pt-6 border-t border-[#E3DBD4] text-[11px] text-[#CB9274] font-medium">
                 Tip: Keep the strip flush against the skin when marking.
               </div>
             </div>
 
             {/* Step 4 */}
-            <div className="bg-white border border-[#E8DFC9] rounded-2xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white border border-[#E3DBD4] rounded-none p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
               <div className="space-y-4">
-                <div className="w-10 h-10 rounded-full bg-[#F4ECDD] text-[#A88A4F] font-serif font-semibold flex items-center justify-center text-sm border border-[#E8DFC9]">
+                <div className="w-10 h-10 rounded-full bg-[#F6F4F2] text-[#CB9274] font-serif font-semibold flex items-center justify-center text-sm border border-[#E3DBD4]">
                   04
                 </div>
-                <h3 className="font-serif text-lg text-[#2A241B] font-medium">
+                <h3 className="font-serif text-lg text-[#051F34] font-medium">
                   Measure with a Metric Ruler
                 </h3>
-                <p className="text-xs text-[#5C5347] leading-relaxed">
+                <p className="text-xs text-[#69727D] leading-relaxed">
                   Lay the paper flat against a standard ruler. Measure the distance from the start of the paper
                   to your mark in millimetres (mm). This number is your finger circumference.
                 </p>
               </div>
-              <div className="pt-6 border-t border-[#E8DFC9] text-[11px] text-[#A88A4F] font-medium">
+              <div className="pt-6 border-t border-[#E3DBD4] text-[11px] text-[#CB9274] font-medium">
                 Tip: Match this millimetre value in our converter below.
               </div>
             </div>
@@ -263,16 +263,16 @@ export default function RingSizeGuidePage() {
         </section>
 
         {/* ================= INTERACTIVE GLOBAL SIZE CONVERTER ================= */}
-        <section id="converter" className="py-16 bg-white border-y border-[#E8DFC9]">
+        <section id="converter" className="py-16 bg-white border-y border-[#E3DBD4]">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-[#A88A4F] font-semibold">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-[#CB9274] font-semibold">
                 Universal Calculator
               </span>
-              <h2 className="font-serif text-2xl sm:text-4xl text-[#2A241B] font-normal">
+              <h2 className="font-serif text-2xl sm:text-4xl text-[#051F34] font-normal">
                 Find Out Ring Size Equivalents Globally
               </h2>
-              <p className="text-xs text-[#5C5347] leading-relaxed">
+              <p className="text-xs text-[#69727D] leading-relaxed">
                 Already know your size in your home country, or just measured your finger circumference?
                 Select your preferred input method to calculate your exact international conversion.
               </p>
@@ -280,23 +280,23 @@ export default function RingSizeGuidePage() {
 
             {/* Mode Switcher Tabs */}
             <div className="flex justify-center mb-8">
-              <div className="inline-flex bg-[#F4ECDD] p-1 rounded-xl border border-[#E8DFC9]">
+              <div className="inline-flex bg-[#F6F4F2] p-1 rounded-none border border-[#E3DBD4]">
                 <button
                   onClick={() => setConverterMode('country')}
-                  className={`px-5 py-2 rounded-lg text-xs uppercase tracking-wider font-medium transition-all ${
+                  className={`px-5 py-2 rounded-none text-xs uppercase tracking-wider font-medium transition-all ${
                     converterMode === 'country'
-                      ? 'bg-[#2A241B] text-white shadow-sm'
-                      : 'text-[#5C5347] hover:text-[#2A241B]'
+                      ? 'bg-[#051F34] text-white shadow-sm'
+                      : 'text-[#69727D] hover:text-[#051F34]'
                   }`}
                 >
                   By Known Country Size
                 </button>
                 <button
                   onClick={() => setConverterMode('diameter')}
-                  className={`px-5 py-2 rounded-lg text-xs uppercase tracking-wider font-medium transition-all ${
+                  className={`px-5 py-2 rounded-none text-xs uppercase tracking-wider font-medium transition-all ${
                     converterMode === 'diameter'
-                      ? 'bg-[#2A241B] text-white shadow-sm'
-                      : 'text-[#5C5347] hover:text-[#2A241B]'
+                      ? 'bg-[#051F34] text-white shadow-sm'
+                      : 'text-[#69727D] hover:text-[#051F34]'
                   }`}
                 >
                   By Inside Diameter / Millimetres
@@ -305,12 +305,12 @@ export default function RingSizeGuidePage() {
             </div>
 
             {/* Controls Box */}
-            <div className="bg-[#FBF7F0] border border-[#E8DFC9] rounded-2xl p-6 sm:p-8 shadow-sm">
+            <div className="bg-[#F6F4F2] border border-[#E3DBD4] rounded-none p-6 sm:p-8 shadow-sm">
               {converterMode === 'country' ? (
                 <div className="space-y-6">
                   {/* Select Country */}
                   <div>
-                    <label className="block text-xs uppercase tracking-widest text-[#2A241B] font-medium mb-3">
+                    <label className="block text-xs uppercase tracking-widest text-[#051F34] font-medium mb-3">
                       Select Your Country / Regional Sizing Standard:
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -318,10 +318,10 @@ export default function RingSizeGuidePage() {
                         <button
                           key={c.code}
                           onClick={() => setSelectedCountry(c.standard as any)}
-                          className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
+                          className={`p-3 rounded-none border text-left transition-all flex items-center gap-2.5 ${
                             selectedCountry === c.standard
-                              ? 'bg-[#2A241B] text-white border-[#2A241B] shadow-sm'
-                              : 'bg-white border-[#E8DFC9] text-[#2A241B] hover:border-[#A88A4F]'
+                              ? 'bg-[#051F34] text-white border-[#051F34] shadow-sm'
+                              : 'bg-white border-[#E3DBD4] text-[#051F34] hover:border-[#CB9274]'
                           }`}
                         >
                           <span className="text-xl">{c.flag}</span>
@@ -336,7 +336,7 @@ export default function RingSizeGuidePage() {
 
                   {/* Select Size Dropdown */}
                   <div>
-                    <label className="block text-xs uppercase tracking-widest text-[#2A241B] font-medium mb-2">
+                    <label className="block text-xs uppercase tracking-widest text-[#051F34] font-medium mb-2">
                       Select Known Ring Size:
                     </label>
                     <select
@@ -345,7 +345,7 @@ export default function RingSizeGuidePage() {
                         const found = RING_SIZE_DATA.find((r) => r.us === e.target.value)
                         if (found) setSelectedEntry(found)
                       }}
-                      className="w-full bg-white border border-[#E8DFC9] rounded-xl px-4 py-3 text-sm text-[#2A241B] focus:outline-none focus:border-[#2A241B] shadow-sm font-medium"
+                      className="w-full bg-white border border-[#E3DBD4] rounded-none px-4 py-3 text-sm text-[#051F34] focus:outline-none focus:border-[#051F34] shadow-sm font-medium"
                     >
                       {RING_SIZE_DATA.map((r) => {
                         let label = ''
@@ -367,7 +367,7 @@ export default function RingSizeGuidePage() {
                 /* Diameter / Circumference Mode */
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-xs uppercase tracking-widest text-[#2A241B] font-medium mb-2">
+                    <label className="block text-xs uppercase tracking-widest text-[#051F34] font-medium mb-2">
                       Select Inside Diameter (mm) or Finger Circumference (mm):
                     </label>
                     <select
@@ -376,7 +376,7 @@ export default function RingSizeGuidePage() {
                         const found = RING_SIZE_DATA.find((r) => r.us === e.target.value)
                         if (found) setSelectedEntry(found)
                       }}
-                      className="w-full bg-white border border-[#E8DFC9] rounded-xl px-4 py-3 text-sm text-[#2A241B] focus:outline-none focus:border-[#2A241B] shadow-sm font-medium"
+                      className="w-full bg-white border border-[#E3DBD4] rounded-none px-4 py-3 text-sm text-[#051F34] focus:outline-none focus:border-[#051F34] shadow-sm font-medium"
                     >
                       {RING_SIZE_DATA.map((r) => (
                         <option key={r.us} value={r.us}>
@@ -388,9 +388,9 @@ export default function RingSizeGuidePage() {
 
                   {/* Range Slider for rapid visual preview */}
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-[#8C8275]">
+                    <div className="flex justify-between text-xs text-[#69727D]">
                       <span>14.05 mm (Size 3)</span>
-                      <span className="font-mono font-medium text-[#2A241B]">
+                      <span className="font-mono font-medium text-[#051F34]">
                         Active: {selectedEntry.diameterMm} mm
                       </span>
                       <span>24.23 mm (Size 15)</span>
@@ -404,73 +404,73 @@ export default function RingSizeGuidePage() {
                         const idx = parseInt(e.target.value, 10)
                         if (RING_SIZE_DATA[idx]) setSelectedEntry(RING_SIZE_DATA[idx])
                       }}
-                      className="w-full accent-[#2A241B] cursor-pointer"
+                      className="w-full accent-[#051F34] cursor-pointer"
                     />
                   </div>
                 </div>
               )}
 
               {/* Real-Time Conversion Result Card */}
-              <div className="mt-8 pt-8 border-t border-[#E8DFC9]">
-                <div className="bg-white border border-[#E8DFC9] rounded-2xl p-6 shadow-sm">
-                  <div className="text-center pb-6 border-b border-[#E8DFC9]">
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-[#A88A4F] font-semibold">
+              <div className="mt-8 pt-8 border-t border-[#E3DBD4]">
+                <div className="bg-white border border-[#E3DBD4] rounded-none p-6 shadow-sm">
+                  <div className="text-center pb-6 border-b border-[#E3DBD4]">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-[#CB9274] font-semibold">
                       Your Global Measurement
                     </span>
-                    <div className="font-serif text-3xl sm:text-4xl text-[#2A241B] font-medium mt-1">
+                    <div className="font-serif text-3xl sm:text-4xl text-[#051F34] font-medium mt-1">
                       US {selectedEntry.us}
                     </div>
-                    <p className="text-xs text-[#8C8275] mt-1">
+                    <p className="text-xs text-[#69727D] mt-1">
                       Equivalent to {selectedEntry.circumferenceMm} mm circumference around your finger.
                     </p>
                   </div>
 
                   {/* 4 Standard Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 text-center border-b border-[#E8DFC9]">
-                    <div className="p-3 bg-[#FBF7F0] rounded-xl border border-[#E8DFC9]">
-                      <div className="text-[10px] uppercase tracking-wider text-[#8C8275]">US & Canada</div>
-                      <div className="font-serif text-xl font-medium text-[#2A241B] mt-0.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 text-center border-b border-[#E3DBD4]">
+                    <div className="p-3 bg-[#F6F4F2] rounded-none border border-[#E3DBD4]">
+                      <div className="text-[10px] uppercase tracking-wider text-[#69727D]">US & Canada</div>
+                      <div className="font-serif text-xl font-medium text-[#051F34] mt-0.5">
                         {selectedEntry.us}
                       </div>
                     </div>
-                    <div className="p-3 bg-[#FBF7F0] rounded-xl border border-[#E8DFC9]">
-                      <div className="text-[10px] uppercase tracking-wider text-[#8C8275]">UK & Australia</div>
-                      <div className="font-serif text-xl font-medium text-[#2A241B] mt-0.5">
+                    <div className="p-3 bg-[#F6F4F2] rounded-none border border-[#E3DBD4]">
+                      <div className="text-[10px] uppercase tracking-wider text-[#69727D]">UK & Australia</div>
+                      <div className="font-serif text-xl font-medium text-[#051F34] mt-0.5">
                         {selectedEntry.uk}
                       </div>
                     </div>
-                    <div className="p-3 bg-[#FBF7F0] rounded-xl border border-[#E8DFC9]">
-                      <div className="text-[10px] uppercase tracking-wider text-[#8C8275]">Europe (EU)</div>
-                      <div className="font-serif text-xl font-medium text-[#2A241B] mt-0.5">
+                    <div className="p-3 bg-[#F6F4F2] rounded-none border border-[#E3DBD4]">
+                      <div className="text-[10px] uppercase tracking-wider text-[#69727D]">Europe (EU)</div>
+                      <div className="font-serif text-xl font-medium text-[#051F34] mt-0.5">
                         {selectedEntry.eu}
                       </div>
                     </div>
-                    <div className="p-3 bg-[#FBF7F0] rounded-xl border border-[#E8DFC9]">
-                      <div className="text-[10px] uppercase tracking-wider text-[#8C8275]">India & Japan</div>
-                      <div className="font-serif text-xl font-medium text-[#2A241B] mt-0.5">
+                    <div className="p-3 bg-[#F6F4F2] rounded-none border border-[#E3DBD4]">
+                      <div className="text-[10px] uppercase tracking-wider text-[#69727D]">India & Japan</div>
+                      <div className="font-serif text-xl font-medium text-[#051F34] mt-0.5">
                         {selectedEntry.asia}
                       </div>
                     </div>
                   </div>
 
                   {/* Metric Dimensions */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 text-xs text-[#5C5347]">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 text-xs text-[#69727D]">
                     <div className="flex items-center gap-4">
                       <span>
-                        Inside Diameter: <strong className="text-[#2A241B] font-mono">{selectedEntry.diameterMm} mm</strong>
+                        Inside Diameter: <strong className="text-[#051F34] font-mono">{selectedEntry.diameterMm} mm</strong>
                       </span>
                       <span>•</span>
                       <span>
-                        Circumference: <strong className="text-[#2A241B] font-mono">{selectedEntry.circumferenceMm} mm</strong>
+                        Circumference: <strong className="text-[#051F34] font-mono">{selectedEntry.circumferenceMm} mm</strong>
                       </span>
                     </div>
 
                     <Link
                       href="/jewellery?category=rings"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2A241B] text-white rounded-xl text-xs uppercase tracking-widest font-medium hover:bg-stone-800 transition-colors shadow-sm"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#051F34] text-white rounded-none text-xs uppercase tracking-widest font-medium hover:bg-stone-800 transition-colors shadow-sm"
                     >
                       <span>Explore Rings & Bands</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-[#C9A86A]" />
+                      <ArrowRight className="w-3.5 h-3.5 text-[#CB9274]" />
                     </Link>
                   </div>
                 </div>
@@ -481,15 +481,15 @@ export default function RingSizeGuidePage() {
 
         {/* ================= COMPLIMENTARY SIZER REQUEST FORM ================= */}
         <section id="request-sizer" className="py-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-          <div className="bg-[#2A241B] text-[#FBF7F0] rounded-3xl p-8 sm:p-12 shadow-xl relative overflow-hidden">
+          <div className="bg-[#051F34] text-[#F6F4F2] rounded-none p-8 sm:p-12 shadow-xl relative overflow-hidden">
             {/* Background luxury ornament */}
             <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 opacity-10 pointer-events-none">
-              <Diamond className="w-96 h-96 text-[#C9A86A]" />
+              <Diamond className="w-96 h-96 text-[#CB9274]" />
             </div>
 
             <div className="relative z-10">
               <div className="text-center max-w-xl mx-auto space-y-3 mb-8">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-[10px] uppercase tracking-[0.25em] text-[#C9A86A]">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-[10px] uppercase tracking-[0.25em] text-[#CB9274]">
                   <Package className="w-3.5 h-3.5" />
                   <span>Complimentary Atelier Service</span>
                 </div>
@@ -504,8 +504,8 @@ export default function RingSizeGuidePage() {
               </div>
 
               {formSuccessRef ? (
-                <div className="bg-white/10 border border-[#C9A86A]/40 rounded-2xl p-8 text-center space-y-4 max-w-md mx-auto">
-                  <div className="w-12 h-12 rounded-full bg-[#C9A86A] text-[#2A241B] flex items-center justify-center mx-auto">
+                <div className="bg-white/10 border border-[#CB9274]/40 rounded-none p-8 text-center space-y-4 max-w-md mx-auto">
+                  <div className="w-12 h-12 rounded-full bg-[#CB9274] text-[#051F34] flex items-center justify-center mx-auto">
                     <Check className="w-6 h-6 stroke-[3]" />
                   </div>
                   <h3 className="font-serif text-2xl text-white font-medium">
@@ -514,7 +514,7 @@ export default function RingSizeGuidePage() {
                   <p className="text-xs text-stone-300 leading-relaxed">
                     Thank you! Your complimentary sizing belt has been scheduled for priority dispatch.
                   </p>
-                  <div className="p-3 bg-black/40 rounded-lg text-xs font-mono text-[#C9A86A]">
+                  <div className="p-3 bg-black/40 rounded-none text-xs font-mono text-[#CB9274]">
                     Reference: {formSuccessRef}
                   </div>
                   <button
@@ -541,7 +541,7 @@ export default function RingSizeGuidePage() {
               ) : (
                 <form onSubmit={handleSizerSubmit} className="space-y-4 max-w-2xl mx-auto">
                   {formError && (
-                    <div className="p-3 bg-red-950/60 border border-red-500/50 rounded-xl text-xs text-red-200">
+                    <div className="p-3 bg-red-950/60 border border-red-500/50 rounded-none text-xs text-red-200">
                       {formError}
                     </div>
                   )}
@@ -557,7 +557,7 @@ export default function RingSizeGuidePage() {
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         placeholder="e.g. Katherine Vance"
-                        className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#C9A86A]"
+                        className="w-full bg-white/5 border border-white/20 rounded-none px-4 py-2.5 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#CB9274]"
                       />
                     </div>
                     <div>
@@ -570,7 +570,7 @@ export default function RingSizeGuidePage() {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="katherine@example.com"
-                        className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#C9A86A]"
+                        className="w-full bg-white/5 border border-white/20 rounded-none px-4 py-2.5 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#CB9274]"
                       />
                     </div>
                   </div>
@@ -585,7 +585,7 @@ export default function RingSizeGuidePage() {
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="+1 (555) 019-2834"
-                        className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#C9A86A]"
+                        className="w-full bg-white/5 border border-white/20 rounded-none px-4 py-2.5 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#CB9274]"
                       />
                     </div>
                     <div>
@@ -595,7 +595,7 @@ export default function RingSizeGuidePage() {
                       <select
                         value={formData.ringStyle}
                         onChange={(e) => setFormData({ ...formData, ringStyle: e.target.value })}
-                        className="w-full bg-[#3D3528] border border-white/20 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#C9A86A]"
+                        className="w-full bg-[#3D3528] border border-white/20 rounded-none px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#CB9274]"
                       >
                         <option value="Solitaire Engagement Ring">Solitaire Engagement Ring</option>
                         <option value="Classic Wedding Band">Classic Wedding Band</option>
@@ -616,7 +616,7 @@ export default function RingSizeGuidePage() {
                       value={formData.street}
                       onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                       placeholder="Street address, apartment or suite number"
-                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#C9A86A]"
+                      className="w-full bg-white/5 border border-white/20 rounded-none px-4 py-2.5 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#CB9274]"
                     />
                   </div>
 
@@ -631,7 +631,7 @@ export default function RingSizeGuidePage() {
                         value={formData.city}
                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                         placeholder="New York"
-                        className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#C9A86A]"
+                        className="w-full bg-white/5 border border-white/20 rounded-none px-3 py-2 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#CB9274]"
                       />
                     </div>
                     <div>
@@ -643,7 +643,7 @@ export default function RingSizeGuidePage() {
                         value={formData.state}
                         onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                         placeholder="NY"
-                        className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#C9A86A]"
+                        className="w-full bg-white/5 border border-white/20 rounded-none px-3 py-2 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#CB9274]"
                       />
                     </div>
                     <div>
@@ -656,7 +656,7 @@ export default function RingSizeGuidePage() {
                         value={formData.postalCode}
                         onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
                         placeholder="10001"
-                        className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#C9A86A]"
+                        className="w-full bg-white/5 border border-white/20 rounded-none px-3 py-2 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#CB9274]"
                       />
                     </div>
                     <div>
@@ -666,7 +666,7 @@ export default function RingSizeGuidePage() {
                       <select
                         value={formData.country}
                         onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                        className="w-full bg-[#3D3528] border border-white/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#C9A86A]"
+                        className="w-full bg-[#3D3528] border border-white/20 rounded-none px-3 py-2 text-xs text-white focus:outline-none focus:border-[#CB9274]"
                       >
                         <option value="United States">United States</option>
                         <option value="United Kingdom">United Kingdom</option>
@@ -688,7 +688,7 @@ export default function RingSizeGuidePage() {
                     <button
                       type="submit"
                       disabled={formSubmitting}
-                      className="w-full sm:w-auto px-8 py-3.5 bg-[#C9A86A] text-[#2A241B] rounded-xl text-xs uppercase tracking-widest font-semibold hover:bg-[#E8DFC9] transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                      className="w-full sm:w-auto px-8 py-3.5 bg-[#CB9274] text-[#051F34] rounded-none text-xs uppercase tracking-widest font-semibold hover:bg-[#E3DBD4] transition-all shadow-lg active:scale-95 disabled:opacity-50"
                     >
                       {formSubmitting ? 'Submitting Request...' : 'Dispatch My Complimentary Sizer'}
                     </button>
@@ -703,30 +703,30 @@ export default function RingSizeGuidePage() {
         </section>
 
         {/* ================= PRINTABLE 1:1 TRUE-SCALE GUIDE ================= */}
-        <section id="printable-guide" className="py-16 bg-white border-y border-[#E8DFC9]">
+        <section id="printable-guide" className="py-16 bg-white border-y border-[#E3DBD4]">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-[#A88A4F] font-semibold">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-[#CB9274] font-semibold">
                 Print & True-Scale Calibration
               </span>
-              <h2 className="font-serif text-2xl sm:text-4xl text-[#2A241B] font-normal">
+              <h2 className="font-serif text-2xl sm:text-4xl text-[#051F34] font-normal">
                 Printable 1:1 Scale Guide & Circle Silhouettes
               </h2>
-              <p className="text-xs text-[#5C5347] leading-relaxed">
+              <p className="text-xs text-[#69727D] leading-relaxed">
                 If you have an existing ring that fits your chosen finger, print this page or compare the
                 inner diameter directly against our calibrated circles.
               </p>
             </div>
 
-            <div className="bg-[#FBF7F0] border border-[#E8DFC9] rounded-2xl p-6 sm:p-8 space-y-8">
+            <div className="bg-[#F6F4F2] border border-[#E3DBD4] rounded-none p-6 sm:p-8 space-y-8">
               {/* Calibration Card Box */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-white border border-[#E8DFC9] rounded-xl">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-white border border-[#E3DBD4] rounded-none">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[#2A241B] uppercase tracking-wider">
-                    <Ruler className="w-4 h-4 text-[#A88A4F]" />
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#051F34] uppercase tracking-wider">
+                    <Ruler className="w-4 h-4 text-[#CB9274]" />
                     <span>Credit Card Scale Verification</span>
                   </div>
-                  <p className="text-xs text-[#5C5347] max-w-md leading-relaxed">
+                  <p className="text-xs text-[#69727D] max-w-md leading-relaxed">
                     Place any standard credit or debit card over this box. If it aligns with the border
                     exactly (85.6 mm × 53.98 mm), your screen/print scale is 100% accurate.
                   </p>
@@ -734,7 +734,7 @@ export default function RingSizeGuidePage() {
 
                 {/* Exact Credit Card Size in CSS mm */}
                 <div
-                  className="border-2 border-dashed border-[#A88A4F] bg-[#FBF7F0] rounded-lg flex items-center justify-center text-[10px] uppercase tracking-widest text-[#8C8275] shrink-0"
+                  className="border-2 border-dashed border-[#CB9274] bg-[#F6F4F2] rounded-none flex items-center justify-center text-[10px] uppercase tracking-widest text-[#69727D] shrink-0"
                   style={{ width: '85.6mm', height: '53.98mm' }}
                 >
                   <span>Credit Card Silhouette (85.6mm × 54mm)</span>
@@ -743,7 +743,7 @@ export default function RingSizeGuidePage() {
 
               {/* Sample Ring Circles Grid */}
               <div className="space-y-4">
-                <div className="text-xs font-semibold text-[#2A241B] uppercase tracking-wider">
+                <div className="text-xs font-semibold text-[#051F34] uppercase tracking-wider">
                   Popular Ring Diameters (Place your ring over circle to match inner edge):
                 </div>
 
@@ -764,27 +764,27 @@ export default function RingSizeGuidePage() {
                   ].map((circle) => (
                     <div
                       key={circle.size}
-                      className="bg-white border border-[#E8DFC9] rounded-xl p-4 flex flex-col items-center justify-between"
+                      className="bg-white border border-[#E3DBD4] rounded-none p-4 flex flex-col items-center justify-between"
                     >
                       <div
-                        className="rounded-full border-2 border-[#2A241B] flex items-center justify-center my-2"
+                        className="rounded-full border-2 border-[#051F34] flex items-center justify-center my-2"
                         style={{ width: `${circle.mm}mm`, height: `${circle.mm}mm` }}
                       />
-                      <div className="text-xs font-semibold text-[#2A241B]">{circle.size}</div>
-                      <div className="text-[10px] font-mono text-[#8C8275]">{circle.mm} mm</div>
+                      <div className="text-xs font-semibold text-[#051F34]">{circle.size}</div>
+                      <div className="text-[10px] font-mono text-[#69727D]">{circle.mm} mm</div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#E8DFC9]">
-                <span className="text-xs text-[#8C8275]">
+              <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#E3DBD4]">
+                <span className="text-xs text-[#69727D]">
                   Ensure your printer scaling is set to <strong>100% or "Actual Size"</strong> (not "Fit to Page").
                 </span>
 
                 <button
                   onClick={() => window.print()}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-[#2A241B] rounded-xl text-xs uppercase tracking-widest font-medium text-[#2A241B] hover:bg-[#2A241B] hover:text-white transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-[#051F34] rounded-none text-xs uppercase tracking-widest font-medium text-[#051F34] hover:bg-[#051F34] hover:text-white transition-colors"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Print Sizing Guide</span>
@@ -797,48 +797,48 @@ export default function RingSizeGuidePage() {
         {/* ================= SECRET SIZING & PROPOSAL TIPS ================= */}
         <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-[#A88A4F] font-semibold">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-[#CB9274] font-semibold">
               The Art of the Surprise
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl text-[#2A241B] font-normal">
+            <h2 className="font-serif text-2xl sm:text-4xl text-[#051F34] font-normal">
               How to Measure Their Ring Size Secretly
             </h2>
-            <p className="text-xs text-[#5C5347] leading-relaxed">
+            <p className="text-xs text-[#69727D] leading-relaxed">
               Planning a surprise proposal? Discover the clever methods our bespoke atelier clients use to
               find the right ring size without spoiling the moment.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white border border-[#E8DFC9] rounded-2xl p-6 space-y-3">
-              <div className="text-xs uppercase tracking-wider font-semibold text-[#A88A4F]">
+            <div className="bg-white border border-[#E3DBD4] rounded-none p-6 space-y-3">
+              <div className="text-xs uppercase tracking-wider font-semibold text-[#CB9274]">
                 Method 1: The Ring Borrow
               </div>
-              <h3 className="font-serif text-lg text-[#2A241B] font-medium">Borrow an Existing Ring</h3>
-              <p className="text-xs text-[#5C5347] leading-relaxed">
+              <h3 className="font-serif text-lg text-[#051F34] font-medium">Borrow an Existing Ring</h3>
+              <p className="text-xs text-[#69727D] leading-relaxed">
                 Discreetly borrow a ring they wear on their left ring finger (or middle finger, which is
                 typically half a size larger). Trace the inside circle on a piece of paper or press it into a
                 bar of soap to capture the exact diameter.
               </p>
             </div>
 
-            <div className="bg-white border border-[#E8DFC9] rounded-2xl p-6 space-y-3">
-              <div className="text-xs uppercase tracking-wider font-semibold text-[#A88A4F]">
+            <div className="bg-white border border-[#E3DBD4] rounded-none p-6 space-y-3">
+              <div className="text-xs uppercase tracking-wider font-semibold text-[#CB9274]">
                 Method 2: The Trusted Confidante
               </div>
-              <h3 className="font-serif text-lg text-[#2A241B] font-medium">Ask Friends or Family</h3>
-              <p className="text-xs text-[#5C5347] leading-relaxed">
+              <h3 className="font-serif text-lg text-[#051F34] font-medium">Ask Friends or Family</h3>
+              <p className="text-xs text-[#69727D] leading-relaxed">
                 Her best friend, sister, or mother often knows her ring size—or can casually bring up jewellery
                 in conversation or take her shopping to try on rings "for fun."
               </p>
             </div>
 
-            <div className="bg-white border border-[#E8DFC9] rounded-2xl p-6 space-y-3">
-              <div className="text-xs uppercase tracking-wider font-semibold text-[#A88A4F]">
+            <div className="bg-white border border-[#E3DBD4] rounded-none p-6 space-y-3">
+              <div className="text-xs uppercase tracking-wider font-semibold text-[#CB9274]">
                 Method 3: The Safe Average
               </div>
-              <h3 className="font-serif text-lg text-[#2A241B] font-medium">Use the Average Size</h3>
-              <p className="text-xs text-[#5C5347] leading-relaxed">
+              <h3 className="font-serif text-lg text-[#051F34] font-medium">Use the Average Size</h3>
+              <p className="text-xs text-[#69727D] leading-relaxed">
                 The most common women's ring size worldwide is <strong>US 6 to 6.5 (UK L to M)</strong>.
                 Because SHEWAH offers a complimentary 30-day resizing policy on all solitaire designs, you can
                 propose with full confidence and resize afterwards.
@@ -848,17 +848,17 @@ export default function RingSizeGuidePage() {
         </section>
 
         {/* ================= MASTER INTERNATIONAL SIZING MATRIX ================= */}
-        <section id="size-matrix" className="py-16 bg-white border-y border-[#E8DFC9]">
+        <section id="size-matrix" className="py-16 bg-white border-y border-[#E3DBD4]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
               <div className="space-y-2">
-                <span className="text-[10px] uppercase tracking-[0.3em] text-[#A88A4F] font-semibold">
+                <span className="text-[10px] uppercase tracking-[0.3em] text-[#CB9274] font-semibold">
                   Comprehensive Data
                 </span>
-                <h2 className="font-serif text-2xl sm:text-4xl text-[#2A241B] font-normal">
+                <h2 className="font-serif text-2xl sm:text-4xl text-[#051F34] font-normal">
                   Master Ring Size Conversion Chart
                 </h2>
-                <p className="text-xs text-[#5C5347]">
+                <p className="text-xs text-[#69727D]">
                   Equivalents across US/Canada, UK/Australia, Europe, Asia, and metric dimensions.
                 </p>
               </div>
@@ -866,23 +866,23 @@ export default function RingSizeGuidePage() {
               {/* Quick Filter Search */}
               <div className="w-full md:w-72">
                 <div className="relative">
-                  <Search className="w-4 h-4 text-[#8C8275] absolute left-3 top-1/2 transform -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-[#69727D] absolute left-3 top-1/2 transform -translate-y-1/2" />
                   <input
                     type="text"
                     value={tableSearch}
                     onChange={(e) => setTableSearch(e.target.value)}
                     placeholder="Search size (e.g. 6, L 1/2, 16.51)..."
-                    className="w-full bg-[#FBF7F0] border border-[#E8DFC9] rounded-xl pl-9 pr-4 py-2 text-xs text-[#2A241B] focus:outline-none focus:border-[#2A241B]"
+                    className="w-full bg-[#F6F4F2] border border-[#E3DBD4] rounded-none pl-9 pr-4 py-2 text-xs text-[#051F34] focus:outline-none focus:border-[#051F34]"
                   />
                 </div>
               </div>
             </div>
 
             {/* Responsive Table */}
-            <div className="border border-[#E8DFC9] rounded-2xl overflow-hidden shadow-sm bg-white">
+            <div className="border border-[#E3DBD4] rounded-none overflow-hidden shadow-sm bg-white">
               <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead className="sticky top-0 bg-[#2A241B] text-[#FBF7F0] text-[11px] uppercase tracking-wider font-medium z-10">
+                  <thead className="sticky top-0 bg-[#051F34] text-[#F6F4F2] text-[11px] uppercase tracking-wider font-medium z-10">
                     <tr>
                       <th className="py-3 px-4">US & Canada</th>
                       <th className="py-3 px-4">UK & Australia</th>
@@ -893,7 +893,7 @@ export default function RingSizeGuidePage() {
                       <th className="py-3 px-4 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E8DFC9]">
+                  <tbody className="divide-y divide-[#E3DBD4]">
                     {filteredMatrix.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="py-8 text-center text-stone-400">
@@ -909,11 +909,11 @@ export default function RingSizeGuidePage() {
                             onClick={() => setSelectedEntry(row)}
                             className={`cursor-pointer transition-colors ${
                               isSelected
-                                ? 'bg-[#F4ECDD] font-semibold text-[#2A241B]'
-                                : 'hover:bg-[#FAF6ED] text-[#5C5347]'
+                                ? 'bg-[#F6F4F2] font-semibold text-[#051F34]'
+                                : 'hover:bg-[#FAF6ED] text-[#69727D]'
                             }`}
                           >
-                            <td className="py-3 px-4 font-serif text-sm text-[#2A241B]">
+                            <td className="py-3 px-4 font-serif text-sm text-[#051F34]">
                               US {row.us}
                             </td>
                             <td className="py-3 px-4">{row.uk}</td>
@@ -929,7 +929,7 @@ export default function RingSizeGuidePage() {
                                   const el = document.getElementById('converter')
                                   if (el) el.scrollIntoView({ behavior: 'smooth' })
                                 }}
-                                className="text-[11px] text-[#A88A4F] hover:underline"
+                                className="text-[11px] text-[#CB9274] hover:underline"
                               >
                                 View in Converter
                               </button>
@@ -948,13 +948,13 @@ export default function RingSizeGuidePage() {
         {/* ================= FREQUENTLY ASKED QUESTIONS ================= */}
         <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
           <div className="text-center max-w-xl mx-auto mb-10 space-y-2">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-[#A88A4F] font-semibold">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-[#CB9274] font-semibold">
               Questions & Policies
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl text-[#2A241B] font-normal">
+            <h2 className="font-serif text-2xl sm:text-4xl text-[#051F34] font-normal">
               Frequently Asked Questions
             </h2>
-            <p className="text-xs text-[#5C5347]">
+            <p className="text-xs text-[#69727D]">
               Everything you need to know about precision ring sizing, delivery, and our 30-day resizing guarantee.
             </p>
           </div>
@@ -965,24 +965,24 @@ export default function RingSizeGuidePage() {
               return (
                 <div
                   key={faq.q}
-                  className="bg-white border border-[#E8DFC9] rounded-2xl overflow-hidden transition-all shadow-sm"
+                  className="bg-white border border-[#E3DBD4] rounded-none overflow-hidden transition-all shadow-sm"
                 >
                   <button
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
                     className="w-full text-left px-6 py-4 flex items-center justify-between gap-4"
                   >
-                    <span className="font-serif text-sm sm:text-base font-medium text-[#2A241B]">
+                    <span className="font-serif text-sm sm:text-base font-medium text-[#051F34]">
                       {faq.q}
                     </span>
                     {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-[#A88A4F] shrink-0" />
+                      <ChevronUp className="w-4 h-4 text-[#CB9274] shrink-0" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-[#8C8275] shrink-0" />
+                      <ChevronDown className="w-4 h-4 text-[#69727D] shrink-0" />
                     )}
                   </button>
 
                   {isOpen && (
-                    <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-[#5C5347] font-light leading-relaxed border-t border-[#F4ECDD]">
+                    <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-[#69727D] font-light leading-relaxed border-t border-[#F6F4F2]">
                       {faq.a}
                     </div>
                   )}
@@ -993,28 +993,28 @@ export default function RingSizeGuidePage() {
         </section>
 
         {/* ================= CONCIERGE FOOTER BANNER ================= */}
-        <section className="bg-[#F4ECDD] border-t border-[#E8DFC9] py-14 px-4 sm:px-6 lg:px-8 text-center">
+        <section className="bg-[#F6F4F2] border-t border-[#E3DBD4] py-14 px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-2xl mx-auto space-y-4">
-            <div className="w-10 h-10 rounded-full bg-[#2A241B] text-[#C9A86A] flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-full bg-[#051F34] text-[#CB9274] flex items-center justify-center mx-auto">
               <Sparkles className="w-5 h-5" />
             </div>
-            <h3 className="font-serif text-2xl sm:text-3xl text-[#2A241B] font-medium">
+            <h3 className="font-serif text-2xl sm:text-3xl text-[#051F34] font-medium">
               Still Need Sizing Assistance?
             </h3>
-            <p className="text-xs sm:text-sm text-[#5C5347] leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#69727D] leading-relaxed">
               Our atelier master craftsmen and gemologists are at your service. Contact our concierge
               via WhatsApp, email, or schedule a 1-on-1 virtual design appointment.
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-xs font-medium">
               <a
                 href="mailto:concierge@shewah.com"
-                className="px-5 py-2.5 bg-[#2A241B] text-white rounded-xl uppercase tracking-wider hover:bg-stone-800 transition-colors"
+                className="px-5 py-2.5 bg-[#051F34] text-white rounded-none uppercase tracking-wider hover:bg-stone-800 transition-colors"
               >
                 Email Concierge
               </a>
               <Link
                 href="/bespoke"
-                className="px-5 py-2.5 bg-white border border-[#2A241B] text-[#2A241B] rounded-xl uppercase tracking-wider hover:bg-[#2A241B] hover:text-white transition-colors"
+                className="px-5 py-2.5 bg-white border border-[#051F34] text-[#051F34] rounded-none uppercase tracking-wider hover:bg-[#051F34] hover:text-white transition-colors"
               >
                 Book Bespoke Consultation
               </Link>

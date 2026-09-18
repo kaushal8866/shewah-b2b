@@ -171,17 +171,13 @@ const config: Config = {
       },
 
       fontFamily: {
-        // Neutral grotesque for everything functional.
-        sans:    ['Inter', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-        // Old-style serif, reserved for editorial headlines and product names.
-        // Cormorant Garamond was already the chosen serif in lib/consumerTheme.
-        serif:   ['Cormorant Garamond', 'Hoefler Text', 'Baskerville', 'Georgia', 'serif'],
-        display: ['Cormorant Garamond', 'Hoefler Text', 'Baskerville', 'Georgia', 'serif'],
-        // Previously undefined despite 131 `font-mono` usages, so it silently
-        // fell back to the Tailwind default.
+        // Body, UI, Buttons, Navigation, Metadata (Bijoux exact: Montserrat)
+        sans:    ['var(--font-sans)', 'Montserrat', 'Inter', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        // Display & Headings H1-H4 (Bijoux exact: Sorts Mill Goudy)
+        serif:   ['var(--font-serif)', 'Sorts Mill Goudy', 'Georgia', 'serif'],
+        display: ['var(--font-serif)', 'Sorts Mill Goudy', 'Georgia', 'serif'],
         mono:    ['ui-monospace', 'SF Mono', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
-        // Numeric / metric — the functional tier's tabular figures.
-        metric:  ['Inter', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        metric:  ['var(--font-sans)', 'Montserrat', 'Arial', 'sans-serif'],
       },
 
       letterSpacing: {

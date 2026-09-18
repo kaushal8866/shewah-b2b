@@ -1,20 +1,26 @@
 import './globals.css'
+import type { Metadata } from 'next'
 import SessionProvider from '@/components/SessionProvider'
 import { CartProvider } from '@/components/d2c/CartContext'
 import { WishlistProvider } from '@/lib/wishlistStore'
 import AppShell from '@/components/AppShell'
 import Script from 'next/script'
-import { Metadata } from 'next'
-
 export const metadata: Metadata = {
-  title: 'Shewah B2B Admin',
-  description: 'B2B operations management for Shewah Jewelry — LGD rings, Surat',
+  title: 'SHEWAH | High Jewellery Atelier & Certified Diamonds',
+  description: 'Handcrafted fine jewellery made to order in solid 18K gold and certified diamonds.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Preconnect and load verified Bijoux typography: Sorts Mill Goudy (headings) & Montserrat (body) */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sorts+Mill+Goudy:ital@0;1&display=swap"
+          rel="stylesheet"
+        />
         {/* Google Tag Manager - Base Script */}
         <Script
           id="gtm-base"

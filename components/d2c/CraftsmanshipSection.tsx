@@ -8,59 +8,59 @@ export default function CraftsmanshipSection() {
   const steps = [
     {
       num: '01',
-      title: '3D CAD Architectural Modeling',
-      desc: 'Settings are mathematically customized to securely seat the exact girdle and pavilion depth of each stone, minimizing superfluous metal weight.',
+      title: '3D Precision Modeling',
+      desc: 'Settings are mathematically customized to securely seat the exact girdle and depth of each stone, ensuring structural integrity.',
     },
     {
       num: '02',
-      title: 'Lost-Wax Solid Gold Casting',
-      desc: 'Cast in individual flasks using certified 18K solid gold alloys and 950 platinum. Never plated brass, never hollow stamped shells.',
+      title: 'Solid 18K Gold Crafting',
+      desc: 'Crafted individually in solid 18K gold. Never plated brass, never hollow stamped shells.',
     },
     {
       num: '03',
-      title: 'Microscope Stone Setting',
-      desc: 'Master karigars examine every prong and bead under 40x stereomicroscopes, ensuring uniform height, optical alignment, and lifelong retention.',
+      title: 'Artisanal Stone Setting',
+      desc: 'Skilled jewelers examine every prong and bead under magnification, ensuring uniform alignment and dependable retention.',
     },
     {
       num: '04',
-      title: 'Certified Assay Hallmarking',
-      desc: 'Multi-stage rouge polish followed by independent assay testing and legal fineness hallmarking (BIS Hallmark with HUID / Assay 750).',
+      title: 'Precious Metal Finishing',
+      desc: 'Multi-stage hand polish followed by fineness verification and hallmarking for solid gold authenticity.',
     },
   ]
 
   return (
-    <section className="py-20 sm:py-24 bg-[#FBF7F0] border-b border-[#E8DFC9]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 sm:py-28 bg-[#F6F4F2] border-b border-[#E3DBD4]">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center mb-16">
           {/* Left: Copy (6 cols) */}
           <div className="lg:col-span-6 space-y-6">
-            <span className="text-[10px] uppercase tracking-[0.35em] text-[#A88A4F] font-semibold block">
-              Atelier Artisanship • Surat & Antwerp
+            <span className="text-[11px] uppercase tracking-[0.25em] text-[#CB9274] font-medium block">
+              Atelier Artisanship
             </span>
 
-            <h2 className="font-serif text-3xl sm:text-5xl text-[#2A241B] font-light leading-tight">
-              Where Mathematical Geometry Meets Ancient Mastery.
+            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-[#051F34] font-normal leading-tight">
+              Where Precision Engineering Meets Timeless Craft.
             </h2>
 
-            <p className="text-xs sm:text-sm text-[#5C5347] font-light leading-relaxed">
-              Unlike commercial jewellery brands that rely on mass stamping lines, Shewah functions as an authentic private atelier. In our Surat workshops, hereditary master goldsmiths work alongside digital 3D sculptors to craft each creation individually.
+            <p className="text-sm text-[#69727D] font-light leading-relaxed">
+              Unlike commercial jewellery brands that rely on mass production lines, Shewah functions as an authentic fine jewellery atelier. In our workshops, dedicated goldsmiths work alongside digital 3D designers to craft each creation individually.
             </p>
 
-            <div className="grid grid-cols-2 gap-6 pt-4 border-t border-[#E8DFC9]">
+            <div className="grid grid-cols-2 gap-6 pt-4 border-t border-[#E3DBD4]">
               <div>
-                <div className="font-serif text-2xl text-[#2A241B] font-medium">100%</div>
-                <div className="text-[11px] text-[#5C5347] mt-0.5">Individually Cast to Order</div>
+                <div className="font-serif text-2xl text-[#051F34] font-medium">100%</div>
+                <div className="text-xs text-[#69727D] mt-1 font-light">Crafted to Order</div>
               </div>
               <div>
-                <div className="font-serif text-2xl text-[#2A241B] font-medium">Assay 750</div>
-                <div className="text-[11px] text-[#5C5347] mt-0.5">Certified Solid Gold Hallmarking</div>
+                <div className="font-serif text-2xl text-[#051F34] font-medium">Solid 18K</div>
+                <div className="text-xs text-[#69727D] mt-1 font-light">Hallmarked Precious Metal</div>
               </div>
             </div>
 
             <div className="pt-2">
               <Link
                 href="/craftsmanship"
-                className="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-semibold text-[#2A241B] hover:text-[#A88A4F] transition-colors"
+                className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-[#051F34] hover:text-[#CB9274] transition-colors"
               >
                 <span>Read Full Craftsmanship Story</span>
                 <ArrowRight className="w-4 h-4" />
@@ -70,11 +70,11 @@ export default function CraftsmanshipSection() {
 
           {/* Right: Atelier Visual (6 cols) */}
           <div className="lg:col-span-6 relative">
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border border-[#E8DFC9]">
+            <div className="relative aspect-[4/3] rounded-none overflow-hidden border border-[#E3DBD4]">
               <img
                 src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=1200&q=80"
-                alt="Master karigar handcrafting jewellery at Shewah Atelier"
-                className="w-full h-full object-cover"
+                alt="Jeweler handcrafting jewellery at Shewah Atelier"
+                className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-105"
                 loading="lazy"
               />
             </div>
@@ -82,19 +82,19 @@ export default function CraftsmanshipSection() {
         </div>
 
         {/* 4 Process Pillars */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {steps.map((step) => (
             <div
               key={step.num}
-              className="p-6 bg-white rounded-2xl border border-[#E8DFC9] space-y-2.5 shadow-sm hover:border-[#A88A4F] transition-colors"
+              className="p-6 sm:p-8 bg-white rounded-none border border-[#E3DBD4] space-y-3 transition-colors hover:border-[#051F34]"
             >
-              <span className="font-serif text-2xl text-[#C9A86A] font-semibold block">
+              <span className="font-serif text-2xl text-[#CB9274] font-normal block">
                 {step.num}
               </span>
-              <h4 className="font-serif text-base text-[#2A241B] font-medium">
+              <h4 className="font-serif text-lg text-[#051F34] font-normal">
                 {step.title}
               </h4>
-              <p className="text-[11px] text-[#5C5347] font-light leading-relaxed">
+              <p className="text-xs text-[#69727D] font-light leading-relaxed">
                 {step.desc}
               </p>
             </div>

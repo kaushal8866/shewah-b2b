@@ -357,7 +357,7 @@ export default function ProductDetailPage() {
           <div className="pt-4">
             <Link
               href="/jewellery"
-              className="px-6 py-2.5 bg-[#2A241B] text-white text-xs uppercase tracking-widest font-medium rounded-full"
+              className="px-8 py-3.5 bg-[#051F34] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#CB9274] transition-all duration-300"
             >
               Return to Catalog
             </Link>
@@ -369,22 +369,22 @@ export default function ProductDetailPage() {
 
   return (
     <StoreLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12 py-10 lg:py-16">
         {/* Breadcrumbs */}
-        <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-wider text-[#8C8275] mb-6 sm:mb-8 flex items-center flex-wrap gap-x-2 gap-y-1">
-          <Link href="/" className="hover:text-[#2A241B] transition-colors shrink-0 inline-flex items-center min-h-0 leading-none">
+        <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-[0.2em] text-[#69727D] mb-8 flex items-center flex-wrap gap-x-2 gap-y-1 font-medium">
+          <Link href="/" className="hover:text-[#051F34] transition-colors shrink-0 inline-flex items-center leading-none">
             Home
           </Link>
-          <span className="text-stone-300 select-none shrink-0 inline-flex items-center leading-none" aria-hidden="true">
+          <span className="text-[#E3DBD4] select-none shrink-0 inline-flex items-center leading-none" aria-hidden="true">
             /
           </span>
-          <Link href="/jewellery" className="hover:text-[#2A241B] transition-colors shrink-0 inline-flex items-center min-h-0 leading-none">
+          <Link href="/jewellery" className="hover:text-[#051F34] transition-colors shrink-0 inline-flex items-center leading-none">
             Jewellery
           </Link>
-          <span className="text-stone-300 select-none shrink-0 inline-flex items-center leading-none" aria-hidden="true">
+          <span className="text-[#E3DBD4] select-none shrink-0 inline-flex items-center leading-none" aria-hidden="true">
             /
           </span>
-          <span className="text-[#2A241B] font-medium shrink-0 inline-flex items-center leading-none capitalize" aria-current="page">
+          <span className="text-[#051F34] font-semibold shrink-0 inline-flex items-center leading-none capitalize" aria-current="page">
             {product.category}
           </span>
         </nav>
@@ -393,7 +393,7 @@ export default function ProductDetailPage() {
           {/* Left: Gallery Column (7 cols) */}
           <div className="lg:col-span-7 space-y-4">
             {/* Main high-res view */}
-            <div className="aspect-square bg-white rounded-2xl border border-[#E8DFC9] overflow-hidden shadow-sm relative">
+            <div className="aspect-square bg-white rounded-none border border-[#E3DBD4] overflow-hidden relative">
               {selectedPhoto ? (
                 <img
                   src={selectedPhoto}
@@ -401,7 +401,7 @@ export default function ProductDetailPage() {
                   className="w-full h-full object-cover transition-opacity duration-300"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center font-serif text-stone-300 text-lg">
+                <div className="w-full h-full flex items-center justify-center font-serif text-[#69727D] text-lg">
                   SHEWAH ATELIER
                 </div>
               )}
@@ -409,16 +409,16 @@ export default function ProductDetailPage() {
               {/* Status Badge */}
               <div className="absolute top-4 left-4">
                 {activeComponent ? (
-                  <span className="bg-[#2A241B] text-white px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-medium border border-white/20 shadow-sm flex items-center gap-1.5">
+                  <span className="bg-[#051F34] text-white px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium border border-white/20 flex items-center gap-1.5">
                     <span>{activeComponent.roleLabel} • Individual Piece</span>
                   </span>
                 ) : product.setInfo ? (
-                  <span className="bg-[#2A241B] text-[#D4AF37] px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-semibold border border-[#D4AF37]/30 shadow-sm flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                  <span className="bg-[#051F34] text-[#CB9274] px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-semibold border border-[#CB9274]/30 flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-[#CB9274]" />
                     <span>Complete Suite Ensemble</span>
                   </span>
                 ) : (
-                  <span className="bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] uppercase tracking-wider text-[#2A241B] font-medium border border-[#E8DFC9]">
+                  <span className="bg-white/95 backdrop-blur-sm px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[#051F34] font-semibold border border-[#E3DBD4]">
                     Made to Order
                   </span>
                 )}
@@ -437,10 +437,10 @@ export default function ProductDetailPage() {
                     <button
                       key={idx}
                       onClick={() => setSelectedPhoto(url)}
-                      className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
+                      className={`w-20 h-20 rounded-none overflow-hidden border-2 transition-all shrink-0 ${
                         selectedPhoto === url
-                          ? 'border-[#A88A4F] ring-2 ring-[#A88A4F] ring-offset-2 ring-offset-[#FBF7F0] shadow-md scale-[1.02]'
-                          : 'border-[#E8DFC9] opacity-70 hover:opacity-100 hover:border-stone-400'
+                          ? 'border-[#051F34] scale-[1.02]'
+                          : 'border-[#E3DBD4] opacity-70 hover:opacity-100 hover:border-[#051F34]'
                       }`}
                     >
                       <img src={url} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-cover" />
@@ -455,49 +455,49 @@ export default function ProductDetailPage() {
           <div className="lg:col-span-5 space-y-6">
             {/* Title & Brand Header */}
             <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[10px] uppercase tracking-[0.25em] text-[#A88A4F] font-semibold">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[11px] uppercase tracking-[0.25em] text-[#CB9274] font-medium">
                   {activeComponent ? `${product.name} • ${activeComponent.roleLabel}` : product.category}
                 </span>
                 {product.setInfo && !activeComponent && (
-                  <span className="bg-[#2A241B] text-[#D4AF37] px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-widest font-semibold border border-[#D4AF37]/30">
+                  <span className="bg-[#051F34] text-[#CB9274] px-2.5 py-0.5 text-[9px] uppercase tracking-[0.2em] font-semibold">
                     Jewellery Suite
                   </span>
                 )}
                 {activeComponent && (
-                  <span className="bg-[#F4ECDD] text-[#2A241B] px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-widest font-semibold border border-[#E8DFC9]">
+                  <span className="bg-[#F6F4F2] text-[#051F34] px-2.5 py-0.5 text-[9px] uppercase tracking-[0.2em] font-semibold border border-[#E3DBD4]">
                     Individual Piece
                   </span>
                 )}
               </div>
-              <h1 className="font-serif text-2xl sm:text-3xl text-[#2A241B] font-medium leading-snug">
+              <h1 className="font-serif text-3xl sm:text-4xl text-[#051F34] font-normal leading-snug">
                 {activeComponent ? activeComponent.name : product.name}
               </h1>
-              <p className="text-xs text-[#5C5347] font-light mt-1.5 leading-relaxed">
+              <p className="text-sm text-[#69727D] font-light mt-2 leading-relaxed">
                 {activeComponent ? (activeComponent.subtitle || `Handcrafted individual piece from the ${product.name}.`) : product.subtitle}
               </p>
             </div>
 
             {/* Price block */}
-            <div className="py-3 border-y border-[#E8DFC9] flex items-baseline justify-between">
+            <div className="py-4 border-y border-[#E3DBD4] flex items-baseline justify-between">
               <div>
-                <div className="text-2xl font-serif font-medium text-[#2A241B] flex items-center gap-2">
+                <div className="text-3xl font-serif font-normal text-[#051F34] flex items-center gap-2">
                   <span>
                     {dynamicPrice?.formatted || (activeComponent ? activeComponent.price.formatted : product.price.formatted)}
                   </span>
                   {calculatingPrice && (
-                    <span className="text-[10px] font-sans text-[#A88A4F] animate-pulse">
+                    <span className="text-[10px] font-sans text-[#CB9274] animate-pulse">
                       Updating...
                     </span>
                   )}
                 </div>
-                <div className="text-[11px] text-[#8C8275] mt-0.5">
-                  {product.price.taxLabel} • Complimentary worldwide shipping
+                <div className="text-xs text-[#69727D] mt-1 font-light">
+                  {product.price.taxLabel} • Complimentary worldwide insured delivery
                 </div>
               </div>
 
               <div className="text-right">
-                <span className="text-[11px] font-mono text-stone-500 uppercase tracking-widest">
+                <span className="text-[11px] font-mono text-[#69727D] uppercase tracking-widest">
                   SKU: {activeComponent ? activeComponent.code : product.code}
                 </span>
               </div>
@@ -505,16 +505,16 @@ export default function ProductDetailPage() {
 
             {/* Suite Purchase Option Selector (Order Together or Separately) */}
             {product.setInfo && product.setInfo.components.length > 0 && (
-              <div className="p-4 bg-white rounded-2xl border-2 border-[#A88A4F]/30 shadow-sm space-y-3">
+              <div className="p-5 bg-[#F6F4F2] rounded-none border border-[#E3DBD4] space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#A88A4F]" />
-                    <span className="text-xs uppercase tracking-wider font-semibold text-[#2A241B]">
+                    <Sparkles className="w-4 h-4 text-[#CB9274]" />
+                    <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[#051F34]">
                       Order Together or Separately
                     </span>
                   </div>
                   {product.setInfo.suiteSavingsAmount > 0 && (
-                    <span className="bg-[#2A241B] text-[#D4AF37] px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold">
+                    <span className="bg-[#051F34] text-[#CB9274] px-2.5 py-0.5 text-[10px] uppercase tracking-[0.2em] font-semibold">
                       Save {product.setInfo.formattedSavings} on Suite
                     </span>
                   )}
@@ -525,35 +525,35 @@ export default function ProductDetailPage() {
                   <button
                     type="button"
                     onClick={() => handleSelectSuiteOption('full_suite')}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between ${
+                    className={`w-full text-left p-4 rounded-none border transition-all flex items-center justify-between ${
                       selectedSuiteOption === 'full_suite'
-                        ? 'border-[#2A241B] bg-[#FBF7F0] ring-1 ring-[#2A241B] shadow-sm'
-                        : 'border-[#E8DFC9] bg-white hover:border-stone-400'
+                        ? 'border-[#051F34] bg-white shadow-sm'
+                        : 'border-[#E3DBD4] bg-transparent hover:border-[#051F34]'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                        selectedSuiteOption === 'full_suite' ? 'border-[#2A241B]' : 'border-stone-300'
+                      <div className={`w-3.5 h-3.5 border flex items-center justify-center ${
+                        selectedSuiteOption === 'full_suite' ? 'border-[#051F34] bg-[#051F34]' : 'border-[#E3DBD4]'
                       }`}>
-                        {selectedSuiteOption === 'full_suite' && <div className="w-2 h-2 rounded-full bg-[#2A241B]" />}
+                        {selectedSuiteOption === 'full_suite' && <div className="w-1.5 h-1.5 bg-white" />}
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-[#2A241B] flex items-center gap-2">
+                        <div className="text-xs font-semibold text-[#051F34] flex items-center gap-2">
                           <span>Complete Suite ({product.setInfo.components.length} Pieces)</span>
-                          <span className="text-[10px] text-[#A88A4F] font-normal uppercase tracking-wider">Recommended</span>
+                          <span className="text-[10px] text-[#CB9274] font-medium uppercase tracking-wider">Recommended</span>
                         </div>
-                        <div className="text-[11px] text-[#5C5347] mt-0.5">
+                        <div className="text-xs text-[#69727D] font-light mt-0.5">
                           Includes {product.setInfo.components.map(c => c.roleLabel).join(' + ')}
                         </div>
                       </div>
                     </div>
 
                     <div className="text-right">
-                      <div className="text-xs font-serif font-bold text-[#2A241B]">
+                      <div className="text-xs font-serif font-medium text-[#051F34]">
                         {product.price.formatted}
                       </div>
                       {product.setInfo.formattedSavings && (
-                        <div className="text-[10px] text-[#5C7F5F] font-medium">
+                        <div className="text-[10px] text-[#CB9274] font-medium">
                           Save {product.setInfo.formattedSavings}
                         </div>
                       )}
@@ -566,33 +566,33 @@ export default function ProductDetailPage() {
                       key={comp.code}
                       type="button"
                       onClick={() => handleSelectSuiteOption(comp.code)}
-                      className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between ${
+                      className={`w-full text-left p-4 rounded-none border transition-all flex items-center justify-between ${
                         selectedSuiteOption === comp.code
-                          ? 'border-[#2A241B] bg-[#FBF7F0] ring-1 ring-[#2A241B] shadow-sm'
-                          : 'border-[#E8DFC9] bg-white hover:border-stone-400'
+                          ? 'border-[#051F34] bg-white shadow-sm'
+                          : 'border-[#E3DBD4] bg-transparent hover:border-[#051F34]'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          selectedSuiteOption === comp.code ? 'border-[#2A241B]' : 'border-stone-300'
+                        <div className={`w-3.5 h-3.5 border flex items-center justify-center ${
+                          selectedSuiteOption === comp.code ? 'border-[#051F34] bg-[#051F34]' : 'border-[#E3DBD4]'
                         }`}>
-                          {selectedSuiteOption === comp.code && <div className="w-2 h-2 rounded-full bg-[#2A241B]" />}
+                          {selectedSuiteOption === comp.code && <div className="w-1.5 h-1.5 bg-white" />}
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-[#2A241B]">
+                          <div className="text-xs font-semibold text-[#051F34]">
                             {comp.roleLabel} Only
                           </div>
-                          <div className="text-[11px] text-[#5C5347] mt-0.5">
+                          <div className="text-xs text-[#69727D] font-light mt-0.5">
                             {comp.name} {comp.approxGoldWeight ? `• ~${comp.approxGoldWeight}g 18K Solid Gold` : ''}
                           </div>
                         </div>
                       </div>
 
                       <div className="text-right">
-                        <div className="text-xs font-serif font-bold text-[#2A241B]">
+                        <div className="text-xs font-serif font-medium text-[#051F34]">
                           {comp.price.formatted}
                         </div>
-                        <div className="text-[10px] text-stone-400">
+                        <div className="text-[10px] text-[#69727D]">
                           Individual Piece
                         </div>
                       </div>
@@ -604,9 +604,9 @@ export default function ProductDetailPage() {
 
             {/* Configurator: Metal Tone */}
             <div className="space-y-2">
-              <label className="text-xs uppercase tracking-wider font-semibold text-[#2A241B] flex items-center justify-between">
+              <label className="text-xs uppercase tracking-[0.2em] font-semibold text-[#051F34] flex items-center justify-between">
                 <span>Metal: Solid 18K Gold / Platinum</span>
-                <span className="text-[#A88A4F] capitalize">{selectedMetalTone} Gold</span>
+                <span className="text-[#CB9274] capitalize">{selectedMetalTone} Gold</span>
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {[
@@ -618,14 +618,14 @@ export default function ProductDetailPage() {
                   <button
                     key={m.id}
                     onClick={() => setSelectedMetalTone(m.id)}
-                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-xs text-left transition-all ${
+                    className={`flex items-center gap-2.5 px-3 py-3 rounded-none border text-xs text-left transition-all ${
                       selectedMetalTone === m.id
-                        ? 'border-[#2A241B] bg-white shadow-sm ring-1 ring-[#2A241B]'
-                        : 'border-[#E8DFC9] bg-[#FBF7F0] hover:border-stone-400'
+                        ? 'border-[#051F34] bg-white shadow-sm'
+                        : 'border-[#E3DBD4] bg-[#F6F4F2] hover:border-[#051F34]'
                     }`}
                   >
-                    <span className="w-3.5 h-3.5 rounded-full border border-stone-300 shadow-inner" style={{ backgroundColor: m.hex }} />
-                    <span className="font-medium text-[#2A241B]">{m.name}</span>
+                    <span className="w-3.5 h-3.5 rounded-none border border-[#E3DBD4]" style={{ backgroundColor: m.hex }} />
+                    <span className="font-medium text-[#051F34]">{m.name}</span>
                   </button>
                 ))}
               </div>
@@ -639,25 +639,25 @@ export default function ProductDetailPage() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setSelectedDiamondType('lab_grown')}
-                  className={`p-3 rounded-xl border text-xs text-left transition-all ${
+                  className={`p-3 rounded-none border text-xs text-left transition-all ${
                     selectedDiamondType === 'lab_grown'
-                      ? 'border-[#2A241B] bg-white shadow-sm ring-1 ring-[#2A241B]'
-                      : 'border-[#E8DFC9] bg-[#FBF7F0] hover:border-stone-400'
+                      ? 'border-[#051F34] bg-white shadow-sm'
+                      : 'border-[#E3DBD4] bg-[#F6F4F2] hover:border-[#051F34]'
                   }`}
                 >
-                  <div className="font-semibold text-[#2A241B]">Lab-Grown Diamond</div>
-                  <div className="text-[10px] text-[#5C5347] mt-0.5">IGI Certified • D-F / VS+</div>
+                  <div className="font-semibold text-[#051F34]">Lab-Grown Diamond</div>
+                  <div className="text-[10px] text-[#69727D] mt-0.5">IGI Certified • D-F / VS+</div>
                 </button>
                 <button
                   onClick={() => setSelectedDiamondType('natural')}
-                  className={`p-3 rounded-xl border text-xs text-left transition-all ${
+                  className={`p-3 rounded-none border text-xs text-left transition-all ${
                     selectedDiamondType === 'natural'
-                      ? 'border-[#2A241B] bg-white shadow-sm ring-1 ring-[#2A241B]'
-                      : 'border-[#E8DFC9] bg-[#FBF7F0] hover:border-stone-400'
+                      ? 'border-[#051F34] bg-white shadow-sm'
+                      : 'border-[#E3DBD4] bg-[#F6F4F2] hover:border-[#051F34]'
                   }`}
                 >
-                  <div className="font-semibold text-[#2A241B]">Natural Mined Diamond</div>
-                  <div className="text-[10px] text-[#5C5347] mt-0.5">GIA Certified • Rare Heirloom</div>
+                  <div className="font-semibold text-[#051F34]">Natural Mined Diamond</div>
+                  <div className="text-[10px] text-[#69727D] mt-0.5">GIA Certified • Geological Origin</div>
                 </button>
               </div>
             </div>
@@ -666,16 +666,16 @@ export default function ProductDetailPage() {
             {product.configurationSchema?.isRing && !activeComponent && product.configurationSchema?.sizes?.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="uppercase tracking-wider font-semibold text-[#2A241B]">
+                  <span className="uppercase tracking-[0.2em] font-semibold text-[#051F34]">
                     Ring Size (US)
                   </span>
                   <Link
                     href="/ring-size-guide"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#A88A4F] text-[11px] underline hover:text-[#2A241B] transition-colors"
+                    className="text-[#CB9274] text-[11px] uppercase tracking-wider hover:text-[#051F34] transition-colors"
                   >
-                    Complimentary Sizer & Guide
+                    Size Guide
                   </Link>
                 </div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
@@ -683,10 +683,10 @@ export default function ProductDetailPage() {
                     <button
                       key={sz}
                       onClick={() => setSelectedRingSize(sz)}
-                      className={`py-2 text-xs rounded-lg border text-center transition-all ${
+                      className={`py-2 text-xs rounded-none border text-center transition-all ${
                         selectedRingSize === sz
-                          ? 'bg-[#2A241B] text-white font-medium shadow-sm'
-                          : 'bg-white border-[#E8DFC9] text-[#5C5347] hover:border-stone-400'
+                          ? 'bg-[#051F34] text-white font-medium border-[#051F34]'
+                          : 'bg-white border-[#E3DBD4] text-[#69727D] hover:border-[#051F34]'
                       }`}
                     >
                       {sz}
@@ -697,14 +697,14 @@ export default function ProductDetailPage() {
             )}
 
             {/* Made-to-Order Timeline Box */}
-            <div className="bg-[#F4ECDD] p-4 rounded-xl border border-[#E8DFC9] text-xs text-[#5C5347] space-y-1.5">
-              <div className="flex items-center gap-2 font-medium text-[#2A241B]">
-                <Truck className="w-4 h-4 text-[#A88A4F]" />
-                <span>Made to Order Delivery Window:</span>
+            <div className="bg-[#F6F4F2] p-4 rounded-none border border-[#E3DBD4] text-xs text-[#69727D] space-y-1.5">
+              <div className="flex items-center gap-2 font-medium text-[#051F34]">
+                <Truck className="w-4 h-4 text-[#CB9274]" />
+                <span className="uppercase tracking-wider text-[11px]">Made to Order Delivery Window:</span>
               </div>
-              <p className="text-[11px]">
+              <p className="text-[11px] font-light">
                 Crafted especially for you in approximately {product.craftingLeadDays} business days.
-                Estimated arrival in {market.name}: <strong className="text-[#2A241B]">{product.estimatedDeliveryWindow}</strong>.
+                Estimated arrival in {market.name}: <strong className="text-[#051F34] font-medium">{product.estimatedDeliveryWindow}</strong>.
               </p>
             </div>
 
@@ -713,7 +713,7 @@ export default function ProductDetailPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleAddToBag}
-                  className="flex-1 py-4 px-6 bg-[#2A241B] text-white text-xs uppercase tracking-[0.2em] font-medium rounded-xl hover:bg-stone-800 transition-all shadow-lg active:scale-[0.99] flex items-center justify-center gap-2"
+                  className="flex-1 py-4 px-8 bg-[#051F34] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#CB9274] transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   <span>
                     {activeComponent
@@ -739,53 +739,53 @@ export default function ProductDetailPage() {
                       subtitle: activeComponent ? activeComponent.subtitle : product.subtitle,
                     })
                   }}
-                  className={`p-4 rounded-xl border transition-all shadow-sm flex items-center justify-center ${
+                  className={`p-4 rounded-none border transition-all flex items-center justify-center ${
                     isInWishlist(activeComponent ? activeComponent.id : product.id)
-                      ? 'border-[#A88A4F] bg-[#2A241B] text-[#D4AF37]'
-                      : 'border-[#E8DFC9] bg-white text-[#5C5347] hover:border-[#A88A4F] hover:text-[#2A241B]'
+                      ? 'border-[#051F34] bg-[#051F34] text-[#CB9274]'
+                      : 'border-[#E3DBD4] bg-white text-[#051F34] hover:border-[#051F34]'
                   }`}
                   aria-label="Save to Wishlist"
                 >
-                  <Heart className={`w-4 h-4 ${isInWishlist(activeComponent ? activeComponent.id : product.id) ? 'fill-[#D4AF37]' : ''}`} />
+                  <Heart className={`w-4 h-4 ${isInWishlist(activeComponent ? activeComponent.id : product.id) ? 'fill-[#CB9274]' : ''}`} />
                 </button>
               </div>
 
               {addedNotice && (
-                <div className="text-center text-xs text-[#5C7F5F] font-medium flex items-center justify-center gap-1.5 pt-1 animate-in fade-in">
-                  <Check className="w-4 h-4" />
-                  <span>{addedNoticeMsg}! Click the bag icon above to checkout.</span>
+                <div className="text-center text-xs text-[#051F34] font-medium flex items-center justify-center gap-1.5 pt-1 animate-in fade-in">
+                  <Check className="w-4 h-4 text-[#CB9274]" />
+                  <span>{addedNoticeMsg}! Click the bag icon above to view bag.</span>
                 </div>
               )}
             </div>
 
             {/* Accordions: Specifications, Shipping, Warranty */}
-            <div className="pt-6 border-t border-[#E8DFC9] divide-y divide-[#E8DFC9]">
+            <div className="pt-6 border-t border-[#E3DBD4] divide-y divide-[#E3DBD4]">
               {/* Accordion 1: Specifications */}
-              <div className="py-3">
+              <div className="py-4">
                 <button
                   onClick={() => setOpenSection(openSection === 'specs' ? null : 'specs')}
-                  className="w-full flex items-center justify-between text-xs uppercase tracking-wider font-semibold text-[#2A241B]"
+                  className="w-full flex items-center justify-between text-xs uppercase tracking-[0.2em] font-semibold text-[#051F34]"
                 >
-                  <span>The Specifications & Provenance</span>
+                  <span>Specifications & Provenance</span>
                   {openSection === 'specs' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {openSection === 'specs' && (
-                  <div className="pt-3 text-xs text-[#5C5347] space-y-2 animate-in fade-in">
+                  <div className="pt-4 text-xs text-[#69727D] space-y-3 animate-in fade-in font-light">
                     <p>{activeComponent ? activeComponent.subtitle : product.description}</p>
-                    <div className="grid grid-cols-2 gap-2 pt-2 text-[11px]">
-                      <div><strong>Metal:</strong> Solid 18K Gold / 950 Platinum</div>
-                      <div><strong>Hallmark:</strong> {product.specifications.hallmark}</div>
-                      <div><strong>Stone Certification:</strong> {product.specifications.certification}</div>
-                      <div><strong>Diamond Quality:</strong> Color {product.specifications.diamondColor}, Clarity {product.specifications.diamondClarity}</div>
+                    <div className="grid grid-cols-2 gap-3 pt-2 text-xs">
+                      <div><strong className="text-[#051F34] font-medium">Metal:</strong> Solid 18K Gold / 950 Platinum</div>
+                      <div><strong className="text-[#051F34] font-medium">Hallmark:</strong> {product.specifications.hallmark}</div>
+                      <div><strong className="text-[#051F34] font-medium">Certification:</strong> {product.specifications.certification}</div>
+                      <div><strong className="text-[#051F34] font-medium">Diamond Quality:</strong> Color {product.specifications.diamondColor}, Clarity {product.specifications.diamondClarity}</div>
                       {activeComponent?.approxGoldWeight ? (
-                        <div><strong>Gold Weight:</strong> ~{activeComponent.approxGoldWeight}g 18K Solid Gold</div>
+                        <div><strong className="text-[#051F34] font-medium">Gold Weight:</strong> ~{activeComponent.approxGoldWeight}g Solid 18K</div>
                       ) : product.specifications.approxGoldWeight ? (
-                        <div><strong>Gold Weight:</strong> ~{product.specifications.approxGoldWeight}g 18K Solid Gold</div>
+                        <div><strong className="text-[#051F34] font-medium">Gold Weight:</strong> ~{product.specifications.approxGoldWeight}g Solid 18K</div>
                       ) : null}
                       {activeComponent?.diamondWeightCarats ? (
-                        <div><strong>Solitaire:</strong> ~{activeComponent.diamondWeightCarats}ct Total</div>
+                        <div><strong className="text-[#051F34] font-medium">Diamonds:</strong> ~{activeComponent.diamondWeightCarats}ct Total</div>
                       ) : product.specifications.diamondWeightCarats ? (
-                        <div><strong>Solitaire:</strong> ~{product.specifications.diamondWeightCarats}ct Total</div>
+                        <div><strong className="text-[#051F34] font-medium">Diamonds:</strong> ~{product.specifications.diamondWeightCarats}ct Total</div>
                       ) : null}
                     </div>
                   </div>
@@ -793,39 +793,39 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Accordion 2: Shipping & Returns */}
-              <div className="py-3">
+              <div className="py-4">
                 <button
                   onClick={() => setOpenSection(openSection === 'shipping' ? null : 'shipping')}
-                  className="w-full flex items-center justify-between text-xs uppercase tracking-wider font-semibold text-[#2A241B]"
+                  className="w-full flex items-center justify-between text-xs uppercase tracking-[0.2em] font-semibold text-[#051F34]"
                 >
-                  <span>Insured Courier & Return Policy</span>
+                  <span>Insured Delivery & 14-Day Returns</span>
                   {openSection === 'shipping' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {openSection === 'shipping' && (
-                  <div className="pt-3 text-xs text-[#5C5347] space-y-2 animate-in fade-in">
+                  <div className="pt-4 text-xs text-[#69727D] space-y-2 animate-in fade-in font-light">
                     <p>
-                      Each order is dispatched via direct, fully insured air courier with signature verification upon delivery.
+                      Each creation is dispatched via fully insured air courier with signature verification upon delivery.
                     </p>
                     <p>
-                      <strong>Return Policy:</strong> {product.returnPolicy.type === 'made_to_order' ? 'Made-to-order creations are eligible for complimentary 30-day resizing and inspection. Inquire for return eligibility.' : 'Standard 30-day return policy applies.'}
+                      <strong className="text-[#051F34] font-medium">Return Policy:</strong> We offer a 14-day inspection window on standard catalogue creations with intact security tags. Bespoke creations include complimentary ring sizing and dedicated atelier adjustments.
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Accordion 3: Lifetime Care */}
-              <div className="py-3">
+              {/* Accordion 3: Care & Services */}
+              <div className="py-4">
                 <button
                   onClick={() => setOpenSection(openSection === 'warranty' ? null : 'warranty')}
-                  className="w-full flex items-center justify-between text-xs uppercase tracking-wider font-semibold text-[#2A241B]"
+                  className="w-full flex items-center justify-between text-xs uppercase tracking-[0.2em] font-semibold text-[#051F34]"
                 >
-                  <span>Lifetime Atelier Warranty</span>
+                  <span>Atelier Care & Services</span>
                   {openSection === 'warranty' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {openSection === 'warranty' && (
-                  <div className="pt-3 text-xs text-[#5C5347] space-y-2 animate-in fade-in">
+                  <div className="pt-4 text-xs text-[#69727D] space-y-2 animate-in fade-in font-light">
                     <p>
-                      Every Shewah piece is accompanied by our lifetime craftsmanship guarantee, including complimentary annual prong tightening, ultrasonic cleaning, and rhodium re-plating.
+                      Every Shewah creation is crafted to endure. We provide ongoing support including complimentary prong inspection, ultrasonic cleansing guidance, and expert sizing assistance.
                     </p>
                   </div>
                 )}
@@ -836,11 +836,11 @@ export default function ProductDetailPage() {
 
         {/* Part of Suite Banner (When viewing an individual piece belonging to a suite) */}
         {product.parentSetInfo && (
-          <div className="mt-12 p-6 sm:p-8 bg-[#FBF7F0] rounded-2xl border border-[#A88A4F]/40 shadow-sm space-y-5">
+          <div className="mt-14 p-6 sm:p-8 bg-[#F6F4F2] rounded-none border border-[#E3DBD4] space-y-5">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div className="flex items-center gap-5">
                 {product.parentSetInfo.parentPhotoUrl && (
-                  <div className="w-20 h-20 rounded-xl overflow-hidden bg-white border border-[#E8DFC9] shrink-0 shadow-sm">
+                  <div className="w-20 h-20 rounded-none overflow-hidden bg-white border border-[#E3DBD4] shrink-0">
                     <img
                       src={product.parentSetInfo.parentPhotoUrl}
                       alt={product.parentSetInfo.parentName}
@@ -850,16 +850,16 @@ export default function ProductDetailPage() {
                 )}
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#A88A4F]" />
-                    <span className="text-[10px] uppercase tracking-wider font-semibold text-[#A88A4F]">
+                    <Sparkles className="w-3.5 h-3.5 text-[#CB9274]" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#CB9274]">
                       Designed as Part of a Matched Suite
                     </span>
                   </div>
-                  <h4 className="font-serif text-lg font-medium text-[#2A241B]">
+                  <h4 className="font-serif text-xl font-normal text-[#051F34]">
                     {product.parentSetInfo.parentName}
                   </h4>
-                  <p className="text-xs text-[#5C5347]">
-                    Available as a complete ensemble for <strong className="text-[#2A241B]">{product.parentSetInfo.parentPrice.formatted}</strong>
+                  <p className="text-xs text-[#69727D]">
+                    Available as a complete ensemble for <strong className="text-[#051F34] font-medium">{product.parentSetInfo.parentPrice.formatted}</strong>
                   </p>
                 </div>
               </div>
@@ -868,13 +868,13 @@ export default function ProductDetailPage() {
                 <button
                   type="button"
                   onClick={() => handleAddParentSuite(product.parentSetInfo!)}
-                  className="flex-1 sm:flex-initial py-3 px-5 bg-[#2A241B] text-white text-xs uppercase tracking-wider font-medium rounded-xl hover:bg-stone-800 transition-all whitespace-nowrap shadow-sm"
+                  className="flex-1 sm:flex-initial py-3.5 px-6 bg-[#051F34] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#CB9274] transition-all duration-300 whitespace-nowrap"
                 >
                   Order Complete Suite
                 </button>
                 <Link
                   href={`/jewellery/${product.parentSetInfo.parentSlug}`}
-                  className="py-3 px-5 border border-[#E8DFC9] text-[#2A241B] text-xs uppercase tracking-wider font-medium rounded-xl hover:bg-white transition-all whitespace-nowrap"
+                  className="py-3.5 px-6 border border-[#051F34] text-[#051F34] text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#051F34] hover:text-white transition-all duration-300 whitespace-nowrap"
                 >
                   View Suite →
                 </Link>
@@ -883,25 +883,25 @@ export default function ProductDetailPage() {
 
             {/* Sibling matching piece quick add */}
             {product.parentSetInfo.siblings.length > 0 && (
-              <div className="pt-4 border-t border-[#E8DFC9] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="pt-4 border-t border-[#E3DBD4] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-3">
                   {product.parentSetInfo.siblings[0].photoUrl && (
                     <img
                       src={product.parentSetInfo.siblings[0].photoUrl}
                       alt={product.parentSetInfo.siblings[0].name}
-                      className="w-10 h-10 rounded-lg object-cover border border-[#E8DFC9]"
+                      className="w-10 h-10 rounded-none object-cover border border-[#E3DBD4]"
                     />
                   )}
-                  <div className="text-[#5C5347]">
+                  <div className="text-[#69727D]">
                     <span>Matching companion piece: </span>
-                    <strong className="text-[#2A241B]">{product.parentSetInfo.siblings[0].name}</strong>
-                    <span className="text-[#8C8275] ml-1.5 font-medium">({product.parentSetInfo.siblings[0].price.formatted})</span>
+                    <strong className="text-[#051F34] font-medium">{product.parentSetInfo.siblings[0].name}</strong>
+                    <span className="text-[#69727D] ml-1.5 font-medium">({product.parentSetInfo.siblings[0].price.formatted})</span>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleAddSiblingComponent(product.parentSetInfo!.siblings[0])}
-                  className="py-2 px-4 bg-[#F4ECDD] text-[#2A241B] hover:bg-[#E8DFC9] text-xs font-semibold rounded-lg border border-[#E8DFC9] transition-all"
+                  className="py-2.5 px-5 bg-white text-[#051F34] hover:bg-[#051F34] hover:text-white text-xs uppercase tracking-wider font-semibold rounded-none border border-[#E3DBD4] transition-all duration-300"
                 >
                   + Add Matching Piece to Bag
                 </button>
@@ -912,15 +912,15 @@ export default function ProductDetailPage() {
 
         {/* Full Suite Ensemble Showcase (Order Together or Individually) */}
         {product.setInfo && product.setInfo.components.length > 0 && (
-          <section className="mt-16 sm:mt-24 pt-12 border-t border-[#E8DFC9]">
-            <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-[#A88A4F] font-medium">
+          <section className="mt-16 sm:mt-24 pt-14 border-t border-[#E3DBD4]">
+            <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+              <span className="text-[11px] uppercase tracking-[0.25em] text-[#CB9274] font-medium block">
                 Curated Ensemble
               </span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-light text-[#2A241B]">
+              <h2 className="font-serif text-3xl sm:text-4xl text-[#051F34] font-normal tracking-tight">
                 Pieces in this Suite
               </h2>
-              <p className="text-xs sm:text-sm text-[#5C5347] font-light">
+              <p className="text-sm text-[#69727D] font-light">
                 Order all creations together as a unified ensemble, or acquire individual pieces separately.
               </p>
             </div>
@@ -929,10 +929,10 @@ export default function ProductDetailPage() {
               {product.setInfo.components.map((comp) => (
                 <div
                   key={comp.code}
-                  className="bg-white rounded-2xl border border-[#E8DFC9] p-6 sm:p-8 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-white rounded-none border border-[#E3DBD4] p-6 sm:p-8 flex flex-col justify-between transition-colors hover:border-[#051F34]"
                 >
                   <div className="flex flex-col sm:flex-row gap-6">
-                    <div className="w-full sm:w-44 aspect-square rounded-xl overflow-hidden bg-[#FBF7F0] border border-[#E8DFC9] shrink-0">
+                    <div className="w-full sm:w-44 aspect-square rounded-none overflow-hidden bg-[#F6F4F2] border border-[#E3DBD4] shrink-0">
                       {comp.primaryPhotoUrl ? (
                         <img
                           src={comp.primaryPhotoUrl}
@@ -940,58 +940,58 @@ export default function ProductDetailPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center font-serif text-stone-300 text-xs">
+                        <div className="w-full h-full flex items-center justify-center font-serif text-[#69727D] text-xs">
                           SHEWAH
                         </div>
                       )}
                     </div>
 
-                    <div className="flex-1 space-y-2.5">
-                      <span className="text-[10px] uppercase tracking-wider text-[#A88A4F] font-semibold">
+                    <div className="flex-1 space-y-2">
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-[#CB9274] font-semibold">
                         {comp.roleLabel}
                       </span>
-                      <h3 className="font-serif text-lg font-medium text-[#2A241B] leading-snug">
+                      <h3 className="font-serif text-xl font-normal text-[#051F34] leading-snug">
                         {comp.name}
                       </h3>
-                      <p className="text-xs text-[#5C5347] font-light">
+                      <p className="text-xs text-[#69727D] font-light">
                         {comp.subtitle}
                       </p>
 
-                      <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] text-[#5C5347]">
+                      <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] text-[#69727D]">
                         {comp.approxGoldWeight && (
                           <div>
-                            <span className="text-stone-400">Gold:</span> <strong>~{comp.approxGoldWeight}g 18K</strong>
+                            <span>Gold:</span> <strong className="text-[#051F34]">~{comp.approxGoldWeight}g 18K</strong>
                           </div>
                         )}
                         {comp.diamondWeightCarats && (
                           <div>
-                            <span className="text-stone-400">Solitaire:</span> <strong>~{comp.diamondWeightCarats}ct</strong>
+                            <span>Diamonds:</span> <strong className="text-[#051F34]">~{comp.diamondWeightCarats}ct</strong>
                           </div>
                         )}
                         <div>
-                          <span className="text-stone-400">Crafting:</span> <strong>Made to Order</strong>
+                          <span>Crafting:</span> <strong className="text-[#051F34]">Made to Order</strong>
                         </div>
                         <div>
-                          <span className="text-stone-400">Assay:</span> <strong>Solid 750 Gold</strong>
+                          <span>Assay:</span> <strong className="text-[#051F34]">Solid 18K Gold</strong>
                         </div>
                       </div>
 
                       <div className="pt-3 flex items-baseline gap-2">
-                        <span className="text-lg font-serif font-bold text-[#2A241B]">
+                        <span className="text-xl font-serif font-medium text-[#051F34]">
                           {comp.price.formatted}
                         </span>
-                        <span className="text-[11px] text-[#8C8275]">
-                          Individual piece price
+                        <span className="text-[11px] text-[#69727D]">
+                          Individual piece
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-6 mt-6 border-t border-[#E8DFC9] flex items-center gap-3">
+                  <div className="pt-6 mt-6 border-t border-[#E3DBD4] flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => handleAddIndividualComponent(comp)}
-                      className="flex-1 py-3 px-4 bg-[#2A241B] text-white text-xs uppercase tracking-wider font-medium rounded-xl hover:bg-stone-800 transition-all shadow-sm flex items-center justify-center gap-2"
+                      className="flex-1 py-3 px-4 bg-[#051F34] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#CB9274] transition-all duration-300 flex items-center justify-center gap-2"
                     >
                       <span>Add {comp.roleLabel} Only</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -999,9 +999,9 @@ export default function ProductDetailPage() {
 
                     <Link
                       href={`/jewellery/${comp.slug}`}
-                      className="py-3 px-4 border border-[#E8DFC9] text-[#2A241B] text-xs uppercase tracking-wider font-medium rounded-xl hover:border-[#2A241B] hover:bg-[#FBF7F0] transition-all whitespace-nowrap"
+                      className="py-3 px-4 border border-[#051F34] text-[#051F34] text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#051F34] hover:text-white transition-all duration-300 whitespace-nowrap"
                     >
-                      View Piece Details
+                      View Piece
                     </Link>
                   </div>
                 </div>
@@ -1009,22 +1009,22 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Complete Suite Callout Banner */}
-            <div className="mt-8 p-6 sm:p-8 bg-[#2A241B] text-white rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
-              <div className="space-y-1.5 text-center sm:text-left">
+            <div className="mt-8 p-8 sm:p-10 bg-[#051F34] text-white rounded-none flex flex-col sm:flex-row items-center justify-between gap-6 border border-[#051F34]">
+              <div className="space-y-2 text-center sm:text-left">
                 <div className="flex items-center justify-center sm:justify-start gap-2">
-                  <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-                  <span className="text-xs uppercase tracking-[0.2em] text-[#D4AF37] font-semibold">
+                  <Sparkles className="w-4 h-4 text-[#CB9274]" />
+                  <span className="text-xs uppercase tracking-[0.2em] text-[#CB9274] font-semibold">
                     Complete Suite Privilege
                   </span>
                 </div>
-                <h3 className="font-serif text-xl sm:text-2xl text-white font-normal">
+                <h3 className="font-serif text-2xl sm:text-3xl text-white font-normal">
                   Acquire the Complete {product.name}
                 </h3>
-                <p className="text-xs text-stone-300 font-light max-w-xl">
+                <p className="text-xs sm:text-sm text-stone-300 font-light max-w-xl">
                   Order all pieces together in a custom presentation suite case.
                   {product.setInfo.formattedSavings && (
-                    <span className="text-[#D4AF37] font-medium ml-1">
-                      Enjoy {product.setInfo.formattedSavings} bundle privilege compared to acquiring pieces individually.
+                    <span className="text-[#CB9274] font-medium ml-1">
+                      Enjoy {product.setInfo.formattedSavings} savings compared to individual pieces.
                     </span>
                   )}
                 </p>
@@ -1032,11 +1032,11 @@ export default function ProductDetailPage() {
 
               <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0">
                 <div className="text-center sm:text-right">
-                  <div className="text-2xl font-serif font-semibold text-white">
+                  <div className="text-3xl font-serif font-normal text-white">
                     {product.price.formatted}
                   </div>
                   {product.setInfo.formattedSavings && (
-                    <div className="text-[10px] text-[#D4AF37]">
+                    <div className="text-[10px] uppercase tracking-wider text-[#CB9274] font-semibold">
                       Saves {product.setInfo.formattedSavings}
                     </div>
                   )}
@@ -1048,7 +1048,7 @@ export default function ProductDetailPage() {
                     handleSelectSuiteOption('full_suite')
                     handleAddToBag()
                   }}
-                  className="py-3.5 px-6 bg-[#D4AF37] text-[#2A241B] text-xs uppercase tracking-widest font-semibold rounded-xl hover:bg-[#c49f2e] transition-all shadow-lg whitespace-nowrap"
+                  className="py-4 px-8 bg-[#CB9274] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-white hover:text-[#051F34] transition-all duration-300 whitespace-nowrap"
                 >
                   Add Complete Suite to Bag
                 </button>

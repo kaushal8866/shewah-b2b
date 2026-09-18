@@ -7,43 +7,43 @@ import { ArrowRight, Globe, Compass, Gem } from 'lucide-react'
 
 export default function OriginStory() {
   return (
-    <section className="py-20 lg:py-28 bg-[#FBF7F0] border-t border-[#E8DFC9] overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 lg:py-28 bg-[#F6F4F2] border-t border-[#E3DBD4] overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Left Column: Editorial Imagery & Heritage Grid */}
           <div className="lg:col-span-6 relative">
             <div className="relative mx-auto max-w-md lg:max-w-none">
               {/* Main Image */}
-              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl border border-[#E8DFC9]">
+              <div className="relative aspect-[4/5] rounded-none overflow-hidden border border-[#E3DBD4]">
                 <Image
                   src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?q=80&w=1200&auto=format&fit=crop"
-                  alt="SHEWAH Master Karigar diamond setting in atelier"
+                  alt="Jeweler setting diamonds in atelier"
                   fill
                   sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover"
+                  className="object-cover transition-transform duration-700 ease-out hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#2A241B]/80 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#051F34]/80 via-transparent to-transparent" />
                 
                 <div className="absolute bottom-6 left-6 right-6 text-white">
-                  <div className="text-[10px] uppercase tracking-[0.25em] text-[#C9A86A] mb-1">
-                    The Surat Atelier
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-[#CB9274] mb-1 font-semibold">
+                    The Atelier
                   </div>
-                  <div className="font-serif text-lg sm:text-xl font-light">
-                    Where hereditary artisanship meets precision stereomicroscopy.
+                  <div className="font-serif text-lg sm:text-xl font-normal">
+                    Where fine jewellery artisanship meets contemporary design precision.
                   </div>
                 </div>
               </div>
 
-              {/* Floating Antwerp Accent Card */}
-              <div className="absolute -bottom-6 -right-4 sm:-right-8 bg-white border border-[#E8DFC9] p-5 rounded-xl shadow-xl max-w-[240px] sm:max-w-[270px]">
-                <div className="flex items-center gap-2 mb-2 text-[#A88A4F]">
+              {/* Floating Accent Card */}
+              <div className="absolute -bottom-6 -right-4 sm:-right-8 bg-white border border-[#E3DBD4] p-5 rounded-none shadow-lg max-w-[240px] sm:max-w-[270px]">
+                <div className="flex items-center gap-2 mb-2 text-[#CB9274]">
                   <Compass className="w-4 h-4 shrink-0" />
                   <span className="text-[10px] uppercase tracking-[0.2em] font-semibold">
-                    Dual Heritage
+                    Conscious Luxury
                   </span>
                 </div>
-                <p className="text-xs text-[#5C5347] font-light leading-snug">
-                  Antwerp gemological optical standards united with Surat lost-wax gold casting.
+                <p className="text-xs text-[#69727D] font-light leading-snug">
+                  Independent gemological standards united with solid 18K gold crafting.
                 </p>
               </div>
             </div>
@@ -52,52 +52,52 @@ export default function OriginStory() {
           {/* Right Column: Narrative Copy */}
           <div className="lg:col-span-6 space-y-6">
             <div className="flex items-center gap-2">
-              <Gem className="w-4 h-4 text-[#A88A4F]" />
-              <span className="text-[11px] uppercase tracking-[0.3em] text-[#A88A4F] font-medium">
-                Our Provenance
+              <Gem className="w-4 h-4 text-[#CB9274]" />
+              <span className="text-[11px] uppercase tracking-[0.25em] text-[#CB9274] font-medium">
+                Our Philosophy
               </span>
             </div>
 
-            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-[#2A241B] tracking-tight leading-[1.15]">
-              From Antwerp & Surat to Discerning Collectors Worldwide
+            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-[#051F34] font-normal tracking-tight leading-[1.15]">
+              Fine Jewellery Crafted for Discerning Collectors Worldwide
             </h2>
 
-            <div className="space-y-4 text-sm sm:text-base text-[#5C5347] font-light leading-relaxed">
+            <div className="space-y-4 text-sm sm:text-base text-[#69727D] font-light leading-relaxed">
               <p>
-                SHEWAH was founded to challenge the traditional luxury diamond paradigm. For generations, exquisite high jewellery passed through a labyrinth of brokers, wholesale syndicates, and opulent storefronts—multiplying the price tag at every tier while diluting connection to the artisans.
+                SHEWAH was founded to provide transparent, world-class fine jewellery. Traditionally, exquisite jewellery passed through a succession of brokers and distributors—multiplying prices at every level while obscuring provenance.
               </p>
               <p>
-                By anchoring our diamond grading rigor in the historic diamond capital of Antwerp and our manufacturing atelier in the heart of Surat’s master karigar district, we eliminate intermediate markups entirely.
+                By working directly with certified diamond sources and skilled goldsmiths, we eliminate traditional multi-tier retail markups and channel every resource into higher metal purity and superior optical cuts.
               </p>
               <p>
-                Every piece is cast individually in solid 18K gold only when requested, hand-set under stereomicroscopes, independently hallmarked with government assay certificates, and delivered directly to your doorstep in armored transit.
+                Every piece is crafted individually in solid 18K gold to order, hand-finished by skilled jewelers, verified for precious metal fineness, and delivered directly to your door with full insurance.
               </p>
             </div>
 
             {/* Credential Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 pt-4 border-t border-[#E8DFC9]">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 pt-4 border-t border-[#E3DBD4]">
               <div>
-                <div className="font-serif text-2xl sm:text-3xl text-[#2A241B] font-medium">
+                <div className="font-serif text-2xl sm:text-3xl text-[#051F34] font-medium">
                   18K
                 </div>
-                <div className="text-[11px] uppercase tracking-wider text-[#8C8275] mt-1">
-                  Solid 750 Gold Only
+                <div className="text-[11px] uppercase tracking-[0.15em] text-[#69727D] mt-1">
+                  Solid Gold Standard
                 </div>
               </div>
               <div>
-                <div className="font-serif text-2xl sm:text-3xl text-[#2A241B] font-medium">
+                <div className="font-serif text-2xl sm:text-3xl text-[#051F34] font-medium">
                   0%
                 </div>
-                <div className="text-[11px] uppercase tracking-wider text-[#8C8275] mt-1">
-                  Dead Stock Markups
+                <div className="text-[11px] uppercase tracking-[0.15em] text-[#69727D] mt-1">
+                  Middleman Markup
                 </div>
               </div>
               <div className="col-span-2 sm:col-span-1">
-                <div className="font-serif text-2xl sm:text-3xl text-[#2A241B] font-medium">
-                  IGI & GIA
+                <div className="font-serif text-2xl sm:text-3xl text-[#051F34] font-medium">
+                  IGI / GIA
                 </div>
-                <div className="text-[11px] uppercase tracking-wider text-[#8C8275] mt-1">
-                  Dual Certification
+                <div className="text-[11px] uppercase tracking-[0.15em] text-[#69727D] mt-1">
+                  Certified Diamonds
                 </div>
               </div>
             </div>
@@ -106,14 +106,14 @@ export default function OriginStory() {
             <div className="flex flex-wrap items-center gap-4 pt-4">
               <Link
                 href="/about"
-                className="inline-flex items-center gap-2 bg-[#2A241B] text-[#FBF7F0] px-6 py-3.5 rounded-full text-xs uppercase tracking-widest font-medium hover:bg-[#3D3528] transition-colors"
+                className="inline-flex items-center gap-2 bg-[#051F34] text-white px-8 py-4 rounded-none text-xs uppercase tracking-[0.2em] font-semibold hover:bg-[#CB9274] transition-all duration-300"
               >
                 <span>Read The Full Story</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <Link
                 href="/craftsmanship"
-                className="inline-flex items-center gap-2 border border-[#E8DFC9] text-[#2A241B] px-6 py-3.5 rounded-full text-xs uppercase tracking-widest font-medium hover:border-[#2A241B] hover:bg-white transition-colors"
+                className="inline-flex items-center gap-2 border border-[#051F34] text-[#051F34] px-8 py-4 rounded-none text-xs uppercase tracking-[0.2em] font-semibold hover:bg-[#051F34] hover:text-white transition-all duration-300"
               >
                 <span>Explore The Atelier</span>
               </Link>

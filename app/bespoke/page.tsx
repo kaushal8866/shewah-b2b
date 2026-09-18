@@ -42,15 +42,15 @@ const TRUST = [
 
 const PROOF = [
   { n: '12,000+', l: 'Pieces crafted for international jewellers' },
-  { n: '180+',    l: 'Hereditary master artisans in our workshops' },
-  { n: '2',       l: 'Cutting & casting centres: Antwerp & Surat' },
+  { n: '180+',    l: 'Artisans and stone setters in our atelier' },
+  { n: '100%',    l: 'Certified diamonds & solid gold craftsmanship' },
 ]
 
 const STEPS = [
   { n: '01', h: 'Submit your brief',    p: 'Share your desired style, diamond parameters, and budget. Simple 2-minute form, no calls needed.' },
-  { n: '02', h: '3D CAD render',        p: 'Receive custom photorealistic 3D CAD renders of your design with unlimited revisions within 3 days.' },
+  { n: '02', h: '3D CAD render',        p: 'Receive custom photorealistic 3D CAD renders of your design with revisions within 3 days.' },
   { n: '03', h: 'Transparent approval', p: 'Complete itemised breakdown of pure gold weight, labour, and diamond specifications before crafting.' },
-  { n: '04', h: 'Insured delivery',     p: 'Individually hand-cast, hallmarked, and delivered in discreet armoured packaging to your doorstep.' },
+  { n: '04', h: 'Insured delivery',     p: 'Individually crafted, hallmarked, and delivered in secure discreet packaging to your doorstep.' },
 ]
 
 const empty = {
@@ -407,7 +407,7 @@ export default function BespokePage() {
             <div className="absolute inset-0 flex items-center">
               <div className="mx-auto w-full max-w-5xl px-6 sm:px-8">
                 <p className="mb-4 text-[10px] uppercase tracking-[0.35em] text-[#D4AF37] font-semibold">
-                  Atelier Handcrafted · Antwerp & Surat Provenance
+                  Atelier Handcrafted · Master Jeweller Provenance
                 </p>
                 <h1 className="max-w-2xl font-serif text-4xl leading-[1.1] text-white sm:text-6xl font-light">
                   Your Bespoke Design, <br />

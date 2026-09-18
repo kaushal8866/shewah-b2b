@@ -189,7 +189,7 @@ export default function PortalProductPage() {
         <div className="bg-stone-50 rounded-xl p-4 mb-6 flex items-center gap-3">
           <div className="text-2xl">◆</div>
           <div>
-            <p className="text-sm font-medium text-stone-900">Made-to-order in Surat</p>
+            <p className="text-sm font-medium text-stone-900">Made-to-order by Master Jewellers</p>
             <p className="text-xs text-stone-900">Each piece is custom made · Delivery in {product.delivery_days || 14}–{(product.delivery_days || 14) + 7} days · BIS Hallmarked · IGI Certified</p>
           </div>
         </div>

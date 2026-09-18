@@ -25,13 +25,13 @@ import { type ProductCardProps } from '@/components/d2c/ProductCard'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'SHEWAH | High Jewellery Atelier & Certified Diamonds',
+  title: 'SHEWAH | Fine Jewellery Atelier & Certified Diamonds',
   description:
-    'Handcrafted fine diamond jewellery cast individually in solid 18K gold. Antwerp & Surat certified natural and lab-grown diamonds, bespoke engagement rings, and high jewellery suites with worldwide insured armored delivery.',
+    'Handcrafted fine jewellery individually made to order in solid 18K gold. Certified natural and lab-grown diamonds, bespoke commissions, and fine jewellery suites with worldwide insured delivery.',
   openGraph: {
-    title: 'SHEWAH | High Jewellery Atelier & Certified Diamonds',
+    title: 'SHEWAH | Fine Jewellery Atelier & Certified Diamonds',
     description:
-      'Handcrafted fine diamond jewellery cast individually in solid 18K gold and set with certified diamonds.',
+      'Handcrafted fine diamond jewellery individually made to order in solid 18K gold and set with certified diamonds.',
     type: 'website',
   },
 }
@@ -121,7 +121,7 @@ export default async function HomePage() {
       {/* 8. Diamond Provenance, 4Cs Education & Silhouette Discovery */}
       <DiamondDiscovery />
 
-      {/* 9. Surat Master Karigar Craftsmanship & Solid 18K Gold Metallurgy */}
+      {/* 9. Master Craftsmanship & Solid 18K Gold Metallurgy */}
       <CraftsmanshipSection />
 
       {/* 10. Verified Private Client Testimonials & Heirloom Commissions */}
@@ -130,7 +130,7 @@ export default async function HomePage() {
       {/* 11. Private Atelier Concierge & Consultation Action Banner */}
       <ServiceBanner />
 
-      {/* 12. "From Antwerp & Surat to the World" Brand Provenance Story */}
+      {/* 12. Brand Provenance & Craft Story */}
       <OriginStory />
 
       {/* 13. High-Conversion Dedicated Consultation Booking Module */}

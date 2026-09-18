@@ -23,18 +23,18 @@ export default function CategoryDiscovery({
         : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
 
   return (
-    <section className="py-20 bg-[#FBF7F0] border-b border-[#E8DFC9]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 sm:py-28 bg-[#F6F4F2] border-b border-[#E3DBD4]">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
         {/* Section Header */}
-        <div className="text-center max-w-xl mx-auto space-y-3 mb-14">
-          <span className="text-[10px] uppercase tracking-[0.35em] text-[#A88A4F] font-semibold block">
+        <div className="text-center max-w-xl mx-auto space-y-3 mb-16">
+          <span className="text-[11px] uppercase tracking-[0.25em] text-[#CB9274] font-medium block">
             Curated Categories
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl text-[#2A241B] font-light">
+          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-[#051F34] font-normal tracking-tight">
             Crafted for Generations
           </h2>
-          <p className="text-xs sm:text-sm text-[#5C5347] font-light leading-relaxed">
-            Discover iconic high jewellery designs forged from the purest solid gold alloys and certified diamonds.
+          <p className="text-sm text-[#69727D] font-light leading-relaxed">
+            Discover iconic high jewellery designs forged from solid 18K gold and certified diamonds.
           </p>
         </div>
 
@@ -45,29 +45,29 @@ export default function CategoryDiscovery({
               key={col.key}
               href={col.href}
               onClick={() => trackEvent('category_click', { category: col.key, label: col.label })}
-              className="group relative h-96 sm:h-[420px] rounded-2xl overflow-hidden shadow-sm flex flex-col justify-end p-6 sm:p-8 border border-[#E8DFC9] transition-all hover:shadow-2xl"
+              className="group relative h-96 sm:h-[440px] rounded-none overflow-hidden flex flex-col justify-end p-6 sm:p-8 border border-[#E3DBD4] transition-all hover:border-[#051F34]"
             >
               {col.image && (
                 <div
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105"
                   style={{ backgroundImage: `url('${col.image}')` }}
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#051F34]/85 via-[#051F34]/30 to-transparent" />
 
-              <div className="relative z-10 text-white space-y-1.5">
-                <span className="text-[9px] uppercase tracking-widest text-[#C9A86A] font-mono">
-                  {col.count} {col.count === 1 ? 'Masterwork' : 'Masterworks'}
+              <div className="relative z-10 text-white space-y-2">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-[#CB9274] font-medium">
+                  {col.count} {col.count === 1 ? 'Design' : 'Designs'}
                 </span>
-                <h3 className="font-serif text-2xl font-light tracking-wide text-white">
+                <h3 className="font-serif text-2xl sm:text-3xl font-normal tracking-wide text-white">
                   {col.label}
                 </h3>
                 {col.subtitle && (
-                  <p className="text-xs text-stone-300 font-light line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-white/80 font-light line-clamp-2 leading-relaxed">
                     {col.subtitle}
                   </p>
                 )}
-                <div className="pt-3 flex items-center gap-1.5 text-xs text-[#C9A86A] font-medium tracking-wider uppercase group-hover:translate-x-1 transition-transform">
+                <div className="pt-2 flex items-center gap-2 text-[11px] text-[#CB9274] font-semibold tracking-[0.2em] uppercase group-hover:translate-x-1 transition-transform">
                   <span>Explore Collection</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </div>

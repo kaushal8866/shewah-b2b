@@ -7,22 +7,7 @@
  *   public-route detection — we add `/c` to its allow-list).
  */
 import type { Metadata } from 'next'
-import { Cormorant_Garamond, Inter } from 'next/font/google'
 import './consumer.css'
-
-const serif = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-consumer-serif',
-  display: 'swap',
-})
-
-const sans = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-consumer-sans',
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: 'Your custom piece — Shewah Jewellery',
@@ -31,8 +16,16 @@ export const metadata: Metadata = {
 
 export default function ConsumerLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${serif.variable} ${sans.variable} consumer-shell min-h-screen bg-white text-stone-800`}>
-      {children}
-    </div>
+    <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet"
+      />
+      <div className="consumer-shell min-h-screen bg-white text-stone-800">
+        {children}
+      </div>
+    </>
   )
 }

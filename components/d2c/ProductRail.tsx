@@ -36,46 +36,46 @@ export default function ProductRail({
   }
 
   return (
-    <section className="py-16 sm:py-20 border-b border-[#E8DFC9] bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 sm:py-24 border-b border-[#E3DBD4] bg-[#FFFFFF]">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
         {/* Header with Navigation Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
           <div className="space-y-2">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-[#A88A4F] font-semibold block">
+            <span className="text-[11px] uppercase tracking-[0.25em] text-[#CB9274] font-medium block">
               {eyebrow}
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl text-[#2A241B] font-light">
+            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-[#051F34] font-normal tracking-tight">
               {title}
             </h2>
             {subtitle && (
-              <p className="text-xs sm:text-sm text-[#5C5347] font-light max-w-xl">
+              <p className="text-sm text-[#69727D] font-light max-w-xl">
                 {subtitle}
               </p>
             )}
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-4 shrink-0">
             {viewAllHref && (
               <Link
                 href={viewAllHref}
-                className="text-xs uppercase tracking-wider font-semibold text-[#2A241B] hover:text-[#A88A4F] transition-colors flex items-center gap-1.5 mr-2"
+                className="text-xs uppercase tracking-[0.2em] font-medium text-[#051F34] hover:text-[#CB9274] transition-colors flex items-center gap-2 mr-2"
               >
                 <span>{viewAllLabel}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             )}
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => handleScroll('left')}
-                className="p-2 rounded-full border border-[#E8DFC9] text-[#2A241B] hover:bg-[#FBF7F0] hover:border-[#2A241B] transition-colors active:scale-95"
+                className="w-10 h-10 flex items-center justify-center border border-[#E3DBD4] text-[#051F34] hover:bg-[#051F34] hover:text-white hover:border-[#051F34] transition-colors active:scale-95"
                 aria-label="Scroll left"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleScroll('right')}
-                className="p-2 rounded-full border border-[#E8DFC9] text-[#2A241B] hover:bg-[#FBF7F0] hover:border-[#2A241B] transition-colors active:scale-95"
+                className="w-10 h-10 flex items-center justify-center border border-[#E3DBD4] text-[#051F34] hover:bg-[#051F34] hover:text-white hover:border-[#051F34] transition-colors active:scale-95"
                 aria-label="Scroll right"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -93,7 +93,7 @@ export default function ProductRail({
           {products.map((p) => (
             <div
               key={p.id}
-              className="min-w-[260px] sm:min-w-[300px] max-w-[320px] flex-shrink-0 snap-start"
+              className="min-w-[280px] sm:min-w-[320px] max-w-[340px] flex-shrink-0 snap-start"
             >
               <ProductCard {...p} />
             </div>

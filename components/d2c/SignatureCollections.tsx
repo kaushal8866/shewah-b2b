@@ -21,7 +21,7 @@ export default function SignatureCollections({ products }: SignatureCollectionsP
   }, [products])
 
   const tabs = useMemo(() => {
-    const list = [{ key: 'all', label: 'All Masterworks' }]
+    const list = [{ key: 'all', label: 'All Creations' }]
     if (availableCategories.includes('necklaces')) {
       list.push({ key: 'necklaces', label: 'Necklaces & Pendants' })
     }
@@ -44,18 +44,18 @@ export default function SignatureCollections({ products }: SignatureCollectionsP
   if (!products || products.length === 0) return null
 
   return (
-    <section className="py-20 sm:py-24 bg-white border-b border-[#E8DFC9]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div className="space-y-2">
-            <span className="text-[10px] uppercase tracking-[0.35em] text-[#A88A4F] font-semibold block">
-              Curated Atelier Merchandising
+    <section className="py-20 sm:py-28 bg-white border-b border-[#E3DBD4]">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+          <div className="space-y-3">
+            <span className="text-[11px] uppercase tracking-[0.25em] text-[#CB9274] font-medium block">
+              Curated Selections
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl text-[#2A241B] font-light">
+            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-[#051F34] font-normal tracking-tight">
               Signature Creations
             </h2>
-            <p className="text-xs sm:text-sm text-[#5C5347] font-light max-w-xl">
-              Each piece is individual in creation, certified by international gemological authorities, and cast in solid gold alloys.
+            <p className="text-sm text-[#69727D] font-light max-w-xl">
+              Each piece is individually crafted in solid 18K gold and set with certified diamonds to order.
             </p>
           </div>
 
@@ -65,10 +65,10 @@ export default function SignatureCollections({ products }: SignatureCollectionsP
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-xs uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
+                className={`px-5 py-2.5 text-[11px] uppercase tracking-[0.2em] rounded-none transition-all whitespace-nowrap ${
                   activeTab === tab.key
-                    ? 'bg-[#2A241B] text-white font-medium shadow-sm'
-                    : 'bg-[#FBF7F0] border border-[#E8DFC9] text-[#5C5347] hover:border-[#2A241B] hover:text-[#2A241B]'
+                    ? 'bg-[#051F34] text-white border border-[#051F34] font-semibold'
+                    : 'bg-transparent border border-[#E3DBD4] text-[#69727D] hover:border-[#051F34] hover:text-[#051F34]'
                 }`}
               >
                 {tab.label}
@@ -85,13 +85,13 @@ export default function SignatureCollections({ products }: SignatureCollectionsP
         </div>
 
         {/* Bottom Catalog Action */}
-        <div className="pt-14 text-center">
+        <div className="pt-16 text-center">
           <Link
             href="/jewellery"
-            className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#FBF7F0] border border-[#E8DFC9] text-[#2A241B] text-xs uppercase tracking-widest font-semibold rounded-full hover:bg-[#2A241B] hover:text-white transition-all shadow-sm"
+            className="inline-flex items-center gap-2 px-9 py-4 bg-transparent border border-[#051F34] text-[#051F34] text-xs uppercase tracking-[0.2em] font-semibold hover:bg-[#051F34] hover:text-white transition-all duration-300"
           >
-            <span>Explore Entire Jewellery Vault</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>Explore Entire Collection</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       </div>

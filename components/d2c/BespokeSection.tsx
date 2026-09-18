@@ -10,27 +10,27 @@ export default function BespokeSection() {
     {
       num: '01',
       title: 'Submit Your Vision',
-      desc: 'Share a sketch, an heirloom inspiration, or simply a desired carat size and metal alloy.',
+      desc: 'Share a sketch, an heirloom inspiration, or desired diamond shape and precious metal alloy.',
     },
     {
       num: '02',
       title: '3D CAD Rendering',
-      desc: 'Review custom photorealistic CAD renders from multiple camera perspectives with unlimited refinements.',
+      desc: 'Review custom photorealistic CAD renders from multiple camera perspectives with refined adjustments.',
     },
     {
       num: '03',
       title: 'Atelier Goldsmithing',
-      desc: 'Individually cast in solid 18K gold and set under microscope magnification by master artisans.',
+      desc: 'Individually crafted in solid 18K gold and handset by meticulous jewelers.',
     },
     {
       num: '04',
-      title: 'Armored Delivery',
-      desc: 'Independently assay-hallmarked, certified by IGI or GIA, and delivered insured to your door.',
+      title: 'Insured Delivery',
+      desc: 'Certified by IGI or GIA where applicable, and delivered with full door-to-door insurance.',
     },
   ]
 
   return (
-    <section className="py-20 sm:py-24 bg-[#2A241B] text-[#FBF7F0] relative overflow-hidden">
+    <section className="py-20 sm:py-28 bg-[#051F34] text-white relative overflow-hidden">
       {/* Subtle ambient luxury backdrop */}
       <div
         className="absolute inset-0 bg-cover bg-center opacity-10"
@@ -38,39 +38,39 @@ export default function BespokeSection() {
           backgroundImage: `url('https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=1920&q=80')`,
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#2A241B] via-transparent to-[#2A241B]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#051F34] via-transparent to-[#051F34]" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 max-w-[1440px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Left: Headline & Consultation Pitch (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
-            <span className="text-[10px] uppercase tracking-[0.35em] text-[#C9A86A] font-semibold block">
+            <span className="text-[11px] uppercase tracking-[0.25em] text-[#CB9274] font-medium block">
               Private Commission
             </span>
 
-            <h2 className="font-serif text-3xl sm:text-5xl font-light text-white leading-tight">
+            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal text-white leading-tight">
               Bespoke Jewellery, <br />
               Sculpted Around You.
             </h2>
 
-            <p className="text-xs sm:text-sm text-stone-300 font-light leading-relaxed">
-              Your jewellery can begin with an heirloom stone, an architectural sketch, or simply a cherished memory. Collaborate 1-on-1 with our master CAD sculptors and gemologists to create a one-of-a-kind treasure.
+            <p className="text-sm text-stone-300 font-light leading-relaxed">
+              Your jewellery can begin with an heirloom stone, an architectural sketch, or simply a cherished memory. Collaborate 1-on-1 with our design team to create a one-of-a-kind treasure.
             </p>
 
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
               <Link
                 href="/consultation"
                 onClick={() => trackEvent('consultation_click', { source: 'bespoke_section' })}
-                className="px-8 py-3.5 bg-[#C9A86A] text-[#2A241B] text-xs uppercase tracking-widest font-semibold rounded-full hover:bg-[#E8D6AC] transition-all shadow-xl text-center flex items-center justify-center gap-2"
+                className="px-8 py-4 bg-[#CB9274] text-white text-xs uppercase tracking-[0.2em] font-semibold hover:bg-white hover:text-[#051F34] transition-all duration-300 text-center flex items-center justify-center gap-2"
               >
                 <span>Book a Consultation</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <Link
                 href="/bespoke"
-                className="px-8 py-3.5 border border-[#E8DFC9]/40 text-white text-xs uppercase tracking-widest font-medium rounded-full hover:bg-white/10 transition-colors text-center"
+                className="px-8 py-4 border border-white/40 text-white text-xs uppercase tracking-[0.2em] font-semibold hover:bg-white hover:text-[#051F34] transition-all duration-300 text-center"
               >
-                Explore Bespoke Process
+                Explore Bespoke
               </Link>
             </div>
           </div>
@@ -80,14 +80,14 @@ export default function BespokeSection() {
             {steps.map((s) => (
               <div
                 key={s.num}
-                className="p-6 rounded-2xl bg-stone-900/80 border border-[#E8DFC9]/20 space-y-2.5 backdrop-blur-sm hover:border-[#C9A86A]/50 transition-colors"
+                className="p-6 sm:p-8 bg-white/5 border border-white/10 space-y-3 backdrop-blur-sm hover:border-[#CB9274] transition-colors"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-[#C9A86A]">{s.num}</span>
-                  <Sparkles className="w-3.5 h-3.5 text-[#C9A86A]/60" />
+                  <span className="font-mono text-xs font-semibold text-[#CB9274]">{s.num}</span>
+                  <Sparkles className="w-4 h-4 text-[#CB9274]" />
                 </div>
-                <h4 className="font-serif text-lg text-white font-medium">{s.title}</h4>
-                <p className="text-[11px] text-stone-400 font-light leading-relaxed">
+                <h4 className="font-serif text-xl text-white font-normal">{s.title}</h4>
+                <p className="text-xs text-stone-300 font-light leading-relaxed">
                   {s.desc}
                 </p>
               </div>

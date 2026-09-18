@@ -1,20 +1,5 @@
 import type { Metadata } from 'next'
-import { Cormorant_Garamond, Inter } from 'next/font/google'
 import './consultation.css'
-
-const serif = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-serif',
-  display: 'swap',
-})
-
-const sans = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-sans',
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: 'Bespoke Jewellery Design Consultation | SHEWAH',
@@ -32,8 +17,16 @@ export const metadata: Metadata = {
 
 export default function ConsultationLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${serif.variable} ${sans.variable} consultation-shell min-h-screen bg-stone-900 text-[rgba(255,255,255,0.90)]`}>
-      {children}
-    </div>
+    <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+      <div className="consultation-shell min-h-screen bg-stone-900 text-[rgba(255,255,255,0.90)]">
+        {children}
+      </div>
+    </>
   )
 }

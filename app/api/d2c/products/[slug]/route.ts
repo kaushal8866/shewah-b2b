@@ -205,7 +205,7 @@ export async function GET(
       code: product.code,
       name: product.d2c_title || product.name,
       slug: product.slug || product.code.toLowerCase(),
-      subtitle: product.d2c_subtitle || 'Bespoke Craftsmanship • Antwerp Cut Diamonds',
+      subtitle: product.d2c_subtitle || 'Bespoke Craftsmanship • Certified Diamonds',
       description: product.d2c_description || product.description || 'An exquisite masterwork hand-crafted in solid gold.',
       category: product.category,
       photoUrls: product.photo_urls || [],
