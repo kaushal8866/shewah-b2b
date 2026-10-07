@@ -128,12 +128,23 @@ export async function createDraftArticle(params: CreateDraftParams): Promise<Sto
       bodyMarkdown: cleanBody,
       category: params.category,
       heroImageUrl: params.heroImageUrl,
+      heroImageAlt: params.heroImageAlt,
+      heroImageCaption: params.heroImageCaption,
+      heroImageRights: params.heroImageRights,
       sourceReferences: params.sourceReferences,
     },
     settings.allowed_categories
   )
 
   if (!validation.valid) {
+    await recordBlogAudit({
+      actorType: params.actorType,
+      actorId: params.actorId,
+      operation: 'create_draft',
+      outcome: 'failure',
+      requestId: params.requestId,
+      errorMessage: validation.blockers.join('; '),
+    })
     return {
       success: false,
       error: { code: 'VALIDATION_FAILED', message: validation.blockers.join(' '), details: validation },
@@ -376,11 +387,30 @@ export async function updateDraftArticle(params: UpdateDraftParams): Promise<Sto
 
   // Validate merged draft
   const validation = validateDraftPayload(
-    { title, slug: newSlug, bodyMarkdown, category, heroImageUrl, sourceReferences },
+    {
+      title,
+      slug: newSlug,
+      bodyMarkdown,
+      category,
+      heroImageUrl,
+      heroImageAlt,
+      heroImageCaption,
+      heroImageRights,
+      sourceReferences,
+    },
     settings.allowed_categories
   )
 
   if (!validation.valid) {
+    await recordBlogAudit({
+      articleId: params.articleId,
+      actorType: params.actorType,
+      actorId: params.actorId,
+      operation: 'update_draft',
+      outcome: 'failure',
+      requestId: params.requestId,
+      errorMessage: validation.blockers.join('; '),
+    })
     return {
       success: false,
       error: { code: 'VALIDATION_FAILED', message: validation.blockers.join(' '), details: validation },
@@ -551,6 +581,8 @@ export async function publishArticle(
       authorDisplayName: rev.author_display_name,
       heroImageUrl: rev.hero_image_url,
       heroImageAlt: rev.hero_image_alt,
+      heroImageCaption: rev.hero_image_caption,
+      heroImageRights: rev.hero_image_rights,
       seoTitle: rev.seo_title,
       metaDescription: rev.meta_description,
       sourceReferences: rev.source_references,
@@ -559,6 +591,16 @@ export async function publishArticle(
   )
 
   if (!validation.valid) {
+    await recordBlogAudit({
+      articleId,
+      revisionId: rev.id,
+      actorType: actor.type,
+      actorId: actor.id,
+      operation: 'publish',
+      outcome: 'failure',
+      requestId,
+      errorMessage: validation.blockers.join('; '),
+    })
     return {
       success: false,
       error: { code: 'VALIDATION_FAILED', message: validation.blockers.join(' '), details: validation },

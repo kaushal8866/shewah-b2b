@@ -177,6 +177,12 @@ describe('Blog Editorial Model & State Machine', () => {
           url: 'https://www.igi.org',
           checkedAt: '2026-09-15',
         },
+        {
+          title: 'GIA Diamond Origin and Grading Overview',
+          sourceName: 'Gemological Institute of America',
+          url: 'https://www.gia.edu',
+          checkedAt: '2026-09-15',
+        },
       ],
     }
 

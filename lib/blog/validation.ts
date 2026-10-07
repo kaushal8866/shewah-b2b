@@ -23,45 +23,27 @@ const DISALLOWED_HTML_TAGS = [
 
 const DANGEROUS_PROTOCOLS = ['javascript:', 'data:', 'vbscript:', 'file:']
 
+import {
+  inspectSubmissionSafety,
+  sanitizeMarkdownContent,
+  validateUrlSafety,
+  detectPromptInjectionAndHiddenText,
+  checkEditorialClaimsAndSeparation,
+} from './safety'
+
 /**
- * Sanitize untrusted Markdown/text input: strips hazardous tags and protocol attributes.
+ * Sanitize untrusted Markdown/text input: strips hazardous tags, inline styles, event handlers, and protocol attributes.
  */
 export function sanitizeMarkdown(input: string): string {
-  if (!input) return ''
-  let sanitized = input
-
-  // Remove dangerous tags and their content
-  for (const tag of DISALLOWED_HTML_TAGS) {
-    const regex = new RegExp(`<${tag}[^>]*>[\\s\\S]*?<\\/${tag}>`, 'gi')
-    sanitized = sanitized.replace(regex, '')
-    const selfClosing = new RegExp(`<${tag}[^>]*\\/?>`, 'gi')
-    sanitized = sanitized.replace(selfClosing, '')
-  }
-
-  // Remove inline event handlers (onload, onerror, onclick, etc.)
-  sanitized = sanitized.replace(/\s+on\w+\s*=\s*(["'])[\s\S]*?\1/gi, '')
-  sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '')
-
-  // Remove dangerous URI schemes in markdown links [text](javascript:...)
-  sanitized = sanitized.replace(
-    /\[([^\]]*)\]\((javascript|data|vbscript|file):[^)]*\)/gi,
-    '[$1](#)'
-  )
-
-  return sanitized
+  return sanitizeMarkdownContent(input)
 }
 
 /**
- * Validate URL string safety (must be valid http: or https:).
+ * Validate URL string safety with private IP and SSRF protection.
  */
 export function isSafeUrl(urlStr?: string | null): boolean {
   if (!urlStr) return true
-  try {
-    const parsed = new URL(urlStr)
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
-  } catch {
-    return false
-  }
+  return validateUrlSafety(urlStr).safe
 }
 
 export interface ArticleDraftInput {
@@ -88,7 +70,7 @@ export interface ArticleDraftInput {
  */
 export function validateDraftPayload(
   payload: Partial<ArticleDraftInput>,
-  allowedCategories: string[] = ['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds']
+  allowedCategories: string[] = ['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds', 'care-guide', 'buying-guide', 'styling']
 ): ValidationResult {
   const blockers: string[] = []
   const warnings: string[] = []
@@ -112,38 +94,27 @@ export function validateDraftPayload(
     blockers.push('Article body exceeds maximum allowed size (150,000 characters).')
   }
 
-  // Category validation
-  if (payload.category && !allowedCategories.includes(payload.category)) {
-    blockers.push(`Category "${payload.category}" is not in the allowed list: ${allowedCategories.join(', ')}`)
-  }
+  // Comprehensive safety and policy inspection (SSRF, prompt injection, hidden text, British spelling, trade separation, claims)
+  const safetyResult = inspectSubmissionSafety(
+    {
+      title: payload.title || '',
+      slug: payload.slug,
+      bodyMarkdown: payload.bodyMarkdown || '',
+      category: payload.category || '',
+      heroImageUrl: payload.heroImageUrl,
+      heroImageAlt: payload.heroImageAlt,
+      heroImageCaption: payload.heroImageCaption,
+      heroImageRights: payload.heroImageRights,
+      sourceReferences: payload.sourceReferences,
+    },
+    allowedCategories
+  )
 
-  // Hero Image URL safety
-  if (payload.heroImageUrl && !isSafeUrl(payload.heroImageUrl)) {
-    blockers.push('Hero image URL must be a valid HTTP or HTTPS URL.')
-  }
-
-  // Source references validation
-  if (payload.sourceReferences && Array.isArray(payload.sourceReferences)) {
-    payload.sourceReferences.forEach((ref, index) => {
-      if (!ref.title || !ref.sourceName) {
-        blockers.push(`Source reference #${index + 1} must include both a title and source name.`)
-      }
-      if (ref.url && !isSafeUrl(ref.url)) {
-        blockers.push(`Source reference #${index + 1} URL "${ref.url}" is not a safe HTTP/HTTPS link.`)
-      }
-      if (ref.checkedAt) {
-        const d = new Date(ref.checkedAt)
-        if (isNaN(d.getTime())) {
-          blockers.push(`Source reference #${index + 1} checkedAt date is invalid.`)
-        }
-      }
-    })
-  }
-
-  // Check for dangerous patterns in body
-  for (const proto of DANGEROUS_PROTOCOLS) {
-    if (payload.bodyMarkdown && payload.bodyMarkdown.toLowerCase().includes(proto)) {
-      blockers.push(`Article content contains prohibited protocol pattern: "${proto}".`)
+  for (const violation of safetyResult.violations) {
+    if (violation.severity === 'blocker') {
+      blockers.push(violation.message)
+    } else {
+      warnings.push(violation.message)
     }
   }
 
@@ -160,14 +131,6 @@ export function validateDraftPayload(
     warnings.push('No research source references provided. Educational articles should include primary citations.')
   }
 
-  if (payload.bodyMarkdown && (
-    payload.bodyMarkdown.includes('guaranteed return') ||
-    payload.bodyMarkdown.includes('investment promise') ||
-    payload.bodyMarkdown.includes('#1 jewellery')
-  )) {
-    warnings.push('Content contains claims regarding investment returns or unsubstantiated superlatives.')
-  }
-
   return {
     valid: blockers.length === 0,
     blockers,
@@ -180,7 +143,7 @@ export function validateDraftPayload(
  */
 export function validateForPublication(
   article: Partial<ArticleDraftInput>,
-  allowedCategories: string[] = ['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds']
+  allowedCategories: string[] = ['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds', 'care-guide', 'buying-guide', 'styling']
 ): ValidationResult {
   const base = validateDraftPayload(article, allowedCategories)
   const blockers = [...base.blockers]
@@ -194,6 +157,10 @@ export function validateForPublication(
     blockers.push('Publication requires an approved hero image.')
   } else if (!article.heroImageAlt || article.heroImageAlt.trim().length < 5) {
     blockers.push('Publication requires descriptive hero image alt text.')
+  }
+
+  if (article.heroImageUrl && (!article.heroImageRights || article.heroImageRights.trim().length < 5)) {
+    blockers.push('Publication requires an editorial rights/attribution note for the hero image.')
   }
 
   if (!article.authorDisplayName || article.authorDisplayName.trim().length < 3) {

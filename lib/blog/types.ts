@@ -23,6 +23,7 @@ export type AuditOperation =
   | 'resume_automation'
   | 'create_token'
   | 'revoke_token'
+  | 'upload_media'
 
 export type AuditOutcome = 'success' | 'failure' | 'conflict'
 
