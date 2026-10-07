@@ -433,7 +433,7 @@ export default function CheckoutPage() {
                   className="mt-0.5 border-[#E3DBD4] text-[#051F34] focus:ring-[#051F34]"
                 />
                 <span className="text-xs text-[#69727D] font-sans leading-tight">
-                  I agree to the <Link href="/shipping" className="underline text-[#051F34]">Terms of Service</Link> and acknowledge the <Link href="/returns" className="underline text-[#051F34]">Privacy Policy</Link>. *
+                  I agree to the <Link href="/terms" className="underline text-[#051F34] hover:text-[#CB9274]">Terms of Service</Link> and acknowledge the <Link href="/privacy" className="underline text-[#051F34] hover:text-[#CB9274]">Privacy Policy</Link>. *
                 </span>
               </label>
 

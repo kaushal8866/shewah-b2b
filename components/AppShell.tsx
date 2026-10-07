@@ -173,6 +173,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/returns') ||
     pathname.startsWith('/warranty') ||
     pathname.startsWith('/care') ||
+    pathname.startsWith('/contact') ||
+    pathname.startsWith('/privacy') ||
+    pathname.startsWith('/terms') ||
     pathname.startsWith('/wishlist') ||
     pathname.startsWith('/ring-size-guide') ||
     pathname.startsWith('/pages') ||

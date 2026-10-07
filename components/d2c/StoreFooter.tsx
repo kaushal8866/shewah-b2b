@@ -60,6 +60,10 @@ export default function StoreFooter() {
               <ShieldCheck className="w-4 h-4 stroke-[1.5]" />
               <span className="tracking-wide">Made to Order • Certified Diamonds</span>
             </div>
+            <div className="pt-2 text-[11px] text-stone-400 space-y-0.5 font-light leading-relaxed">
+              <p>Atelier Shewah • Surat Diamond Bourse / Katargam, Surat, Gujarat 395004, India</p>
+              <p>Client Care: <a href="mailto:concierge@shewah.co" className="hover:text-white underline">concierge@shewah.co</a> • <a href="https://wa.me/919662266360" target="_blank" rel="noopener noreferrer" className="hover:text-white underline">+91 96622 66360</a></p>
+            </div>
           </div>
 
           {/* Col 2: High Jewellery */}
@@ -68,10 +72,10 @@ export default function StoreFooter() {
               Collections
             </h4>
             <ul className="space-y-2.5 text-xs text-stone-300">
-              {collections.map((col) => (
-                <li key={col.key}>
-                  <Link href={col.href} className="hover:text-white transition-colors tracking-wide">
-                    {col.label}
+              {collections.map((c: any) => (
+                <li key={c.slug || c.key}>
+                  <Link href={`/jewellery?category=${c.slug || c.key}`} className="hover:text-white transition-colors tracking-wide">
+                    {c.label}
                   </Link>
                 </li>
               ))}
@@ -94,6 +98,11 @@ export default function StoreFooter() {
               Client Care
             </h4>
             <ul className="space-y-2.5 text-xs text-stone-300">
+              <li>
+                <Link href="/contact" className="hover:text-white transition-colors tracking-wide">
+                  Contact & Concierge
+                </Link>
+              </li>
               <li>
                 <Link href="/consultation" className="hover:text-white transition-colors tracking-wide">
                   Book Consultation
@@ -145,14 +154,14 @@ export default function StoreFooter() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email address"
-                    className="w-full bg-white/10 border border-white/20 px-3.5 py-2.5 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#CB9274] transition-colors"
+                    className="w-full bg-white/10 border border-white/20 px-3.5 py-2.5 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#CB9274] transition-colors rounded-none"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-white text-[#051F34] hover:bg-[#CB9274] hover:text-white px-4 py-2.5 text-[11px] uppercase tracking-[0.16em] font-semibold transition-colors"
+                  className="w-full bg-white text-[#051F34] hover:bg-[#CB9274] hover:text-white px-4 py-2.5 text-[11px] uppercase tracking-[0.16em] font-semibold transition-colors rounded-none"
                 >
-                  Join Register
+                  SUBSCRIBE
                 </button>
               </form>
             )}
@@ -162,9 +171,13 @@ export default function StoreFooter() {
         {/* Bottom Bar: Copyright & Discrete Trade Access */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-400">
           <p>© {new Date().getFullYear()} SHEWAH High Jewellery. All rights reserved.</p>
-          <div className="flex items-center gap-6 text-[11px]">
-            <Link href="/shipping" className="hover:text-white transition-colors">
-              Privacy & Terms
+          <div className="flex items-center gap-4 text-[11px]">
+            <Link href="/privacy" className="hover:text-white transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="text-white/20 select-none">•</span>
+            <Link href="/terms" className="hover:text-white transition-colors">
+              Terms of Service
             </Link>
             <span className="text-white/20 select-none">•</span>
             <Link href="/business" className="hover:text-[#CB9274] transition-colors tracking-widest uppercase font-medium">

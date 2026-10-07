@@ -6,7 +6,7 @@ export const BRAND = {
   name: 'Shewah',
   tagline: 'Diamond jewellery, the way Indian retailers actually want it.',
   primaryColor: '#1E3A5F',
-  whatsappE164: '919876543210',   // operator-editable; used for the floating WA button
+  whatsappE164: '919662266360',   // operator-editable; used for the floating WA button
   contactEmail: 'partners@shewah.com',
 }
 
@@ -21,10 +21,10 @@ export const HERO = {
 }
 
 export const STATS = [
-  { value: '12,000+', label: 'Pieces shipped to partners' },
-  { value: '180+',     label: 'Karigars on our network'   },
-  { value: '64',       label: 'Cities served' },
-  { value: '< 1 day',  label: 'Lead-to-call time' },
+  { value: '100% Solid', label: '18K & 14K Gold Hallmark' },
+  { value: 'Certified',  label: 'Natural & Lab-Grown Diamonds' },
+  { value: 'Surat',      label: 'Manufacturing Atelier Base' },
+  { value: '48h',        label: 'Custom CAD Turnaround' },
 ]
 
 export const VALUE_PROPS = [

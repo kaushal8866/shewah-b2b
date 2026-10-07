@@ -6,8 +6,28 @@ import { WishlistProvider } from '@/lib/wishlistStore'
 import AppShell from '@/components/AppShell'
 import Script from 'next/script'
 export const metadata: Metadata = {
-  title: 'SHEWAH | High Jewellery Atelier & Certified Diamonds',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://shewah.co'),
+  title: {
+    default: 'SHEWAH | High Jewellery Atelier & Certified Diamonds',
+    template: '%s | SHEWAH',
+  },
   description: 'Handcrafted fine jewellery made to order in solid 18K gold and certified diamonds.',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'SHEWAH | High Jewellery Atelier & Certified Diamonds',
+    description: 'Handcrafted fine jewellery made to order in solid 18K gold and certified diamonds.',
+    url: 'https://shewah.co',
+    siteName: 'SHEWAH',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SHEWAH | High Jewellery Atelier & Certified Diamonds',
+    description: 'Handcrafted fine jewellery made to order in solid 18K gold and certified diamonds.',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -24,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Google Tag Manager - Base Script */}
         <Script
           id="gtm-base"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -39,12 +59,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         {/* Google Tag (gtag.js) - Google Ads AW-18068366696 */}
         <Script
           id="gtag-src"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           src="https://www.googletagmanager.com/gtag/js?id=AW-18068366696"
         />
         <Script
           id="gtag-init"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
   window.dataLayer = window.dataLayer || [];
@@ -56,13 +76,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           }}
         />
 
-        <title>Shewah B2B Admin</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        
         {/* Pinterest Tag Base Code */}
         <Script
           id="pintrk-init"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
 !function(e){if(!window.pintrk){window.pintrk = function () {
@@ -88,7 +105,7 @@ pintrk('page');
         {/* Microsoft Clarity Tag */}
         <Script
           id="ms-clarity-init"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
     (function(c,l,a,r,i,t,y){
@@ -102,7 +119,7 @@ pintrk('page');
         {/* Meta Pixel Base Code */}
         <Script
           id="meta-pixel-init"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
 !function(f,b,e,v,n,t,s)

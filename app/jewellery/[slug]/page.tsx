@@ -373,18 +373,18 @@ export default function ProductDetailPage() {
         {/* Breadcrumbs */}
         <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-[0.2em] text-[#69727D] mb-8 flex items-center flex-wrap gap-x-2 gap-y-1 font-medium">
           <Link href="/" className="hover:text-[#051F34] transition-colors shrink-0 inline-flex items-center leading-none">
-            Home
+            HOME
           </Link>
           <span className="text-[#E3DBD4] select-none shrink-0 inline-flex items-center leading-none" aria-hidden="true">
             /
           </span>
           <Link href="/jewellery" className="hover:text-[#051F34] transition-colors shrink-0 inline-flex items-center leading-none">
-            Jewellery
+            JEWELLERY
           </Link>
           <span className="text-[#E3DBD4] select-none shrink-0 inline-flex items-center leading-none" aria-hidden="true">
             /
           </span>
-          <span className="text-[#051F34] font-semibold shrink-0 inline-flex items-center leading-none capitalize" aria-current="page">
+          <span className="text-[#051F34] font-semibold shrink-0 inline-flex items-center leading-none uppercase" aria-current="page">
             {product.category}
           </span>
         </nav>
@@ -703,7 +703,7 @@ export default function ProductDetailPage() {
                 <span className="uppercase tracking-wider text-[11px]">Made to Order Delivery Window:</span>
               </div>
               <p className="text-[11px] font-light">
-                Crafted especially for you in approximately {product.craftingLeadDays} business days.
+                Crafted especially for you in approximately {product.craftingLeadDays} business days.{' '}
                 Estimated arrival in {market.name}: <strong className="text-[#051F34] font-medium">{product.estimatedDeliveryWindow}</strong>.
               </p>
             </div>
@@ -776,7 +776,7 @@ export default function ProductDetailPage() {
                       <div><strong className="text-[#051F34] font-medium">Metal:</strong> Solid 18K Gold / 950 Platinum</div>
                       <div><strong className="text-[#051F34] font-medium">Hallmark:</strong> {product.specifications.hallmark}</div>
                       <div><strong className="text-[#051F34] font-medium">Certification:</strong> {product.specifications.certification}</div>
-                      <div><strong className="text-[#051F34] font-medium">Diamond Quality:</strong> Color {product.specifications.diamondColor}, Clarity {product.specifications.diamondClarity}</div>
+                      <div><strong className="text-[#051F34] font-medium">Diamond Quality:</strong> Color {product.specifications.diamondColor || 'EF'}, Clarity {product.specifications.diamondClarity || 'VVS-VS'}</div>
                       {activeComponent?.approxGoldWeight ? (
                         <div><strong className="text-[#051F34] font-medium">Gold Weight:</strong> ~{activeComponent.approxGoldWeight}g Solid 18K</div>
                       ) : product.specifications.approxGoldWeight ? (
@@ -787,6 +787,26 @@ export default function ProductDetailPage() {
                       ) : product.specifications.diamondWeightCarats ? (
                         <div><strong className="text-[#051F34] font-medium">Diamonds:</strong> ~{product.specifications.diamondWeightCarats}ct Total</div>
                       ) : null}
+                      <div className="col-span-2 pt-2 border-t border-[#E3DBD4] flex flex-wrap items-center gap-3 text-[11px]">
+                        <span className="text-[#051F34] font-medium">Verify Laboratory Report:</span>
+                        <a
+                          href="https://www.igi.org/verify-your-report/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#051F34] hover:text-[#CB9274] underline font-medium inline-flex items-center gap-1"
+                        >
+                          IGI Certificate Verification ↗
+                        </a>
+                        <span className="text-[#E3DBD4] select-none">•</span>
+                        <a
+                          href="https://www.gia.edu/report-check-landing"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#051F34] hover:text-[#CB9274] underline font-medium inline-flex items-center gap-1"
+                        >
+                          GIA Report Check ↗
+                        </a>
+                      </div>
                     </div>
                   </div>
                 )}

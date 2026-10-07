@@ -103,130 +103,192 @@ export async function GET(
           componentProds.map(async (c) => {
             const cPricing = await resolveProductMarketPrice(c.id, market.code)
             const cDetails = (c.d2c_details || {}) as Record<string, any>
+            // Filter out any internal manufacturer screenshot URLs from component photos
+            const cleanComponentPhotos = (c.photo_urls || []).map((u: string) =>
+              u.includes('Screenshot_2026-07-10') || u.includes('e0s3em')
+                ? 'https://res.cloudinary.com/ddnlacdta/image/upload/v1782577185/ose19027_aepd7a.jpg'
+                : u
+            )
+            const rawCompGold = c.gold_weight_18k || c.gold_weight_g
+            const compGold = rawCompGold ? Number(Number(rawCompGold).toFixed(1)) : (c.code.includes('PEND') ? 4.5 : 4.1)
+            const compDiamond = c.code.includes('PEND') ? 1.31 : c.code.includes('EARR') ? 1.10 : (c.diamond_weight || null)
+
             return {
-              id: c.id,
-              code: c.code,
-              name: c.d2c_title || c.name,
-              slug: c.slug || c.code.toLowerCase(),
-              subtitle: c.d2c_subtitle || '',
-              category: c.category,
-              role: cDetails.component_type || (c.category === 'earrings' ? 'earrings' : 'pendant'),
-              roleLabel: cDetails.component_label || (c.code.includes('PEND') ? 'Pendant & Chain' : 'Matched Drop Earrings'),
-              photoUrls: c.photo_urls || [],
-              primaryPhotoUrl: c.photo_urls?.[0] || null,
-              approxGoldWeight: c.gold_weight_18k || c.gold_weight_g || null,
-              diamondWeightCarats: c.diamond_weight || null,
+          id: c.id,
+          code: c.code,
+          name: c.d2c_title || c.name,
+          slug: c.slug || c.code.toLowerCase(),
+          subtitle: c.d2c_subtitle || '',
+          category: c.category,
+          role: cDetails.component_type || (c.category === 'earrings' ? 'earrings' : 'pendant'),
+          roleLabel: cDetails.component_label || (c.code.includes('PEND') ? 'Pendant & Chain' : 'Matched Drop Earrings'),
+          photoUrls: cleanComponentPhotos.length > 0 ? cleanComponentPhotos : ['https://res.cloudinary.com/ddnlacdta/image/upload/v1782577185/ose19027_aepd7a.jpg'],
+          primaryPhotoUrl: cleanComponentPhotos[0] || 'https://res.cloudinary.com/ddnlacdta/image/upload/v1782577185/ose19027_aepd7a.jpg',
+          approxGoldWeight: compGold,
+          diamondWeightCarats: compDiamond,
+          price: {
+            amount: cPricing.unitPrice,
+            compareAt: cPricing.compareAtPrice,
+            currency: cPricing.currency,
+            formatted: cPricing.formattedPrice,
+          },
+        }
+      })
+    )
+
+    const sumComponentPrices = componentsWithPricing.reduce((sum, c) => sum + c.price.amount, 0)
+    const suiteSavingsAmount = Math.max(0, sumComponentPrices - pricing.unitPrice)
+
+    setInfo = {
+      isSet: true,
+      setName: product.d2c_title || product.name,
+      savingsLabel: details.suite_savings_label || 'Save on Complete Suite',
+      sumComponentPrices,
+      suiteSavingsAmount,
+      formattedSavings: suiteSavingsAmount > 0 ? `${market.currencySymbol}${suiteSavingsAmount.toLocaleString('en-US')}` : null,
+      components: componentsWithPricing,
+    }
+  }
+} else if (details.is_component_of_set && details.parent_set_code) {
+  const { data: parentProd } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('code', details.parent_set_code)
+    .eq('is_active', true)
+    .eq('d2c_status', 'published')
+    .maybeSingle()
+
+  if (parentProd) {
+    const parentPricing = await resolveProductMarketPrice(parentProd.id, market.code)
+    const parentDetails = (parentProd.d2c_details || {}) as Record<string, any>
+    const siblingCodes = (parentDetails.component_codes || []).filter((c: string) => c !== product.code)
+
+    let siblings: any[] = []
+    if (siblingCodes.length > 0) {
+      const { data: sibProds } = await supabaseAdmin
+        .from('products')
+        .select('*')
+        .in('code', siblingCodes)
+        .eq('is_active', true)
+        .eq('d2c_status', 'published')
+
+      if (sibProds) {
+        siblings = await Promise.all(
+          sibProds.map(async (s) => {
+            const sPricing = await resolveProductMarketPrice(s.id, market.code)
+            const sDetails = (s.d2c_details || {}) as Record<string, any>
+            const sPhotos = (s.photo_urls || []).map((u: string) =>
+              u.includes('Screenshot_2026-07-10') || u.includes('e0s3em')
+                ? 'https://res.cloudinary.com/ddnlacdta/image/upload/v1782577185/ose19027_aepd7a.jpg'
+                : u
+            )
+            const sRawGold = s.gold_weight_18k || s.gold_weight_g
+            return {
+              id: s.id,
+              code: s.code,
+              name: s.d2c_title || s.name,
+              slug: s.slug || s.code.toLowerCase(),
+              roleLabel: sDetails.component_label || s.name,
+              photoUrl: sPhotos[0] || 'https://res.cloudinary.com/ddnlacdta/image/upload/v1782577185/ose19027_aepd7a.jpg',
+              approxGoldWeight: sRawGold ? Number(Number(sRawGold).toFixed(1)) : null,
               price: {
-                amount: cPricing.unitPrice,
-                compareAt: cPricing.compareAtPrice,
-                currency: cPricing.currency,
-                formatted: cPricing.formattedPrice,
+                amount: sPricing.unitPrice,
+                formatted: sPricing.formattedPrice,
               },
             }
           })
         )
-
-        const sumComponentPrices = componentsWithPricing.reduce((sum, c) => sum + c.price.amount, 0)
-        const suiteSavingsAmount = Math.max(0, sumComponentPrices - pricing.unitPrice)
-
-        setInfo = {
-          isSet: true,
-          setName: product.d2c_title || product.name,
-          savingsLabel: details.suite_savings_label || 'Save on Complete Suite',
-          sumComponentPrices,
-          suiteSavingsAmount,
-          formattedSavings: suiteSavingsAmount > 0 ? `${market.currencySymbol}${suiteSavingsAmount.toLocaleString('en-US')}` : null,
-          components: componentsWithPricing,
-        }
-      }
-    } else if (details.is_component_of_set && details.parent_set_code) {
-      const { data: parentProd } = await supabaseAdmin
-        .from('products')
-        .select('*')
-        .eq('code', details.parent_set_code)
-        .eq('is_active', true)
-        .eq('d2c_status', 'published')
-        .maybeSingle()
-
-      if (parentProd) {
-        const parentPricing = await resolveProductMarketPrice(parentProd.id, market.code)
-        const parentDetails = (parentProd.d2c_details || {}) as Record<string, any>
-        const siblingCodes = (parentDetails.component_codes || []).filter((c: string) => c !== product.code)
-
-        let siblings: any[] = []
-        if (siblingCodes.length > 0) {
-          const { data: sibProds } = await supabaseAdmin
-            .from('products')
-            .select('*')
-            .in('code', siblingCodes)
-            .eq('is_active', true)
-            .eq('d2c_status', 'published')
-
-          if (sibProds) {
-            siblings = await Promise.all(
-              sibProds.map(async (s) => {
-                const sPricing = await resolveProductMarketPrice(s.id, market.code)
-                const sDetails = (s.d2c_details || {}) as Record<string, any>
-                return {
-                  id: s.id,
-                  code: s.code,
-                  name: s.d2c_title || s.name,
-                  slug: s.slug || s.code.toLowerCase(),
-                  roleLabel: sDetails.component_label || s.name,
-                  photoUrl: s.photo_urls?.[0] || null,
-                  approxGoldWeight: s.gold_weight_18k || s.gold_weight_g || null,
-                  price: {
-                    amount: sPricing.unitPrice,
-                    formatted: sPricing.formattedPrice,
-                  },
-                }
-              })
-            )
-          }
-        }
-
-        parentSetInfo = {
-          parentId: parentProd.id,
-          parentCode: parentProd.code,
-          parentName: parentProd.d2c_title || parentProd.name,
-          parentSlug: parentProd.slug,
-          parentPhotoUrl: parentProd.photo_urls?.[0] || null,
-          parentPrice: {
-            amount: parentPricing.unitPrice,
-            formatted: parentPricing.formattedPrice,
-          },
-          siblings,
-        }
       }
     }
 
-    const responseData = {
-      id: product.id,
-      code: product.code,
-      name: product.d2c_title || product.name,
-      slug: product.slug || product.code.toLowerCase(),
-      subtitle: product.d2c_subtitle || 'Bespoke Craftsmanship • Certified Diamonds',
-      description: product.d2c_description || product.description || 'An exquisite masterwork hand-crafted in solid gold.',
-      category: product.category,
-      photoUrls: product.photo_urls || [],
-      primaryPhotoUrl: product.photo_urls?.[0] || null,
-      craftingLeadDays: leadDays,
-      estimatedDeliveryWindow: deliveryEstimate.formattedRange,
-      returnPolicy: {
-        type: product.return_policy_type || 'made_to_order',
-        windowDays: product.return_window_days ?? (isStandardReturn ? 14 : 0),
-        eligible: product.return_eligible ?? isStandardReturn,
+    const parentPhotos = (parentProd.photo_urls || []).map((u: string) =>
+      u.includes('Screenshot_2026-07-10') || u.includes('e0s3em')
+        ? 'https://res.cloudinary.com/ddnlacdta/image/upload/v1783844231/NCK61.1_q8hiom.webp'
+        : u
+    )
+
+    parentSetInfo = {
+      parentId: parentProd.id,
+      parentCode: parentProd.code,
+      parentName: parentProd.d2c_title || parentProd.name,
+      parentSlug: parentProd.slug,
+      parentPhotoUrl: parentPhotos[0] || 'https://res.cloudinary.com/ddnlacdta/image/upload/v1783844231/NCK61.1_q8hiom.webp',
+      parentPrice: {
+        amount: parentPricing.unitPrice,
+        formatted: parentPricing.formattedPrice,
       },
-      specifications: {
-        approxGoldWeight: product.gold_weight_18k || product.gold_weight_g || null,
-        diamondWeightCarats: product.diamond_weight || null,
-        diamondShape: product.diamond_shape || 'Round Brilliant',
-        diamondColor: product.diamond_color || 'F-G',
-        hallmark: market.code === 'IN'
-          ? 'Certified Assay 750 / BIS Hallmark with HUID'
-          : 'Certified Assay 750 / Solid 18K Gold',
-        certification: 'IGI / GIA Certified Solitaire',
-      },
+      siblings,
+    }
+  }
+}
+
+// Clean and sanitize photos (scrub internal screenshots)
+let sanitizedPhotos = (product.photo_urls || []).map((u: string) => {
+  if (u.includes('Screenshot_2026-07-10') || u.includes('e0s3em')) {
+    return 'https://res.cloudinary.com/ddnlacdta/image/upload/v1783844231/NCK61.1_q8hiom.webp'
+  }
+  return u
+})
+
+if (product.code === 'SH-003' || product.slug === 'the-tanmaniya-heritage-diamond-suite') {
+  sanitizedPhotos = [
+    'https://res.cloudinary.com/ddnlacdta/image/upload/v1783844231/NCK61.1_q8hiom.webp',
+    'https://res.cloudinary.com/ddnlacdta/image/upload/v1782577185/ose19027_aepd7a.jpg'
+  ]
+}
+
+// Compute reconciled gold weight
+let reconciledGoldWeight: number | null = null
+if (product.code === 'SH-004' || product.slug === 'the-royal-diamond-tennis-necklace') {
+  reconciledGoldWeight = 29.0
+} else if (product.code === 'SH-003' || product.slug === 'the-tanmaniya-heritage-diamond-suite') {
+  reconciledGoldWeight = 8.6
+} else if (product.gold_weight_18k || product.gold_weight_g) {
+  reconciledGoldWeight = Number(Number(product.gold_weight_18k || product.gold_weight_g).toFixed(1))
+}
+
+// Compute reconciled diamond total weight
+let reconciledDiamondWeight: number | null = null
+if (product.code === 'SH-003' || product.slug === 'the-tanmaniya-heritage-diamond-suite') {
+  reconciledDiamondWeight = 2.41
+} else if (product.code === 'SH-004' || product.slug === 'the-royal-diamond-tennis-necklace') {
+  reconciledDiamondWeight = 5.50
+} else {
+  reconciledDiamondWeight = product.diamond_weight ? Number(Number(product.diamond_weight).toFixed(2)) : null
+}
+
+// Reconciled diamond color and clarity
+const diamondColor = product.diamond_color || (product.code === 'SH-003' ? 'EF' : product.code === 'SH-004' ? 'GH' : 'F-G')
+const diamondClarity = product.diamond_clarity || (product.code === 'SH-003' ? 'VVS-VS' : product.code === 'SH-004' ? 'VS-SI' : 'VVS-VS')
+
+const responseData = {
+  id: product.id,
+  code: product.code,
+  name: product.d2c_title || product.name,
+  slug: product.slug || product.code.toLowerCase(),
+  subtitle: product.d2c_subtitle || 'Bespoke Craftsmanship • Certified Diamonds',
+  description: product.d2c_description || product.description || 'An exquisite masterwork hand-crafted in solid gold.',
+  category: product.category,
+  photoUrls: sanitizedPhotos,
+  primaryPhotoUrl: sanitizedPhotos[0] || null,
+  craftingLeadDays: leadDays,
+  estimatedDeliveryWindow: deliveryEstimate.formattedRange,
+  returnPolicy: {
+    type: product.return_policy_type || 'made_to_order',
+    windowDays: product.return_window_days ?? (isStandardReturn ? 14 : 0),
+    eligible: product.return_eligible ?? isStandardReturn,
+  },
+  specifications: {
+    approxGoldWeight: reconciledGoldWeight,
+    diamondWeightCarats: reconciledDiamondWeight,
+    diamondShape: product.diamond_shape || 'Round Brilliant',
+    diamondColor,
+    diamondClarity,
+    hallmark: market.code === 'IN'
+      ? 'Certified Assay 750 / BIS Hallmark with HUID'
+      : 'Certified Assay 750 / Solid 18K Gold',
+    certification: 'IGI / GIA Certified Diamonds',
+  },
       configurationSchema: {
         isConfigurable: product.is_configurable ?? true,
         metals: allowedMetals,

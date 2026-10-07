@@ -20,12 +20,12 @@ interface BespokeMarketPricing {
 }
 
 const MARKET_BESPOKE_RATES: Record<string, BespokeMarketPricing> = {
-  US: { lgdFrom: 450, naturalFrom: 1450, lgdFormatted: '$450', naturalFormatted: '$1,450', fxRateToInr: 87.0 },
-  GB: { lgdFrom: 380, naturalFrom: 1200, lgdFormatted: '£380', naturalFormatted: '£1,200', fxRateToInr: 110.0 },
-  EU: { lgdFrom: 420, naturalFrom: 1350, lgdFormatted: '€420', naturalFormatted: '€1,350', fxRateToInr: 94.0 },
-  DE: { lgdFrom: 420, naturalFrom: 1350, lgdFormatted: '€420', naturalFormatted: '€1,350', fxRateToInr: 94.0 },
-  FR: { lgdFrom: 420, naturalFrom: 1350, lgdFormatted: '€420', naturalFormatted: '€1,350', fxRateToInr: 94.0 },
-  AU: { lgdFrom: 680, naturalFrom: 2200, lgdFormatted: 'A$680', naturalFormatted: 'A$2,200', fxRateToInr: 56.0 },
+  US: { lgdFrom: 1200, naturalFrom: 2200, lgdFormatted: '$1,200', naturalFormatted: '$2,200', fxRateToInr: 87.0 },
+  GB: { lgdFrom: 950, naturalFrom: 1750, lgdFormatted: '£950', naturalFormatted: '£1,750', fxRateToInr: 110.0 },
+  EU: { lgdFrom: 1100, naturalFrom: 2000, lgdFormatted: '€1,100', naturalFormatted: '€2,000', fxRateToInr: 94.0 },
+  DE: { lgdFrom: 1100, naturalFrom: 2000, lgdFormatted: '€1,100', naturalFormatted: '€2,000', fxRateToInr: 94.0 },
+  FR: { lgdFrom: 1100, naturalFrom: 2000, lgdFormatted: '€1,100', naturalFormatted: '€2,000', fxRateToInr: 94.0 },
+  AU: { lgdFrom: 1850, naturalFrom: 3400, lgdFormatted: 'A$1,850', naturalFormatted: 'A$3,400', fxRateToInr: 56.0 },
 }
 
 const DEFAULT_MARKET_RATE = MARKET_BESPOKE_RATES.US
@@ -35,15 +35,15 @@ const WHATSAPP_INTRO = 'Hi Shewah Atelier — I would like an indicative price f
 
 const TRUST = [
   { k: 'Certified Stones', v: 'IGI & GIA certified diamonds' },
-  { k: 'Hallmarked Gold',  v: 'Independently assay hallmarked' },
-  { k: '12-14 Days',       v: 'Atelier design to doorstep' },
-  { k: 'Insured Shipping', v: 'Complimentary express delivery' },
+  { k: 'Solid Gold',       v: 'Assay verified 18K gold & platinum' },
+  { k: '14-18 Days',       v: 'Atelier design to doorstep' },
+  { k: 'Insured Delivery', v: 'Complimentary express air courier' },
 ]
 
 const PROOF = [
-  { n: '12,000+', l: 'Pieces crafted for international jewellers' },
-  { n: '180+',    l: 'Artisans and stone setters in our atelier' },
-  { n: '100%',    l: 'Certified diamonds & solid gold craftsmanship' },
+  { n: 'Solid 18K', l: 'Assay certified solid gold and platinum' },
+  { n: 'Certified', l: 'Every center stone accompanied by IGI / GIA dossier' },
+  { n: '1-on-1',   l: 'Direct master designer consultation & 3D CAD' },
 ]
 
 const STEPS = [
@@ -468,7 +468,7 @@ export default function BespokePage() {
               </span>
               <h3 className="font-serif text-2xl text-[#2A241B]">Lab-Grown Diamonds</h3>
               <p className="font-serif text-4xl text-[#2A241B] font-light">
-                <span className="text-sm font-sans text-[#8C8275]">from </span>
+                <span className="text-sm font-sans text-[#8C8275]">from{' '}</span>
                 {activePricing.lgdFormatted}
               </p>
               <p className="text-xs text-[#5C5347] leading-relaxed font-light">
@@ -482,7 +482,7 @@ export default function BespokePage() {
               </span>
               <h3 className="font-serif text-2xl text-[#2A241B]">Natural Mined Diamonds</h3>
               <p className="font-serif text-4xl text-[#2A241B] font-light">
-                <span className="text-sm font-sans text-[#8C8275]">from </span>
+                <span className="text-sm font-sans text-[#8C8275]">from{' '}</span>
                 {activePricing.naturalFormatted}
               </p>
               <p className="text-xs text-[#5C5347] leading-relaxed font-light">
