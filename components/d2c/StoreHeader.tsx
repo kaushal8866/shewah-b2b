@@ -209,6 +209,15 @@ export default function StoreHeader() {
             </Link>
 
             <Link
+              href="/blog"
+              className={`hover:text-[#CB9274] transition-colors ${
+                pathname.startsWith('/blog') ? 'text-[#CB9274]' : ''
+              }`}
+            >
+              Journal
+            </Link>
+
+            <Link
               href="/business"
               className={`hover:text-[#CB9274] transition-colors ${
                 pathname.startsWith('/business') ? 'text-[#CB9274]' : ''
@@ -490,6 +499,13 @@ export default function StoreHeader() {
                   className="block py-2 text-[#051F34] hover:text-[#CB9274] transition-colors"
                 >
                   Diamonds
+                </Link>
+                <Link
+                  href="/blog"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="block py-2 text-[#051F34] hover:text-[#CB9274] transition-colors"
+                >
+                  The Journal
                 </Link>
                 <Link
                   href="/ring-size-guide"

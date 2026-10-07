@@ -89,6 +89,11 @@ export default function StoreFooter() {
                   Diamond Guide
                 </Link>
               </li>
+              <li>
+                <Link href="/blog" className="hover:text-white transition-colors tracking-wide">
+                  The Journal
+                </Link>
+              </li>
             </ul>
           </div>
 
