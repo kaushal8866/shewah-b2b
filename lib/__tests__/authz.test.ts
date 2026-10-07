@@ -166,6 +166,7 @@ describe('route resolution', () => {
       cash: '/cash',
       diamond_procurement: '/diamond-asks',
       settings: '/settings',
+      blog: '/admin/blog',
     }
     for (const id of MODULE_IDS) {
       expect(representative[id], `no representative route for "${id}"`).toBeDefined()

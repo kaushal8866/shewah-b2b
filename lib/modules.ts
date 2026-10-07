@@ -33,6 +33,7 @@ const LABELS: Record<ModuleId, string> = {
   diamond_procurement: 'Diamond Procurement',
   aurora:              'AURORA Intelligence',
   settings:            'Settings',
+  blog:                'Editorial Blog',
 }
 
 export const MODULES: ReadonlyArray<{ id: ModuleId; label: string }> =

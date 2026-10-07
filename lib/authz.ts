@@ -41,6 +41,7 @@ export const MODULE_IDS = [
   'diamond_procurement',
   'aurora',
   'settings',
+  'blog',
 ] as const
 
 export type ModuleId = typeof MODULE_IDS[number]
@@ -98,11 +99,13 @@ const ROUTE_MODULES: Array<[string, ModuleId]> = [
   ['/cash',                    'cash'],
   ['/diamond-asks',            'diamond_procurement'],
   ['/settings',                'settings'],
+  ['/admin/blog',               'blog'],
   ['/aurora',                  'aurora'],
   ['/apply',                   'partners'],
   ['/shared-design',           'catalog'],
 
   // API namespaces
+  ['/api/blog',                    'blog'],
   ['/api/dashboard',               'dashboard'],
   ['/api/aurora',                  'aurora'],
   ['/api/partners',                'partners'],
@@ -251,6 +254,14 @@ export const TABLE_MODULES: Record<string, ModuleId> = {
   cash_transactions: 'cash',
   // settings
   settings: 'settings',
+  // blog
+  blog_articles: 'blog',
+  blog_revisions: 'blog',
+  blog_audit_logs: 'blog',
+  blog_settings: 'blog',
+  blog_api_tokens: 'blog',
+  blog_idempotency_records: 'blog',
+  blog_slug_redirects: 'blog',
 }
 
 /**
@@ -267,6 +278,7 @@ export const MASTER_ONLY_TABLES = new Set<string>([
   'partner_diamond_trades',
   'partner_trade_payments',
   'gst_invoices',
+  'blog_api_tokens',
 ])
 
 export type DbOp = 'select' | 'insert' | 'update' | 'delete' | 'upsert'

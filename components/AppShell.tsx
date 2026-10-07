@@ -77,6 +77,7 @@ const navSections = [
     title: 'System',
     items: [
       { href: '/settings',        icon: Settings,        label: 'Settings',      module: 'settings'      },
+      { href: '/admin/blog',      icon: FileText,        label: 'Editorial Blog', module: 'blog'         },
     ]
   }
 ]
@@ -179,6 +180,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/wishlist') ||
     pathname.startsWith('/ring-size-guide') ||
     pathname.startsWith('/pages') ||
+    pathname.startsWith('/blog') ||
     pathname.startsWith('/m/') ||
     pathname.startsWith('/frames') ||
     pathname.startsWith('/shared-design')
