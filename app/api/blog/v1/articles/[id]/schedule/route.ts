@@ -51,10 +51,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const settings = await getBlogSettings()
   if (settings.is_automation_paused && auth.actorType === 'assistant_token') {
-    return {
-      status: 403,
-      error: 'Blog automation is currently paused by the atelier owner.',
-    }
+    return NextResponse.json(
+      { error: 'Blog automation is currently paused by the atelier owner.' },
+      { status: 403 }
+    )
   }
 
   const { data: article } = await supabaseAdmin
