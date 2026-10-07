@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { authenticateBlogRequest, checkRateLimit } from '@/lib/blog/auth'
+import { validateBlogApiAccess } from '@/lib/blog/auth'
 import { validateUrlSafety, validateHeroMediaSafety } from '@/lib/blog/safety'
 import { recordBlogAudit } from '@/lib/blog/audit'
 
@@ -12,27 +12,14 @@ const ALLOWED_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/a
 const ALLOWED_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'avif'])
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, {
+    requiredScope: 'blog:media:upload',
+    maxBytes: MAX_IMAGE_BYTES,
+  })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  // Scope check: must have media upload, draft write, or admin authority
-  const hasScope =
-    auth.scopes.includes('blog:media:upload') ||
-    auth.scopes.includes('blog:draft:write') ||
-    auth.scopes.includes('blog:admin')
-
-  if (!hasScope) {
-    return NextResponse.json(
-      { error: 'Forbidden: Missing "blog:media:upload" or "blog:draft:write" scope.' },
-      { status: 403 }
-    )
-  }
-
-  if (!checkRateLimit(auth.actorId)) {
-    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
-  }
+  const auth = access.auth
 
   const contentType = req.headers.get('content-type') || ''
   const requestId = crypto.randomUUID()

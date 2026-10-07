@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateBlogRequest, checkRateLimit } from '@/lib/blog/auth'
+import { validateBlogApiAccess } from '@/lib/blog/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { validateForPublication } from '@/lib/blog/validation'
 import { getBlogSettings } from '@/lib/blog/storage'
@@ -12,22 +12,11 @@ interface Params {
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, { requiredScope: 'blog:schedule', maxBytes: 64_000 })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  const hasScheduleScope = auth.scopes.includes('blog:schedule')
-  if (!hasScheduleScope && !auth.isOwner) {
-    return NextResponse.json(
-      { error: 'Forbidden: Missing "blog:schedule" scope. Scheduling must be explicitly enabled.' },
-      { status: 403 }
-    )
-  }
-
-  if (!checkRateLimit(auth.actorId)) {
-    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
-  }
+  const auth = access.auth
 
   let body: any
   try {

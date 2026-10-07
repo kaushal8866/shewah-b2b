@@ -1,9 +1,12 @@
 import { MetadataRoute } from 'next'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { getBlogSettings } from '@/lib/blog/storage'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://shewah.co'
   const now = new Date().toISOString()
+  const settings = await getBlogSettings().catch(() => ({ is_blog_enabled: true }))
+  const isBlogEnabled = settings.is_blog_enabled !== false
 
   // 1. Core static D2C routes
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -23,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${baseUrl}/blog`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
+    ...(isBlogEnabled ? [{ url: `${baseUrl}/blog`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.8 }] : []),
   ]
 
   // 2. Dynamic published products from catalogue
@@ -51,23 +54,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 3. Dynamic canonical published blog articles
   let blogEntries: MetadataRoute.Sitemap = []
-  try {
-    const { data: articles } = await supabaseAdmin
-      .from('blog_articles')
-      .select('slug, updated_at, published_at')
-      .eq('status', 'published')
-      .lte('published_at', now)
+  if (isBlogEnabled) {
+    try {
+      const { data: articles } = await supabaseAdmin
+        .from('blog_articles')
+        .select('slug, updated_at, published_at')
+        .eq('status', 'published')
+        .lte('published_at', now)
 
-    if (articles) {
-      blogEntries = articles.map((a) => ({
-        url: `${baseUrl}/blog/${a.slug}`,
-        lastModified: a.updated_at ? new Date(a.updated_at) : new Date(a.published_at || now),
-        changeFrequency: 'weekly' as const,
-        priority: 0.7,
-      }))
+      if (articles) {
+        blogEntries = articles.map((a) => ({
+          url: `${baseUrl}/blog/${a.slug}`,
+          lastModified: a.updated_at ? new Date(a.updated_at) : new Date(a.published_at || now),
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        }))
+      }
+    } catch (err) {
+      console.error('[sitemap] Failed to query blog articles:', err)
     }
-  } catch (err) {
-    console.error('[sitemap] Failed to query blog articles:', err)
   }
 
   return [...staticRoutes, ...productEntries, ...blogEntries]

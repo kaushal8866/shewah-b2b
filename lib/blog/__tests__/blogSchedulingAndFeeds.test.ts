@@ -44,6 +44,7 @@ describe('Scheduling, Reliability & Pause Controls (Phase 5)', () => {
     it('halts scheduled publication when global pause switch is active', async () => {
       vi.spyOn(storage, 'getBlogSettings').mockResolvedValue({
         id: 'default',
+        is_blog_enabled: true,
         publication_mode: 'auto_publish',
         is_automation_paused: true, // PAUSED
         max_daily_new_posts: 1,
@@ -64,6 +65,7 @@ describe('Scheduling, Reliability & Pause Controls (Phase 5)', () => {
     it('halts scheduled publication when publishing switch is OFF (draft_only mode)', async () => {
       vi.spyOn(storage, 'getBlogSettings').mockResolvedValue({
         id: 'default',
+        is_blog_enabled: true,
         publication_mode: 'draft_only', // OFF
         is_automation_paused: false,
         max_daily_new_posts: 1,
@@ -86,6 +88,7 @@ describe('Scheduling, Reliability & Pause Controls (Phase 5)', () => {
     it('prevents publishing if daily limit has already been met today in Asia/Kolkata', async () => {
       vi.spyOn(storage, 'getBlogSettings').mockResolvedValue({
         id: 'default',
+        is_blog_enabled: true,
         publication_mode: 'auto_publish',
         is_automation_paused: false,
         max_daily_new_posts: 1,
@@ -114,6 +117,7 @@ describe('Scheduling, Reliability & Pause Controls (Phase 5)', () => {
     it('rejects publication on broken draft and transitions it to in_review', async () => {
       vi.spyOn(storage, 'getBlogSettings').mockResolvedValue({
         id: 'default',
+        is_blog_enabled: true,
         publication_mode: 'auto_publish',
         is_automation_paused: false,
         max_daily_new_posts: 5,
@@ -183,6 +187,7 @@ describe('Scheduling, Reliability & Pause Controls (Phase 5)', () => {
     it('successfully releases a validated scheduled article atomically', async () => {
       vi.spyOn(storage, 'getBlogSettings').mockResolvedValue({
         id: 'default',
+        is_blog_enabled: true,
         publication_mode: 'auto_publish',
         is_automation_paused: false,
         max_daily_new_posts: 5,
@@ -203,21 +208,21 @@ describe('Scheduling, Reliability & Pause Controls (Phase 5)', () => {
         blog_revisions: [
           {
             id: 'rev-valid-1',
-            title: 'Master Gem Setting Techniques in Heritage Kundan',
-            excerpt: 'An exploration of 24k gold foil packing techniques used by royal Indian karigars.',
-            body_markdown: `Detailed essay on kundan jewellery settings spanning several centuries of Indian craftsmanship. Every bezel is hand burnished with agate tools to secure stones without prongs, producing a seamless gold tapestry. The karigars fold micro-thin 24k gold leaf around the gem until it bonds through pure molecular contact, a process preserved through generations of royal atelier traditions.`,
+            title: 'Synthetic Test Fixture: Master Gem Setting Techniques',
+            excerpt: 'Synthetic test excerpt: An exploration of jewellery settings and gold foil packing techniques.',
+            body_markdown: `Synthetic test body: Detailed essay on jewellery settings spanning craftsmanship techniques. Every bezel is hand burnished with agate tools to secure stones without prongs, producing a seamless gold tapestry. The karigars fold micro-thin 24k gold leaf around the gem until it bonds through pure molecular contact, a process preserved through generations of royal atelier traditions.`,
             category: 'craftsmanship',
-            author_display_name: 'SHEWAH Editorial Atelier',
-            hero_image_url: 'https://res.cloudinary.com/ddnlacdta/image/upload/v1783844231/NCK61.1.webp',
-            hero_image_alt: 'Artisan burnishing 24k gold kundan bezel under microscope',
-            hero_image_rights: '© SHEWAH Archives / Photographed in Mumbai Atelier',
-            seo_title: 'Master Gem Setting in Heritage Kundan | SHEWAH Journal',
-            meta_description: 'An exploration of royal 24k gold foil packing techniques in historic Indian kundan jewellery.',
+            author_display_name: 'Synthetic Test Author',
+            hero_image_url: 'https://res.cloudinary.com/synthetic-test/image/upload/fixture.webp',
+            hero_image_alt: 'Synthetic test diagram of gemstone setting under microscope',
+            hero_image_rights: 'Synthetic Test Attribution — Automated Test Harness',
+            seo_title: 'Synthetic Test Fixture: Master Gem Setting | SHEWAH Journal',
+            meta_description: 'Synthetic test description for scheduler automated test.',
             source_references: [
               {
-                title: 'Indian Enamelling & Kundan Setting History',
-                sourceName: 'National Craft Museum',
-                url: 'https://nationalcraftmuseum.gov.in',
+                title: 'Synthetic Reference on Traditional Setting Methods',
+                sourceName: 'Synthetic Historical Craft Registry',
+                url: 'https://example.com/synthetic-craft-registry',
                 checkedAt: '2026-08-01T00:00:00Z',
               },
             ],
@@ -277,12 +282,12 @@ describe('Scheduling, Reliability & Pause Controls (Phase 5)', () => {
     const publishedArticle = {
       id: 'art-1',
       slug: 'heritage-solitaire',
-      title: 'The Heritage Solitaire',
-      excerpt: 'A study on natural diamonds.',
+      title: 'Synthetic Test Fixture: The Heritage Solitaire',
+      excerpt: 'Synthetic test excerpt for syndication feed verification.',
       category: 'craftsmanship',
-      author_display_name: 'SHEWAH Editorial Atelier',
-      hero_image_url: 'https://res.cloudinary.com/ddnlacdta/image/upload/v1783844231/NCK61.1.webp',
-      hero_image_rights: '© SHEWAH Archives',
+      author_display_name: 'Synthetic Test Author',
+      hero_image_url: 'https://res.cloudinary.com/synthetic-test/image/upload/fixture.webp',
+      hero_image_rights: 'Synthetic Test Attribution — Automated Test Harness',
       published_at: '2026-10-01T12:00:00Z',
       updated_at: '2026-10-02T12:00:00Z',
       tags: ['craftsmanship', 'diamonds'],
@@ -290,17 +295,31 @@ describe('Scheduling, Reliability & Pause Controls (Phase 5)', () => {
 
     it('generates valid RSS 2.0 XML with RFC-822 timestamps and canonical links', async () => {
       const { GET: getRss } = await import('@/app/blog/rss.xml/route')
-      vi.mocked(supabaseAdmin.from).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            lte: vi.fn().mockReturnValue({
-              order: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue({ data: [publishedArticle], error: null }),
+      vi.mocked(supabaseAdmin.from).mockImplementation((table: string) => {
+        if (table === 'blog_settings') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'default', is_blog_enabled: true },
+                  error: null,
+                }),
+              }),
+            }),
+          } as any
+        }
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              lte: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({ data: [publishedArticle], error: null }),
+                }),
               }),
             }),
           }),
-        }),
-      } as any)
+        } as any
+      })
 
       const response = await getRss()
       expect(response.status).toBe(200)
@@ -314,17 +333,31 @@ describe('Scheduling, Reliability & Pause Controls (Phase 5)', () => {
 
     it('generates valid Atom 1.0 XML with RFC-3339 timestamps', async () => {
       const { GET: getAtom } = await import('@/app/blog/atom.xml/route')
-      vi.mocked(supabaseAdmin.from).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            lte: vi.fn().mockReturnValue({
-              order: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue({ data: [publishedArticle], error: null }),
+      vi.mocked(supabaseAdmin.from).mockImplementation((table: string) => {
+        if (table === 'blog_settings') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'default', is_blog_enabled: true },
+                  error: null,
+                }),
+              }),
+            }),
+          } as any
+        }
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              lte: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({ data: [publishedArticle], error: null }),
+                }),
               }),
             }),
           }),
-        }),
-      } as any)
+        } as any
+      })
 
       const response = await getAtom()
       expect(response.status).toBe(200)
@@ -337,17 +370,31 @@ describe('Scheduling, Reliability & Pause Controls (Phase 5)', () => {
 
     it('generates valid JSON Feed 1.1 structure', async () => {
       const { GET: getJsonFeed } = await import('@/app/blog/feed.json/route')
-      vi.mocked(supabaseAdmin.from).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            lte: vi.fn().mockReturnValue({
-              order: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue({ data: [publishedArticle], error: null }),
+      vi.mocked(supabaseAdmin.from).mockImplementation((table: string) => {
+        if (table === 'blog_settings') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'default', is_blog_enabled: true },
+                  error: null,
+                }),
+              }),
+            }),
+          } as any
+        }
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              lte: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({ data: [publishedArticle], error: null }),
+                }),
               }),
             }),
           }),
-        }),
-      } as any)
+        } as any
+      })
 
       const response = await getJsonFeed()
       expect(response.status).toBe(200)

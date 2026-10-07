@@ -1,7 +1,9 @@
 import React from 'react'
 import { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { getBlogSettings } from '@/lib/blog/storage'
 import StoreHeader from '@/components/d2c/StoreHeader'
 import StoreFooter from '@/components/d2c/StoreFooter'
 import { ArrowRight, BookOpen, Clock, Calendar, Sparkles } from 'lucide-react'
@@ -43,6 +45,11 @@ interface BlogIndexProps {
 }
 
 export default async function BlogIndexPage({ searchParams }: BlogIndexProps) {
+  const settings = await getBlogSettings()
+  if (settings.is_blog_enabled === false) {
+    notFound()
+  }
+
   const page = Math.max(1, parseInt(searchParams?.page || '1', 10))
   const selectedCategory = searchParams?.category || 'all'
   const pageSize = 9

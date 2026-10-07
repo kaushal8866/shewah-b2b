@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 import { notFound, redirect, RedirectType } from 'next/navigation'
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { getBlogSettings } from '@/lib/blog/storage'
 import StoreHeader from '@/components/d2c/StoreHeader'
 import StoreFooter from '@/components/d2c/StoreFooter'
 import {
@@ -31,6 +32,11 @@ interface BlogPostProps {
  * Returns null if article is draft, scheduled, archived, or nonexistent.
  */
 async function fetchPublicArticle(slug: string) {
+  const settings = await getBlogSettings()
+  if (settings.is_blog_enabled === false) {
+    return null
+  }
+
   const cleanSlug = slug.toLowerCase().trim()
   const now = new Date().toISOString()
 

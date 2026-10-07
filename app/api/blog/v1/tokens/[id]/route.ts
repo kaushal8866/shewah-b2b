@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateBlogRequest } from '@/lib/blog/auth'
+import { validateBlogApiAccess } from '@/lib/blog/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { recordBlogAudit } from '@/lib/blog/audit'
 
@@ -10,18 +10,11 @@ interface Params {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, { requireOwner: true })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  // Revoking credentials is strictly owner authority
-  if (!auth.isOwner && !auth.scopes.includes('blog:owner')) {
-    return NextResponse.json(
-      { error: 'Forbidden: Revoking credentials requires atelier owner authority.' },
-      { status: 403 }
-    )
-  }
+  const auth = access.auth
 
   const { data: updated, error } = await supabaseAdmin
     .from('blog_api_tokens')

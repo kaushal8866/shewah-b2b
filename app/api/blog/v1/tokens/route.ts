@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateBlogRequest, generateBlogApiToken } from '@/lib/blog/auth'
+import { validateBlogApiAccess, generateBlogApiToken } from '@/lib/blog/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { recordBlogAudit } from '@/lib/blog/audit'
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Token management is strictly owner authority
-  if (!auth.isOwner && !auth.scopes.includes('blog:owner')) {
-    return NextResponse.json(
-      { error: 'Forbidden: Viewing credentials requires atelier owner authority.' },
-      { status: 403 }
-    )
+  const access = await validateBlogApiAccess(req, { requireOwner: true })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
 
   const { data: tokens, error } = await supabaseAdmin
@@ -30,18 +22,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, { requireOwner: true, maxBytes: 64_000 })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  // Generating credentials is strictly owner authority
-  if (!auth.isOwner && !auth.scopes.includes('blog:owner')) {
-    return NextResponse.json(
-      { error: 'Forbidden: Generating credentials requires atelier owner authority.' },
-      { status: 403 }
-    )
-  }
+  const auth = access.auth
 
   let body: any
   try {

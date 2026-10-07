@@ -90,13 +90,13 @@ describe('Blog Public Pages & Search Metadata (Phase 2)', () => {
   describe('JSON-LD Structured Data Schema', () => {
     it('creates compliant BlogPosting structured data matching visible content', () => {
       const article = {
-        title: 'The Solitaire Riviera: Precision Alignment in Solid 18K Gold',
-        excerpt: 'An investigation into structural tension and prong architecture.',
-        author: 'SHEWAH Master Setter',
+        title: 'Synthetic Test Fixture: Solitaire Setting Architecture',
+        excerpt: 'Synthetic test excerpt: Investigation into prong architecture and structural tension.',
+        author: 'Synthetic Test Author',
         heroImage: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e',
         publishedAt: '2026-10-01T10:00:00.000Z',
         updatedAt: '2026-10-02T12:00:00.000Z',
-        canonicalUrl: 'https://shewah.co/blog/the-solitaire-riviera',
+        canonicalUrl: 'https://shewah.co/blog/synthetic-solitaire-setting',
       }
 
       const jsonLd = {

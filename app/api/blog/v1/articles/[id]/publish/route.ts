@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateBlogRequest, checkRateLimit } from '@/lib/blog/auth'
+import { validateBlogApiAccess } from '@/lib/blog/auth'
 import { publishArticle } from '@/lib/blog/storage'
 import { revalidatePath } from 'next/cache'
 
@@ -10,23 +10,12 @@ interface Params {
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, { requiredScope: 'blog:publish' })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  // Check publish scope
-  const hasPublishScope = auth.scopes.includes('blog:publish')
-  if (!hasPublishScope && !auth.isOwner) {
-    return NextResponse.json(
-      { error: 'Forbidden: Missing "blog:publish" scope. Publishing must be explicitly enabled by atelier owner.' },
-      { status: 403 }
-    )
-  }
-
-  if (!checkRateLimit(auth.actorId)) {
-    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
-  }
+  const auth = access.auth
+  const hasPublishScope = auth.scopes.includes('blog:publish') || auth.isOwner
 
   const requestId = req.headers.get('x-request-id') || undefined
 

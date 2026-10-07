@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateBlogRequest } from '@/lib/blog/auth'
+import { validateBlogApiAccess } from '@/lib/blog/auth'
 import { getBlogSettings } from '@/lib/blog/storage'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { recordBlogAudit } from '@/lib/blog/audit'
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, { requiredScope: 'blog:read' })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
 
   const settings = await getBlogSettings()
@@ -15,18 +15,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, { requireOwner: true, maxBytes: 64_000 })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  // Only the owner can change blog policies or emergency controls
-  if (!auth.isOwner && !auth.scopes.includes('blog:owner')) {
-    return NextResponse.json(
-      { error: 'Forbidden: Policy changes and emergency pause are restricted to the atelier owner.' },
-      { status: 403 }
-    )
-  }
+  const auth = access.auth
 
   let body: any
   try {
@@ -37,6 +30,10 @@ export async function PATCH(req: NextRequest) {
 
   const updates: Record<string, any> = {
     updated_at: new Date().toISOString(),
+  }
+
+  if (typeof body.isBlogEnabled === 'boolean') {
+    updates.is_blog_enabled = body.isBlogEnabled
   }
 
   if (body.publicationMode !== undefined) {

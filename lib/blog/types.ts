@@ -116,6 +116,7 @@ export interface BlogAuditLog {
 
 export interface BlogSettings {
   id: string
+  is_blog_enabled: boolean // Non-destructive kill switch: disables public and API routes
   publication_mode: PublicationMode
   is_automation_paused: boolean
   max_daily_new_posts: number

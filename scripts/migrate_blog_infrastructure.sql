@@ -145,11 +145,13 @@ create table if not exists blog_audit_logs (
 -- ── 4. BLOG SETTINGS (Owner Governance & Gates) ─────────────
 create table if not exists blog_settings (
   id                          text primary key default 'default',
+  -- Kill switch: if false, all public and API blog routes are completely disabled
+  is_blog_enabled             boolean not null default true,
   -- Owner gate: starts strictly in 'draft_only' mode!
   publication_mode            text not null default 'draft_only', -- 'draft_only' | 'review_first' | 'auto_publish'
   is_automation_paused        boolean not null default false,
   max_daily_new_posts         integer not null default 1,
-  allowed_categories          text[] not null default array['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds'],
+  allowed_categories          text[] not null default array['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds', 'care-guide', 'buying-guide', 'styling'],
   publish_window_start_time   text not null default '09:00', -- Asia/Kolkata 24h
   publish_window_end_time     text not null default '20:00', -- Asia/Kolkata 24h
   timezone                    text not null default 'Asia/Kolkata',
@@ -161,10 +163,10 @@ create table if not exists blog_settings (
 
 -- Initialize default settings row if not present
 insert into blog_settings (
-  id, publication_mode, is_automation_paused, max_daily_new_posts, allowed_categories, timezone
+  id, is_blog_enabled, publication_mode, is_automation_paused, max_daily_new_posts, allowed_categories, timezone
 )
 values (
-  'default', 'draft_only', false, 1, array['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds'], 'Asia/Kolkata'
+  'default', true, 'draft_only', false, 1, array['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds', 'care-guide', 'buying-guide', 'styling'], 'Asia/Kolkata'
 )
 on conflict (id) do nothing;
 
@@ -217,3 +219,86 @@ create index if not exists idx_blog_audit_actor on blog_audit_logs(actor_id, cre
 create index if not exists idx_blog_api_tokens_hash on blog_api_tokens(token_hash) where is_revoked = false;
 create index if not exists idx_blog_idempotency_lookup on blog_idempotency_records(idempotency_key, actor_id);
 create index if not exists idx_blog_slug_redirects_old on blog_slug_redirects(old_slug);
+
+-- ── 9. ZERO-TRUST ROW LEVEL SECURITY (RLS) LOCKDOWN ────────
+-- Enable RLS on all blog infrastructure tables
+alter table blog_articles enable row level security;
+alter table blog_revisions enable row level security;
+alter table blog_audit_logs enable row level security;
+alter table blog_settings enable row level security;
+alter table blog_api_tokens enable row level security;
+alter table blog_idempotency_records enable row level security;
+alter table blog_slug_redirects enable row level security;
+
+-- ── 10. REVOKE ALL DIRECT ACCESS FROM ANON & AUTHENTICATED ──
+-- Deny public and standard Supabase client roles from querying or mutating any blog table
+revoke all on blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects from anon, authenticated;
+revoke all on table blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects from anon, authenticated;
+
+-- ── 11. EXPLICIT ZERO-TRUST DENIAL POLICIES ─────────────────
+-- Explicit defense-in-depth: Even if grants were ever re-added, RLS denies all access
+do $$
+begin
+  -- blog_articles
+  if not exists (select 1 from pg_policies where policyname = 'deny_anon_blog_articles') then
+    create policy deny_anon_blog_articles on blog_articles for all to anon using (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'deny_auth_blog_articles') then
+    create policy deny_auth_blog_articles on blog_articles for all to authenticated using (false);
+  end if;
+
+  -- blog_revisions
+  if not exists (select 1 from pg_policies where policyname = 'deny_anon_blog_revisions') then
+    create policy deny_anon_blog_revisions on blog_revisions for all to anon using (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'deny_auth_blog_revisions') then
+    create policy deny_auth_blog_revisions on blog_revisions for all to authenticated using (false);
+  end if;
+
+  -- blog_audit_logs
+  if not exists (select 1 from pg_policies where policyname = 'deny_anon_blog_audit_logs') then
+    create policy deny_anon_blog_audit_logs on blog_audit_logs for all to anon using (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'deny_auth_blog_audit_logs') then
+    create policy deny_auth_blog_audit_logs on blog_audit_logs for all to authenticated using (false);
+  end if;
+
+  -- blog_settings
+  if not exists (select 1 from pg_policies where policyname = 'deny_anon_blog_settings') then
+    create policy deny_anon_blog_settings on blog_settings for all to anon using (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'deny_auth_blog_settings') then
+    create policy deny_auth_blog_settings on blog_settings for all to authenticated using (false);
+  end if;
+
+  -- blog_api_tokens
+  if not exists (select 1 from pg_policies where policyname = 'deny_anon_blog_api_tokens') then
+    create policy deny_anon_blog_api_tokens on blog_api_tokens for all to anon using (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'deny_auth_blog_api_tokens') then
+    create policy deny_auth_blog_api_tokens on blog_api_tokens for all to authenticated using (false);
+  end if;
+
+  -- blog_idempotency_records
+  if not exists (select 1 from pg_policies where policyname = 'deny_anon_blog_idempotency_records') then
+    create policy deny_anon_blog_idempotency_records on blog_idempotency_records for all to anon using (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'deny_auth_blog_idempotency_records') then
+    create policy deny_auth_blog_idempotency_records on blog_idempotency_records for all to authenticated using (false);
+  end if;
+
+  -- blog_slug_redirects
+  if not exists (select 1 from pg_policies where policyname = 'deny_anon_blog_slug_redirects') then
+    create policy deny_anon_blog_slug_redirects on blog_slug_redirects for all to anon using (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'deny_auth_blog_slug_redirects') then
+    create policy deny_auth_blog_slug_redirects on blog_slug_redirects for all to authenticated using (false);
+  end if;
+end $$;
+
+-- ── 12. EXCLUSIVE SERVER-ROLE GRANTS ────────────────────────
+-- Only the backend service_role (which bypasses RLS on the server) possesses operational access
+grant all on blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects to service_role;
+grant all on table blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects to service_role;
+
+

@@ -197,21 +197,14 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
       excerpt: '',
       bodyMarkdown: '',
       category: 'education',
-      authorDisplayName: 'SHEWAH Editorial Atelier',
+      authorDisplayName: '',
       heroImageUrl: '',
       heroImageAlt: '',
       heroImageCaption: '',
       heroImageRights: '',
       seoTitle: '',
       metaDescription: '',
-      sourceReferences: [
-        {
-          title: 'IGI / GIA Gemological Dossier',
-          sourceName: 'International Gemological Institute',
-          url: 'https://www.igi.org',
-          checkedAt: new Date().toISOString().split('T')[0],
-        },
-      ],
+      sourceReferences: [],
       externalContentId: '',
       lockVersion: 1,
     })

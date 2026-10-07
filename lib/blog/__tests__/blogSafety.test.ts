@@ -113,8 +113,8 @@ describe('Content and Media Safety System (Phase 4)', () => {
     it('passes for valid high-resolution editorial media', () => {
       const violations = validateHeroMediaSafety({
         url: 'https://res.cloudinary.com/ddnlacdta/image/upload/v1783844231/NCK61.1.webp',
-        altText: 'A 22k gold polki necklace showcasing fine kundan settings and meenakari enameling',
-        rightsNote: '© SHEWAH Atelier / Shot at Mumbai Workshop',
+        altText: 'Synthetic test fixture diagram representing 18k gold setting and gemstone proportions',
+        rightsNote: 'Synthetic Test License — Test Harness Reference',
         width: 1920,
         height: 1080,
       })

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateBlogRequest } from '@/lib/blog/auth'
+import { validateBlogApiAccess } from '@/lib/blog/auth'
 import { rollbackArticleRevision } from '@/lib/blog/storage'
 import { revalidatePath } from 'next/cache'
 
@@ -10,18 +10,11 @@ interface Params {
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, { requireOwner: true, maxBytes: 64_000 })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  // Rollback is strictly owner authority
-  if (!auth.isOwner && !auth.scopes.includes('blog:owner')) {
-    return NextResponse.json(
-      { error: 'Forbidden: Revision rollback is restricted to the atelier owner.' },
-      { status: 403 }
-    )
-  }
+  const auth = access.auth
 
   let body: any
   try {

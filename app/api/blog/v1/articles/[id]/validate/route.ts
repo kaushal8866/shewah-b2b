@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateBlogRequest, checkRateLimit } from '@/lib/blog/auth'
+import { validateBlogApiAccess } from '@/lib/blog/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { validateForPublication } from '@/lib/blog/validation'
 import { getBlogSettings } from '@/lib/blog/storage'
@@ -11,18 +11,11 @@ interface Params {
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, { requiredScope: 'blog:read' })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  if (!auth.scopes.includes('blog:read') && !auth.scopes.includes('blog:draft:write')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  if (!checkRateLimit(auth.actorId)) {
-    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
-  }
+  const auth = access.auth
 
   const { data: article } = await supabaseAdmin
     .from('blog_articles')

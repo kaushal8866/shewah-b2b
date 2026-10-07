@@ -1,23 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateBlogRequest, checkRateLimit } from '@/lib/blog/auth'
+import { validateBlogApiAccess } from '@/lib/blog/auth'
 import { createDraftArticle, getBlogSettings } from '@/lib/blog/storage'
 import { checkIdempotency, saveIdempotencyRecord } from '@/lib/blog/idempotency'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import crypto from 'crypto'
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, { requiredScope: 'blog:read' })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  if (!auth.scopes.includes('blog:read')) {
-    return NextResponse.json({ error: 'Forbidden: Missing "blog:read" scope' }, { status: 403 })
-  }
-
-  if (!checkRateLimit(auth.actorId)) {
-    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
-  }
+  const auth = access.auth
 
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
@@ -73,18 +66,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await validateBlogApiAccess(req, { requiredScope: 'blog:draft:write', maxBytes: 512_000 })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  if (!auth.scopes.includes('blog:draft:write')) {
-    return NextResponse.json({ error: 'Forbidden: Missing "blog:draft:write" scope' }, { status: 403 })
-  }
-
-  if (!checkRateLimit(auth.actorId)) {
-    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
-  }
+  const auth = access.auth
 
   const idempotencyKey = req.headers.get('idempotency-key')
   if (!idempotencyKey) {

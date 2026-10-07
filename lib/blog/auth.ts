@@ -14,6 +14,9 @@ export interface BlogAuthContext {
   isOwner: boolean
 }
 
+import { NextResponse } from 'next/server'
+import { getBlogSettings } from './storage'
+
 // In-memory rate limiter per token/actor
 const rateLimitHits = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_MAX = 60 // 60 requests per minute
@@ -31,6 +34,112 @@ export function checkRateLimit(actorId: string): boolean {
   }
   hit.count += 1
   return true
+}
+
+/**
+ * Validate request payload size against a maximum byte limit.
+ */
+export function checkRequestSize(req: NextRequest, maxBytes = 512_000): { ok: boolean; size?: number; error?: string } {
+  const contentLength = req.headers.get('content-length')
+  if (contentLength) {
+    const bytes = parseInt(contentLength, 10)
+    if (!isNaN(bytes) && bytes > maxBytes) {
+      return {
+        ok: false,
+        size: bytes,
+        error: `Payload too large (${(bytes / 1024).toFixed(1)} KB). Maximum allowed size is ${(maxBytes / 1024).toFixed(1)} KB.`,
+      }
+    }
+  }
+  return { ok: true }
+}
+
+/**
+ * Comprehensive API security validator:
+ * 1. Request size limit check (413)
+ * 2. Authentication check (401)
+ * 3. Token revocation and expiry check (401)
+ * 4. Kill switch / is_blog_enabled check (503)
+ * 5. Automation pause switch check (403 for assistant tokens)
+ * 6. Rate limit check (429)
+ * 7. Scope verification check (403)
+ */
+export async function validateBlogApiAccess(
+  req: NextRequest,
+  options?: { requiredScope?: string; maxBytes?: number; requireOwner?: boolean }
+): Promise<{ authorized: boolean; auth?: BlogAuthContext; response?: NextResponse }> {
+  // 1. Request size limit check
+  const sizeCheck = checkRequestSize(req, options?.maxBytes ?? 512_000)
+  if (!sizeCheck.ok) {
+    return {
+      authorized: false,
+      response: NextResponse.json({ error: sizeCheck.error }, { status: 413 }),
+    }
+  }
+
+  // 2. Authentication check
+  const auth = await authenticateBlogRequest(req)
+  if (!auth) {
+    return {
+      authorized: false,
+      response: NextResponse.json({ error: 'Unauthorized: Missing or invalid credentials' }, { status: 401 }),
+    }
+  }
+
+  // 3. Blog settings checks (kill switch + automation pause)
+  const settings = await getBlogSettings()
+
+  if (settings.is_blog_enabled === false && !auth.isOwner && !auth.scopes.includes('blog:owner')) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'Blog system is currently disabled by the atelier owner.' },
+        { status: 503 }
+      ),
+    }
+  }
+
+  if (settings.is_automation_paused && auth.actorType === 'assistant_token') {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'Blog automation is currently paused by the atelier owner.' },
+        { status: 403 }
+      ),
+    }
+  }
+
+  // 4. Rate limiting check
+  if (!checkRateLimit(auth.actorId)) {
+    return {
+      authorized: false,
+      response: NextResponse.json({ error: 'Too many requests. Rate limit exceeded.' }, { status: 429 }),
+    }
+  }
+
+  // 5. Require Owner check
+  if (options?.requireOwner && !auth.isOwner && !auth.scopes.includes('blog:owner')) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'Forbidden: This action requires atelier owner authority.' },
+        { status: 403 }
+      ),
+    }
+  }
+
+  // 6. Scoped authority check
+  if (options?.requiredScope && !auth.scopes.includes(options.requiredScope) && !auth.isOwner) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: `Forbidden: Missing required "${options.requiredScope}" permission scope.` },
+        { status: 403 }
+      ),
+    }
+  }
+
+  return { authorized: true, auth }
 }
 
 /**

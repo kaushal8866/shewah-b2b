@@ -75,6 +75,16 @@ export async function runScheduledBlogPublisher(options?: {
   const requestId = options?.requestId || crypto.randomUUID()
   const settings: BlogSettings = await getBlogSettings()
 
+  // ── GATE 0: System Enabled Check ──────────────────────────────────────────
+  if (settings.is_blog_enabled === false) {
+    return {
+      processed: 0,
+      success: false,
+      reason: 'blog_disabled',
+      message: 'Blog system is currently disabled by the atelier owner.',
+    }
+  }
+
   // ── GATE 1: Global Automation Pause ────────────────────────────────────────
   if (settings.is_automation_paused) {
     return {

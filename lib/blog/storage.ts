@@ -89,10 +89,11 @@ export async function getBlogSettings(): Promise<BlogSettings> {
     // Default safe fallback if database table not yet populated
     return {
       id: 'default',
+      is_blog_enabled: true,
       publication_mode: 'draft_only',
       is_automation_paused: false,
       max_daily_new_posts: 1,
-      allowed_categories: ['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds'],
+      allowed_categories: ['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds', 'care-guide', 'buying-guide', 'styling'],
       publish_window_start_time: '09:00',
       publish_window_end_time: '20:00',
       timezone: 'Asia/Kolkata',
@@ -101,7 +102,10 @@ export async function getBlogSettings(): Promise<BlogSettings> {
     }
   }
 
-  return data as BlogSettings
+  return {
+    ...data,
+    is_blog_enabled: data.is_blog_enabled !== undefined ? Boolean(data.is_blog_enabled) : true,
+  } as BlogSettings
 }
 
 /**
@@ -109,6 +113,13 @@ export async function getBlogSettings(): Promise<BlogSettings> {
  */
 export async function createDraftArticle(params: CreateDraftParams): Promise<StorageResult<{ article: BlogArticle; revision: BlogRevision }>> {
   const settings = await getBlogSettings()
+
+  if (settings.is_blog_enabled === false) {
+    return {
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'Blog system is currently disabled by the atelier owner.' },
+    }
+  }
 
   if (settings.is_automation_paused && params.actorType === 'assistant_token') {
     return {
@@ -302,6 +313,13 @@ export async function createDraftArticle(params: CreateDraftParams): Promise<Sto
  */
 export async function updateDraftArticle(params: UpdateDraftParams): Promise<StorageResult<{ article: BlogArticle; revision: BlogRevision }>> {
   const settings = await getBlogSettings()
+
+  if (settings.is_blog_enabled === false) {
+    return {
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'Blog system is currently disabled by the atelier owner.' },
+    }
+  }
 
   if (settings.is_automation_paused && params.actorType === 'assistant_token') {
     return {
@@ -528,6 +546,13 @@ export async function publishArticle(
   requestId?: string | null
 ): Promise<StorageResult<BlogArticle>> {
   const settings = await getBlogSettings()
+
+  if (settings.is_blog_enabled === false) {
+    return {
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'Blog system is currently disabled by the atelier owner.' },
+    }
+  }
 
   if (settings.is_automation_paused && actor.type === 'assistant_token') {
     return {
@@ -812,6 +837,9 @@ export async function rollbackArticleRevision(
  * Reads content from live_revision_id snapshot.
  */
 export async function getPublicArticleBySlug(slug: string): Promise<{ article: BlogArticle; revision: BlogRevision } | null> {
+  const settings = await getBlogSettings()
+  if (settings.is_blog_enabled === false) return null
+
   const cleanSlug = slug.toLowerCase().trim()
   const now = new Date().toISOString()
 

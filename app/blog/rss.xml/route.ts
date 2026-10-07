@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { getBlogSettings } from '@/lib/blog/storage'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,11 @@ function escapeXml(unsafe: string): string {
 }
 
 export async function GET() {
+  const settings = await getBlogSettings()
+  if (settings.is_blog_enabled === false) {
+    return new NextResponse(null, { status: 404 })
+  }
+
   const now = new Date().toISOString()
   const baseUrl = 'https://shewah.co'
 

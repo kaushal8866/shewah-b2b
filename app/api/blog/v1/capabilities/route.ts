@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateBlogRequest, checkRateLimit } from '@/lib/blog/auth'
+import { validateBlogApiAccess } from '@/lib/blog/auth'
 import { getBlogSettings } from '@/lib/blog/storage'
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticateBlogRequest(req)
-  if (!auth) {
-    return NextResponse.json(
-      { error: 'Unauthorized: Invalid or missing authentication credentials.' },
-      { status: 401 }
-    )
+  const access = await validateBlogApiAccess(req, { requiredScope: 'blog:read' })
+  if (!access.authorized || !access.auth) {
+    return access.response!
   }
-
-  if (!checkRateLimit(auth.actorId)) {
-    return NextResponse.json(
-      { error: 'Too Many Requests: Rate limit exceeded (60 req/min).' },
-      { status: 429 }
-    )
-  }
+  const auth = access.auth
 
   const settings = await getBlogSettings()
 

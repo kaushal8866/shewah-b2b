@@ -160,27 +160,21 @@ describe('Blog Editorial Model & State Machine', () => {
 
   describe('Validation Engine', () => {
     const validDraft = {
-      title: 'A Guide to Lab-Grown Diamonds vs Natural Diamonds',
-      slug: 'guide-lab-grown-diamonds-vs-natural',
-      bodyMarkdown: 'Lab-grown diamonds share identical physical, chemical, and optical properties with mined diamonds. Crafted in high-pressure ateliers, each gemstone undergoes precise laser cutting and certification by reputable gemological laboratories like IGI and GIA. Whether set in solid 18K gold or platinum, modern lab-grown solitaires offer extraordinary brilliance and craftsmanship with complete traceability.',
+      title: 'Synthetic Test Fixture: Gemological Analysis of Lab-Grown Diamonds',
+      slug: 'synthetic-test-fixture-gemological-analysis',
+      bodyMarkdown: 'Synthetic test body content: Lab-grown diamonds share identical physical, chemical, and optical properties with mined diamonds. Crafted in high-pressure ateliers, each gemstone undergoes precise laser cutting and certification by reputable gemological laboratories. Whether set in solid 18K gold or platinum, modern lab-grown solitaires offer extraordinary brilliance and craftsmanship with complete traceability for testing purposes.',
       category: 'education',
       heroImageUrl: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e',
-      heroImageAlt: 'Macro view of certified brilliant cut diamond',
-      heroImageRights: 'Licensed studio photography via Unsplash',
-      authorDisplayName: 'SHEWAH Master Gemologist',
-      seoTitle: 'Lab-Grown vs Natural Diamonds: The Essential Guide | SHEWAH',
-      metaDescription: 'Discover the scientific differences, valuation factors, and ethical considerations between lab-grown and mined natural diamonds.',
+      heroImageAlt: 'Synthetic test fixture macro diagram of gemstone cut',
+      heroImageRights: 'Synthetic Test Fixture Attribution — Automated Test Harness',
+      authorDisplayName: 'Synthetic Test Author',
+      seoTitle: 'Synthetic Test Fixture: Gemological Analysis | SHEWAH',
+      metaDescription: 'Synthetic test description for unit test validation of blog editorial model and publication requirements.',
       sourceReferences: [
         {
-          title: 'IGI Lab Grown Diamond Grading Standards',
-          sourceName: 'International Gemological Institute',
-          url: 'https://www.igi.org',
-          checkedAt: '2026-09-15',
-        },
-        {
-          title: 'GIA Diamond Origin and Grading Overview',
-          sourceName: 'Gemological Institute of America',
-          url: 'https://www.gia.edu',
+          title: 'Synthetic Gemological Laboratory Standards Dossier',
+          sourceName: 'Synthetic Gemological Reference Bureau',
+          url: 'https://example.com/synthetic-gemological-reference',
           checkedAt: '2026-09-15',
         },
       ],
@@ -225,7 +219,7 @@ describe('Blog Editorial Model & State Machine', () => {
   })
 
   describe('Database Migration Scripts Validation', () => {
-    it('migration SQL script exists and contains all required blog tables', () => {
+    it('migration SQL script exists and contains all required blog tables and RLS lockdown', () => {
       const migrationPath = path.join(process.cwd(), 'scripts/migrate_blog_infrastructure.sql')
       expect(fs.existsSync(migrationPath)).toBe(true)
 
@@ -241,13 +235,36 @@ describe('Blog Editorial Model & State Machine', () => {
       expect(sql).toContain('live_revision_id')
       expect(sql).toContain('current_revision_id')
       expect(sql).toContain('external_content_id')
+      expect(sql).toContain('enable row level security')
+      expect(sql).toContain('revoke all on blog_articles')
+      expect(sql).toContain('from anon, authenticated')
     })
 
-    it('rollback SQL script exists and safely cleans up all blog tables', () => {
+    it('rollback SQL script exists and performs a safe non-destructive rollback', () => {
       const rollbackPath = path.join(process.cwd(), 'scripts/rollback_blog_infrastructure.sql')
       expect(fs.existsSync(rollbackPath)).toBe(true)
 
       const sql = fs.readFileSync(rollbackPath, 'utf8')
+      // Non-destructive: MUST NOT contain DROP TABLE
+      expect(sql.toLowerCase()).not.toContain('drop table')
+      // Must pause automation and disable blog
+      expect(sql).toContain('is_blog_enabled = false')
+      expect(sql).toContain('is_automation_paused = true')
+      expect(sql).toContain("publication_mode = 'draft_only'")
+      // Must revoke tokens and unpublish live articles
+      expect(sql).toContain('is_revoked = true')
+      expect(sql).toContain("status = 'in_review'")
+      expect(sql).toContain('live_revision_id = null')
+      // Must append audit log entry
+      expect(sql).toContain('insert into blog_audit_logs')
+    })
+
+    it('disposable drop script exists strictly for test fixtures and is clearly labelled', () => {
+      const dropPath = path.join(process.cwd(), 'scripts/test_fixtures_drop_blog_infrastructure.sql')
+      expect(fs.existsSync(dropPath)).toBe(true)
+
+      const sql = fs.readFileSync(dropPath, 'utf8')
+      expect(sql).toContain('DISPOSABLE TEST FIXTURES ONLY — NEVER RUN IN PRODUCTION')
       expect(sql).toContain('drop table if exists blog_idempotency_records cascade')
       expect(sql).toContain('drop table if exists blog_audit_logs cascade')
       expect(sql).toContain('drop table if exists blog_api_tokens cascade')
