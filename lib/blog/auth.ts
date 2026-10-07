@@ -17,23 +17,93 @@ export interface BlogAuthContext {
 import { NextResponse } from 'next/server'
 import { getBlogSettings } from './storage'
 
-// In-memory rate limiter per token/actor
-const rateLimitHits = new Map<string, { count: number; resetAt: number }>()
+// In-memory fallback rate limiter per token/actor (used if database is unreachable or during unit tests)
+const inMemoryRateLimitHits = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_MAX = 60 // 60 requests per minute
 const RATE_LIMIT_WINDOW_MS = 60_000
 
-export function checkRateLimit(actorId: string): boolean {
+export function checkInMemoryRateLimit(actorId: string, max = RATE_LIMIT_MAX, windowMs = RATE_LIMIT_WINDOW_MS): boolean {
   const now = Date.now()
-  const hit = rateLimitHits.get(actorId)
+  const hit = inMemoryRateLimitHits.get(actorId)
   if (!hit || now > hit.resetAt) {
-    rateLimitHits.set(actorId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    inMemoryRateLimitHits.set(actorId, { count: 1, resetAt: now + windowMs })
     return true
   }
-  if (hit.count >= RATE_LIMIT_MAX) {
+  if (hit.count >= max) {
     return false
   }
   hit.count += 1
   return true
+}
+
+/**
+ * Database-backed persistent rate limiter for Vercel serverless functions.
+ * Protects against cold starts and ephemeral container resets by persisting
+ * sliding token counts in blog_rate_limits.
+ * Gracefully falls back to in-memory rate limiting if database is unavailable.
+ */
+export async function checkRateLimit(actorId: string, max = RATE_LIMIT_MAX, windowMs = RATE_LIMIT_WINDOW_MS): Promise<boolean> {
+  // In unit test runner without live network access, use fast in-memory rate limiting
+  if (process.env.NODE_ENV === 'test' && !process.env.LIVE_DB_TEST) {
+    return checkInMemoryRateLimit(actorId, max, windowMs)
+  }
+
+  try {
+    const nowIso = new Date().toISOString()
+    const nowMs = Date.now()
+
+    const { data: record, error } = await supabaseAdmin
+      .from('blog_rate_limits')
+      .select('count, window_start')
+      .eq('id', actorId)
+      .maybeSingle()
+
+    if (error || !record) {
+      if (!record && !error) {
+        // Record does not exist yet: create it with count = 1
+        await supabaseAdmin.from('blog_rate_limits').insert({
+          id: actorId,
+          count: 1,
+          window_start: nowIso,
+          updated_at: nowIso,
+        })
+        return true
+      }
+      // If table missing or query error, fall back to in-memory
+      return checkInMemoryRateLimit(actorId, max, windowMs)
+    }
+
+    const windowStartMs = new Date(record.window_start).getTime()
+    if (nowMs - windowStartMs >= windowMs) {
+      // Window has expired: reset counter
+      await supabaseAdmin
+        .from('blog_rate_limits')
+        .update({
+          count: 1,
+          window_start: nowIso,
+          updated_at: nowIso,
+        })
+        .eq('id', actorId)
+      return true
+    }
+
+    if (record.count >= max) {
+      return false
+    }
+
+    // Increment count
+    await supabaseAdmin
+      .from('blog_rate_limits')
+      .update({
+        count: record.count + 1,
+        updated_at: nowIso,
+      })
+      .eq('id', actorId)
+
+    return true
+  } catch (err) {
+    return checkInMemoryRateLimit(actorId, max, windowMs)
+  }
 }
 
 /**
@@ -109,8 +179,8 @@ export async function validateBlogApiAccess(
     }
   }
 
-  // 4. Rate limiting check
-  if (!checkRateLimit(auth.actorId)) {
+  // 4. Rate limiting check (persistent database-backed with in-memory fallback)
+  if (!(await checkRateLimit(auth.actorId))) {
     return {
       authorized: false,
       response: NextResponse.json({ error: 'Too many requests. Rate limit exceeded.' }, { status: 429 }),

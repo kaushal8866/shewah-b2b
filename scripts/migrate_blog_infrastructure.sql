@@ -4,12 +4,12 @@
 -- Zero changes, locks, or modifications to existing B2B or D2C tables.
 -- ============================================================
 
--- Ensure uuid-ossp or pgcrypto is available for UUID generation
-create extension if not exists "uuid-ossp";
+-- Modern PostgreSQL 13+ includes gen_random_uuid() natively in core.
+-- Zero external extensions required.
 
 -- ── 1. BLOG ARTICLES (Root Entity) ──────────────────────────
 create table if not exists blog_articles (
-  id                    uuid primary key default uuid_generate_v4(),
+  id                    uuid primary key default gen_random_uuid(),
   slug                  text not null unique,
   title                 text not null,
   excerpt               text,
@@ -61,7 +61,7 @@ create table if not exists blog_articles (
 
 -- ── 2. BLOG REVISIONS (Immutable Version Snapshots) ─────────
 create table if not exists blog_revisions (
-  id                    uuid primary key default uuid_generate_v4(),
+  id                    uuid primary key default gen_random_uuid(),
   article_id            uuid not null references blog_articles(id) on delete cascade,
   revision_number       integer not null,
   
@@ -121,7 +121,7 @@ end $$;
 
 -- ── 3. BLOG AUDIT LOGS (Durable Event Trail) ────────────────
 create table if not exists blog_audit_logs (
-  id                    uuid primary key default uuid_generate_v4(),
+  id                    uuid primary key default gen_random_uuid(),
   article_id            uuid references blog_articles(id) on delete set null,
   revision_id           uuid references blog_revisions(id) on delete set null,
   
@@ -172,7 +172,7 @@ on conflict (id) do nothing;
 
 -- ── 5. BLOG API TOKENS (Scoped Bearer Credentials) ──────────
 create table if not exists blog_api_tokens (
-  id                    uuid primary key default uuid_generate_v4(),
+  id                    uuid primary key default gen_random_uuid(),
   name                  text not null,
   token_prefix          text not null, -- e.g. 'shw_blog_'
   token_hash            text not null unique, -- SHA-256 hash of plaintext token
@@ -187,7 +187,7 @@ create table if not exists blog_api_tokens (
 
 -- ── 6. BLOG IDEMPOTENCY RECORDS (Atomic Mutation Deduplication)
 create table if not exists blog_idempotency_records (
-  id                    uuid primary key default uuid_generate_v4(),
+  id                    uuid primary key default gen_random_uuid(),
   idempotency_key       text not null,
   actor_id              text not null,
   operation             text not null,
@@ -201,13 +201,21 @@ create table if not exists blog_idempotency_records (
 
 -- ── 7. BLOG SLUG REDIRECTS (301 Permanent Redirect Map) ────
 create table if not exists blog_slug_redirects (
-  id                    uuid primary key default uuid_generate_v4(),
+  id                    uuid primary key default gen_random_uuid(),
   old_slug              text not null unique,
   new_slug              text not null,
   created_at            timestamptz not null default now()
 );
 
--- ── 8. INDEXES FOR HIGH-PERFORMANCE QUERYING ────────────────
+-- ── 8. BLOG RATE LIMITS (Persistent Serverless Throttle) ────
+create table if not exists blog_rate_limits (
+  id                    text primary key, -- actor_id
+  count                 integer not null default 1,
+  window_start          timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
+);
+
+-- ── 9. INDEXES FOR HIGH-PERFORMANCE QUERYING ────────────────
 create index if not exists idx_blog_articles_slug on blog_articles(slug);
 create index if not exists idx_blog_articles_status_pub on blog_articles(status, published_at desc);
 create index if not exists idx_blog_articles_status_sched on blog_articles(status, scheduled_at);
@@ -220,7 +228,7 @@ create index if not exists idx_blog_api_tokens_hash on blog_api_tokens(token_has
 create index if not exists idx_blog_idempotency_lookup on blog_idempotency_records(idempotency_key, actor_id);
 create index if not exists idx_blog_slug_redirects_old on blog_slug_redirects(old_slug);
 
--- ── 9. ZERO-TRUST ROW LEVEL SECURITY (RLS) LOCKDOWN ────────
+-- ── 10. ZERO-TRUST ROW LEVEL SECURITY (RLS) LOCKDOWN ────────
 -- Enable RLS on all blog infrastructure tables
 alter table blog_articles enable row level security;
 alter table blog_revisions enable row level security;
@@ -229,13 +237,14 @@ alter table blog_settings enable row level security;
 alter table blog_api_tokens enable row level security;
 alter table blog_idempotency_records enable row level security;
 alter table blog_slug_redirects enable row level security;
+alter table blog_rate_limits enable row level security;
 
--- ── 10. REVOKE ALL DIRECT ACCESS FROM ANON & AUTHENTICATED ──
+-- ── 11. REVOKE ALL DIRECT ACCESS FROM ANON & AUTHENTICATED ──
 -- Deny public and standard Supabase client roles from querying or mutating any blog table
-revoke all on blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects from anon, authenticated;
-revoke all on table blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects from anon, authenticated;
+revoke all on blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects, blog_rate_limits from anon, authenticated;
+revoke all on table blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects, blog_rate_limits from anon, authenticated;
 
--- ── 11. EXPLICIT ZERO-TRUST DENIAL POLICIES ─────────────────
+-- ── 12. EXPLICIT ZERO-TRUST DENIAL POLICIES ─────────────────
 -- Explicit defense-in-depth: Even if grants were ever re-added, RLS denies all access
 do $$
 begin
@@ -294,11 +303,17 @@ begin
   if not exists (select 1 from pg_policies where policyname = 'deny_auth_blog_slug_redirects') then
     create policy deny_auth_blog_slug_redirects on blog_slug_redirects for all to authenticated using (false);
   end if;
+
+  -- blog_rate_limits
+  if not exists (select 1 from pg_policies where policyname = 'deny_anon_blog_rate_limits') then
+    create policy deny_anon_blog_rate_limits on blog_rate_limits for all to anon using (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'deny_auth_blog_rate_limits') then
+    create policy deny_auth_blog_rate_limits on blog_rate_limits for all to authenticated using (false);
+  end if;
 end $$;
 
--- ── 12. EXCLUSIVE SERVER-ROLE GRANTS ────────────────────────
+-- ── 13. EXCLUSIVE SERVER-ROLE GRANTS ────────────────────────
 -- Only the backend service_role (which bypasses RLS on the server) possesses operational access
-grant all on blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects to service_role;
-grant all on table blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects to service_role;
-
-
+grant all on blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects, blog_rate_limits to service_role;
+grant all on table blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects, blog_rate_limits to service_role;

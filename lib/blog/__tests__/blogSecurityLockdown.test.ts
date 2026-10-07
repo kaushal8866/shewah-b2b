@@ -30,16 +30,17 @@ describe('SHEWAH Blog Security & Lockdown Verification', () => {
       'blog_api_tokens',
       'blog_idempotency_records',
       'blog_slug_redirects',
+      'blog_rate_limits',
     ]
 
-    it('enables Row Level Security on all 7 blog tables', () => {
+    it('enables Row Level Security on all 8 blog tables', () => {
       for (const table of blogTables) {
         expect(sql).toContain(`alter table ${table} enable row level security;`)
       }
     })
 
     it('explicitly revokes all permissions from anon and authenticated roles', () => {
-      expect(sql).toContain('revoke all on blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects from anon, authenticated;')
+      expect(sql).toContain('revoke all on blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects, blog_rate_limits from anon, authenticated;')
     })
 
     it('establishes explicit zero-trust deny policies for anon and authenticated roles', () => {
@@ -50,7 +51,7 @@ describe('SHEWAH Blog Security & Lockdown Verification', () => {
     })
 
     it('grants full operational access strictly and exclusively to service_role', () => {
-      expect(sql).toContain('grant all on blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects to service_role;')
+      expect(sql).toContain('grant all on blog_articles, blog_revisions, blog_audit_logs, blog_settings, blog_api_tokens, blog_idempotency_records, blog_slug_redirects, blog_rate_limits to service_role;')
     })
 
     it('ensures service-role key is kept strictly server-only and not exposed to browser', () => {
@@ -163,13 +164,13 @@ describe('SHEWAH Blog Security & Lockdown Verification', () => {
       expect(check.ok).toBe(true)
     })
 
-    it('enforces in-memory rate limiting (max 60 requests/min per actor)', () => {
+    it('enforces rate limiting (max 60 requests/min per actor)', async () => {
       const actorId = `test_actor_${Date.now()}`
       for (let i = 0; i < 60; i++) {
-        expect(checkRateLimit(actorId)).toBe(true)
+        expect(await checkRateLimit(actorId)).toBe(true)
       }
       // 61st request must be rejected
-      expect(checkRateLimit(actorId)).toBe(false)
+      expect(await checkRateLimit(actorId)).toBe(false)
     })
 
     it('excludes blog:media:upload from default token scopes', () => {

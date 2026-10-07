@@ -4,6 +4,7 @@
 -- DO NOT RUN ON ANY PERSISTENT, STAGING, OR PRODUCTION DATABASE.
 -- ============================================================
 
+drop table if exists blog_rate_limits cascade;
 drop table if exists blog_idempotency_records cascade;
 drop table if exists blog_audit_logs cascade;
 drop table if exists blog_api_tokens cascade;
