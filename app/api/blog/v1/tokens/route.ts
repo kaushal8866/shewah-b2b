@@ -58,14 +58,31 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Enforce token expiry presets (7, 14, 30, 90 days; default 30)
+  const ALLOWED_EXPIRY_PRESETS = [7, 14, 30, 90] as const
+  let effectiveExpiresDays = 30
+  if (expiresDays !== undefined && expiresDays !== null) {
+    if (
+      typeof expiresDays !== 'number' ||
+      !Number.isInteger(expiresDays) ||
+      !ALLOWED_EXPIRY_PRESETS.includes(expiresDays as any)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Bad Request: "expiresDays" must be one of the allowed presets: 7, 14, 30, or 90 days (defaults to 30).',
+        },
+        { status: 400 }
+      )
+    }
+    effectiveExpiresDays = expiresDays
+  }
+
   const { rawToken, tokenHash, tokenPrefix } = generateBlogApiToken()
 
-  let expiresAt: string | null = null
-  if (typeof expiresDays === 'number' && expiresDays > 0) {
-    const d = new Date()
-    d.setDate(d.getDate() + expiresDays)
-    expiresAt = d.toISOString()
-  }
+  const d = new Date()
+  d.setDate(d.getDate() + effectiveExpiresDays)
+  const expiresAt = d.toISOString()
 
   const { data: tokenRow, error } = await supabaseAdmin
     .from('blog_api_tokens')

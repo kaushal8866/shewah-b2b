@@ -17,6 +17,8 @@ export default function robots(): MetadataRoute.Robots {
           '/dashboard',
           '/dashboard/',
           '/settings',
+          '/editorial',
+          '/editorial/',
           '/api/',
           '/*?*preview=*',
         ],

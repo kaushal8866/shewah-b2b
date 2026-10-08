@@ -5,6 +5,7 @@ import { CartProvider } from '@/components/d2c/CartContext'
 import { WishlistProvider } from '@/lib/wishlistStore'
 import AppShell from '@/components/AppShell'
 import Script from 'next/script'
+import { headers } from 'next/headers'
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://shewah.co'),
   title: {
@@ -31,6 +32,8 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const isEditorial = headers().get('x-is-editorial') === '1'
+
   return (
     <html lang="en">
       <head>
@@ -41,12 +44,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sorts+Mill+Goudy:ital@0;1&display=swap"
           rel="stylesheet"
         />
-        {/* Google Tag Manager - Base Script */}
-        <Script
-          id="gtm-base"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
+        {!isEditorial && (
+          <>
+            {/* Google Tag Manager - Base Script */}
+            <Script
+              id="gtm-base"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -135,27 +140,30 @@ fbq('track', 'PageView');
 `,
           }}
         />
-        <noscript>
-          <img
-            height="1"
-            width="1"
-            style={{ display: 'none' }}
-            alt=""
-            src="https://www.facebook.com/tr?id=1809742277070832&ev=PageView&noscript=1"
-          />
-        </noscript>
+            <noscript>
+              <img
+                height="1"
+                width="1"
+                style={{ display: 'none' }}
+                alt=""
+                src="https://www.facebook.com/tr?id=1809742277070832&ev=PageView&noscript=1"
+              />
+            </noscript>
+          </>
+        )}
       </head>
       <body>
-        {/* Google Tag Manager (noscript) */}
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-TPKRMF93"
-            height="0"
-            width="0"
-            style={{ display: 'none', visibility: 'hidden' }}
-          />
-        </noscript>
-        {/* End Google Tag Manager (noscript) */}
+        {!isEditorial && (
+          /* Google Tag Manager (noscript) */
+          <noscript>
+            <iframe
+              src="https://www.googletagmanager.com/ns.html?id=GTM-TPKRMF93"
+              height="0"
+              width="0"
+              style={{ display: 'none', visibility: 'hidden' }}
+            />
+          </noscript>
+        )}
 
         <SessionProvider>
           <CartProvider>

@@ -81,6 +81,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
   const [tokens, setTokens] = useState<any[]>([])
   const [newTokenName, setNewTokenName] = useState('')
   const [newTokenScopes, setNewTokenScopes] = useState<string[]>(['blog:read', 'blog:draft:write'])
+  const [newTokenExpiresDays, setNewTokenExpiresDays] = useState<number>(30)
   const [createdTokenModal, setCreatedTokenModal] = useState<any>(null)
   const [copiedToken, setCopiedToken] = useState(false)
 
@@ -405,7 +406,11 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
       const res = await fetch('/api/blog/v1/tokens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newTokenName.trim(), scopes: newTokenScopes, expiresDays: 90 }),
+        body: JSON.stringify({
+          name: newTokenName.trim(),
+          scopes: newTokenScopes,
+          expiresDays: Number(newTokenExpiresDays),
+        }),
       })
       if (res.ok) {
         const d = await res.json()
@@ -1172,6 +1177,17 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                     {copiedToken ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
+                <div className="text-[11px] text-emerald-800 flex items-center gap-3">
+                  <span className="font-semibold">Valid Until:</span>
+                  <span>
+                    {createdTokenModal.expiresAt
+                      ? `${new Date(createdTokenModal.expiresAt).toLocaleDateString()} (${Math.max(1, Math.round((new Date(createdTokenModal.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days)`
+                      : '30 days'}
+                  </span>
+                  <span className="text-emerald-600">|</span>
+                  <span className="font-semibold">Scopes:</span>
+                  <span>{createdTokenModal.scopes?.join(', ')}</span>
+                </div>
                 <button
                   onClick={() => setCreatedTokenModal(null)}
                   className="px-4 py-1.5 bg-emerald-700 text-white text-xs uppercase tracking-wider"
@@ -1190,16 +1206,34 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
 
               <form onSubmit={handleCreateToken} className="space-y-4 text-xs">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#69727D] mb-1">
+                  <label htmlFor="newTokenNameInput" className="block text-[11px] uppercase tracking-wider text-[#69727D] mb-1">
                     Credential Name / Identity
                   </label>
                   <input
+                    id="newTokenNameInput"
                     type="text"
                     value={newTokenName}
                     onChange={(e) => setNewTokenName(e.target.value)}
                     placeholder="e.g. External Editorial Assistant 1"
                     className="w-full p-2 border border-[#E3DBD4]"
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="tokenExpirySelect" className="block text-[11px] uppercase tracking-wider text-[#69727D] mb-1">
+                    Token Expiry
+                  </label>
+                  <select
+                    id="tokenExpirySelect"
+                    value={newTokenExpiresDays}
+                    onChange={(e) => setNewTokenExpiresDays(Number(e.target.value))}
+                    className="w-full p-2 border border-[#E3DBD4] text-xs bg-white text-[#051F34] focus:outline-none focus:border-[#051F34]"
+                  >
+                    <option value={7}>7 Days (Short-term review)</option>
+                    <option value={14}>14 Days (Two-week evaluation)</option>
+                    <option value={30}>30 Days (Default / 1 Month)</option>
+                    <option value={90}>90 Days (Quarterly maximum)</option>
+                  </select>
                 </div>
 
                 <div>
@@ -1258,6 +1292,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                     <th className="p-3">Name & Prefix</th>
                     <th className="p-3">Scopes</th>
                     <th className="p-3">Created</th>
+                    <th className="p-3">Expires</th>
                     <th className="p-3">Status</th>
                     <th className="p-3 text-right">Revoke</th>
                   </tr>
@@ -1272,6 +1307,9 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                       <td className="p-3 text-[11px] font-mono">{t.scopes?.join(', ')}</td>
                       <td className="p-3 font-mono text-[11px] text-[#69727D]">
                         {new Date(t.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="p-3 font-mono text-[11px] text-[#69727D]">
+                        {t.expires_at ? new Date(t.expires_at).toLocaleDateString() : 'Never'}
                       </td>
                       <td className="p-3">
                         {t.is_revoked ? (
@@ -1353,9 +1391,9 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
             </p>
 
             <div className="p-4 bg-[#F6F4F2] border border-[#E3DBD4] space-y-2">
-              <h3 className="font-serif text-base font-semibold">1. Browser-Based Editorial Fallback</h3>
+              <h3 className="font-serif text-base font-semibold">1. Token-Authenticated Browser Submission Interface</h3>
               <p>
-                If direct REST API integration is unavailable or unverified, the assistant can log into this browser interface directly at <code className="bg-white px-1 py-0.5 border">https://shewah.co/admin/blog</code> using an authorized staff credential. The assistant can compose drafts, view real-time validation blockers, and save revisions directly in the web browser.
+                The assistant can submit drafts directly through the dedicated browser submission gateway at <code className="bg-white px-1 py-0.5 border">https://shewah.co/editorial/submit</code>. This unlinked, noindex interface allows secure fill-only bearer token authentication, capabilities verification, draft JSON validation, and idempotent draft submission without requiring staff credentials or owner login.
               </p>
             </div>
 

@@ -21,6 +21,18 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['pdfkit'],
   },
+  async headers() {
+    return [
+      {
+        source: '/editorial/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+        ],
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

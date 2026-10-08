@@ -181,6 +181,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/ring-size-guide') ||
     pathname.startsWith('/pages') ||
     pathname.startsWith('/blog') ||
+    pathname.startsWith('/editorial') ||
     pathname.startsWith('/m/') ||
     pathname.startsWith('/frames') ||
     pathname.startsWith('/shared-design')

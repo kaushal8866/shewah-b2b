@@ -35,6 +35,7 @@ function isPublicMarketing(pathname: string): boolean {
     pathname.startsWith('/ring-size-guide') ||
     pathname.startsWith('/pages') ||
     pathname.startsWith('/blog') ||
+    pathname.startsWith('/editorial') ||
     pathname.startsWith('/api/d2c') ||
     pathname.startsWith('/api/public/')
   )
@@ -57,6 +58,16 @@ export default withAuth(
 
     if (isPublicStorefront(pathname)) {
       return NextResponse.next()
+    }
+
+    if (pathname.startsWith('/editorial')) {
+      const requestHeaders = new Headers(req.headers)
+      requestHeaders.set('x-is-editorial', '1')
+      const res = NextResponse.next({ request: { headers: requestHeaders } })
+      res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+      res.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
+      res.headers.set('Referrer-Policy', 'no-referrer')
+      return res
     }
 
     if (isPublicMarketing(pathname)) {
