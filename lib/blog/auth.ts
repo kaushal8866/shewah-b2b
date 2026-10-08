@@ -36,17 +36,45 @@ export function checkInMemoryRateLimit(actorId: string, max = RATE_LIMIT_MAX, wi
   return true
 }
 
+export interface RateLimitResult {
+  allowed: boolean
+  status?: number
+  error?: string
+}
+
 /**
  * Database-backed persistent rate limiter for Vercel serverless functions.
  * Protects against cold starts and ephemeral container resets by persisting
  * sliding token counts in blog_rate_limits.
- * Gracefully falls back to in-memory rate limiting if database is unavailable.
+ *
+ * FAIL-CLOSED GUARANTEE:
+ * In deployed environments (Vercel preview/production), any database failure,
+ * missing table, query error, or bounded timeout (3000ms) will FAIL CLOSED with
+ * HTTP 503 Service Unavailable, completely preventing unlimited external requests.
+ * Local in-memory fallback is restricted strictly to local offline development/testing.
  */
-export async function checkRateLimit(actorId: string, max = RATE_LIMIT_MAX, windowMs = RATE_LIMIT_WINDOW_MS): Promise<boolean> {
+export async function checkRateLimit(
+  actorId: string,
+  max = RATE_LIMIT_MAX,
+  windowMs = RATE_LIMIT_WINDOW_MS
+): Promise<RateLimitResult> {
+  const isDeployedEnv =
+    process.env.VERCEL === '1' ||
+    process.env.VERCEL_ENV === 'preview' ||
+    process.env.VERCEL_ENV === 'production' ||
+    process.env.NODE_ENV === 'production'
+
   // In unit test runner without live network access, use fast in-memory rate limiting
-  if (process.env.NODE_ENV === 'test' && !process.env.LIVE_DB_TEST) {
-    return checkInMemoryRateLimit(actorId, max, windowMs)
+  if (process.env.NODE_ENV === 'test' && !process.env.LIVE_DB_TEST && !isDeployedEnv) {
+    const inMem = checkInMemoryRateLimit(actorId, max, windowMs)
+    return inMem
+      ? { allowed: true }
+      : { allowed: false, status: 429, error: 'Too many requests. Rate limit exceeded.' }
   }
+
+  // Bounded timeout: 3000ms max for database rate-limit verification
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 3000)
 
   try {
     const nowIso = new Date().toISOString()
@@ -56,27 +84,50 @@ export async function checkRateLimit(actorId: string, max = RATE_LIMIT_MAX, wind
       .from('blog_rate_limits')
       .select('count, window_start')
       .eq('id', actorId)
+      .abortSignal(controller.signal)
       .maybeSingle()
 
-    if (error || !record) {
-      if (!record && !error) {
-        // Record does not exist yet: create it with count = 1
-        await supabaseAdmin.from('blog_rate_limits').insert({
-          id: actorId,
-          count: 1,
-          window_start: nowIso,
-          updated_at: nowIso,
-        })
-        return true
+    clearTimeout(timeoutId)
+
+    if (error) {
+      // Database query error (e.g. table missing, connection failure, schema mismatch)
+      if (isDeployedEnv) {
+        // FAIL CLOSED: Deny operation with controlled 503 Service Unavailable
+        return {
+          allowed: false,
+          status: 503,
+          error: 'Rate limiting service temporarily unavailable. Please retry later.',
+        }
       }
-      // If table missing or query error, fall back to in-memory
-      return checkInMemoryRateLimit(actorId, max, windowMs)
+      // Local development only fallback
+      const inMem = checkInMemoryRateLimit(actorId, max, windowMs)
+      return inMem
+        ? { allowed: true }
+        : { allowed: false, status: 429, error: 'Too many requests. Rate limit exceeded.' }
+    }
+
+    if (!record) {
+      // Record does not exist: insert initial record
+      const { error: insertErr } = await supabaseAdmin.from('blog_rate_limits').insert({
+        id: actorId,
+        count: 1,
+        window_start: nowIso,
+        updated_at: nowIso,
+      })
+      if (insertErr && isDeployedEnv) {
+        return {
+          allowed: false,
+          status: 503,
+          error: 'Rate limiting service temporarily unavailable. Please retry later.',
+        }
+      }
+      return { allowed: true }
     }
 
     const windowStartMs = new Date(record.window_start).getTime()
     if (nowMs - windowStartMs >= windowMs) {
       // Window has expired: reset counter
-      await supabaseAdmin
+      const { error: resetErr } = await supabaseAdmin
         .from('blog_rate_limits')
         .update({
           count: 1,
@@ -84,15 +135,26 @@ export async function checkRateLimit(actorId: string, max = RATE_LIMIT_MAX, wind
           updated_at: nowIso,
         })
         .eq('id', actorId)
-      return true
+      if (resetErr && isDeployedEnv) {
+        return {
+          allowed: false,
+          status: 503,
+          error: 'Rate limiting service temporarily unavailable. Please retry later.',
+        }
+      }
+      return { allowed: true }
     }
 
     if (record.count >= max) {
-      return false
+      return {
+        allowed: false,
+        status: 429,
+        error: 'Too many requests. Rate limit exceeded.',
+      }
     }
 
     // Increment count
-    await supabaseAdmin
+    const { error: updateErr } = await supabaseAdmin
       .from('blog_rate_limits')
       .update({
         count: record.count + 1,
@@ -100,9 +162,29 @@ export async function checkRateLimit(actorId: string, max = RATE_LIMIT_MAX, wind
       })
       .eq('id', actorId)
 
-    return true
-  } catch (err) {
-    return checkInMemoryRateLimit(actorId, max, windowMs)
+    if (updateErr && isDeployedEnv) {
+      return {
+        allowed: false,
+        status: 503,
+        error: 'Rate limiting service temporarily unavailable. Please retry later.',
+      }
+    }
+
+    return { allowed: true }
+  } catch (err: any) {
+    clearTimeout(timeoutId)
+    if (isDeployedEnv) {
+      // Timeout or unexpected exception in deployed env -> FAIL CLOSED with 503
+      return {
+        allowed: false,
+        status: 503,
+        error: 'Rate limiting service temporarily unavailable. Please retry later.',
+      }
+    }
+    const inMem = checkInMemoryRateLimit(actorId, max, windowMs)
+    return inMem
+      ? { allowed: true }
+      : { allowed: false, status: 429, error: 'Too many requests. Rate limit exceeded.' }
   }
 }
 
@@ -179,11 +261,19 @@ export async function validateBlogApiAccess(
     }
   }
 
-  // 4. Rate limiting check (persistent database-backed with in-memory fallback)
-  if (!(await checkRateLimit(auth.actorId))) {
-    return {
-      authorized: false,
-      response: NextResponse.json({ error: 'Too many requests. Rate limit exceeded.' }, { status: 429 }),
+  // 4. Rate limiting check (fail-closed persistent rate limiting)
+  // External automation and assistant requests must pass persistent fail-closed rate limiting.
+  // The authenticated Atelier Owner retains an independent recovery path to administer and restore systems without lockout.
+  if (!auth.isOwner && !auth.scopes.includes('blog:owner')) {
+    const rateCheck = await checkRateLimit(auth.actorId)
+    if (!rateCheck.allowed) {
+      return {
+        authorized: false,
+        response: NextResponse.json(
+          { error: rateCheck.error || 'Too many requests. Rate limit exceeded.' },
+          { status: rateCheck.status || 429 }
+        ),
+      }
     }
   }
 

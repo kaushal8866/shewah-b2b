@@ -23,10 +23,13 @@ describe('Scoped Automation Interface & Auth (Phase 3)', () => {
     it('allows requests within rate limits and throttles upon exceeding threshold', async () => {
       const testActorId = `test_actor_${Date.now()}`
       for (let i = 0; i < 60; i++) {
-        expect(await checkRateLimit(testActorId)).toBe(true)
+        const res = await checkRateLimit(testActorId)
+        expect(res.allowed).toBe(true)
       }
       // 61st hit should be blocked
-      expect(await checkRateLimit(testActorId)).toBe(false)
+      const blocked = await checkRateLimit(testActorId)
+      expect(blocked.allowed).toBe(false)
+      expect(blocked.status).toBe(429)
     })
   })
 

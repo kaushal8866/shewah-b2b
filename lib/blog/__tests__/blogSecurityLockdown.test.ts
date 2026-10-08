@@ -167,10 +167,13 @@ describe('SHEWAH Blog Security & Lockdown Verification', () => {
     it('enforces rate limiting (max 60 requests/min per actor)', async () => {
       const actorId = `test_actor_${Date.now()}`
       for (let i = 0; i < 60; i++) {
-        expect(await checkRateLimit(actorId)).toBe(true)
+        const res = await checkRateLimit(actorId)
+        expect(res.allowed).toBe(true)
       }
       // 61st request must be rejected
-      expect(await checkRateLimit(actorId)).toBe(false)
+      const blocked = await checkRateLimit(actorId)
+      expect(blocked.allowed).toBe(false)
+      expect(blocked.status).toBe(429)
     })
 
     it('excludes blog:media:upload from default token scopes', () => {
