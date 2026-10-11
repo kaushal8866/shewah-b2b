@@ -181,6 +181,7 @@ export default function EditorialSubmitClient() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [previewObjectUrls, setPreviewObjectUrls] = useState<Record<string, string>>({})
+  const previewUrlsRef = useRef<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Preview viewport mode ('desktop' | 'mobile_390' | 'plain')
@@ -210,16 +211,20 @@ export default function EditorialSubmitClient() {
     }
   }, [])
 
-  // Cleanup any in-memory blob preview URLs on unmount
+  // Keep ref in sync and cleanup any in-memory blob preview URLs strictly on unmount
+  useEffect(() => {
+    previewUrlsRef.current = previewObjectUrls
+  }, [previewObjectUrls])
+
   useEffect(() => {
     return () => {
-      Object.values(previewObjectUrls).forEach((u) => {
+      Object.values(previewUrlsRef.current).forEach((u) => {
         try {
           URL.revokeObjectURL(u)
         } catch {}
       })
     }
-  }, [previewObjectUrls])
+  }, [])
 
   // Parse and validate article JSON safely as data only
   const parsedArticle = useMemo<ParsedArticle | null>(() => {
@@ -340,6 +345,18 @@ export default function EditorialSubmitClient() {
     }
   }
 
+  // Automatically fetch private preview blobs for any /api/blog/v1/media/<id> attachments when token is available
+  useEffect(() => {
+    const trimmedToken = token.trim()
+    if (!trimmedToken || attachments.length === 0) return
+    for (const att of attachments) {
+      if (att.url?.startsWith('/api/blog/v1/media/') && !previewUrlsRef.current[att.mediaId]) {
+        fetchAuthenticatedPreviewBlob(att.mediaId, att.url)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attachments, token])
+
   // Upload 1..5 image files to /api/blog/v1/media
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     setUploadError(null)
@@ -360,10 +377,10 @@ export default function EditorialSubmitClient() {
 
     setUploadingImage(true)
     const defaultPositions: BlogMediaPlacement[] = [
+      'hero_only',
       'after_intro',
       'after_section_1',
       'after_section_2',
-      'after_section_3',
       'before_conclusion',
     ]
 
