@@ -19,11 +19,20 @@ export type AuditOperation =
   | 'unpublish'
   | 'rollback'
   | 'archive'
+  | 'delete_article'
   | 'pause_automation'
   | 'resume_automation'
   | 'create_token'
   | 'revoke_token'
   | 'upload_media'
+
+export type BulkArticleAction =
+  | 'publish'
+  | 'unpublish'
+  | 'set_draft'
+  | 'set_in_review'
+  | 'archive'
+  | 'delete'
 
 export type AuditOutcome = 'success' | 'failure' | 'conflict'
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { validateBlogApiAccess } from '@/lib/blog/auth'
-import { updateDraftArticle } from '@/lib/blog/storage'
+import { updateDraftArticle, deleteArticlePermanently } from '@/lib/blog/storage'
 import { checkIdempotency, saveIdempotencyRecord } from '@/lib/blog/idempotency'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import crypto from 'crypto'
@@ -160,5 +161,57 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   return NextResponse.json(responsePayload, { status: 200, headers: { 'Cache-Control': 'no-store' } })
+}
+
+export async function DELETE(req: NextRequest, { params }: Params) {
+  // Strictly owner-only: assistant tokens have no hard-delete endpoint
+  const access = await validateBlogApiAccess(req, { requireOwner: true })
+  if (!access.authorized || !access.auth) {
+    return access.response!
+  }
+  const auth = access.auth
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID()
+
+  const result = await deleteArticlePermanently(
+    params.id,
+    {
+      type: auth.actorType,
+      id: auth.actorId,
+    },
+    requestId
+  )
+
+  if (!result.success || !result.data) {
+    const status =
+      result.error?.code === 'FORBIDDEN'
+        ? 403
+        : result.error?.code === 'NOT_FOUND'
+          ? 404
+          : 500
+    return NextResponse.json(
+      { error: result.error?.message || 'Failed to delete article.' },
+      { status, headers: { 'Cache-Control': 'no-store' } }
+    )
+  }
+
+  try {
+    revalidatePath('/blog')
+    revalidatePath(`/blog/${result.data.slug}`)
+    revalidatePath('/sitemap.xml')
+  } catch {
+    // Non-fatal
+  }
+
+  return NextResponse.json(
+    {
+      success: true,
+      articleId: result.data.id,
+      slug: result.data.slug,
+      title: result.data.title,
+      status: 'deleted',
+      requestId,
+    },
+    { status: 200, headers: { 'Cache-Control': 'no-store' } }
+  )
 }
 

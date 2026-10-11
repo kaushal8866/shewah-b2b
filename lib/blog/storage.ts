@@ -7,6 +7,7 @@ import {
   BlogStatus,
   BlogMediaAttachment,
   BlogStructuredBody,
+  BulkArticleAction,
   AI_ILLUSTRATION_DISCLAIMER,
   canTransitionStatus,
   calculateReadingTime,
@@ -858,7 +859,15 @@ export async function publishArticle(
     return { success: false, error: { code: 'NOT_FOUND', message: 'Article not found.' } }
   }
 
-  const rev = Array.isArray(article.blog_revisions) ? article.blog_revisions[0] : article.blog_revisions
+  let rev = Array.isArray(article.blog_revisions) ? article.blog_revisions[0] : article.blog_revisions
+  if (!rev && article.current_revision_id) {
+    const { data: fallbackRev } = await supabaseAdmin
+      .from('blog_revisions')
+      .select('*')
+      .eq('id', article.current_revision_id)
+      .single()
+    rev = fallbackRev
+  }
   if (!rev) {
     return { success: false, error: { code: 'VALIDATION_FAILED', message: 'No current revision found to publish.' } }
   }
@@ -870,6 +879,8 @@ export async function publishArticle(
       slug: article.slug,
       excerpt: rev.excerpt,
       bodyMarkdown: rev.body_markdown,
+      bodyStructured: rev.body_structured,
+      images: Array.isArray(rev.body_structured?.images) ? rev.body_structured.images : undefined,
       category: rev.category,
       authorDisplayName: rev.author_display_name,
       heroImageUrl: rev.hero_image_url,
@@ -935,21 +946,21 @@ export async function publishArticle(
 }
 
 /**
- * Unpublish an article (returns to 'in_review' or 'archived' and clears live_revision_id).
+ * Unpublish an article (returns to 'in_review', 'draft', or 'archived' and clears live_revision_id).
  * Owner-only or authorized staff.
  */
 export async function unpublishArticle(
   articleId: string,
   actor: { type: ActorType; id: string },
-  newStatus: 'in_review' | 'archived' = 'in_review'
+  newStatus: 'in_review' | 'draft' | 'archived' = 'in_review'
 ): Promise<StorageResult<BlogArticle>> {
   const { data: article } = await supabaseAdmin.from('blog_articles').select('*').eq('id', articleId).single()
   if (!article) {
     return { success: false, error: { code: 'NOT_FOUND', message: 'Article not found.' } }
   }
 
-  if (article.status !== 'published') {
-    return { success: false, error: { code: 'VALIDATION_FAILED', message: 'Article is not currently published.' } }
+  if (article.status !== 'published' && article.status !== 'scheduled') {
+    return { success: false, error: { code: 'VALIDATION_FAILED', message: 'Article is not currently published or scheduled.' } }
   }
 
   const { data: updated, error } = await supabaseAdmin
@@ -957,6 +968,7 @@ export async function unpublishArticle(
     .update({
       status: newStatus,
       live_revision_id: null,
+      scheduled_at: null,
       updated_at: new Date().toISOString(),
       lock_version: article.lock_version + 1,
     })
@@ -974,9 +986,285 @@ export async function unpublishArticle(
     actorId: actor.id,
     operation: 'unpublish',
     outcome: 'success',
+    diffSummary: { previousStatus: article.status, newStatus },
   })
 
   return { success: true, data: updated as BlogArticle }
+}
+
+/**
+ * Transitions an article to a non-live editorial state ('draft', 'in_review', or 'archived').
+ * Clears live_revision_id and scheduled_at so previously published/scheduled articles are removed from public storefront.
+ */
+export async function transitionArticleStatus(
+  articleId: string,
+  targetStatus: 'draft' | 'in_review' | 'archived',
+  actor: { type: ActorType; id: string },
+  requestId?: string | null
+): Promise<StorageResult<BlogArticle>> {
+  const { data: article } = await supabaseAdmin.from('blog_articles').select('*').eq('id', articleId).single()
+  if (!article) {
+    return { success: false, error: { code: 'NOT_FOUND', message: 'Article not found.' } }
+  }
+
+  const previousStatus: BlogStatus = article.status
+  const now = new Date().toISOString()
+
+  const { data: updated, error } = await supabaseAdmin
+    .from('blog_articles')
+    .update({
+      status: targetStatus,
+      live_revision_id: null,
+      scheduled_at: null,
+      updated_at: now,
+      lock_version: (article.lock_version || 1) + 1,
+    })
+    .eq('id', articleId)
+    .select()
+    .single()
+
+  if (error || !updated) {
+    return {
+      success: false,
+      error: { code: 'DATABASE_ERROR', message: error?.message || `Failed to move article to ${targetStatus}.` },
+    }
+  }
+
+  await recordBlogAudit({
+    articleId,
+    actorType: actor.type,
+    actorId: actor.id,
+    operation: targetStatus === 'archived' ? 'archive' : targetStatus === 'in_review' ? 'submit_review' : 'update_draft',
+    outcome: 'success',
+    requestId,
+    diffSummary: { previousStatus, newStatus: targetStatus },
+  })
+
+  return { success: true, data: updated as BlogArticle }
+}
+
+/**
+ * Permanently deletes an article and its revision snapshots.
+ * Strictly restricted to owner identity (never assistant_token).
+ */
+export async function deleteArticlePermanently(
+  articleId: string,
+  actor: { type: ActorType; id: string },
+  requestId?: string | null
+): Promise<StorageResult<{ id: string; slug: string; title: string; previousStatus: BlogStatus }>> {
+  if (actor.type !== 'owner') {
+    return {
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'Permanent article deletion requires owner authority.' },
+    }
+  }
+
+  const { data: article } = await supabaseAdmin
+    .from('blog_articles')
+    .select('id, slug, title, status, external_content_id')
+    .eq('id', articleId)
+    .single()
+
+  if (!article) {
+    return { success: false, error: { code: 'NOT_FOUND', message: 'Article not found.' } }
+  }
+
+  // Detach revision pointers before deleting article row so FK constraints never block cascade
+  await supabaseAdmin
+    .from('blog_articles')
+    .update({ current_revision_id: null, live_revision_id: null })
+    .eq('id', articleId)
+
+  // Clean up any slug redirects pointing to or from this article
+  if (article.slug) {
+    await supabaseAdmin.from('blog_slug_redirects').delete().eq('old_slug', article.slug)
+    await supabaseAdmin.from('blog_slug_redirects').delete().eq('new_slug', article.slug)
+  }
+
+  const { error: delErr } = await supabaseAdmin.from('blog_articles').delete().eq('id', articleId)
+  if (delErr) {
+    return {
+      success: false,
+      error: { code: 'DATABASE_ERROR', message: delErr.message || 'Failed to delete article.' },
+    }
+  }
+
+  await recordBlogAudit({
+    articleId: null,
+    actorType: actor.type,
+    actorId: actor.id,
+    operation: 'delete_article',
+    outcome: 'success',
+    requestId,
+    diffSummary: {
+      deletedArticleId: article.id,
+      slug: article.slug,
+      title: article.title,
+      previousStatus: article.status,
+      externalContentId: article.external_content_id || null,
+    },
+  })
+
+  return {
+    success: true,
+    data: {
+      id: article.id,
+      slug: article.slug,
+      title: article.title,
+      previousStatus: article.status as BlogStatus,
+    },
+  }
+}
+
+export interface BulkArticleActionItemResult {
+  articleId: string
+  slug?: string
+  title?: string
+  success: boolean
+  status?: BlogStatus | 'deleted'
+  error?: string
+}
+
+export interface BulkArticleActionSummary {
+  action: BulkArticleAction
+  totalRequested: number
+  succeededCount: number
+  failedCount: number
+  affectedSlugs: string[]
+  results: BulkArticleActionItemResult[]
+}
+
+/**
+ * Executes a bulk action across multiple selected articles (Owner-only).
+ */
+export async function executeBulkArticleAction(
+  articleIds: string[],
+  action: BulkArticleAction,
+  actor: { type: ActorType; id: string; hasPublishScope: boolean },
+  requestId?: string | null
+): Promise<StorageResult<BulkArticleActionSummary>> {
+  if (actor.type !== 'owner') {
+    return {
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'Bulk article operations require owner authority.' },
+    }
+  }
+
+  const uniqueIds = Array.from(
+    new Set(
+      (Array.isArray(articleIds) ? articleIds : [])
+        .map((id) => String(id || '').trim())
+        .filter(Boolean)
+    )
+  ).slice(0, 50)
+
+  if (uniqueIds.length === 0) {
+    return {
+      success: false,
+      error: { code: 'VALIDATION_FAILED', message: 'At least one article ID must be selected.' },
+    }
+  }
+
+  const results: BulkArticleActionItemResult[] = []
+  const affectedSlugs = new Set<string>()
+
+  for (const id of uniqueIds) {
+    if (action === 'publish') {
+      const res = await publishArticle(id, actor, requestId)
+      if (res.success && res.data) {
+        affectedSlugs.add(res.data.slug)
+        results.push({
+          articleId: id,
+          slug: res.data.slug,
+          title: res.data.title,
+          success: true,
+          status: res.data.status,
+        })
+      } else {
+        results.push({
+          articleId: id,
+          success: false,
+          error: res.error?.message || 'Failed to publish article.',
+        })
+      }
+    } else if (action === 'unpublish') {
+      const res = await unpublishArticle(id, actor, 'in_review')
+      if (res.success && res.data) {
+        affectedSlugs.add(res.data.slug)
+        results.push({
+          articleId: id,
+          slug: res.data.slug,
+          title: res.data.title,
+          success: true,
+          status: res.data.status,
+        })
+      } else {
+        results.push({
+          articleId: id,
+          success: false,
+          error: res.error?.message || 'Failed to unpublish article.',
+        })
+      }
+    } else if (action === 'set_draft' || action === 'set_in_review' || action === 'archive') {
+      const targetStatus: 'draft' | 'in_review' | 'archived' =
+        action === 'set_draft' ? 'draft' : action === 'set_in_review' ? 'in_review' : 'archived'
+      const res = await transitionArticleStatus(id, targetStatus, actor, requestId)
+      if (res.success && res.data) {
+        affectedSlugs.add(res.data.slug)
+        results.push({
+          articleId: id,
+          slug: res.data.slug,
+          title: res.data.title,
+          success: true,
+          status: res.data.status,
+        })
+      } else {
+        results.push({
+          articleId: id,
+          success: false,
+          error: res.error?.message || `Failed to transition article to ${targetStatus}.`,
+        })
+      }
+    } else if (action === 'delete') {
+      const res = await deleteArticlePermanently(id, actor, requestId)
+      if (res.success && res.data) {
+        affectedSlugs.add(res.data.slug)
+        results.push({
+          articleId: id,
+          slug: res.data.slug,
+          title: res.data.title,
+          success: true,
+          status: 'deleted',
+        })
+      } else {
+        results.push({
+          articleId: id,
+          success: false,
+          error: res.error?.message || 'Failed to delete article.',
+        })
+      }
+    } else {
+      return {
+        success: false,
+        error: { code: 'VALIDATION_FAILED', message: `Unsupported bulk action "${String(action)}".` },
+      }
+    }
+  }
+
+  const succeededCount = results.filter((r) => r.success).length
+  const failedCount = results.length - succeededCount
+
+  return {
+    success: true,
+    data: {
+      action,
+      totalRequested: uniqueIds.length,
+      succeededCount,
+      failedCount,
+      affectedSlugs: Array.from(affectedSlugs),
+      results,
+    },
+  }
 }
 
 /**

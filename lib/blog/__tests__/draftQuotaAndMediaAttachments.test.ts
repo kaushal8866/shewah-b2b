@@ -214,6 +214,8 @@ import {
   updateDraftArticle,
   getDailyNewDraftCountInKolkata,
   DRAFT_QUOTA_DELETION_POLICY,
+  executeBulkArticleAction,
+  deleteArticlePermanently,
 } from '../storage'
 import {
   validateAndSanitizeImageBinary,
@@ -970,4 +972,121 @@ describe('Shewah Blog Draft Capacity (10/day Asia/Kolkata) & Image Attachments (
       expect(mockState.storageObjects.has(recentKey)).toBe(true)
     })
   })
+
+  describe('4. Owner Multi-Select Bulk Actions (publish, unpublish, set_draft, set_in_review, archive, delete)', () => {
+    it('rejects assistant_token from executing bulk operations or permanent deletes', async () => {
+      const draft = await createDraftArticle({
+        title: 'Protected Draft Against Token Delete',
+        slug: 'protected-draft-against-token-delete',
+        category: 'education',
+        bodyMarkdown: VALID_BODY_MARKDOWN,
+        actorType: 'assistant_token',
+        actorId: 'token-1',
+      })
+      const articleId = draft.data!.article.id
+
+      const bulkRes = await executeBulkArticleAction(
+        [articleId],
+        'delete',
+        { type: 'assistant_token', id: 'token-1', hasPublishScope: false }
+      )
+      expect(bulkRes.success).toBe(false)
+      expect(bulkRes.error?.code).toBe('FORBIDDEN')
+
+      const singleDelRes = await deleteArticlePermanently(articleId, {
+        type: 'assistant_token',
+        id: 'token-1',
+      })
+      expect(singleDelRes.success).toBe(false)
+      expect(singleDelRes.error?.code).toBe('FORBIDDEN')
+      expect(mockState.articles.some((a) => a.id === articleId)).toBe(true)
+    })
+
+    it('supports owner bulk publish, unpublish, archive, move to draft, and permanent delete across multiple selected articles', async () => {
+      const pubReadyPayload = (idx: number) => ({
+        title: `Architectural Diamond Setting Guide Part ${idx}`,
+        slug: `architectural-diamond-setting-guide-part-${idx}`,
+        excerpt: 'A detailed gemological guide to inspecting diamond prong symmetry, gallery rail geometry, and solid gold settings.',
+        bodyMarkdown: `${VALID_BODY_MARKDOWN}\n\n${VALID_BODY_MARKDOWN}`,
+        category: 'education',
+        authorDisplayName: 'SHEWAH Editorial Atelier',
+        heroImageUrl: 'https://shewah.co/consultation/diamond.jpg',
+        heroImageAlt: 'Macro photograph of a solitaire diamond ring setting from the SHEWAH archive',
+        heroImageRights: '© SHEWAH Archives',
+        seoTitle: `Architectural Diamond Setting Guide Part ${idx} | SHEWAH`,
+        metaDescription: 'Learn how to inspect diamond prong symmetry, gallery rail stability, and solid gold settings with bench jeweller precision.',
+        sourceReferences: [
+          {
+            title: 'GIA Bench Jeweller Guide to Prong and Bezel Inspection',
+            sourceName: 'Gemological Institute of America (GIA)',
+            url: 'https://4cs.gia.edu',
+            checkedAt: '2026-10-11T06:00:00Z',
+          },
+        ],
+        actorType: 'owner' as const,
+        actorId: 'owner-1',
+      })
+
+      const d1 = await createDraftArticle(pubReadyPayload(1))
+      const d2 = await createDraftArticle(pubReadyPayload(2))
+      const id1 = d1.data!.article.id
+      const id2 = d2.data!.article.id
+
+      // 1. Bulk Publish both selected drafts
+      const pubRes = await executeBulkArticleAction(
+        [id1, id2],
+        'publish',
+        { type: 'owner', id: 'owner-1', hasPublishScope: true }
+      )
+      expect(pubRes.success).toBe(true)
+      expect(pubRes.data?.succeededCount).toBe(2)
+      expect(pubRes.data?.failedCount).toBe(0)
+      expect(mockState.articles.find((a) => a.id === id1)?.status).toBe('published')
+      expect(mockState.articles.find((a) => a.id === id2)?.status).toBe('published')
+      expect(mockState.articles.find((a) => a.id === id1)?.live_revision_id).toBeTruthy()
+
+      // 2. Bulk Unpublish both selected articles
+      const unpubRes = await executeBulkArticleAction(
+        [id1, id2],
+        'unpublish',
+        { type: 'owner', id: 'owner-1', hasPublishScope: true }
+      )
+      expect(unpubRes.success).toBe(true)
+      expect(unpubRes.data?.succeededCount).toBe(2)
+      expect(mockState.articles.find((a) => a.id === id1)?.status).toBe('in_review')
+      expect(mockState.articles.find((a) => a.id === id1)?.live_revision_id).toBeNull()
+
+      // 3. Bulk Archive both selected articles
+      const archRes = await executeBulkArticleAction(
+        [id1, id2],
+        'archive',
+        { type: 'owner', id: 'owner-1', hasPublishScope: true }
+      )
+      expect(archRes.success).toBe(true)
+      expect(archRes.data?.succeededCount).toBe(2)
+      expect(mockState.articles.find((a) => a.id === id1)?.status).toBe('archived')
+      expect(mockState.articles.find((a) => a.id === id2)?.status).toBe('archived')
+
+      // 4. Bulk Move back to Draft
+      const draftRes = await executeBulkArticleAction(
+        [id1, id2],
+        'set_draft',
+        { type: 'owner', id: 'owner-1', hasPublishScope: true }
+      )
+      expect(draftRes.success).toBe(true)
+      expect(mockState.articles.find((a) => a.id === id1)?.status).toBe('draft')
+
+      // 5. Bulk Delete permanently
+      const delRes = await executeBulkArticleAction(
+        [id1, id2],
+        'delete',
+        { type: 'owner', id: 'owner-1', hasPublishScope: true }
+      )
+      expect(delRes.success).toBe(true)
+      expect(delRes.data?.succeededCount).toBe(2)
+      expect(mockState.articles.some((a) => a.id === id1 || a.id === id2)).toBe(false)
+      expect(mockState.auditLogs.some((l) => l.operation === 'delete_article')).toBe(true)
+    })
+  })
 })
+

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   BookOpen,
@@ -18,6 +18,8 @@ import {
   ExternalLink,
   RotateCcw,
   Eye,
+  EyeOff,
+  Archive,
   Trash2,
   Copy,
   Check,
@@ -27,9 +29,10 @@ import {
   Monitor,
   Smartphone,
   Image as ImageIcon,
+  X,
 } from 'lucide-react'
 import { EditorialArticleBodyRenderer, EditorialMediaFigure } from '@/lib/blog/renderer'
-import type { BlogMediaAttachment } from '@/lib/blog/types'
+import type { BlogMediaAttachment, BulkArticleAction } from '@/lib/blog/types'
 
 interface CurrentUser {
   id?: string
@@ -44,6 +47,25 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
+
+  // Multi-selection & bulk action state
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkFeedback, setBulkFeedback] = useState<{
+    type: 'success' | 'warning' | 'error'
+    summary: string
+    details?: string[]
+  } | null>(null)
+  const [confirmModal, setConfirmModal] = useState<{
+    action: BulkArticleAction
+    articleIds: string[]
+    title: string
+    description: string
+    confirmLabel: string
+    tone: 'emerald' | 'amber' | 'stone' | 'red'
+  } | null>(null)
+  const selectAllCheckboxRef = useRef<HTMLInputElement | null>(null)
 
   // Editor form state
   const [formData, setFormData] = useState({
@@ -105,7 +127,10 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
       const res = await fetch(`/api/blog/v1/articles?${q.toString()}`)
       if (res.ok) {
         const data = await res.json()
-        setArticles(data.articles || [])
+        const loaded = data.articles || []
+        setArticles(loaded)
+        const loadedIdSet = new Set(loaded.map((a: any) => a.id))
+        setSelectedIds((prev) => prev.filter((id) => loadedIdSet.has(id)))
       }
     } catch {}
     setLoading(false)
@@ -160,6 +185,205 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
     loadTokens()
     loadAuditLogs()
   }, [statusFilter])
+
+  const visibleIds = articles.map((a) => a.id)
+  const selectedVisibleCount = visibleIds.filter((id) => selectedIds.includes(id)).length
+  const allVisibleSelected = articles.length > 0 && selectedVisibleCount === articles.length
+  const someVisibleSelected = selectedVisibleCount > 0 && selectedVisibleCount < articles.length
+
+  useEffect(() => {
+    if (selectAllCheckboxRef.current) {
+      selectAllCheckboxRef.current.indeterminate = someVisibleSelected
+    }
+  }, [someVisibleSelected, allVisibleSelected])
+
+  function toggleSelectAllVisible() {
+    if (allVisibleSelected) {
+      const visibleSet = new Set(visibleIds)
+      setSelectedIds((prev) => prev.filter((id) => !visibleSet.has(id)))
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...visibleIds])))
+    }
+  }
+
+  function toggleSelectArticle(articleId: string, rowIndex: number, shiftKey: boolean = false) {
+    setSelectedIds((prev) => {
+      const isCurrentlySelected = prev.includes(articleId)
+      if (shiftKey && lastSelectedIndex !== null && lastSelectedIndex !== rowIndex) {
+        const start = Math.min(lastSelectedIndex, rowIndex)
+        const end = Math.max(lastSelectedIndex, rowIndex)
+        const rangeIds = articles.slice(start, end + 1).map((a) => a.id)
+        if (isCurrentlySelected) {
+          const removeSet = new Set(rangeIds)
+          return prev.filter((id) => !removeSet.has(id))
+        }
+        return Array.from(new Set([...prev, ...rangeIds]))
+      }
+      if (isCurrentlySelected) {
+        return prev.filter((id) => id !== articleId)
+      }
+      return [...prev, articleId]
+    })
+    setLastSelectedIndex(rowIndex)
+  }
+
+  function clearSelection() {
+    setSelectedIds([])
+    setLastSelectedIndex(null)
+  }
+
+  function promptBulkAction(action: BulkArticleAction, explicitIds?: string[]) {
+    const targetIds = explicitIds && explicitIds.length > 0 ? explicitIds : selectedIds
+    if (targetIds.length === 0) return
+
+    const targetArticles = articles.filter((a) => targetIds.includes(a.id))
+    const count = targetIds.length
+    const plural = count === 1 ? 'article' : 'articles'
+    const publishedCount = targetArticles.filter((a) => a.status === 'published').length
+
+    if (action === 'publish') {
+      setConfirmModal({
+        action,
+        articleIds: targetIds,
+        title: `Publish ${count} Selected ${count === 1 ? 'Article' : 'Articles'} Live`,
+        description: `Each selected ${plural} will be validated against publication readiness checks (title, body length, hero image, SEO metadata, and verified source references) and published live to https://shewah.co/blog.`,
+        confirmLabel: `Publish ${count} ${count === 1 ? 'Article' : 'Articles'}`,
+        tone: 'emerald',
+      })
+    } else if (action === 'unpublish') {
+      setConfirmModal({
+        action,
+        articleIds: targetIds,
+        title: `Unpublish ${count} Selected ${count === 1 ? 'Article' : 'Articles'}`,
+        description: `Removes the selected ${plural} from the public storefront immediately, clears live_revision_id, and moves status to "in_review". Working draft revisions remain intact.`,
+        confirmLabel: `Unpublish ${count} ${count === 1 ? 'Article' : 'Articles'}`,
+        tone: 'amber',
+      })
+    } else if (action === 'set_draft') {
+      setConfirmModal({
+        action,
+        articleIds: targetIds,
+        title: `Move ${count} Selected ${count === 1 ? 'Article' : 'Articles'} to Draft`,
+        description: `Transitions the selected ${plural} to "draft" status${publishedCount > 0 ? ` and unpublishes ${publishedCount} live article(s) from the public storefront` : ''}.`,
+        confirmLabel: `Move to Draft (${count})`,
+        tone: 'stone',
+      })
+    } else if (action === 'set_in_review') {
+      setConfirmModal({
+        action,
+        articleIds: targetIds,
+        title: `Mark ${count} Selected ${count === 1 ? 'Article' : 'Articles'} as In Review`,
+        description: `Transitions the selected ${plural} to "in_review" status${publishedCount > 0 ? ` and unpublishes ${publishedCount} live article(s) from the public storefront` : ''}.`,
+        confirmLabel: `Mark In Review (${count})`,
+        tone: 'stone',
+      })
+    } else if (action === 'archive') {
+      setConfirmModal({
+        action,
+        articleIds: targetIds,
+        title: `Archive ${count} Selected ${count === 1 ? 'Article' : 'Articles'}`,
+        description: `Soft-archives the selected ${plural} (status = "archived") and removes any live version from the storefront while preserving full revision history.`,
+        confirmLabel: `Archive ${count} ${count === 1 ? 'Article' : 'Articles'}`,
+        tone: 'stone',
+      })
+    } else if (action === 'delete') {
+      setConfirmModal({
+        action,
+        articleIds: targetIds,
+        title: `Permanently Delete ${count} Selected ${count === 1 ? 'Article' : 'Articles'}?`,
+        description: `WARNING: This permanently deletes ${count} ${plural} and all associated revision snapshots from the database.${publishedCount > 0 ? ` ${publishedCount} of the selected articles are currently PUBLISHED live!` : ''} This action cannot be undone. Use "Archive" instead if you only want to hide articles.`,
+        confirmLabel: `Delete Permanently (${count})`,
+        tone: 'red',
+      })
+    }
+  }
+
+  async function executeConfirmedBulkAction() {
+    if (!confirmModal) return
+    const { action, articleIds } = confirmModal
+    setBulkBusy(true)
+    setBulkFeedback(null)
+
+    try {
+      const res = await fetch('/api/blog/v1/articles/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, articleIds }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setBulkFeedback({
+          type: 'error',
+          summary: data.error || `Bulk ${action.replace('_', ' ')} action failed.`,
+        })
+      } else {
+        const succeeded = Number(data.succeededCount || 0)
+        const failed = Number(data.failedCount || 0)
+        const total = Number(data.totalRequested || articleIds.length)
+        const failedDetails: string[] = (data.results || [])
+          .filter((r: any) => !r.success)
+          .map((r: any) => {
+            const matched = articles.find((a) => a.id === r.articleId)
+            const label = matched?.title || r.slug || r.articleId
+            return `${label}: ${r.error || 'Action failed'}`
+          })
+
+        const actionVerbMap: Record<BulkArticleAction, string> = {
+          publish: 'Published',
+          unpublish: 'Unpublished',
+          set_draft: 'Moved to Draft',
+          set_in_review: 'Marked In Review',
+          archive: 'Archived',
+          delete: 'Permanently deleted',
+        }
+        const verb = actionVerbMap[action] || 'Processed'
+
+        if (failed === 0) {
+          setBulkFeedback({
+            type: 'success',
+            summary: `${verb} ${succeeded} of ${total} selected ${total === 1 ? 'article' : 'articles'}.`,
+          })
+          setSelectedIds((prev) => prev.filter((id) => !articleIds.includes(id)))
+        } else if (succeeded > 0) {
+          setBulkFeedback({
+            type: 'warning',
+            summary: `${verb} ${succeeded} of ${total} selected articles (${failed} could not be processed).`,
+            details: failedDetails,
+          })
+          const succeededIds = new Set(
+            (data.results || []).filter((r: any) => r.success).map((r: any) => r.articleId)
+          )
+          setSelectedIds((prev) => prev.filter((id) => !succeededIds.has(id)))
+        } else {
+          setBulkFeedback({
+            type: 'error',
+            summary: `Could not ${action.replace('_', ' ')} the selected ${total === 1 ? 'article' : 'articles'}.`,
+            details: failedDetails,
+          })
+        }
+
+        // If the currently open article in the editor was deleted, exit editor back to articles list
+        if (action === 'delete' && selectedArticleId && articleIds.includes(selectedArticleId)) {
+          setSelectedArticleId(null)
+          setActiveTab('articles')
+        } else if (selectedArticleId && articleIds.includes(selectedArticleId) && activeTab === 'editor') {
+          await handleOpenArticle(selectedArticleId)
+        }
+
+        await loadArticles()
+        await loadAuditLogs()
+      }
+    } catch (e: any) {
+      setBulkFeedback({
+        type: 'error',
+        summary: e?.message || 'Network error while running bulk action.',
+      })
+    } finally {
+      setBulkBusy(false)
+      setConfirmModal(null)
+    }
+  }
 
   // Open article in editor
   async function handleOpenArticle(id: string) {
@@ -554,9 +778,9 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
       <main className="flex-1 p-6 lg:p-8 max-w-7xl mx-auto w-full">
         {/* 1. ARTICLES LIST TAB */}
         {activeTab === 'articles' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="relative">
                   <Search className="w-4 h-4 text-[#69727D] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -591,6 +815,190 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
               </button>
             </div>
 
+            {/* Bulk Operation Feedback Banner */}
+            {bulkFeedback && (
+              <div
+                data-testid="bulk-feedback-banner"
+                className={`p-4 border text-xs flex items-start justify-between gap-4 ${
+                  bulkFeedback.type === 'success'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                    : bulkFeedback.type === 'warning'
+                    ? 'bg-amber-50 border-amber-200 text-amber-900'
+                    : 'bg-red-50 border-red-200 text-red-900'
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="font-semibold flex items-center gap-2">
+                    {bulkFeedback.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                    )}
+                    <span>{bulkFeedback.summary}</span>
+                  </div>
+                  {bulkFeedback.details && bulkFeedback.details.length > 0 && (
+                    <ul className="list-disc pl-6 space-y-0.5 text-[11px] opacity-90">
+                      {bulkFeedback.details.map((detail, idx) => (
+                        <li key={idx}>{detail}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <button
+                  onClick={() => setBulkFeedback(null)}
+                  className="text-current opacity-70 hover:opacity-100 p-1"
+                  aria-label="Dismiss notification"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Multi-Select & Bulk Action Toolbar */}
+            {!loading && articles.length > 0 && (
+              <div
+                data-testid="blog-bulk-action-bar"
+                className={`border p-3.5 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-3 ${
+                  selectedIds.length > 0
+                    ? 'bg-[#051F34] border-[#051F34] text-white shadow-sm'
+                    : 'bg-white border-[#E3DBD4] text-[#051F34]'
+                }`}
+              >
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  <label className="inline-flex items-center gap-2 cursor-pointer select-none font-medium">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={toggleSelectAllVisible}
+                      aria-label="Toggle select all articles"
+                      className="w-4 h-4 accent-[#CB9274] cursor-pointer"
+                    />
+                    <span>
+                      {selectedIds.length > 0
+                        ? `${selectedIds.length} of ${articles.length} selected`
+                        : `Select articles for bulk actions (${articles.length} total)`}
+                    </span>
+                  </label>
+
+                  {selectedIds.length > 0 && (
+                    <>
+                      <span className="text-[11px] px-2 py-0.5 bg-white/10 text-stone-200 font-mono">
+                        {(() => {
+                          const counts: Record<string, number> = {}
+                          articles
+                            .filter((a) => selectedIds.includes(a.id))
+                            .forEach((a) => {
+                              const st = (a.status || 'draft').replace('_', ' ')
+                              counts[st] = (counts[st] || 0) + 1
+                            })
+                          return Object.entries(counts)
+                            .map(([st, c]) => `${c} ${st}`)
+                            .join(' · ')
+                        })()}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={clearSelection}
+                        className="text-[11px] uppercase tracking-wider text-[#CB9274] hover:text-white underline"
+                      >
+                        Clear Selection
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid="bulk-publish-btn"
+                    disabled={selectedIds.length === 0 || bulkBusy}
+                    onClick={() => promptBulkAction('publish')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 text-white text-[11px] uppercase tracking-wider font-medium hover:bg-emerald-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Validate and publish selected articles live"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Publish</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-testid="bulk-unpublish-btn"
+                    disabled={selectedIds.length === 0 || bulkBusy}
+                    onClick={() => promptBulkAction('unpublish')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] uppercase tracking-wider font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                      selectedIds.length > 0
+                        ? 'border-amber-400/80 bg-amber-500/20 text-amber-200 hover:bg-amber-500/30'
+                        : 'border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100'
+                    }`}
+                    title="Unpublish selected live/scheduled articles and return to review"
+                  >
+                    <EyeOff className="w-3.5 h-3.5" />
+                    <span>Unpublish</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-testid="bulk-draft-btn"
+                    disabled={selectedIds.length === 0 || bulkBusy}
+                    onClick={() => promptBulkAction('set_draft')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] uppercase tracking-wider font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                      selectedIds.length > 0
+                        ? 'border-stone-500 text-stone-200 hover:bg-white/10'
+                        : 'border-[#E3DBD4] text-[#051F34] hover:bg-[#F6F4F2]'
+                    }`}
+                    title="Move selected articles to draft status"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Move to Draft</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-testid="bulk-review-btn"
+                    disabled={selectedIds.length === 0 || bulkBusy}
+                    onClick={() => promptBulkAction('set_in_review')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] uppercase tracking-wider font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                      selectedIds.length > 0
+                        ? 'border-stone-500 text-stone-200 hover:bg-white/10'
+                        : 'border-[#E3DBD4] text-[#051F34] hover:bg-[#F6F4F2]'
+                    }`}
+                    title="Mark selected articles as In Review"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>In Review</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-testid="bulk-archive-btn"
+                    disabled={selectedIds.length === 0 || bulkBusy}
+                    onClick={() => promptBulkAction('archive')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] uppercase tracking-wider font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                      selectedIds.length > 0
+                        ? 'border-stone-500 text-stone-200 hover:bg-white/10'
+                        : 'border-[#E3DBD4] text-[#051F34] hover:bg-[#F6F4F2]'
+                    }`}
+                    title="Archive selected articles while preserving revisions"
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                    <span>Archive</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-testid="bulk-delete-btn"
+                    disabled={selectedIds.length === 0 || bulkBusy}
+                    onClick={() => promptBulkAction('delete')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-700 text-white text-[11px] uppercase tracking-wider font-medium hover:bg-red-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Permanently delete selected articles"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="py-20 text-center text-xs text-[#69727D] font-mono">Loading articles...</div>
             ) : articles.length === 0 ? (
@@ -608,10 +1016,20 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                 </button>
               </div>
             ) : (
-              <div className="bg-white border border-[#E3DBD4] overflow-hidden">
+              <div className="bg-white border border-[#E3DBD4] overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#F6F4F2] border-b border-[#E3DBD4] text-[10px] uppercase tracking-[0.18em] text-[#69727D]">
                     <tr>
+                      <th className="py-3.5 pl-4 pr-2 w-10">
+                        <input
+                          ref={selectAllCheckboxRef}
+                          type="checkbox"
+                          checked={allVisibleSelected}
+                          onChange={toggleSelectAllVisible}
+                          aria-label="Select all visible articles"
+                          className="w-4 h-4 accent-[#051F34] cursor-pointer"
+                        />
+                      </th>
                       <th className="py-3.5 px-4 font-semibold">Title & Slug</th>
                       <th className="py-3.5 px-4 font-semibold">Category</th>
                       <th className="py-3.5 px-4 font-semibold">Status</th>
@@ -621,53 +1039,120 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E3DBD4]">
-                    {articles.map((item) => (
-                      <tr key={item.id} className="hover:bg-[#F6F4F2]/50 transition-colors">
-                        <td className="py-4 px-4">
-                          <button
-                            onClick={() => handleOpenArticle(item.id)}
-                            className="font-serif text-sm text-[#051F34] hover:text-[#CB9274] font-medium text-left block"
-                          >
-                            {item.title}
-                          </button>
-                          <span className="text-[11px] text-[#69727D] font-mono">/blog/{item.slug}</span>
-                        </td>
-                        <td className="py-4 px-4 capitalize text-[#69727D]">
-                          {item.category?.replace('-', ' ')}
-                        </td>
-                        <td className="py-4 px-4">
-                          <span
-                            className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold ${
-                              item.status === 'published'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : item.status === 'scheduled'
-                                ? 'bg-blue-100 text-blue-800'
-                                : item.status === 'in_review'
-                                ? 'bg-amber-100 text-amber-800'
-                                : item.status === 'archived'
-                                ? 'bg-stone-200 text-stone-700'
-                                : 'bg-stone-100 text-stone-600'
-                            }`}
-                          >
-                            {item.status?.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-[#69727D] text-[11px]">
-                          {item.editorial_source}
-                        </td>
-                        <td className="py-4 px-4 text-[#69727D] font-mono text-[11px]">
-                          {item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '—'}
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                          <button
-                            onClick={() => handleOpenArticle(item.id)}
-                            className="text-[#051F34] hover:text-[#CB9274] font-medium uppercase tracking-wider text-[11px]"
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {articles.map((item, idx) => {
+                      const isSelected = selectedIds.includes(item.id)
+                      return (
+                        <tr
+                          key={item.id}
+                          className={`transition-colors ${
+                            isSelected ? 'bg-[#CB9274]/10 hover:bg-[#CB9274]/15' : 'hover:bg-[#F6F4F2]/50'
+                          }`}
+                        >
+                          <td className="py-4 pl-4 pr-2 align-top">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              onClick={(e) => toggleSelectArticle(item.id, idx, e.shiftKey)}
+                              aria-label={`Select article ${item.title}`}
+                              className="w-4 h-4 mt-1 accent-[#051F34] cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-4 px-4">
+                            <button
+                              onClick={() => handleOpenArticle(item.id)}
+                              className="font-serif text-sm text-[#051F34] hover:text-[#CB9274] font-medium text-left block"
+                            >
+                              {item.title}
+                            </button>
+                            <span className="text-[11px] text-[#69727D] font-mono">/blog/{item.slug}</span>
+                          </td>
+                          <td className="py-4 px-4 capitalize text-[#69727D]">
+                            {item.category?.replace('-', ' ')}
+                          </td>
+                          <td className="py-4 px-4">
+                            <span
+                              className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold ${
+                                item.status === 'published'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : item.status === 'scheduled'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : item.status === 'in_review'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : item.status === 'archived'
+                                  ? 'bg-stone-200 text-stone-700'
+                                  : 'bg-stone-100 text-stone-600'
+                              }`}
+                            >
+                              {item.status?.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-[#69727D] text-[11px]">
+                            {item.editorial_source}
+                          </td>
+                          <td className="py-4 px-4 text-[#69727D] font-mono text-[11px]">
+                            {item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '—'}
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <div className="inline-flex items-center justify-end gap-2.5">
+                              <button
+                                onClick={() => handleOpenArticle(item.id)}
+                                className="text-[#051F34] hover:text-[#CB9274] font-medium uppercase tracking-wider text-[11px]"
+                              >
+                                Edit
+                              </button>
+                              {item.status === 'published' || item.status === 'scheduled' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => promptBulkAction('unpublish', [item.id])}
+                                  className="text-amber-700 hover:text-amber-900 font-medium uppercase tracking-wider text-[11px]"
+                                  title="Unpublish from live storefront"
+                                >
+                                  Unpublish
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => promptBulkAction('publish', [item.id])}
+                                  className="text-emerald-700 hover:text-emerald-900 font-medium uppercase tracking-wider text-[11px]"
+                                  title="Validate and publish live"
+                                >
+                                  Publish
+                                </button>
+                              )}
+                              {item.status !== 'archived' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => promptBulkAction('archive', [item.id])}
+                                  className="text-stone-500 hover:text-[#051F34] font-medium uppercase tracking-wider text-[11px]"
+                                  title="Archive article"
+                                >
+                                  Archive
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => promptBulkAction('set_draft', [item.id])}
+                                  className="text-stone-600 hover:text-[#051F34] font-medium uppercase tracking-wider text-[11px]"
+                                  title="Restore archived article to draft"
+                                >
+                                  Restore
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => promptBulkAction('delete', [item.id])}
+                                className="text-red-600 hover:text-red-800 p-1"
+                                title={`Delete "${item.title}" permanently`}
+                                aria-label={`Delete article ${item.title}`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -711,7 +1196,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
                 {selectedArticleId && (
                   <button
                     onClick={() => setRevisionsDrawerOpen((prev) => !prev)}
@@ -744,9 +1229,28 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                     <button
                       onClick={handleUnpublish}
                       disabled={saving}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-amber-300 text-amber-800 text-xs uppercase tracking-wider hover:bg-amber-50"
+                    >
+                      <EyeOff className="w-3.5 h-3.5" />
+                      <span>Unpublish</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => promptBulkAction('archive', [selectedArticleId])}
+                      disabled={saving}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#E3DBD4] text-[#69727D] text-xs uppercase tracking-wider hover:border-[#051F34] hover:text-[#051F34]"
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                      <span>Archive</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => promptBulkAction('delete', [selectedArticleId])}
+                      disabled={saving}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-red-200 text-red-700 text-xs uppercase tracking-wider hover:bg-red-50"
                     >
-                      <span>Unpublish</span>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
                     </button>
                   </>
                 )}
@@ -1653,6 +2157,95 @@ Idempotency-Key: 11111111-2222-3333-4444-555555555555
           </div>
         )}
       </main>
+
+      {/* Bulk / Lifecycle Action Confirmation Modal */}
+      {confirmModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bulk-confirm-modal-title"
+          data-testid="bulk-confirm-modal"
+          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+        >
+          <div className="bg-white border border-[#E3DBD4] max-w-lg w-full p-6 shadow-xl space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#69727D] block mb-1">
+                  Owner Editorial Action Confirmation
+                </span>
+                <h3 id="bulk-confirm-modal-title" className="font-serif text-lg text-[#051F34]">
+                  {confirmModal.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => setConfirmModal(null)}
+                className="text-[#69727D] hover:text-[#051F34] p-1"
+                aria-label="Close confirmation dialog"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#69727D] leading-relaxed">{confirmModal.description}</p>
+
+            {/* Affected Articles Preview List */}
+            <div className="bg-[#F6F4F2] border border-[#E3DBD4] p-3 max-h-48 overflow-y-auto space-y-2">
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-[#69727D]">
+                Selected Articles ({confirmModal.articleIds.length})
+              </div>
+              <ul className="divide-y divide-[#E3DBD4] text-xs">
+                {confirmModal.articleIds.map((id) => {
+                  const item = articles.find((a) => a.id === id)
+                  const title = item?.title || (id === selectedArticleId ? formData.title : id)
+                  const slug = item?.slug || (id === selectedArticleId ? formData.slug : '')
+                  const status = item?.status || 'draft'
+                  return (
+                    <li key={id} className="py-1.5 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <span className="font-medium text-[#051F34] block truncate">{title}</span>
+                        {slug && <span className="text-[10px] text-[#69727D] font-mono">/blog/{slug}</span>}
+                      </div>
+                      <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold bg-white border border-[#E3DBD4] text-[#051F34] shrink-0">
+                        {String(status).replace('_', ' ')}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => setConfirmModal(null)}
+                className="px-4 py-2 border border-[#E3DBD4] text-xs uppercase tracking-wider text-[#051F34] hover:bg-[#F6F4F2] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                data-testid="bulk-confirm-submit-btn"
+                disabled={bulkBusy}
+                onClick={executeConfirmedBulkAction}
+                className={`px-4 py-2 text-xs uppercase tracking-wider font-medium text-white transition-colors disabled:opacity-50 ${
+                  confirmModal.tone === 'red'
+                    ? 'bg-red-700 hover:bg-red-600'
+                    : confirmModal.tone === 'emerald'
+                    ? 'bg-emerald-700 hover:bg-emerald-600'
+                    : confirmModal.tone === 'amber'
+                    ? 'bg-amber-600 hover:bg-amber-500'
+                    : 'bg-[#051F34] hover:bg-[#CB9274]'
+                }`}
+              >
+                {bulkBusy ? 'Processing...' : confirmModal.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
