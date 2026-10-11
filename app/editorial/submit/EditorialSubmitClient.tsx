@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import {
   Shield,
@@ -16,7 +16,25 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  Image as ImageIcon,
+  Upload,
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  Smartphone,
+  Monitor,
+  Star,
 } from 'lucide-react'
+import {
+  AI_ILLUSTRATION_DISCLAIMER,
+  BlogMediaAttachment,
+  BlogMediaPlacement,
+  BlogMediaSourceType,
+} from '@/lib/blog/types'
+import {
+  EditorialArticleBodyRenderer,
+  ensureAiDisclaimerCaption,
+} from '@/lib/blog/renderer'
 
 interface CapabilitiesResponse {
   authenticated: boolean
@@ -28,6 +46,13 @@ interface CapabilitiesResponse {
   publicationMode: string
   isAutomationPaused: boolean
   maxDailyNewPosts: number
+  currentDailyNewDrafts?: number
+  remainingDailyNewDrafts?: number
+  currentDateAsiaKolkata?: string
+  canUploadDraftMedia?: boolean
+  maxImagesPerDraft?: number
+  recommendedImagesPerDraft?: { min: number; max: number }
+  maxImageUploadBytes?: number
   allowedCategories: string[]
   timezone: string
 }
@@ -45,6 +70,7 @@ interface ParsedArticle {
   heroImageRights?: string
   seoTitle?: string
   metaDescription?: string
+  images?: BlogMediaAttachment[]
   sourceReferences?: Array<{
     title: string
     sourceName: string
@@ -57,12 +83,34 @@ interface ParsedArticle {
 interface ReadbackRecord {
   articleId: string
   slug: string
+  externalContentId: string | null
   revisionNumber: number
   lockVersion: number
   status: string
+  liveRevisionId: string | null
   title: string
+  seoTitle: string | null
+  metaDescription: string | null
   bodyWordCount: number
+  bodyMatches: boolean
+  titleMatches: boolean
+  seoMatches: boolean
+  mediaMatches: boolean
+  imagesCount: number
+  imagesPending: boolean
+  heroUrl: string | null
+  heroAlt: string | null
+  verifiedImages: BlogMediaAttachment[]
   verifiedAt: string
+}
+
+interface PendingVerificationRecord {
+  message: string
+  key: string
+  articleId?: string | null
+  slug?: string | null
+  externalContentId?: string | null
+  revisionNumber?: number | null
 }
 
 const SAMPLE_PAYLOAD = `{
@@ -70,7 +118,7 @@ const SAMPLE_PAYLOAD = `{
   "slug": "geometry-of-the-emerald-cut",
   "category": "education",
   "excerpt": "An architectural examination of parallel step faceting, optical clarity, and bespoke 18K gold bezel mountings.",
-  "bodyMarkdown": "Unlike brilliant cuts designed for chromatic dispersion, the emerald cut prioritizes optical clarity and structural symmetry. Developed during the Art Deco period, the rectangular step cut features parallel facets that create a hall-of-mirrors effect.\\n\\nWhen setting emerald-cut diamonds in solid 18K yellow or rose gold, the atelier craftsmen carefully calculate bezel wall thickness to protect the clipped corners while maximizing light entry through the pavilion.",
+  "bodyMarkdown": "Unlike brilliant cuts designed for chromatic dispersion, the emerald cut prioritizes optical clarity and structural symmetry. Developed during the Art Deco period, the rectangular step cut features parallel facets that create a hall-of-mirrors effect.\\n\\n## Step-Cut Proportions and Pavilion Depth\\n\\nWhen evaluating an emerald-cut diamond, gemologists inspect long linear facets where inclusions are more visible to the unaided eye. Precision symmetry along the keel line ensures balanced light return across each concentric step.\\n\\n## Architectural Gold Mountings\\n\\nWhen setting emerald-cut diamonds in solid 18K yellow or rose gold, the atelier craftsmen carefully calculate bezel wall thickness to protect the clipped corners while maximizing light entry through the pavilion.\\n\\n## Care and Long-Term Inspection\\n\\nBecause step-cut tables act as clear optical windows, routine ultrasonic or warm-soap cleaning preserves the crisp contrast between illuminated and dark facets.",
   "authorDisplayName": "SHEWAH Editorial Atelier",
   "heroImageUrl": "https://images.unsplash.com/photo-1605100804763-247f67b3557e",
   "heroImageAlt": "Macro photograph of step cut emerald diamond in solid gold mounting",
@@ -105,6 +153,16 @@ const FORBIDDEN_KEYS = [
   'prototype',
 ]
 
+const PLACEMENT_OPTIONS: Array<{ value: BlogMediaPlacement; label: string }> = [
+  { value: 'after_intro', label: 'After Introduction (Paragraph 1)' },
+  { value: 'after_section_1', label: 'After Section 1' },
+  { value: 'after_section_2', label: 'After Section 2' },
+  { value: 'after_section_3', label: 'After Section 3' },
+  { value: 'after_section_4', label: 'After Section 4' },
+  { value: 'before_conclusion', label: 'Before Conclusion' },
+  { value: 'hero_only', label: 'Hero Banner Only (Not repeated in body)' },
+]
+
 export default function EditorialSubmitClient() {
   // Secret is held ONLY in short-lived React component state (never persisted to storage or URL)
   const [token, setToken] = useState('')
@@ -118,16 +176,28 @@ export default function EditorialSubmitClient() {
   const [showSample, setShowSample] = useState(false)
   const [jsonError, setJsonError] = useState<string | null>(null)
 
+  // First-party image attachments state (3-5 recommended, max 5)
+  const [attachments, setAttachments] = useState<BlogMediaAttachment[]>([])
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [previewObjectUrls, setPreviewObjectUrls] = useState<Record<string, string>>({})
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Preview viewport mode ('desktop' | 'mobile_390' | 'plain')
+  const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile_390' | 'plain'>('desktop')
+
   // Submission & readback state
   const [submitting, setSubmitting] = useState(false)
+  const [rechecking, setRechecking] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [validationBlockers, setValidationBlockers] = useState<string[]>([])
+  const [validationWarnings, setValidationWarnings] = useState<string[]>([])
   const [readback, setReadback] = useState<ReadbackRecord | null>(null)
-  const [uncertainOutcome, setUncertainOutcome] = useState<{ message: string; key: string } | null>(null)
+  const [uncertainOutcome, setUncertainOutcome] = useState<PendingVerificationRecord | null>(null)
 
   // Stable Idempotency-Key for deliberate retry
   const [idempotencyKey, setIdempotencyKey] = useState<string>('')
-  const [lastSubmittedJson, setLastSubmittedJson] = useState<string>('')
+  const [lastSubmittedSignature, setLastSubmittedSignature] = useState<string>('')
 
   // Disarm telemetry and session replay on this sensitive submission page
   useEffect(() => {
@@ -140,12 +210,22 @@ export default function EditorialSubmitClient() {
     }
   }, [])
 
+  // Cleanup any in-memory blob preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(previewObjectUrls).forEach((u) => {
+        try {
+          URL.revokeObjectURL(u)
+        } catch {}
+      })
+    }
+  }, [previewObjectUrls])
+
   // Parse and validate article JSON safely as data only
   const parsedArticle = useMemo<ParsedArticle | null>(() => {
     setJsonError(null)
     if (!articleJson.trim()) return null
 
-    // Request size check (max 512 KB)
     const byteLength = new TextEncoder().encode(articleJson).length
     if (byteLength > 512_000) {
       setJsonError(`Payload exceeds maximum allowed size of 512 KB (${(byteLength / 1024).toFixed(1)} KB).`)
@@ -165,7 +245,6 @@ export default function EditorialSubmitClient() {
       return null
     }
 
-    // Reject unsafe / privileged / unknown publication fields
     const keys = Object.keys(parsed)
     for (const forbidden of FORBIDDEN_KEYS) {
       if (keys.includes(forbidden)) {
@@ -174,7 +253,6 @@ export default function EditorialSubmitClient() {
       }
     }
 
-    // Required fields check
     if (!parsed.title || typeof parsed.title !== 'string' || parsed.title.trim().length < 5) {
       setJsonError('Missing or invalid "title" (minimum 5 characters).')
       return null
@@ -191,11 +269,291 @@ export default function EditorialSubmitClient() {
     return parsed as ParsedArticle
   }, [articleJson])
 
-  // Word count helper
+  // Sync initial attachments from parsed JSON if attachments list is empty and JSON contains `images`
+  useEffect(() => {
+    if (attachments.length === 0 && Array.isArray(parsedArticle?.images) && parsedArticle.images.length > 0) {
+      setAttachments(
+        parsedArticle.images.slice(0, 5).map((img, i) => ({
+          ...img,
+          order: i + 1,
+          isHero: Boolean(img.isHero ?? i === 0),
+          position: img.position || (i === 0 ? 'after_intro' : 'after_section_1'),
+          sourceType: img.sourceType || 'ai_illustration',
+          caption:
+            (img.sourceType || 'ai_illustration') === 'ai_illustration'
+              ? ensureAiDisclaimerCaption(img.caption)
+              : img.caption || '',
+          rightsNote: img.rightsNote || '© SHEWAH Atelier',
+        }))
+      )
+    }
+  }, [parsedArticle, attachments.length])
+
+  // Combine parsedArticle + UI image attachments into the final submission payload
+  const effectiveSubmissionPayload = useMemo<ParsedArticle | null>(() => {
+    if (!parsedArticle) return null
+    const activeImages: BlogMediaAttachment[] = attachments.map((img, idx) => ({
+      ...img,
+      order: idx + 1,
+      caption:
+        img.sourceType === 'ai_illustration'
+          ? ensureAiDisclaimerCaption(img.caption)
+          : (img.caption || '').trim(),
+      catalogueProduct: img.sourceType === 'catalogue_product' ? img.catalogueProduct : null,
+    }))
+
+    const heroAttachment = activeImages.find((img) => img.isHero) || activeImages[0]
+
+    return {
+      ...parsedArticle,
+      heroImageUrl: heroAttachment?.url || parsedArticle.heroImageUrl,
+      heroImageAlt: heroAttachment?.altText || parsedArticle.heroImageAlt,
+      heroImageCaption: heroAttachment?.caption || parsedArticle.heroImageCaption,
+      heroImageRights: heroAttachment?.rightsNote || parsedArticle.heroImageRights,
+      images: activeImages.length > 0 ? activeImages : parsedArticle.images,
+    }
+  }, [parsedArticle, attachments])
+
   const wordCount = useMemo(() => {
     if (!parsedArticle?.bodyMarkdown) return 0
     return parsedArticle.bodyMarkdown.trim().split(/\s+/).filter(Boolean).length
   }, [parsedArticle])
+
+  // Fetch private draft media preview into an in-memory Blob URL using Authorization header (never putting token in URL)
+  async function fetchAuthenticatedPreviewBlob(mediaId: string, mediaUrl: string) {
+    const trimmedToken = token.trim()
+    if (!trimmedToken || !mediaUrl.startsWith('/api/blog/v1/media/')) return
+    try {
+      const res = await fetch(mediaUrl, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${trimmedToken}`,
+        },
+        credentials: 'omit',
+      })
+      if (!res.ok) return
+      const blob = await res.blob()
+      const objUrl = URL.createObjectURL(blob)
+      setPreviewObjectUrls((prev) => ({ ...prev, [mediaId]: objUrl }))
+    } catch {
+      // Ignore preview blob fetch errors
+    }
+  }
+
+  // Upload 1..5 image files to /api/blog/v1/media
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    setUploadError(null)
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const trimmedToken = token.trim()
+    if (!trimmedToken) {
+      setUploadError('Please enter your Draft writer token before uploading images.')
+      return
+    }
+
+    if (attachments.length + files.length > 5) {
+      setUploadError(`A draft can attach at most 5 images (currently ${attachments.length} attached).`)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    setUploadingImage(true)
+    const defaultPositions: BlogMediaPlacement[] = [
+      'after_intro',
+      'after_section_1',
+      'after_section_2',
+      'after_section_3',
+      'before_conclusion',
+    ]
+
+    try {
+      const newlyUploaded: BlogMediaAttachment[] = []
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const slotIndex = attachments.length + newlyUploaded.length
+        const isFirstHero = slotIndex === 0 && !attachments.some((a) => a.isHero)
+        const defaultPos = defaultPositions[Math.min(slotIndex, defaultPositions.length - 1)]
+        const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim()
+        const defaultAlt =
+          baseName.length >= 10
+            ? `Editorial illustration: ${baseName}`
+            : `SHEWAH editorial illustration #${slotIndex + 1} showing gemstone and ring proportion details`
+
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('alt_text', defaultAlt)
+        formData.append('caption', AI_ILLUSTRATION_DISCLAIMER)
+        formData.append('rights_note', 'SHEWAH Editorial Concept Illustration (Non-Catalogue)')
+        formData.append('source_type', 'ai_illustration')
+        formData.append('position', defaultPos)
+        formData.append('is_hero', String(isFirstHero))
+
+        const res = await fetch('/api/blog/v1/media', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${trimmedToken}`,
+          },
+          credentials: 'omit',
+          body: formData,
+        })
+
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || !data.mediaId) {
+          setUploadError(data.error || `Failed to upload "${file.name}" (HTTP ${res.status}).`)
+          break
+        }
+
+        const localPreviewUrl = URL.createObjectURL(file)
+        setPreviewObjectUrls((prev) => ({ ...prev, [data.mediaId]: localPreviewUrl }))
+
+        newlyUploaded.push({
+          mediaId: data.mediaId,
+          storageKey: data.storageKey || null,
+          url: data.stableUrl || `/api/blog/v1/media/${data.mediaId}`,
+          altText: data.altText || defaultAlt,
+          caption: data.caption || AI_ILLUSTRATION_DISCLAIMER,
+          sourceType: 'ai_illustration',
+          rightsNote: data.rightsNote || 'SHEWAH Editorial Concept Illustration (Non-Catalogue)',
+          isHero: isFirstHero,
+          position: defaultPos,
+          order: slotIndex + 1,
+          mimeType: data.mimeType,
+          sizeBytes: data.sizeBytes,
+          width: data.width || undefined,
+          height: data.height || undefined,
+          catalogueProduct: null,
+        })
+      }
+
+      if (newlyUploaded.length > 0) {
+        setAttachments((prev) => [...prev, ...newlyUploaded])
+      }
+    } catch {
+      setUploadError('Network error while uploading image to /api/blog/v1/media.')
+    } finally {
+      setUploadingImage(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  function handleAddAttachmentSlot(sourceType: BlogMediaSourceType) {
+    setUploadError(null)
+    if (attachments.length >= 5) {
+      setUploadError('Maximum of 5 image attachments reached.')
+      return
+    }
+    const slotIndex = attachments.length
+    const defaultPositions: BlogMediaPlacement[] = [
+      'after_intro',
+      'after_section_1',
+      'after_section_2',
+      'after_section_3',
+      'before_conclusion',
+    ]
+    const isHero = slotIndex === 0 && !attachments.some((a) => a.isHero)
+    const newSlot: BlogMediaAttachment = {
+      mediaId: `slot-${Date.now()}-${slotIndex + 1}`,
+      storageKey: null,
+      url:
+        sourceType === 'catalogue_product'
+          ? 'https://res.cloudinary.com/ddnlacdta/image/upload/v1783844231/NCK61.1.webp'
+          : 'https://images.unsplash.com/photo-1605100804763-247f67b3557e.jpg',
+      altText:
+        sourceType === 'catalogue_product'
+          ? 'Verified SHEWAH catalogue solitaire ring photographed in solid gold setting'
+          : `Editorial illustration #${slotIndex + 1} depicting ring proportion and sizing geometry`,
+      caption:
+        sourceType === 'ai_illustration'
+          ? AI_ILLUSTRATION_DISCLAIMER
+          : sourceType === 'catalogue_product'
+            ? 'Photographed from the verified SHEWAH collection.'
+            : 'Photographed at the SHEWAH Atelier.',
+      sourceType,
+      rightsNote:
+        sourceType === 'ai_illustration'
+          ? 'SHEWAH Editorial Concept Illustration (Non-Catalogue)'
+          : '© SHEWAH Archives',
+      isHero,
+      position: defaultPositions[Math.min(slotIndex, defaultPositions.length - 1)],
+      order: slotIndex + 1,
+      catalogueProduct:
+        sourceType === 'catalogue_product'
+          ? {
+              productCode: 'NCK61',
+              productName: 'SHEWAH Graduated Tennis Necklace',
+              productSlug: 'graduated-tennis-necklace',
+              productUrl: 'https://shewah.co/jewellery/graduated-tennis-necklace',
+              productImageUrl: 'https://res.cloudinary.com/ddnlacdta/image/upload/v1783844231/NCK61.1.webp',
+            }
+          : null,
+    }
+    setAttachments((prev) => [...prev, newSlot])
+  }
+
+  function updateAttachment(index: number, patch: Partial<BlogMediaAttachment>) {
+    setAttachments((prev) => {
+      const next = [...prev]
+      const current = next[index]
+      if (!current) return prev
+
+      const updated: BlogMediaAttachment = { ...current, ...patch }
+
+      // Enforce strict AI vs Catalogue separation on sourceType change
+      if (patch.sourceType === 'ai_illustration') {
+        updated.catalogueProduct = null
+        updated.caption = ensureAiDisclaimerCaption(updated.caption)
+        if (!updated.rightsNote || updated.rightsNote === '© SHEWAH Archives') {
+          updated.rightsNote = 'SHEWAH Editorial Concept Illustration (Non-Catalogue)'
+        }
+      } else if (patch.sourceType === 'catalogue_product' && !updated.catalogueProduct) {
+        updated.catalogueProduct = {
+          productCode: '',
+          productName: '',
+          productSlug: '',
+          productUrl: 'https://shewah.co/jewellery/',
+          productImageUrl: updated.url || '',
+        }
+      }
+
+      if (patch.isHero) {
+        return next.map((item, i) => ({
+          ...(i === index ? updated : item),
+          isHero: i === index,
+        }))
+      }
+
+      next[index] = updated
+      return next
+    })
+  }
+
+  function moveAttachment(index: number, direction: -1 | 1) {
+    setAttachments((prev) => {
+      const target = index + direction
+      if (target < 0 || target >= prev.length) return prev
+      const copy = [...prev]
+      const temp = copy[index]
+      copy[index] = copy[target]
+      copy[target] = temp
+      return copy.map((item, idx) => ({ ...item, order: idx + 1 }))
+    })
+  }
+
+  function removeAttachment(index: number) {
+    setAttachments((prev) => {
+      const remaining = prev.filter((_, i) => i !== index).map((item, idx) => ({ ...item, order: idx + 1 }))
+      if (remaining.length > 0 && !remaining.some((r) => r.isHero)) {
+        remaining[0].isHero = true
+      }
+      return remaining
+    })
+  }
+
+  function syncAttachmentsIntoJsonTextarea() {
+    if (!effectiveSubmissionPayload) return
+    setArticleJson(JSON.stringify(effectiveSubmissionPayload, null, 2))
+  }
 
   // Check access / Capabilities preflight
   async function handleCheckAccess() {
@@ -216,7 +574,8 @@ export default function EditorialSubmitClient() {
         headers: {
           Authorization: `Bearer ${trimmedToken}`,
         },
-        credentials: 'omit', // Prevent owner session from substituting for token
+        credentials: 'omit',
+        cache: 'no-store',
       })
 
       if (res.status === 403) {
@@ -243,7 +602,6 @@ export default function EditorialSubmitClient() {
 
       const data: CapabilitiesResponse = await res.json()
 
-      // Enforce strict actor isolation: only assistant_token is accepted on this page
       if (data.actorType !== 'assistant_token') {
         setCapabilitiesError(
           'Rejected: This page requires an assistant bearer token. Owner session or staff tokens are not permitted here.'
@@ -251,13 +609,11 @@ export default function EditorialSubmitClient() {
         return
       }
 
-      // Enforce minimal required scopes
       if (!data.scopes?.includes('blog:read') || !data.scopes?.includes('blog:draft:write')) {
         setCapabilitiesError('Rejected: Token lacks required "blog:read" or "blog:draft:write" permissions.')
         return
       }
 
-      // Reject broad / dangerous scopes
       if (
         data.scopes?.includes('blog:publish') ||
         data.scopes?.includes('blog:schedule') ||
@@ -269,13 +625,11 @@ export default function EditorialSubmitClient() {
         return
       }
 
-      // Require draft_only publication mode
       if (data.publicationMode !== 'draft_only') {
         setCapabilitiesError(`System publication mode is "${data.publicationMode}". Only "draft_only" is permitted.`)
         return
       }
 
-      // Require active automation (not paused)
       if (data.isAutomationPaused) {
         setIsPausedNotice(true)
         setCapabilitiesError('Automation is paused; ask the owner to resume draft automation.')
@@ -290,14 +644,195 @@ export default function EditorialSubmitClient() {
     }
   }
 
+  // Independent Readback Verifier (used both immediately after POST 201 and by the read-only "Recheck Verification" button)
+  async function performIndependentReadbackVerification(
+    targetArticleId: string,
+    expectedPayload: ParsedArticle,
+    activeKey: string,
+    fallbackMeta?: { slug?: string | null; revisionNumber?: number | null }
+  ) {
+    const trimmedToken = token.trim()
+    if (!trimmedToken) {
+      setUncertainOutcome({
+        message: `Save succeeded (Article ID: ${targetArticleId}), but token is needed to run readback verification.`,
+        key: activeKey,
+        articleId: targetArticleId,
+        slug: fallbackMeta?.slug || expectedPayload.slug || null,
+        externalContentId: expectedPayload.externalContentId || null,
+        revisionNumber: fallbackMeta?.revisionNumber || 1,
+      })
+      return
+    }
+
+    try {
+      const readbackRes = await fetch(`/api/blog/v1/articles/${targetArticleId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${trimmedToken}`,
+        },
+        credentials: 'omit',
+        cache: 'no-store',
+      })
+
+      if (!readbackRes.ok) {
+        setUncertainOutcome({
+          message: `Save may have succeeded; verification pending (Article ID: ${targetArticleId}). Independent GET readback returned HTTP ${readbackRes.status}.`,
+          key: activeKey,
+          articleId: targetArticleId,
+          slug: fallbackMeta?.slug || expectedPayload.slug || null,
+          externalContentId: expectedPayload.externalContentId || null,
+          revisionNumber: fallbackMeta?.revisionNumber || 1,
+        })
+        return
+      }
+
+      const readbackData = await readbackRes.json()
+      const art = readbackData.article
+      const rev = readbackData.currentRevision
+
+      if (art.status !== 'draft') {
+        setSubmitError(`Security discrepancy: Stored status is "${art.status}", expected "draft".`)
+        return
+      }
+      if (art.live_revision_id !== null) {
+        setSubmitError('Security discrepancy: Stored article has an active live revision. Aborting verification.')
+        return
+      }
+
+      const storedImages: BlogMediaAttachment[] = Array.isArray(rev?.body_structured?.images)
+        ? rev.body_structured.images
+        : []
+
+      // Fetch private preview blobs for any stored private draft media not yet cached in memory
+      for (const img of storedImages) {
+        if (img.url?.startsWith('/api/blog/v1/media/') && !previewObjectUrls[img.mediaId]) {
+          fetchAuthenticatedPreviewBlob(img.mediaId, img.url)
+        }
+      }
+
+      const titleMatches = (art.title || '').trim() === (expectedPayload.title || '').trim()
+      const bodyMatches = Boolean(rev?.body_markdown && rev.body_markdown.trim().length >= 20)
+      const seoMatches =
+        (!expectedPayload.seoTitle || (art.seo_title || '').trim() === expectedPayload.seoTitle.trim()) &&
+        (!expectedPayload.metaDescription ||
+          (art.meta_description || '').trim() === expectedPayload.metaDescription.trim())
+
+      const expectedImages = Array.isArray(expectedPayload.images) ? expectedPayload.images : []
+      const mediaMatches =
+        expectedImages.length === 0 ||
+        (storedImages.length === expectedImages.length &&
+          storedImages.every(
+            (sImg, idx) =>
+              sImg.url === expectedImages[idx].url &&
+              sImg.altText === expectedImages[idx].altText.trim() &&
+              sImg.sourceType === expectedImages[idx].sourceType
+          ))
+
+      setUncertainOutcome(null)
+      setReadback({
+        articleId: art.id,
+        slug: art.slug,
+        externalContentId: art.external_content_id || null,
+        revisionNumber: rev?.revision_number ?? 1,
+        lockVersion: art.lock_version ?? 1,
+        status: art.status,
+        liveRevisionId: art.live_revision_id ?? null,
+        title: art.title,
+        seoTitle: art.seo_title || null,
+        metaDescription: art.meta_description || null,
+        bodyWordCount: (rev?.body_markdown || '').trim().split(/\s+/).filter(Boolean).length,
+        bodyMatches,
+        titleMatches,
+        seoMatches,
+        mediaMatches,
+        imagesCount: storedImages.length,
+        imagesPending: Boolean(rev?.body_structured?.imagesPending ?? storedImages.length < 3),
+        heroUrl: art.hero_image_url || null,
+        heroAlt: art.hero_image_alt || null,
+        verifiedImages: storedImages,
+        verifiedAt: new Date().toISOString(),
+      })
+    } catch {
+      setUncertainOutcome({
+        message: `Save may have succeeded; verification pending (Article ID: ${targetArticleId}). Network interrupted during readback check.`,
+        key: activeKey,
+        articleId: targetArticleId,
+        slug: fallbackMeta?.slug || expectedPayload.slug || null,
+        externalContentId: expectedPayload.externalContentId || null,
+        revisionNumber: fallbackMeta?.revisionNumber || 1,
+      })
+    }
+  }
+
+  // Read-only Recheck Verification handler (never creates another draft)
+  async function handleRecheckVerification() {
+    if (!uncertainOutcome || !effectiveSubmissionPayload) return
+    const trimmedToken = token.trim()
+    if (!trimmedToken) {
+      setSubmitError('Please enter your Draft writer token to recheck verification.')
+      return
+    }
+
+    setRechecking(true)
+    setSubmitError(null)
+    try {
+      let targetArticleId = uncertainOutcome.articleId || null
+
+      // If POST itself timed out before returning articleId, look up by slug/externalContentId in read-only GET list
+      if (!targetArticleId) {
+        const listRes = await fetch('/api/blog/v1/articles?limit=20', {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${trimmedToken}` },
+          credentials: 'omit',
+          cache: 'no-store',
+        })
+        if (listRes.ok) {
+          const listData = await listRes.json()
+          const matched = (listData.articles || []).find(
+            (a: any) =>
+              (effectiveSubmissionPayload.externalContentId &&
+                a.external_content_id === effectiveSubmissionPayload.externalContentId) ||
+              (effectiveSubmissionPayload.slug && a.slug === effectiveSubmissionPayload.slug) ||
+              a.title === effectiveSubmissionPayload.title.trim()
+          )
+          if (matched?.id) {
+            targetArticleId = matched.id
+          }
+        }
+      }
+
+      if (!targetArticleId) {
+        setUncertainOutcome({
+          ...uncertainOutcome,
+          message:
+            'No matching saved draft record was found yet on read-only check. You may safely click "Save draft" to retry with the same Idempotency-Key.',
+        })
+        return
+      }
+
+      await performIndependentReadbackVerification(
+        targetArticleId,
+        effectiveSubmissionPayload,
+        uncertainOutcome.key,
+        {
+          slug: uncertainOutcome.slug,
+          revisionNumber: uncertainOutcome.revisionNumber,
+        }
+      )
+    } finally {
+      setRechecking(false)
+    }
+  }
+
   // Save Draft Handler
   async function handleSaveDraft() {
     setSubmitError(null)
     setValidationBlockers([])
+    setValidationWarnings([])
     setUncertainOutcome(null)
     setReadback(null)
 
-    if (!parsedArticle) {
+    if (!effectiveSubmissionPayload) {
       setSubmitError('Please provide a valid Article JSON payload.')
       return
     }
@@ -313,18 +848,19 @@ export default function EditorialSubmitClient() {
       return
     }
 
-    // Manage stable Idempotency-Key: reuse if payload is unchanged, or generate new UUID
+    const serializedPayload = JSON.stringify(effectiveSubmissionPayload)
     let activeKey = idempotencyKey
-    if (!activeKey || lastSubmittedJson !== articleJson) {
+    if (!activeKey || lastSubmittedSignature !== serializedPayload) {
       activeKey = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `idemp-${Date.now()}`
       setIdempotencyKey(activeKey)
-      setLastSubmittedJson(articleJson)
+      setLastSubmittedSignature(serializedPayload)
     }
 
     setSubmitting(true)
 
     let createdArticleId: string | null = null
     let responseSlug: string | null = null
+    let responseRevNum: number | null = null
 
     try {
       const res = await fetch('/api/blog/v1/articles', {
@@ -335,8 +871,18 @@ export default function EditorialSubmitClient() {
           'Idempotency-Key': activeKey,
         },
         credentials: 'omit',
-        body: JSON.stringify(parsedArticle),
+        body: serializedPayload,
       })
+
+      if (res.status === 429) {
+        const d = await res.json().catch(() => ({}))
+        setSubmitError(
+          d.error ||
+            'Daily new draft capacity (10/day in Asia/Kolkata) has been reached. Existing drafts remain intact.'
+        )
+        setSubmitting(false)
+        return
+      }
 
       if (res.status === 409) {
         const d = await res.json().catch(() => ({}))
@@ -363,6 +909,9 @@ export default function EditorialSubmitClient() {
         if (d.details?.blockers && Array.isArray(d.details.blockers)) {
           setValidationBlockers(d.details.blockers)
         }
+        if (d.details?.warnings && Array.isArray(d.details.warnings)) {
+          setValidationWarnings(d.details.warnings)
+        }
         setSubmitting(false)
         return
       }
@@ -377,74 +926,29 @@ export default function EditorialSubmitClient() {
       const data = await res.json()
       createdArticleId = data.articleId
       responseSlug = data.slug
+      responseRevNum = data.revisionNumber ?? 1
     } catch {
-      // Network failure on POST: Save may have succeeded on the server
       setUncertainOutcome({
         message: 'Save may have succeeded; verification pending. Network interrupted during submission.',
         key: activeKey,
+        articleId: null,
+        slug: effectiveSubmissionPayload.slug || null,
+        externalContentId: effectiveSubmissionPayload.externalContentId || null,
       })
       setSubmitting(false)
       return
     }
 
-    // Exact Readback Verification: Call GET /api/blog/v1/articles/[id] with same token
     if (createdArticleId) {
-      try {
-        const readbackRes = await fetch(`/api/blog/v1/articles/${createdArticleId}`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${trimmedToken}`,
-          },
-          credentials: 'omit',
-        })
-
-        if (!readbackRes.ok) {
-          setUncertainOutcome({
-            message: `Save succeeded (Article ID: ${createdArticleId}), but readback verification could not be completed. Verification pending.`,
-            key: activeKey,
-          })
-          setSubmitting(false)
-          return
-        }
-
-        const readbackData = await readbackRes.json()
-        const art = readbackData.article
-        const rev = readbackData.currentRevision
-
-        // Strict verification: must be draft status with NO live revision
-        if (art.status !== 'draft') {
-          setSubmitError(`Security discrepancy: Stored status is "${art.status}", expected "draft".`)
-          setSubmitting(false)
-          return
-        }
-        if (art.live_revision_id !== null) {
-          setSubmitError('Security discrepancy: Stored article has an active live revision. Aborting verification.')
-          setSubmitting(false)
-          return
-        }
-
-        setReadback({
-          articleId: art.id,
-          slug: art.slug,
-          revisionNumber: rev?.revision_number ?? 1,
-          lockVersion: art.lock_version ?? 1,
-          status: art.status,
-          title: art.title,
-          bodyWordCount: wordCount,
-          verifiedAt: new Date().toISOString(),
-        })
-      } catch {
-        setUncertainOutcome({
-          message: `Save succeeded (Article ID: ${createdArticleId}, Slug: ${responseSlug}), but readback check timed out. Verification pending.`,
-          key: activeKey,
-        })
-      }
+      await performIndependentReadbackVerification(createdArticleId, effectiveSubmissionPayload, activeKey, {
+        slug: responseSlug,
+        revisionNumber: responseRevNum,
+      })
     }
 
     setSubmitting(false)
   }
 
-  // Clear token, article, and state
   function handleClearAll() {
     setToken('')
     setCapabilities(null)
@@ -452,12 +956,15 @@ export default function EditorialSubmitClient() {
     setIsPausedNotice(false)
     setArticleJson('')
     setJsonError(null)
+    setAttachments([])
+    setUploadError(null)
     setSubmitError(null)
     setValidationBlockers([])
+    setValidationWarnings([])
     setReadback(null)
     setUncertainOutcome(null)
     setIdempotencyKey('')
-    setLastSubmittedJson('')
+    setLastSubmittedSignature('')
   }
 
   const isSaveReady = Boolean(
@@ -465,9 +972,12 @@ export default function EditorialSubmitClient() {
       capabilities &&
       !capabilities.isAutomationPaused &&
       !isPausedNotice &&
-      parsedArticle &&
+      effectiveSubmissionPayload &&
       !submitting
   )
+
+  const attachedCount = effectiveSubmissionPayload?.images?.length ?? 0
+  const isImagesPending = attachedCount < 3
 
   return (
     <div className="min-h-screen bg-[#F6F4F2] text-[#051F34] font-sans flex flex-col selection:bg-[#CB9274] selection:text-white">
@@ -484,7 +994,7 @@ export default function EditorialSubmitClient() {
                 </span>
               </h1>
               <p className="text-[11px] text-stone-400 font-light">
-                Scoped draft submission interface for authorized editorial assistants.
+                Scoped draft submission &amp; private media attachment interface (Draft-Only Mode).
               </p>
             </div>
           </div>
@@ -495,7 +1005,7 @@ export default function EditorialSubmitClient() {
             title="Clear token, article, and local memory"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear token & article</span>
+            <span>Clear token &amp; article</span>
           </button>
         </div>
       </header>
@@ -507,9 +1017,9 @@ export default function EditorialSubmitClient() {
           <Info className="w-4 h-4 text-[#CB9274] shrink-0 mt-0.5" />
           <div>
             <span className="font-semibold text-[#051F34]">Token-Gated Interface:</span> The bare page shell loads
-            without an owner session so an authorized browser may supply an assistant bearer token. All protected read
-            and write operations require bearer authentication. Anonymous requests receive zero data and cannot mutate
-            the database.
+            without an owner session so an authorized browser may supply an assistant bearer token. All protected read,
+            draft-write, and private image upload operations require bearer authentication. Anonymous requests receive
+            zero data and cannot mutate the database.
           </div>
         </div>
 
@@ -541,6 +1051,7 @@ export default function EditorialSubmitClient() {
                   <Lock className="w-4 h-4 text-[#69727D] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     id="draftWriterToken"
+                    name="draft-writer-token-ephemeral"
                     type="password"
                     value={token}
                     onChange={(e) => {
@@ -572,19 +1083,18 @@ export default function EditorialSubmitClient() {
               </div>
               <p className="text-[11px] text-[#69727D] mt-1.5">
                 Token is kept strictly in transient page memory and submitted over HTTPS via Bearer header with{' '}
-                <code className="text-[#051F34]">credentials: omit</code>.
+                <code className="text-[#051F34]">credentials: omit</code>. Never stored in URLs, cookies, or web storage.
               </p>
             </div>
 
-            {/* Automation Paused Warning */}
             {isPausedNotice && (
               <div className="p-4 bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <div className="font-semibold text-amber-950">Automation is paused by the atelier owner</div>
                   <div>
-                    The master emergency stop is currently active. Draft submissions and capabilities checks are
-                    blocked. Ask the atelier owner to resume draft automation in{' '}
+                    The master emergency stop is currently active. Draft submissions, media uploads, and capabilities
+                    checks are blocked. Ask the atelier owner to resume draft automation in{' '}
                     <code className="bg-amber-100 px-1 py-0.5 border border-amber-200 font-mono">/admin/blog</code> before
                     proceeding.
                   </div>
@@ -592,7 +1102,6 @@ export default function EditorialSubmitClient() {
               </div>
             )}
 
-            {/* Error Message */}
             {capabilitiesError && !isPausedNotice && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
@@ -600,20 +1109,17 @@ export default function EditorialSubmitClient() {
               </div>
             )}
 
-            {/* Verified Capabilities Details */}
             {capabilities && !isPausedNotice && (
               <div className="p-4 bg-stone-50 border border-[#E3DBD4] text-xs space-y-2">
                 <div className="font-semibold text-[#051F34] text-[11px] uppercase tracking-wider">
-                  Verified Authority Readback
+                  Verified Authority &amp; Quota Readback
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[11px]">
                   <div>
                     <span className="text-[#69727D] block">Actor Identity:</span>
-                    <span className="font-mono text-[#051F34] font-medium">{capabilities.actorId}</span>
-                  </div>
-                  <div>
-                    <span className="text-[#69727D] block">Actor Type:</span>
-                    <span className="capitalize text-[#051F34] font-medium">{capabilities.actorType}</span>
+                    <span className="font-mono text-[#051F34] font-medium">
+                      {capabilities.actorType} ({capabilities.actorId})
+                    </span>
                   </div>
                   <div>
                     <span className="text-[#69727D] block">Publication Mode:</span>
@@ -622,6 +1128,24 @@ export default function EditorialSubmitClient() {
                   <div>
                     <span className="text-[#69727D] block">Granted Scopes:</span>
                     <span className="font-mono text-[#051F34] font-medium">{capabilities.scopes.join(', ')}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#69727D] block">Daily New-Draft Capacity:</span>
+                    <span className="font-mono text-[#051F34] font-semibold">
+                      {capabilities.maxDailyNewPosts} / day ({capabilities.timezone})
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[#69727D] block">Remaining Today ({capabilities.currentDateAsiaKolkata || 'IST'}):</span>
+                    <span className="font-mono text-emerald-700 font-semibold">
+                      {capabilities.remainingDailyNewDrafts ?? capabilities.maxDailyNewPosts} of {capabilities.maxDailyNewPosts} available
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[#69727D] block">Draft Image Attachments:</span>
+                    <span className="font-mono text-[#051F34] font-medium">
+                      3–5 images (Max {capabilities.maxImagesPerDraft ?? 5}, ≤5 MB)
+                    </span>
                   </div>
                 </div>
               </div>
@@ -646,7 +1170,6 @@ export default function EditorialSubmitClient() {
             </button>
           </div>
 
-          {/* Sample Schema Box */}
           {showSample && (
             <div className="p-4 bg-[#051F34] text-stone-200 border border-stone-800 space-y-3 text-xs">
               <div className="flex items-center justify-between">
@@ -696,61 +1219,632 @@ export default function EditorialSubmitClient() {
           )}
         </section>
 
-        {/* 3. PARSED DRAFT REVIEW & CONFIRMATION */}
-        {parsedArticle && (
-          <section className="bg-white border border-[#E3DBD4] p-6 space-y-4">
-            <h2 className="font-serif text-lg text-[#051F34] flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>3. Review Parsed Draft</span>
-            </h2>
+        {/* 3. FIRST-PARTY IMAGES SECTION (3-5 ATTACHMENTS) */}
+        <section id="draftImagesSection" className="bg-white border border-[#E3DBD4] p-6 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E3DBD4] pb-4">
+            <div>
+              <h2 className="font-serif text-lg text-[#051F34] flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-[#CB9274]" />
+                <span>3. Images (3–5 Draft Attachments)</span>
+              </h2>
+              <p className="text-xs text-[#69727D] mt-0.5">
+                Attach 3 to 5 first-party illustrations or verified Shewah catalogue photos. Text drafts remain saveable
+                when images are pending.
+              </p>
+            </div>
+            <div>
+              {isImagesPending ? (
+                <span
+                  data-testid="images-pending-badge"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-semibold uppercase tracking-wider"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Images Pending — Draft Only ({attachedCount}/3–5)</span>
+                </span>
+              ) : (
+                <span
+                  data-testid="images-ready-badge"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-semibold uppercase tracking-wider"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{attachedCount}/5 Images Attached (Draft Only)</span>
+                </span>
+              )}
+            </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          {/* Upload & Slot Actions */}
+          <div className="p-4 bg-[#F6F4F2] border border-[#E3DBD4] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <label
+                htmlFor="draftImageFileInput"
+                className="text-xs font-semibold text-[#051F34] block"
+              >
+                Upload First-Party Draft Images (JPEG, PNG, WebP, AVIF • Max 5 MB)
+              </label>
+              <p className="text-[11px] text-[#69727D]">
+                Uploaded files are magic-byte verified, stripped of EXIF metadata, and stored privately under stable
+                media IDs (<code className="text-[#051F34]">/api/blog/v1/media/&lt;id&gt;</code>).
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <input
+                ref={fileInputRef}
+                id="draftImageFileInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                multiple
+                disabled={uploadingImage || attachments.length >= 5}
+                onChange={handleFileUpload}
+                className="sr-only"
+              />
+              <label
+                htmlFor="draftImageFileInput"
+                className={`px-4 py-2 text-xs uppercase tracking-wider font-semibold inline-flex items-center gap-2 cursor-pointer transition-colors ${
+                  uploadingImage || attachments.length >= 5
+                    ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                    : 'bg-[#051F34] hover:bg-[#CB9274] text-white'
+                }`}
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>{uploadingImage ? 'Uploading...' : 'Upload Image File(s)'}</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={() => handleAddAttachmentSlot('ai_illustration')}
+                disabled={attachments.length >= 5}
+                className="px-3 py-2 border border-[#051F34] text-[#051F34] hover:bg-[#051F34] hover:text-white text-[11px] uppercase tracking-wider font-semibold inline-flex items-center gap-1 transition-colors disabled:opacity-40"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ AI Illustration Slot</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAddAttachmentSlot('catalogue_product')}
+                disabled={attachments.length >= 5}
+                className="px-3 py-2 border border-[#CB9274] text-[#051F34] bg-white hover:bg-[#CB9274] hover:text-white text-[11px] uppercase tracking-wider font-semibold inline-flex items-center gap-1 transition-colors disabled:opacity-40"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Catalogue Product Card</span>
+              </button>
+            </div>
+          </div>
+
+          {uploadError && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              <span>{uploadError}</span>
+            </div>
+          )}
+
+          {/* Attached Images List */}
+          {attachments.length === 0 ? (
+            <div className="p-6 border border-dashed border-[#E3DBD4] text-center space-y-1 text-xs text-[#69727D]">
+              <p className="font-medium text-[#051F34]">
+                No draft images attached yet (Images Pending — Not Publication Ready).
+              </p>
+              <p>
+                You may save an editorial text-only draft now, or attach 3 to 5 images above with captions, alt text,
+                hero selection, and body placement.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {attachments.map((att, idx) => {
+                const resolvedPreview =
+                  previewObjectUrls[att.mediaId] ||
+                  att.catalogueProduct?.productImageUrl ||
+                  (!att.url.startsWith('/api/blog/v1/media/') ? att.url : undefined)
+
+                return (
+                  <div
+                    key={att.mediaId || idx}
+                    data-testid={`draft-attachment-card-${idx + 1}`}
+                    className="p-4 border border-[#E3DBD4] bg-[#FBF9F7] space-y-4 text-xs"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E3DBD4] pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="px-2 py-0.5 bg-[#051F34] text-white font-mono text-[11px] font-semibold">
+                          Image #{idx + 1}
+                        </span>
+                        <span className="font-mono text-[11px] text-[#69727D]">
+                          ID: {att.mediaId}
+                        </span>
+                        {att.isHero && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#CB9274] text-white text-[10px] uppercase tracking-wider font-semibold">
+                            <Star className="w-3 h-3" />
+                            <span>Hero Image</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => updateAttachment(idx, { isHero: true })}
+                          className={`px-2.5 py-1 text-[10px] uppercase tracking-wider font-semibold border ${
+                            att.isHero
+                              ? 'bg-[#051F34] text-white border-[#051F34]'
+                              : 'bg-white text-[#051F34] border-[#E3DBD4] hover:border-[#051F34]'
+                          }`}
+                        >
+                          {att.isHero ? 'Selected as Hero' : 'Set as Hero'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveAttachment(idx, -1)}
+                          disabled={idx === 0}
+                          title="Move image up"
+                          className="p-1 border border-[#E3DBD4] bg-white hover:border-[#051F34] disabled:opacity-40"
+                        >
+                          <ArrowUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveAttachment(idx, 1)}
+                          disabled={idx === attachments.length - 1}
+                          title="Move image down"
+                          className="p-1 border border-[#E3DBD4] bg-white hover:border-[#051F34] disabled:opacity-40"
+                        >
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(idx)}
+                          title="Remove image attachment"
+                          className="p-1 border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                      {/* Thumbnail Preview */}
+                      <div className="md:col-span-4 space-y-2">
+                        <div className="aspect-16/10 bg-[#F6F4F2] border border-[#E3DBD4] overflow-hidden flex items-center justify-center">
+                          {resolvedPreview ? (
+                            <img
+                              src={resolvedPreview}
+                              alt={att.altText || `Draft attachment ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="p-3 text-center space-y-1.5">
+                              <span className="block text-[11px] text-[#69727D]">
+                                Private Draft Media ({att.mediaId})
+                              </span>
+                              {token.trim() && att.url.startsWith('/api/blog/v1/media/') && (
+                                <button
+                                  type="button"
+                                  onClick={() => fetchAuthenticatedPreviewBlob(att.mediaId, att.url)}
+                                  className="px-2.5 py-1 bg-[#051F34] text-white text-[10px] uppercase tracking-wider"
+                                >
+                                  Load Private Preview
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-[10px] font-mono text-[#69727D] break-all">
+                          Stable Ref: {att.url}
+                        </div>
+                      </div>
+
+                      {/* Metadata Fields */}
+                      <div className="md:col-span-8 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#69727D] mb-1">
+                              Source / Rights Classification *
+                            </label>
+                            <select
+                              aria-label={`Image ${idx + 1} source type`}
+                              value={att.sourceType}
+                              onChange={(e) =>
+                                updateAttachment(idx, { sourceType: e.target.value as BlogMediaSourceType })
+                              }
+                              className="w-full p-2 border border-[#E3DBD4] bg-white text-xs text-[#051F34]"
+                            >
+                              <option value="ai_illustration">
+                                AI Illustration / Sizing Diagram (Non-Catalogue)
+                              </option>
+                              <option value="catalogue_product">
+                                Authorised Shewah Catalogue Product Photo
+                              </option>
+                              <option value="studio_photography">
+                                First-Party Studio / Atelier Photography
+                              </option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#69727D] mb-1">
+                              Body Placement Position *
+                            </label>
+                            <select
+                              aria-label={`Image ${idx + 1} body placement`}
+                              value={att.position}
+                              onChange={(e) =>
+                                updateAttachment(idx, { position: e.target.value as BlogMediaPlacement })
+                              }
+                              className="w-full p-2 border border-[#E3DBD4] bg-white text-xs text-[#051F34]"
+                            >
+                              {PLACEMENT_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#69727D] mb-1">
+                            Stable Media URL or First-Party Key *
+                          </label>
+                          <input
+                            type="text"
+                            aria-label={`Image ${idx + 1} URL`}
+                            value={att.url}
+                            onChange={(e) => updateAttachment(idx, { url: e.target.value })}
+                            placeholder="/api/blog/v1/media/... or https://res.cloudinary.com/..."
+                            className="w-full p-2 border border-[#E3DBD4] bg-white font-mono text-[11px]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#69727D] mb-1">
+                            Descriptive Alt Text (Min 10 chars) *
+                          </label>
+                          <input
+                            type="text"
+                            aria-label={`Image ${idx + 1} alt text`}
+                            value={att.altText}
+                            onChange={(e) => updateAttachment(idx, { altText: e.target.value })}
+                            placeholder="Describe the diagram, measurement step, or jewellery piece..."
+                            className="w-full p-2 border border-[#E3DBD4] bg-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#69727D] mb-1">
+                            Visible Caption {att.sourceType === 'ai_illustration' ? '(Mandatory AI Disclaimer) *' : ''}
+                          </label>
+                          <input
+                            type="text"
+                            aria-label={`Image ${idx + 1} caption`}
+                            value={att.caption}
+                            onChange={(e) => updateAttachment(idx, { caption: e.target.value })}
+                            placeholder={
+                              att.sourceType === 'ai_illustration'
+                                ? AI_ILLUSTRATION_DISCLAIMER
+                                : 'Editorial caption...'
+                            }
+                            className="w-full p-2 border border-[#E3DBD4] bg-white text-xs"
+                          />
+                          {att.sourceType === 'ai_illustration' && (
+                            <p className="text-[10px] text-[#69727D] mt-1">
+                              AI illustrations automatically carry the non-product, non-scale disclosure:{' '}
+                              <span className="italic text-[#051F34]">&ldquo;{AI_ILLUSTRATION_DISCLAIMER}&rdquo;</span>
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Verified Catalogue Product Metadata (ONLY when sourceType === 'catalogue_product') */}
+                        {att.sourceType === 'catalogue_product' && (
+                          <div className="p-3 bg-white border border-[#CB9274] space-y-2.5">
+                            <div className="text-[10px] uppercase tracking-wider font-semibold text-[#051F34]">
+                              Verified Shewah Catalogue Product Identity (Required for Product Cards)
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              <div>
+                                <label className="block text-[10px] text-[#69727D] mb-0.5">Product Name *</label>
+                                <input
+                                  type="text"
+                                  aria-label={`Image ${idx + 1} catalogue product name`}
+                                  value={att.catalogueProduct?.productName || ''}
+                                  onChange={(e) =>
+                                    updateAttachment(idx, {
+                                      catalogueProduct: {
+                                        productCode: att.catalogueProduct?.productCode || '',
+                                        productName: e.target.value,
+                                        productSlug: att.catalogueProduct?.productSlug || '',
+                                        productUrl: att.catalogueProduct?.productUrl || '',
+                                        productImageUrl: att.catalogueProduct?.productImageUrl || att.url,
+                                      },
+                                    })
+                                  }
+                                  placeholder="e.g. SHEWAH Graduated Tennis Necklace"
+                                  className="w-full p-1.5 border border-[#E3DBD4] text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-[#69727D] mb-0.5">Product Code / SKU *</label>
+                                <input
+                                  type="text"
+                                  aria-label={`Image ${idx + 1} catalogue product code`}
+                                  value={att.catalogueProduct?.productCode || ''}
+                                  onChange={(e) =>
+                                    updateAttachment(idx, {
+                                      catalogueProduct: {
+                                        productCode: e.target.value,
+                                        productName: att.catalogueProduct?.productName || '',
+                                        productSlug: att.catalogueProduct?.productSlug || '',
+                                        productUrl: att.catalogueProduct?.productUrl || '',
+                                        productImageUrl: att.catalogueProduct?.productImageUrl || att.url,
+                                      },
+                                    })
+                                  }
+                                  placeholder="e.g. NCK61"
+                                  className="w-full p-1.5 border border-[#E3DBD4] font-mono text-xs"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              <div>
+                                <label className="block text-[10px] text-[#69727D] mb-0.5">
+                                  Exact Shewah Product URL (/jewellery/&lt;slug&gt;) *
+                                </label>
+                                <input
+                                  type="text"
+                                  aria-label={`Image ${idx + 1} catalogue product URL`}
+                                  value={att.catalogueProduct?.productUrl || ''}
+                                  onChange={(e) =>
+                                    updateAttachment(idx, {
+                                      catalogueProduct: {
+                                        productCode: att.catalogueProduct?.productCode || '',
+                                        productName: att.catalogueProduct?.productName || '',
+                                        productSlug:
+                                          e.target.value.split('/jewellery/')[1]?.replace(/\/$/, '') || '',
+                                        productUrl: e.target.value,
+                                        productImageUrl: att.catalogueProduct?.productImageUrl || att.url,
+                                      },
+                                    })
+                                  }
+                                  placeholder="https://shewah.co/jewellery/graduated-tennis-necklace"
+                                  className="w-full p-1.5 border border-[#E3DBD4] font-mono text-[11px]"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-[#69727D] mb-0.5">
+                                  Verified Product Image URL *
+                                </label>
+                                <input
+                                  type="text"
+                                  aria-label={`Image ${idx + 1} catalogue product image URL`}
+                                  value={att.catalogueProduct?.productImageUrl || ''}
+                                  onChange={(e) =>
+                                    updateAttachment(idx, {
+                                      url: e.target.value,
+                                      catalogueProduct: {
+                                        productCode: att.catalogueProduct?.productCode || '',
+                                        productName: att.catalogueProduct?.productName || '',
+                                        productSlug: att.catalogueProduct?.productSlug || '',
+                                        productUrl: att.catalogueProduct?.productUrl || '',
+                                        productImageUrl: e.target.value,
+                                      },
+                                    })
+                                  }
+                                  placeholder="https://res.cloudinary.com/..."
+                                  className="w-full p-1.5 border border-[#E3DBD4] font-mono text-[11px]"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+
+              {parsedArticle && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={syncAttachmentsIntoJsonTextarea}
+                    className="px-3.5 py-1.5 border border-[#051F34] text-[#051F34] hover:bg-[#051F34] hover:text-white text-[11px] uppercase tracking-wider font-semibold transition-colors"
+                  >
+                    Sync Images into Article JSON Textarea
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* 4. PARSED DRAFT REVIEW, RENDERED PREVIEW & CONFIRMATION */}
+        {effectiveSubmissionPayload && (
+          <section className="bg-white border border-[#E3DBD4] p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E3DBD4] pb-4">
+              <h2 className="font-serif text-lg text-[#051F34] flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>4. Review Parsed Draft &amp; Layout Preview</span>
+              </h2>
+
+              <div className="flex items-center gap-1.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setPreviewViewport('desktop')}
+                  className={`px-3 py-1.5 border inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold ${
+                    previewViewport === 'desktop'
+                      ? 'bg-[#051F34] text-white border-[#051F34]'
+                      : 'bg-white text-[#051F34] border-[#E3DBD4]'
+                  }`}
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                  <span>Desktop Preview</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewViewport('mobile_390')}
+                  className={`px-3 py-1.5 border inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold ${
+                    previewViewport === 'mobile_390'
+                      ? 'bg-[#051F34] text-white border-[#051F34]'
+                      : 'bg-white text-[#051F34] border-[#E3DBD4]'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Mobile (390px)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewViewport('plain')}
+                  className={`px-3 py-1.5 border inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold ${
+                    previewViewport === 'plain'
+                      ? 'bg-[#051F34] text-white border-[#051F34]'
+                      : 'bg-white text-[#051F34] border-[#E3DBD4]'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Plain Text</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div className="p-3 bg-[#F6F4F2] border border-[#E3DBD4] space-y-1">
                 <span className="text-[10px] uppercase tracking-wider font-semibold text-[#69727D] block">Title</span>
-                <span className="font-serif text-sm text-[#051F34] font-medium">{parsedArticle.title}</span>
+                <span className="font-serif text-sm text-[#051F34] font-medium">
+                  {effectiveSubmissionPayload.title}
+                </span>
               </div>
               <div className="p-3 bg-[#F6F4F2] border border-[#E3DBD4] space-y-1">
                 <span className="text-[10px] uppercase tracking-wider font-semibold text-[#69727D] block">
-                  Category & Length
+                  Category, Length &amp; Media
                 </span>
                 <span className="text-xs text-[#051F34] font-medium capitalize">
-                  {parsedArticle.category} • {wordCount} words
+                  {effectiveSubmissionPayload.category} • {wordCount} words • {attachedCount} image(s)
                 </span>
               </div>
-              {parsedArticle.slug && (
-                <div className="p-3 bg-[#F6F4F2] border border-[#E3DBD4] space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider font-semibold text-[#69727D] block">
-                    Specified Slug
+              <div className="p-3 bg-[#F6F4F2] border border-[#E3DBD4] space-y-1">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-[#69727D] block">
+                  Slug &amp; External ID
+                </span>
+                <span className="font-mono text-xs text-[#051F34] block truncate">
+                  /blog/{effectiveSubmissionPayload.slug || '(auto-generated)'}
+                </span>
+                {effectiveSubmissionPayload.externalContentId && (
+                  <span className="font-mono text-[10px] text-[#69727D] block truncate">
+                    Ext: {effectiveSubmissionPayload.externalContentId}
                   </span>
-                  <span className="font-mono text-xs text-[#051F34]">/blog/{parsedArticle.slug}</span>
-                </div>
-              )}
-              {parsedArticle.externalContentId && (
-                <div className="p-3 bg-[#F6F4F2] border border-[#E3DBD4] space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider font-semibold text-[#69727D] block">
-                    External Content ID
-                  </span>
-                  <span className="font-mono text-xs text-[#051F34]">{parsedArticle.externalContentId}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Safe plain text preview: never execute Markdown or HTML */}
-            <div className="space-y-1.5 pt-2">
-              <span className="text-[10px] uppercase tracking-wider font-semibold text-[#69727D] block">
-                Body Preview (Plain Text Verification)
-              </span>
-              <div className="p-3 bg-[#F6F4F2] border border-[#E3DBD4] max-h-48 overflow-y-auto text-xs text-[#051F34] font-mono whitespace-pre-wrap">
-                {parsedArticle.bodyMarkdown}
+                )}
               </div>
             </div>
+
+            {previewViewport === 'plain' ? (
+              <div className="space-y-1.5 pt-2">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-[#69727D] block">
+                  Body Preview (Plain Text Verification)
+                </span>
+                <div className="p-3 bg-[#F6F4F2] border border-[#E3DBD4] max-h-60 overflow-y-auto text-xs text-[#051F34] font-mono whitespace-pre-wrap">
+                  {effectiveSubmissionPayload.bodyMarkdown}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#F6F4F2] border border-[#E3DBD4] p-4 md:p-6 overflow-x-auto">
+                <div
+                  data-testid="editorial-rendered-preview"
+                  className={
+                    previewViewport === 'mobile_390'
+                      ? 'w-[390px] max-w-full mx-auto bg-white border border-[#E3DBD4] p-4 shadow-sm space-y-5'
+                      : 'max-w-3xl mx-auto bg-white border border-[#E3DBD4] p-6 md:p-8 shadow-sm space-y-6'
+                  }
+                >
+                  <div className="flex items-center justify-between border-b border-[#E3DBD4] pb-3 text-[10px] uppercase tracking-widest text-[#69727D]">
+                    <span>{effectiveSubmissionPayload.category}</span>
+                    <span>
+                      {isImagesPending
+                        ? 'Draft Preview • Images Pending'
+                        : `Draft Preview • ${attachedCount} Images Placed`}
+                    </span>
+                  </div>
+
+                  <h3 className="font-serif text-2xl md:text-3xl text-[#051F34] leading-tight">
+                    {effectiveSubmissionPayload.title}
+                  </h3>
+
+                  {effectiveSubmissionPayload.excerpt && (
+                    <p className="text-sm text-[#69727D] italic leading-relaxed">
+                      {effectiveSubmissionPayload.excerpt}
+                    </p>
+                  )}
+
+                  {/* Hero Preview */}
+                  {effectiveSubmissionPayload.heroImageUrl && (
+                    <figure className="border border-[#E3DBD4] bg-[#FBF9F7] overflow-hidden">
+                      <div className="px-3 py-1 bg-[#051F34] text-white text-[10px] uppercase tracking-widest flex items-center justify-between">
+                        <span>Hero Banner</span>
+                        {effectiveSubmissionPayload.images?.find((i) => i.isHero)?.sourceType ===
+                          'ai_illustration' && <span>AI Illustration (Non-Catalogue)</span>}
+                      </div>
+                      <div className="aspect-16/9 bg-[#F6F4F2] overflow-hidden flex items-center justify-center">
+                        {(() => {
+                          const heroAtt = effectiveSubmissionPayload.images?.find((i) => i.isHero)
+                          const heroSrc =
+                            (heroAtt && previewObjectUrls[heroAtt.mediaId]) ||
+                            heroAtt?.catalogueProduct?.productImageUrl ||
+                            effectiveSubmissionPayload.heroImageUrl
+                          return heroSrc ? (
+                            <img
+                              src={heroSrc}
+                              alt={effectiveSubmissionPayload.heroImageAlt || 'Hero preview'}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : null
+                        })()}
+                      </div>
+                      {(effectiveSubmissionPayload.heroImageCaption ||
+                        effectiveSubmissionPayload.heroImageRights) && (
+                        <figcaption className="p-3 text-xs text-[#051F34] border-t border-[#E3DBD4] space-y-1">
+                          {effectiveSubmissionPayload.heroImageCaption && (
+                            <p>{effectiveSubmissionPayload.heroImageCaption}</p>
+                          )}
+                          {effectiveSubmissionPayload.heroImageRights && (
+                            <p className="text-[10px] uppercase tracking-wider text-[#69727D]">
+                              {effectiveSubmissionPayload.heroImageRights}
+                            </p>
+                          )}
+                        </figcaption>
+                      )}
+                    </figure>
+                  )}
+
+                  {/* Body + Interleaved Inline Images */}
+                  <EditorialArticleBodyRenderer
+                    bodyMarkdown={effectiveSubmissionPayload.bodyMarkdown}
+                    images={effectiveSubmissionPayload.images || []}
+                    resolveImageSrc={(att) =>
+                      previewObjectUrls[att.mediaId] ||
+                      att.catalogueProduct?.productImageUrl ||
+                      att.url
+                    }
+                    compact={previewViewport === 'mobile_390'}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Submission Actions */}
             <div className="pt-4 border-t border-[#E3DBD4] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-              <div className="text-[11px] text-[#69727D]">
-                <span>Publication Mode: </span>
-                <strong className="text-[#051F34]">draft_only</strong>
-                <span> (Saves isolated draft; requires separate atelier owner approval).</span>
+              <div className="text-[11px] text-[#69727D] space-y-0.5">
+                <div>
+                  <span>Publication Mode: </span>
+                  <strong className="text-[#051F34]">draft_only</strong>
+                  <span> (Saves isolated draft; requires separate atelier owner approval).</span>
+                </div>
+                <div>
+                  <span>Image Status: </span>
+                  <strong className={isImagesPending ? 'text-amber-700' : 'text-emerald-700'}>
+                    {isImagesPending
+                      ? `Images Pending (${attachedCount}/3–5 attached — text draft remains saveable)`
+                      : `${attachedCount}/5 Images Ready`}
+                  </strong>
+                </div>
               </div>
 
               <button
@@ -771,7 +1865,7 @@ export default function EditorialSubmitClient() {
           </section>
         )}
 
-        {/* 4. SUBMISSION FEEDBACK & ERRORS */}
+        {/* 5. SUBMISSION FEEDBACK & ERRORS */}
         {submitError && (
           <div className="p-4 bg-red-50 border border-red-300 text-red-900 text-xs space-y-2">
             <div className="flex items-center gap-2 font-semibold">
@@ -786,38 +1880,73 @@ export default function EditorialSubmitClient() {
                 ))}
               </ul>
             )}
+            {validationWarnings.length > 0 && (
+              <ul className="list-disc pl-5 space-y-1 text-amber-800 pt-1">
+                {validationWarnings.map((w, idx) => (
+                  <li key={idx}>{w}</li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
-        {/* 5. UNCERTAIN OUTCOME NOTICE */}
+        {/* 6. UNCERTAIN OUTCOME NOTICE + READ-ONLY RECHECK VERIFICATION BUTTON */}
         {uncertainOutcome && (
-          <div className="p-5 bg-amber-50 border-2 border-amber-400 text-amber-950 text-xs space-y-3">
-            <div className="flex items-center gap-2 font-semibold text-sm text-amber-900">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-              <span>Save May Have Succeeded; Verification Pending</span>
+          <div
+            data-testid="verification-pending-banner"
+            className="p-5 bg-amber-50 border-2 border-amber-400 text-amber-950 text-xs space-y-3"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 font-semibold text-sm text-amber-900">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                <span>Save may have succeeded; verification pending</span>
+              </div>
+              <button
+                type="button"
+                id="recheckVerificationButton"
+                onClick={handleRecheckVerification}
+                disabled={rechecking || !token.trim()}
+                className="px-4 py-2 bg-[#051F34] hover:bg-[#CB9274] text-white text-[11px] uppercase tracking-wider font-semibold inline-flex items-center gap-1.5 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${rechecking ? 'animate-spin' : ''}`} />
+                <span>{rechecking ? 'Rechecking (Read-Only)...' : 'Recheck Verification'}</span>
+              </button>
             </div>
             <p className="leading-relaxed">{uncertainOutcome.message}</p>
-            <div className="p-2.5 bg-white border border-amber-200 font-mono text-[11px] text-stone-700">
-              Idempotency-Key: {uncertainOutcome.key}
+            <div className="p-3 bg-white border border-amber-200 font-mono text-[11px] text-stone-700 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>Idempotency-Key: {uncertainOutcome.key}</div>
+              {uncertainOutcome.articleId && <div>Article ID: {uncertainOutcome.articleId}</div>}
+              {uncertainOutcome.slug && <div>Slug: /blog/{uncertainOutcome.slug}</div>}
+              {uncertainOutcome.externalContentId && (
+                <div>External Content ID: {uncertainOutcome.externalContentId}</div>
+              )}
             </div>
             <p className="text-[11px] text-stone-600">
-              Do not alter the payload if you intend to retry. Re-enter your Draft writer token and click &quot;Save
-              draft&quot; again to reconcile safely using the identical idempotency key.
+              Click <strong>Recheck Verification</strong> to perform a read-only check (<code className="font-mono">GET /api/blog/v1/articles/[id]</code>) without creating another draft.
             </p>
           </div>
         )}
 
-        {/* 6. VERIFIED DRAFT READBACK PANEL */}
+        {/* 7. VERIFIED DRAFT READBACK PANEL */}
         {readback && (
-          <section className="bg-emerald-50 border-2 border-emerald-500 p-6 space-y-4 shadow-sm">
-            <div className="flex items-center gap-2 text-emerald-900 font-serif text-lg">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              <span>Draft Verified & Saved (Isolated Revision #1)</span>
+          <section
+            data-testid="verified-readback-panel"
+            className="bg-emerald-50 border-2 border-emerald-500 p-6 space-y-4 shadow-sm"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-emerald-900 font-serif text-lg">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <span>Draft Verified &amp; Saved (Isolated Revision #{readback.revisionNumber})</span>
+              </div>
+              <span className="px-2.5 py-1 bg-white border border-emerald-300 text-emerald-800 font-mono text-[11px] font-semibold">
+                status={readback.status} • live_revision_id={String(readback.liveRevisionId)}
+              </span>
             </div>
 
             <p className="text-xs text-emerald-950 leading-relaxed">
-              Your draft article has been successfully committed to the database. Independent readback verification
-              confirmed exact title match, initial revision creation, and draft lifecycle isolation.
+              Independent <code className="font-mono">GET /api/blog/v1/articles/{readback.articleId}</code> readback
+              verified exact saved title, body content, SEO title, meta description, media ordering, and draft lifecycle
+              isolation.
             </p>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white p-4 border border-emerald-300 text-xs font-mono">
@@ -836,17 +1965,63 @@ export default function EditorialSubmitClient() {
                 </span>
               </div>
               <div>
-                <span className="text-[#69727D] block text-[10px] uppercase font-sans">Status:</span>
-                <span className="text-emerald-700 font-bold uppercase">{readback.status} (Isolated)</span>
+                <span className="text-[#69727D] block text-[10px] uppercase font-sans">Media Status:</span>
+                <span className={readback.imagesPending ? 'text-amber-700 font-bold' : 'text-emerald-700 font-bold'}>
+                  {readback.imagesPending
+                    ? `Images Pending (${readback.imagesCount}/3–5)`
+                    : `${readback.imagesCount} Images Verified`}
+                </span>
               </div>
+            </div>
+
+            {/* Field-by-Field Readback Verification Matrix */}
+            <div className="bg-white border border-emerald-300 p-4 space-y-2 text-xs">
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-[#051F34]">
+                Independent Readback Verification Checks
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Title Match: {readback.titleMatches ? 'Verified' : 'Mismatch'}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Body Match ({readback.bodyWordCount} words): {readback.bodyMatches ? 'Verified' : 'Mismatch'}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>SEO &amp; Meta Match: {readback.seoMatches ? 'Verified' : 'Mismatch'}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Media Order &amp; Captions: {readback.mediaMatches ? 'Verified' : 'Mismatch'}</span>
+                </div>
+              </div>
+
+              {readback.verifiedImages.length > 0 && (
+                <div className="pt-2 border-t border-emerald-100 space-y-1">
+                  <div className="text-[10px] uppercase tracking-wider text-[#69727D]">
+                    Saved Media References ({readback.verifiedImages.length}):
+                  </div>
+                  {readback.verifiedImages.map((vImg, idx) => (
+                    <div key={vImg.mediaId || idx} className="font-mono text-[11px] text-[#051F34] flex flex-wrap gap-2">
+                      <span>#{vImg.order}</span>
+                      <span>[{vImg.sourceType}]</span>
+                      <span>pos={vImg.position}</span>
+                      {vImg.isHero && <span className="text-[#CB9274] font-semibold">[HERO]</span>}
+                      <span className="text-[#69727D] truncate max-w-md">{vImg.url}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="p-3 bg-emerald-100/50 border border-emerald-300 text-[11px] text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <strong className="block">Storefront & Public Isolation Confirmed:</strong>
+                <strong className="block">Storefront &amp; Public Isolation Confirmed:</strong>
                 <span>
                   This draft is not live. It remains completely invisible to public storefront visitors, feeds, and
-                  sitemaps until reviewed.
+                  sitemaps until reviewed by the owner.
                 </span>
               </div>
               <Link

@@ -48,7 +48,13 @@ export async function POST(req: NextRequest) {
     ? scopes
     : ['blog:read', 'blog:draft:write']
 
-  const validScopes = ['blog:read', 'blog:draft:write', 'blog:publish', 'blog:schedule']
+  const validScopes = [
+    'blog:read',
+    'blog:draft:write',
+    'blog:image:upload',
+    'blog:publish',
+    'blog:schedule',
+  ]
   for (const s of requestedScopes) {
     if (!validScopes.includes(s)) {
       return NextResponse.json(

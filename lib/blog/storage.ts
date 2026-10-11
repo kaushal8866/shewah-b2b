@@ -5,6 +5,9 @@ import {
   BlogRevision,
   BlogSettings,
   BlogStatus,
+  BlogMediaAttachment,
+  BlogStructuredBody,
+  AI_ILLUSTRATION_DISCLAIMER,
   canTransitionStatus,
   calculateReadingTime,
   generateSlug,
@@ -14,12 +17,28 @@ import {
 } from './types'
 import { validateDraftPayload, validateForPublication, sanitizeMarkdown } from './validation'
 import { recordBlogAudit } from './audit'
+import { getKolkataTimeDetails } from './scheduler'
+
+/**
+ * Documented Server Policy on Daily New-Draft Counting & Deletion:
+ * - New draft creation counts rows in `blog_articles` whose `created_at` falls within the current
+ *   `Asia/Kolkata` calendar day `[startOfDayUTC, endOfDayUTC)`.
+ * - The blog API does not expose hard deletion of articles; soft lifecycle transitions (such as
+ *   archiving an article to `status = 'archived'` or updating a draft via PATCH) preserve the
+ *   `blog_articles` row and therefore DO NOT free up or refund a daily new-draft slot.
+ * - Idempotent retries (`Idempotency-Key`), draft updates (`PATCH`), media uploads (`POST /media`),
+ *   and article reads (`GET`) never insert into `blog_articles` and never consume a slot.
+ */
+export const DRAFT_QUOTA_DELETION_POLICY =
+  'archived_drafts_remain_counted_in_asia_kolkata_day;no_public_hard_delete_endpoint'
 
 export interface CreateDraftParams {
   title: string
   slug?: string
   excerpt?: string | null
   bodyMarkdown: string
+  bodyStructured?: Record<string, any> | null
+  images?: BlogMediaAttachment[]
   category: string
   tags?: string[]
   authorDisplayName?: string
@@ -38,6 +57,7 @@ export interface CreateDraftParams {
   actorId: string
   requestId?: string | null
   idempotencyKey?: string | null
+  now?: Date
 }
 
 export interface UpdateDraftParams {
@@ -47,6 +67,8 @@ export interface UpdateDraftParams {
   slug?: string
   excerpt?: string | null
   bodyMarkdown?: string
+  bodyStructured?: Record<string, any> | null
+  images?: BlogMediaAttachment[]
   category?: string
   tags?: string[]
   authorDisplayName?: string
@@ -69,9 +91,152 @@ export interface StorageResult<T> {
   success: boolean
   data?: T
   error?: {
-    code: 'NOT_FOUND' | 'CONFLICT' | 'VALIDATION_FAILED' | 'FORBIDDEN' | 'DATABASE_ERROR'
+    code:
+      | 'NOT_FOUND'
+      | 'CONFLICT'
+      | 'VALIDATION_FAILED'
+      | 'FORBIDDEN'
+      | 'DAILY_QUOTA_EXCEEDED'
+      | 'DATABASE_ERROR'
     message: string
     details?: any
+  }
+}
+
+// In-process serialization lock for concurrent createDraftArticle calls
+let draftCreationMutex: Promise<void> = Promise.resolve()
+
+async function withDraftCreationLock<T>(fn: () => Promise<T>): Promise<T> {
+  let release!: () => void
+  const nextLock = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const previousLock = draftCreationMutex
+  draftCreationMutex = previousLock.then(() => nextLock)
+  await previousLock
+  try {
+    return await fn()
+  } finally {
+    release()
+  }
+}
+
+/**
+ * Normalizes attached images and constructs the structured body payload stored in `blog_revisions.body_structured`.
+ */
+export function buildNormalizedStructuredBody(
+  images?: BlogMediaAttachment[],
+  existingStructured?: Record<string, any> | null
+): BlogStructuredBody {
+  const rawImages = Array.isArray(images)
+    ? images
+    : Array.isArray(existingStructured?.images)
+      ? (existingStructured?.images as BlogMediaAttachment[])
+      : []
+
+  let heroAssigned = false
+  const normalizedImages: BlogMediaAttachment[] = rawImages.slice(0, 5).map((img, idx) => {
+    const isHero = Boolean(img.isHero) && !heroAssigned
+    if (isHero) heroAssigned = true
+
+    let caption = (img.caption || '').trim()
+    if (
+      img.sourceType === 'ai_illustration' &&
+      !caption.toLowerCase().includes('ai-generated illustration')
+    ) {
+      caption = caption
+        ? `${caption} — ${AI_ILLUSTRATION_DISCLAIMER}`
+        : AI_ILLUSTRATION_DISCLAIMER
+    }
+
+    return {
+      mediaId: String(img.mediaId || `media-${idx + 1}`).trim(),
+      storageKey: img.storageKey ?? null,
+      url: String(img.url || '').trim(),
+      altText: String(img.altText || '').trim(),
+      caption,
+      sourceType: img.sourceType || 'studio_photography',
+      rightsNote: String(img.rightsNote || '').trim(),
+      isHero,
+      position: img.position || (isHero ? 'hero_only' : 'after_section_1'),
+      order: typeof img.order === 'number' && img.order > 0 ? img.order : idx + 1,
+      mimeType: img.mimeType,
+      sizeBytes: img.sizeBytes,
+      width: img.width,
+      height: img.height,
+      catalogueProduct:
+        img.sourceType === 'catalogue_product' && img.catalogueProduct
+          ? {
+              productId: img.catalogueProduct.productId,
+              productCode: String(img.catalogueProduct.productCode || '').trim(),
+              productName: String(img.catalogueProduct.productName || '').trim(),
+              productSlug: String(img.catalogueProduct.productSlug || '').trim(),
+              productUrl: String(img.catalogueProduct.productUrl || '').trim(),
+              productImageUrl: String(img.catalogueProduct.productImageUrl || '').trim(),
+            }
+          : null,
+    }
+  })
+
+  // Sort by order and re-index 1..N
+  normalizedImages.sort((a, b) => a.order - b.order)
+  normalizedImages.forEach((img, idx) => {
+    img.order = idx + 1
+  })
+
+  // If images exist and none was marked isHero, mark the first one as hero
+  if (normalizedImages.length > 0 && !normalizedImages.some((i) => i.isHero)) {
+    normalizedImages[0].isHero = true
+  }
+
+  return {
+    ...(existingStructured || {}),
+    version: 1,
+    images: normalizedImages,
+    imagesPending: normalizedImages.length < 3,
+    recommendedImageCount: { min: 3, max: 5 },
+  }
+}
+
+/**
+ * Counts how many articles have been created in the current Asia/Kolkata calendar day.
+ */
+export async function getDailyNewDraftCountInKolkata(now: Date = new Date()): Promise<{
+  count: number
+  dateStr: string
+  startOfDayUTC: string
+  endOfDayUTC: string
+  articleIds: string[]
+}> {
+  const { dateStr, startOfDayUTC, endOfDayUTC } = getKolkataTimeDetails(now)
+
+  try {
+    const baseSelect = supabaseAdmin
+      .from('blog_articles')
+      .select('id, created_at', { count: 'exact' })
+    if (!baseSelect || typeof (baseSelect as any).gte !== 'function') {
+      return { count: 0, dateStr, startOfDayUTC, endOfDayUTC, articleIds: [] }
+    }
+
+    let query: any = baseSelect.gte('created_at', startOfDayUTC)
+    if (query && typeof query.lt === 'function') {
+      query = query.lt('created_at', endOfDayUTC)
+    }
+    if (query && typeof query.order === 'function') {
+      query = query.order('created_at', { ascending: true })
+    }
+
+    const res = await query
+    const rows = Array.isArray(res?.data) ? res.data : []
+    const count =
+      typeof res?.count === 'number'
+        ? res.count
+        : rows.length
+    const articleIds = rows.map((r: any) => String(r.id)).filter(Boolean)
+
+    return { count, dateStr, startOfDayUTC, endOfDayUTC, articleIds }
+  } catch {
+    return { count: 0, dateStr, startOfDayUTC, endOfDayUTC, articleIds: [] }
   }
 }
 
@@ -92,7 +257,7 @@ export async function getBlogSettings(): Promise<BlogSettings> {
       is_blog_enabled: true,
       publication_mode: 'draft_only',
       is_automation_paused: false,
-      max_daily_new_posts: 1,
+      max_daily_new_posts: 10,
       allowed_categories: ['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds', 'care-guide', 'buying-guide', 'styling'],
       publish_window_start_time: '09:00',
       publish_window_end_time: '20:00',
@@ -105,126 +270,172 @@ export async function getBlogSettings(): Promise<BlogSettings> {
   return {
     ...data,
     is_blog_enabled: data.is_blog_enabled !== undefined ? Boolean(data.is_blog_enabled) : true,
+    max_daily_new_posts:
+      typeof data.max_daily_new_posts === 'number' && data.max_daily_new_posts > 0
+        ? data.max_daily_new_posts
+        : 10,
   } as BlogSettings
 }
 
 /**
  * Create a new draft article and its initial immutable revision (revision 1).
+ * Enforces server-side daily new-draft capacity in the configured Asia/Kolkata calendar day.
  */
-export async function createDraftArticle(params: CreateDraftParams): Promise<StorageResult<{ article: BlogArticle; revision: BlogRevision }>> {
-  const settings = await getBlogSettings()
+export async function createDraftArticle(
+  params: CreateDraftParams
+): Promise<StorageResult<{ article: BlogArticle; revision: BlogRevision }>> {
+  return withDraftCreationLock(async () => {
+    const settings = await getBlogSettings()
 
-  if (settings.is_blog_enabled === false) {
-    return {
-      success: false,
-      error: { code: 'FORBIDDEN', message: 'Blog system is currently disabled by the atelier owner.' },
+    if (settings.is_blog_enabled === false) {
+      return {
+        success: false,
+        error: { code: 'FORBIDDEN', message: 'Blog system is currently disabled by the atelier owner.' },
+      }
     }
-  }
 
-  if (settings.is_automation_paused && params.actorType === 'assistant_token') {
-    return {
-      success: false,
-      error: { code: 'FORBIDDEN', message: 'Blog automation is currently paused by the atelier owner.' },
+    if (settings.is_automation_paused && params.actorType === 'assistant_token') {
+      return {
+        success: false,
+        error: { code: 'FORBIDDEN', message: 'Blog automation is currently paused by the atelier owner.' },
+      }
     }
-  }
 
-  // Sanitize Markdown content
-  const cleanBody = sanitizeMarkdown(params.bodyMarkdown)
+    // Normalize structured body & attached images
+    const structuredBody = buildNormalizedStructuredBody(params.images, params.bodyStructured)
+    const heroAttachment = structuredBody.images.find((img) => img.isHero) || structuredBody.images[0]
 
-  // Validate draft inputs
-  const validation = validateDraftPayload(
-    {
-      title: params.title,
-      slug: params.slug,
-      bodyMarkdown: cleanBody,
-      category: params.category,
-      heroImageUrl: params.heroImageUrl,
-      heroImageAlt: params.heroImageAlt,
-      heroImageCaption: params.heroImageCaption,
-      heroImageRights: params.heroImageRights,
-      sourceReferences: params.sourceReferences,
-    },
-    settings.allowed_categories
-  )
+    const effectiveHeroUrl = params.heroImageUrl ?? heroAttachment?.url ?? null
+    const effectiveHeroAlt = params.heroImageAlt?.trim() || heroAttachment?.altText || null
+    const effectiveHeroCaption = params.heroImageCaption?.trim() || heroAttachment?.caption || null
+    const effectiveHeroRights = params.heroImageRights?.trim() || heroAttachment?.rightsNote || null
 
-  if (!validation.valid) {
-    await recordBlogAudit({
-      actorType: params.actorType,
-      actorId: params.actorId,
-      operation: 'create_draft',
-      outcome: 'failure',
-      requestId: params.requestId,
-      errorMessage: validation.blockers.join('; '),
-    })
-    return {
-      success: false,
-      error: { code: 'VALIDATION_FAILED', message: validation.blockers.join(' '), details: validation },
+    // Sanitize Markdown content
+    const cleanBody = sanitizeMarkdown(params.bodyMarkdown)
+
+    // Validate draft inputs
+    const validation = validateDraftPayload(
+      {
+        title: params.title,
+        slug: params.slug,
+        bodyMarkdown: cleanBody,
+        bodyStructured: structuredBody,
+        images: structuredBody.images,
+        category: params.category,
+        heroImageUrl: effectiveHeroUrl,
+        heroImageAlt: effectiveHeroAlt,
+        heroImageCaption: effectiveHeroCaption,
+        heroImageRights: effectiveHeroRights,
+        sourceReferences: params.sourceReferences,
+      },
+      settings.allowed_categories
+    )
+
+    if (!validation.valid) {
+      await recordBlogAudit({
+        actorType: params.actorType,
+        actorId: params.actorId,
+        operation: 'create_draft',
+        outcome: 'failure',
+        requestId: params.requestId,
+        errorMessage: validation.blockers.join('; '),
+      })
+      return {
+        success: false,
+        error: { code: 'VALIDATION_FAILED', message: validation.blockers.join(' '), details: validation },
+      }
     }
-  }
 
-  const finalSlug = params.slug ? params.slug.toLowerCase().trim() : generateSlug(params.title)
-  if (!validateSlug(finalSlug)) {
-    return {
-      success: false,
-      error: { code: 'VALIDATION_FAILED', message: `Generated slug "${finalSlug}" is not a valid URL slug.` },
+    const finalSlug = params.slug ? params.slug.toLowerCase().trim() : generateSlug(params.title)
+    if (!validateSlug(finalSlug)) {
+      return {
+        success: false,
+        error: { code: 'VALIDATION_FAILED', message: `Generated slug "${finalSlug}" is not a valid URL slug.` },
+      }
     }
-  }
 
-  // Check slug uniqueness
-  const { data: existingSlug } = await supabaseAdmin
-    .from('blog_articles')
-    .select('id')
-    .eq('slug', finalSlug)
-    .maybeSingle()
-
-  if (existingSlug) {
-    return {
-      success: false,
-      error: { code: 'CONFLICT', message: `An article with slug "${finalSlug}" already exists.` },
-    }
-  }
-
-  // Check externalContentId uniqueness if provided
-  if (params.externalContentId) {
-    const { data: existingExt } = await supabaseAdmin
+    // Check slug uniqueness
+    const { data: existingSlug } = await supabaseAdmin
       .from('blog_articles')
-      .select('id, slug')
-      .eq('external_content_id', params.externalContentId)
+      .select('id')
+      .eq('slug', finalSlug)
       .maybeSingle()
 
-    if (existingExt) {
+    if (existingSlug) {
+      return {
+        success: false,
+        error: { code: 'CONFLICT', message: `An article with slug "${finalSlug}" already exists.` },
+      }
+    }
+
+    // Check externalContentId uniqueness if provided
+    if (params.externalContentId) {
+      const { data: existingExt } = await supabaseAdmin
+        .from('blog_articles')
+        .select('id, slug')
+        .eq('external_content_id', params.externalContentId)
+        .maybeSingle()
+
+      if (existingExt) {
+        return {
+          success: false,
+          error: {
+            code: 'CONFLICT',
+            message: `Article with externalContentId "${params.externalContentId}" already exists (slug: ${existingExt.slug}).`,
+          },
+        }
+      }
+    }
+
+    // Enforce Daily New Draft Quota in Asia/Kolkata calendar day
+    const maxDailyLimit = Math.max(1, settings.max_daily_new_posts || 10)
+    const nowDate = params.now || new Date()
+    const quotaBefore = await getDailyNewDraftCountInKolkata(nowDate)
+    if (quotaBefore.count >= maxDailyLimit) {
+      await recordBlogAudit({
+        actorType: params.actorType,
+        actorId: params.actorId,
+        operation: 'create_draft',
+        outcome: 'failure',
+        requestId: params.requestId,
+        idempotencyKey: params.idempotencyKey,
+        errorMessage: `Daily new draft limit of ${maxDailyLimit} reached for Asia/Kolkata date ${quotaBefore.dateStr}.`,
+      })
       return {
         success: false,
         error: {
-          code: 'CONFLICT',
-          message: `Article with externalContentId "${params.externalContentId}" already exists (slug: ${existingExt.slug}).`,
+          code: 'DAILY_QUOTA_EXCEEDED',
+          message: `Daily new draft capacity of ${maxDailyLimit} articles has been reached for ${quotaBefore.dateStr} (Asia/Kolkata). Existing drafts remain intact; retry tomorrow after 00:00 IST or update an existing draft.`,
+          details: {
+            maxDailyNewPosts: maxDailyLimit,
+            currentDailyCount: quotaBefore.count,
+            dateAsiaKolkata: quotaBefore.dateStr,
+            timezone: 'Asia/Kolkata',
+          },
         },
       }
     }
-  }
 
-  const readingTime = calculateReadingTime(cleanBody)
-  const contentHash = computeContentHash({
-    title: params.title,
-    bodyMarkdown: cleanBody,
-    sources: params.sourceReferences,
-    excerpt: params.excerpt,
-  })
+    const readingTime = calculateReadingTime(cleanBody)
+    const contentHash = computeContentHash({
+      title: params.title,
+      bodyMarkdown: cleanBody,
+      sources: params.sourceReferences,
+      excerpt: params.excerpt,
+    })
 
-  // 1. Insert article shell
-  const { data: articleRow, error: articleErr } = await supabaseAdmin
-    .from('blog_articles')
-    .insert({
+    // 1. Insert article shell
+    const insertPayload: Record<string, any> = {
       slug: finalSlug,
       title: params.title.trim(),
       excerpt: params.excerpt?.trim() ?? null,
       category: params.category,
       tags: params.tags ?? [],
       author_display_name: params.authorDisplayName?.trim() || 'SHEWAH Editorial Atelier',
-      hero_image_url: params.heroImageUrl ?? null,
-      hero_image_alt: params.heroImageAlt?.trim() ?? null,
-      hero_image_caption: params.heroImageCaption?.trim() ?? null,
-      hero_image_rights: params.heroImageRights?.trim() ?? null,
+      hero_image_url: effectiveHeroUrl,
+      hero_image_alt: effectiveHeroAlt,
+      hero_image_caption: effectiveHeroCaption,
+      hero_image_rights: effectiveHeroRights,
       seo_title: params.seoTitle?.trim() ?? null,
       meta_description: params.metaDescription?.trim() ?? null,
       canonical_url_policy: params.canonicalUrlPolicy ?? 'default',
@@ -235,83 +446,117 @@ export async function createDraftArticle(params: CreateDraftParams): Promise<Sto
       editorial_source: params.editorialSource ?? 'internal',
       external_content_id: params.externalContentId ?? null,
       lock_version: 1,
-    })
-    .select()
-    .single()
-
-  if (articleErr || !articleRow) {
-    return {
-      success: false,
-      error: { code: 'DATABASE_ERROR', message: articleErr?.message || 'Failed to insert article record.' },
     }
-  }
-
-  // 2. Insert initial revision (rev 1)
-  const { data: revRow, error: revErr } = await supabaseAdmin
-    .from('blog_revisions')
-    .insert({
-      article_id: articleRow.id,
-      revision_number: 1,
-      title: articleRow.title,
-      excerpt: articleRow.excerpt,
-      body_markdown: cleanBody,
-      category: articleRow.category,
-      tags: articleRow.tags,
-      author_display_name: articleRow.author_display_name,
-      hero_image_url: articleRow.hero_image_url,
-      hero_image_alt: articleRow.hero_image_alt,
-      hero_image_caption: articleRow.hero_image_caption,
-      hero_image_rights: articleRow.hero_image_rights,
-      seo_title: articleRow.seo_title,
-      meta_description: articleRow.meta_description,
-      source_references: articleRow.source_references,
-      reading_time_minutes: readingTime,
-      content_hash: contentHash,
-      created_by_actor_type: params.actorType,
-      created_by_actor_id: params.actorId,
-      change_summary: 'Initial draft created',
-    })
-    .select()
-    .single()
-
-  if (revErr || !revRow) {
-    return {
-      success: false,
-      error: { code: 'DATABASE_ERROR', message: revErr?.message || 'Failed to insert initial revision.' },
+    if (params.now) {
+      insertPayload.created_at = params.now.toISOString()
     }
-  }
 
-  // 3. Link current_revision_id
-  await supabaseAdmin
-    .from('blog_articles')
-    .update({ current_revision_id: revRow.id })
-    .eq('id', articleRow.id)
+    const { data: articleRow, error: articleErr } = await supabaseAdmin
+      .from('blog_articles')
+      .insert(insertPayload)
+      .select()
+      .single()
 
-  articleRow.current_revision_id = revRow.id
+    if (articleErr || !articleRow) {
+      return {
+        success: false,
+        error: { code: 'DATABASE_ERROR', message: articleErr?.message || 'Failed to insert article record.' },
+      }
+    }
 
-  await recordBlogAudit({
-    articleId: articleRow.id,
-    revisionId: revRow.id,
-    actorType: params.actorType,
-    actorId: params.actorId,
-    operation: 'create_draft',
-    outcome: 'success',
-    requestId: params.requestId,
-    idempotencyKey: params.idempotencyKey,
-    payloadHash: contentHash,
+    // Post-insert rank check to guard against cross-instance concurrent bursts exceeding maxDailyLimit
+    const quotaAfter = await getDailyNewDraftCountInKolkata(nowDate)
+    const insertedRank = quotaAfter.articleIds.indexOf(String(articleRow.id))
+    if (
+      (insertedRank !== -1 && insertedRank >= maxDailyLimit) ||
+      (insertedRank === -1 && quotaAfter.count > maxDailyLimit)
+    ) {
+      // Roll back only this excess 11th+ draft so the first 10 drafts remain completely intact
+      await supabaseAdmin.from('blog_articles').delete().eq('id', articleRow.id)
+      return {
+        success: false,
+        error: {
+          code: 'DAILY_QUOTA_EXCEEDED',
+          message: `Concurrent daily new draft limit of ${maxDailyLimit} reached for ${quotaAfter.dateStr} (Asia/Kolkata).`,
+          details: {
+            maxDailyNewPosts: maxDailyLimit,
+            dateAsiaKolkata: quotaAfter.dateStr,
+            timezone: 'Asia/Kolkata',
+          },
+        },
+      }
+    }
+
+    // 2. Insert initial revision (rev 1)
+    const { data: revRow, error: revErr } = await supabaseAdmin
+      .from('blog_revisions')
+      .insert({
+        article_id: articleRow.id,
+        revision_number: 1,
+        title: articleRow.title,
+        excerpt: articleRow.excerpt,
+        body_markdown: cleanBody,
+        body_structured: structuredBody,
+        category: articleRow.category,
+        tags: articleRow.tags,
+        author_display_name: articleRow.author_display_name,
+        hero_image_url: articleRow.hero_image_url,
+        hero_image_alt: articleRow.hero_image_alt,
+        hero_image_caption: articleRow.hero_image_caption,
+        hero_image_rights: articleRow.hero_image_rights,
+        seo_title: articleRow.seo_title,
+        meta_description: articleRow.meta_description,
+        source_references: articleRow.source_references,
+        reading_time_minutes: readingTime,
+        content_hash: contentHash,
+        created_by_actor_type: params.actorType,
+        created_by_actor_id: params.actorId,
+        change_summary: 'Initial draft created',
+      })
+      .select()
+      .single()
+
+    if (revErr || !revRow) {
+      return {
+        success: false,
+        error: { code: 'DATABASE_ERROR', message: revErr?.message || 'Failed to insert initial revision.' },
+      }
+    }
+
+    // 3. Link current_revision_id
+    await supabaseAdmin
+      .from('blog_articles')
+      .update({ current_revision_id: revRow.id })
+      .eq('id', articleRow.id)
+
+    articleRow.current_revision_id = revRow.id
+
+    await recordBlogAudit({
+      articleId: articleRow.id,
+      revisionId: revRow.id,
+      actorType: params.actorType,
+      actorId: params.actorId,
+      operation: 'create_draft',
+      outcome: 'success',
+      requestId: params.requestId,
+      idempotencyKey: params.idempotencyKey,
+      payloadHash: contentHash,
+    })
+
+    return {
+      success: true,
+      data: { article: articleRow as BlogArticle, revision: revRow as BlogRevision },
+    }
   })
-
-  return {
-    success: true,
-    data: { article: articleRow as BlogArticle, revision: revRow as BlogRevision },
-  }
 }
 
 /**
  * Update an existing draft using optimistic locking.
- * Enforces revision isolation: live_revision_id is untouched.
+ * Enforces revision isolation: live_revision_id is untouched, and does NOT consume a daily new-draft slot.
  */
-export async function updateDraftArticle(params: UpdateDraftParams): Promise<StorageResult<{ article: BlogArticle; revision: BlogRevision }>> {
+export async function updateDraftArticle(
+  params: UpdateDraftParams
+): Promise<StorageResult<{ article: BlogArticle; revision: BlogRevision }>> {
   const settings = await getBlogSettings()
 
   if (settings.is_blog_enabled === false) {
@@ -388,17 +633,37 @@ export async function updateDraftArticle(params: UpdateDraftParams): Promise<Sto
   }
 
   // 4. Merge fields
+  const latestRevSnapshot = await getLatestRevisionSnapshot(currentArticle.current_revision_id)
   const cleanBody = params.bodyMarkdown ? sanitizeMarkdown(params.bodyMarkdown) : undefined
   const title = params.title?.trim() ?? currentArticle.title
-  const bodyMarkdown = cleanBody ?? (await getLatestRevisionBody(currentArticle.current_revision_id))
+  const bodyMarkdown = cleanBody ?? latestRevSnapshot.bodyMarkdown
   const category = params.category ?? currentArticle.category
   const excerpt = params.excerpt !== undefined ? params.excerpt : currentArticle.excerpt
   const tags = params.tags ?? currentArticle.tags
   const authorDisplayName = params.authorDisplayName?.trim() ?? currentArticle.author_display_name
-  const heroImageUrl = params.heroImageUrl !== undefined ? params.heroImageUrl : currentArticle.hero_image_url
-  const heroImageAlt = params.heroImageAlt !== undefined ? params.heroImageAlt : currentArticle.hero_image_alt
-  const heroImageCaption = params.heroImageCaption !== undefined ? params.heroImageCaption : currentArticle.hero_image_caption
-  const heroImageRights = params.heroImageRights !== undefined ? params.heroImageRights : currentArticle.hero_image_rights
+
+  const structuredBody = buildNormalizedStructuredBody(
+    params.images,
+    params.bodyStructured !== undefined ? params.bodyStructured : latestRevSnapshot.bodyStructured
+  )
+  const heroAttachment = structuredBody.images.find((img) => img.isHero) || structuredBody.images[0]
+
+  const heroImageUrl =
+    params.heroImageUrl !== undefined
+      ? params.heroImageUrl
+      : heroAttachment?.url ?? currentArticle.hero_image_url
+  const heroImageAlt =
+    params.heroImageAlt !== undefined
+      ? params.heroImageAlt
+      : heroAttachment?.altText ?? currentArticle.hero_image_alt
+  const heroImageCaption =
+    params.heroImageCaption !== undefined
+      ? params.heroImageCaption
+      : heroAttachment?.caption ?? currentArticle.hero_image_caption
+  const heroImageRights =
+    params.heroImageRights !== undefined
+      ? params.heroImageRights
+      : heroAttachment?.rightsNote ?? currentArticle.hero_image_rights
   const seoTitle = params.seoTitle !== undefined ? params.seoTitle : currentArticle.seo_title
   const metaDescription = params.metaDescription !== undefined ? params.metaDescription : currentArticle.meta_description
   const sourceReferences = params.sourceReferences ?? currentArticle.source_references
@@ -409,6 +674,8 @@ export async function updateDraftArticle(params: UpdateDraftParams): Promise<Sto
       title,
       slug: newSlug,
       bodyMarkdown,
+      bodyStructured: structuredBody,
+      images: structuredBody.images,
       category,
       heroImageUrl,
       heroImageAlt,
@@ -458,6 +725,7 @@ export async function updateDraftArticle(params: UpdateDraftParams): Promise<Sto
       title,
       excerpt,
       body_markdown: bodyMarkdown,
+      body_structured: structuredBody,
       category,
       tags,
       author_display_name: authorDisplayName,
@@ -876,8 +1144,18 @@ export async function getPublicArticleBySlug(slug: string): Promise<{ article: B
   }
 }
 
-async function getLatestRevisionBody(revId?: string | null): Promise<string> {
-  if (!revId) return ''
-  const { data } = await supabaseAdmin.from('blog_revisions').select('body_markdown').eq('id', revId).maybeSingle()
-  return data?.body_markdown || ''
+async function getLatestRevisionSnapshot(
+  revId?: string | null
+): Promise<{ bodyMarkdown: string; bodyStructured: Record<string, any> | null }> {
+  if (!revId) return { bodyMarkdown: '', bodyStructured: null }
+  const { data } = await supabaseAdmin
+    .from('blog_revisions')
+    .select('body_markdown, body_structured')
+    .eq('id', revId)
+    .maybeSingle()
+  return {
+    bodyMarkdown: data?.body_markdown || '',
+    bodyStructured: (data?.body_structured as Record<string, any>) || null,
+  }
 }
+

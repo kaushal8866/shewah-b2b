@@ -24,7 +24,12 @@ import {
   FileText,
   Save,
   Send,
+  Monitor,
+  Smartphone,
+  Image as ImageIcon,
 } from 'lucide-react'
+import { EditorialArticleBodyRenderer, EditorialMediaFigure } from '@/lib/blog/renderer'
+import type { BlogMediaAttachment } from '@/lib/blog/types'
 
 interface CurrentUser {
   id?: string
@@ -55,11 +60,13 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
     seoTitle: '',
     metaDescription: '',
     sourceReferences: [] as any[],
+    images: [] as BlogMediaAttachment[],
     externalContentId: '',
     lockVersion: 1,
   })
 
   const [editorMode, setEditorMode] = useState<'edit' | 'preview'>('edit')
+  const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile'>('desktop')
   const [validationResult, setValidationResult] = useState<any>(null)
   const [revisions, setRevisions] = useState<any[]>([])
   const [revisionsDrawerOpen, setRevisionsDrawerOpen] = useState(false)
@@ -70,7 +77,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
   const [settings, setSettings] = useState<any>({
     publication_mode: 'draft_only',
     is_automation_paused: false,
-    max_daily_new_posts: 1,
+    max_daily_new_posts: 10,
     allowed_categories: ['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds'],
     publish_window_start_time: '09:00',
     publish_window_end_time: '20:00',
@@ -164,6 +171,9 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
         const data = await res.json()
         const art = data.article
         const rev = data.currentRevision || {}
+        const revImages: BlogMediaAttachment[] = Array.isArray(rev.body_structured?.images)
+          ? rev.body_structured.images
+          : []
         setFormData({
           title: art.title || '',
           slug: art.slug || '',
@@ -178,6 +188,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
           seoTitle: art.seo_title || '',
           metaDescription: art.meta_description || '',
           sourceReferences: Array.isArray(art.source_references) ? art.source_references : [],
+          images: revImages,
           externalContentId: art.external_content_id || '',
           lockVersion: art.lock_version || 1,
         })
@@ -206,6 +217,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
       seoTitle: '',
       metaDescription: '',
       sourceReferences: [],
+      images: [],
       externalContentId: '',
       lockVersion: 1,
     })
@@ -250,6 +262,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
             seoTitle: formData.seoTitle,
             metaDescription: formData.metaDescription,
             sourceReferences: formData.sourceReferences,
+            images: formData.images.length > 0 ? formData.images : undefined,
           }),
         })
         const data = await res.json()
@@ -283,6 +296,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
             seoTitle: formData.seoTitle,
             metaDescription: formData.metaDescription,
             sourceReferences: formData.sourceReferences,
+            images: formData.images.length > 0 ? formData.images : undefined,
           }),
         })
         const data = await res.json()
@@ -389,6 +403,22 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ publicationMode: mode }),
+      })
+      if (res.ok) {
+        const d = await res.json()
+        setSettings(d)
+        await loadAuditLogs()
+      }
+    } catch {}
+  }
+
+  // Update daily new-draft quota
+  async function handleUpdateDailyQuota(maxDailyNewPosts: number) {
+    try {
+      const res = await fetch('/api/blog/v1/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maxDailyNewPosts }),
       })
       if (res.ok) {
         const d = await res.json()
@@ -800,7 +830,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
 
                   {/* Body Markdown */}
                   <div>
-                    <div className="flex items-center justify-between pb-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-1">
                       <label className="text-[11px] uppercase tracking-wider font-medium text-[#69727D]">
                         Body Content (Markdown) *
                       </label>
@@ -817,8 +847,36 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                           onClick={() => setEditorMode('preview')}
                           className={`px-2 py-0.5 ${editorMode === 'preview' ? 'bg-[#051F34] text-white font-medium' : 'text-[#69727D]'}`}
                         >
-                          Preview
+                          Rendered Preview ({formData.images.length} images)
                         </button>
+                        {editorMode === 'preview' && (
+                          <div className="inline-flex border border-[#E3DBD4] ml-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewViewport('desktop')}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] uppercase tracking-wider ${
+                                previewViewport === 'desktop'
+                                  ? 'bg-[#CB9274] text-white font-semibold'
+                                  : 'bg-white text-[#69727D]'
+                              }`}
+                            >
+                              <Monitor className="w-3 h-3" />
+                              <span>Desktop</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewViewport('mobile')}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] uppercase tracking-wider ${
+                                previewViewport === 'mobile'
+                                  ? 'bg-[#CB9274] text-white font-semibold'
+                                  : 'bg-white text-[#69727D]'
+                              }`}
+                            >
+                              <Smartphone className="w-3 h-3" />
+                              <span>Mobile (390px)</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -831,10 +889,54 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                         className="w-full p-3 border border-[#E3DBD4] text-sm font-mono leading-relaxed focus:outline-none focus:border-[#051F34]"
                       />
                     ) : (
-                      <div className="p-4 border border-[#E3DBD4] min-h-[380px] bg-[#F6F4F2] prose prose-stone max-w-none text-sm">
-                        {formData.bodyMarkdown.split('\n\n').map((p, i) => (
-                          <p key={i}>{p}</p>
-                        ))}
+                      <div className="p-4 border border-[#E3DBD4] min-h-[380px] bg-[#F6F4F2]">
+                        <div
+                          className={`mx-auto bg-white border border-[#E3DBD4] shadow-sm transition-all ${
+                            previewViewport === 'mobile' ? 'max-w-[390px] p-4' : 'max-w-3xl p-6 sm:p-8'
+                          }`}
+                        >
+                          {(() => {
+                            const heroAttachment = formData.images.find((img) => img.isHero)
+                            if (heroAttachment) {
+                              return (
+                                <EditorialMediaFigure
+                                  attachment={heroAttachment}
+                                  compact={previewViewport === 'mobile'}
+                                />
+                              )
+                            }
+                            if (formData.heroImageUrl) {
+                              return (
+                                <figure className="mb-6 bg-white border border-[#E3DBD4] p-2.5">
+                                  <div className="relative aspect-[16/9] overflow-hidden bg-[#F6F4F2]">
+                                    <img
+                                      src={formData.heroImageUrl}
+                                      alt={formData.heroImageAlt || formData.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  {(formData.heroImageCaption || formData.heroImageRights) && (
+                                    <figcaption className="pt-2 px-1 text-[11px] text-[#69727D] flex flex-wrap justify-between gap-1">
+                                      <span>{formData.heroImageCaption}</span>
+                                      {formData.heroImageRights && (
+                                        <span className="font-mono text-[10px] text-stone-400">
+                                          Provenance: {formData.heroImageRights}
+                                        </span>
+                                      )}
+                                    </figcaption>
+                                  )}
+                                </figure>
+                              )
+                            }
+                            return null
+                          })()}
+
+                          <EditorialArticleBodyRenderer
+                            bodyMarkdown={formData.bodyMarkdown}
+                            images={formData.images}
+                            compact={previewViewport === 'mobile'}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -915,7 +1017,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                 </div>
               </div>
 
-              {/* Right Col: Metadata, Hero Media, SEO */}
+              {/* Right Col: Metadata, Hero Media, Attached Draft Media, SEO */}
               <div className="space-y-6">
                 <div className="bg-white border border-[#E3DBD4] p-6 space-y-4 text-xs">
                   <h3 className="font-serif text-base text-[#051F34]">Atelier Metadata</h3>
@@ -955,13 +1057,13 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
 
                   <div>
                     <label className="block text-[11px] uppercase tracking-wider text-[#69727D] mb-1">
-                      Hero Image URL (HTTPS)
+                      Hero Image URL (HTTPS or /api/blog/v1/media/...)
                     </label>
                     <input
-                      type="url"
+                      type="text"
                       value={formData.heroImageUrl}
                       onChange={(e) => setFormData({ ...formData, heroImageUrl: e.target.value })}
-                      placeholder="https://..."
+                      placeholder="https://... or /api/blog/v1/media/..."
                       className="w-full p-2 border border-[#E3DBD4] font-mono text-[11px]"
                     />
                   </div>
@@ -991,6 +1093,49 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                       className="w-full p-2 border border-[#E3DBD4]"
                     />
                   </div>
+                </div>
+
+                {/* Attached Draft Media (3-5 Images) */}
+                <div className="bg-white border border-[#E3DBD4] p-6 space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-serif text-base text-[#051F34] flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-[#CB9274]" />
+                      <span>Attached Draft Media</span>
+                    </h3>
+                    <span className="font-mono text-[11px] px-2 py-0.5 bg-[#F6F4F2] border border-[#E3DBD4]">
+                      {formData.images.length} / 5
+                    </span>
+                  </div>
+                  {formData.images.length === 0 ? (
+                    <p className="text-[11px] text-[#69727D] font-light">
+                      No structured draft images attached yet (target: 3–5 images per draft via /editorial/submit).
+                    </p>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {formData.images.map((img, i) => (
+                        <div key={img.mediaId || i} className="p-2.5 bg-[#F6F4F2] border border-[#E3DBD4] space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-[10px] font-semibold text-[#051F34]">
+                              #{i + 1} {img.isHero ? '• HERO' : ''} ({img.position})
+                            </span>
+                            <span
+                              className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 font-semibold ${
+                                img.sourceType === 'ai_illustration'
+                                  ? 'bg-amber-100 text-amber-900'
+                                  : img.sourceType === 'catalogue_product'
+                                  ? 'bg-emerald-100 text-emerald-900'
+                                  : 'bg-stone-200 text-stone-800'
+                              }`}
+                            >
+                              {img.sourceType.replace('_', ' ')}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#051F34] font-medium truncate">{img.altText}</p>
+                          <p className="text-[10px] text-[#69727D] line-clamp-2">{img.caption}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-white border border-[#E3DBD4] p-6 space-y-4 text-xs">
@@ -1120,10 +1265,52 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                   <div>
                     <span className="font-semibold text-[#051F34]">Autonomous Auto-Publish Mode</span>
                     <p className="text-[#69727D] text-[11px]">
-                      Validated articles meeting all editorial standards publish automatically without manual owner intervention (Max 1 post/day).
+                      Validated articles meeting all editorial standards publish automatically without manual owner intervention (Max {settings.max_daily_new_posts || 10} new drafts/day in {settings.timezone || 'Asia/Kolkata'}).
                     </p>
                   </div>
                 </label>
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t border-[#E3DBD4] pt-6">
+              <label
+                htmlFor="maxDailyNewPostsInput"
+                className="block text-[11px] uppercase tracking-wider font-semibold text-[#051F34]"
+              >
+                Daily New-Draft Capacity ({settings.timezone || 'Asia/Kolkata'} Calendar Day)
+              </label>
+              <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-[#F6F4F2] border border-[#E3DBD4]">
+                <div className="space-y-1 max-w-md">
+                  <span className="font-semibold text-[#051F34]">
+                    Maximum New Draft Articles Per Day: {settings.max_daily_new_posts ?? 10}
+                  </span>
+                  <p className="text-[11px] text-[#69727D]">
+                    Enforced server-side across {settings.timezone || 'Asia/Kolkata'} calendar days. Idempotent retries, draft updates (PATCH), image uploads, and readback checks do not consume a daily slot.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="maxDailyNewPostsInput"
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={settings.max_daily_new_posts ?? 10}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        max_daily_new_posts: Math.max(1, Math.min(50, Number(e.target.value) || 10)),
+                      })
+                    }
+                    className="w-20 p-2 border border-[#E3DBD4] bg-white font-mono text-xs text-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateDailyQuota(Number(settings.max_daily_new_posts) || 10)}
+                    className="px-4 py-2 bg-[#051F34] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#CB9274]"
+                  >
+                    Save Quota
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1201,7 +1388,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
             <div className="bg-white border border-[#E3DBD4] p-6 space-y-4">
               <h2 className="font-serif text-lg text-[#051F34]">Generate Scoped Editorial Token</h2>
               <p className="text-xs text-[#69727D]">
-                Issue an expiring, high-entropy bearer token for the external assistant. By default, tokens are granted only read and draft-write scopes.
+                Issue an expiring, high-entropy bearer token for the external assistant. By default, tokens are granted only read and draft-write scopes (which includes private draft image uploads).
               </p>
 
               <form onSubmit={handleCreateToken} className="space-y-4 text-xs">
@@ -1267,7 +1454,21 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
                           )
                         }}
                       />
-                      <span>blog:draft:write (Submit & edit drafts)</span>
+                      <span>blog:draft:write (Submit drafts & upload draft media)</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newTokenScopes.includes('blog:image:upload')}
+                        onChange={(e) => {
+                          setNewTokenScopes(
+                            e.target.checked
+                              ? [...newTokenScopes, 'blog:image:upload']
+                              : newTokenScopes.filter((s) => s !== 'blog:image:upload')
+                          )
+                        }}
+                      />
+                      <span>blog:image:upload (Dedicated image upload scope)</span>
                     </label>
                   </div>
                 </div>

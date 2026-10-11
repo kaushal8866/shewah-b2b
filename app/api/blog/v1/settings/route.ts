@@ -47,7 +47,18 @@ export async function PATCH(req: NextRequest) {
     updates.is_automation_paused = body.isAutomationPaused
   }
 
-  if (typeof body.maxDailyNewPosts === 'number' && body.maxDailyNewPosts >= 1 && body.maxDailyNewPosts <= 10) {
+  if (body.maxDailyNewPosts !== undefined) {
+    if (
+      typeof body.maxDailyNewPosts !== 'number' ||
+      !Number.isInteger(body.maxDailyNewPosts) ||
+      body.maxDailyNewPosts < 1 ||
+      body.maxDailyNewPosts > 50
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid maxDailyNewPosts: must be an integer between 1 and 50.' },
+        { status: 400 }
+      )
+    }
     updates.max_daily_new_posts = body.maxDailyNewPosts
   }
 

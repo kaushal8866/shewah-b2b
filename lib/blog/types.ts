@@ -42,6 +42,58 @@ export interface HeroMedia {
   rightsNote?: string
 }
 
+export type BlogMediaSourceType =
+  | 'ai_illustration'
+  | 'catalogue_product'
+  | 'studio_photography'
+
+export type BlogMediaPlacement =
+  | 'hero_only'
+  | 'after_intro'
+  | 'after_section_1'
+  | 'after_section_2'
+  | 'after_section_3'
+  | 'after_section_4'
+  | 'before_conclusion'
+
+export const AI_ILLUSTRATION_DISCLAIMER =
+  'AI-generated illustration; not a Shewah product or a scale measurement.'
+
+export interface BlogCatalogueProductRef {
+  productId?: string
+  productCode: string
+  productName: string
+  productSlug: string
+  productUrl: string
+  productImageUrl: string
+}
+
+export interface BlogMediaAttachment {
+  mediaId: string
+  storageKey?: string | null
+  url: string
+  altText: string
+  caption: string
+  sourceType: BlogMediaSourceType
+  rightsNote: string
+  isHero: boolean
+  position: BlogMediaPlacement
+  order: number
+  mimeType?: string
+  sizeBytes?: number
+  width?: number
+  height?: number
+  catalogueProduct?: BlogCatalogueProductRef | null
+}
+
+export interface BlogStructuredBody {
+  version: 1
+  images: BlogMediaAttachment[]
+  imagesPending: boolean
+  recommendedImageCount: { min: number; max: number }
+}
+
+
 export interface BlogArticle {
   id: string
   slug: string

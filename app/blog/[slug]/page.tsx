@@ -17,6 +17,8 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { EditorialArticleBodyRenderer, EditorialMediaFigure } from '@/lib/blog/renderer'
+import type { BlogMediaAttachment } from '@/lib/blog/types'
 
 export const revalidate = 60
 
@@ -298,88 +300,52 @@ export default async function BlogPostPage({ params }: BlogPostProps) {
           </header>
 
           {/* Hero Media Canvas */}
-          {revision.hero_image_url && (
-            <figure className="max-w-5xl mx-auto mb-16 bg-white border border-[#E3DBD4] p-3 sm:p-4">
-              <div className="relative aspect-[16/9] overflow-hidden bg-[#F6F4F2]">
-                <img
-                  src={revision.hero_image_url}
-                  alt={revision.hero_image_alt || revision.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {(revision.hero_image_caption || revision.hero_image_rights) && (
-                <figcaption className="pt-3 px-1 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[11px] text-[#69727D] font-light">
-                  <span>{revision.hero_image_caption}</span>
-                  {revision.hero_image_rights && (
-                    <span className="text-[10px] uppercase tracking-wider font-mono text-stone-400">
-                      Provenance: {revision.hero_image_rights}
-                    </span>
+          {(() => {
+            const revImages: BlogMediaAttachment[] = Array.isArray(revision.body_structured?.images)
+              ? revision.body_structured.images
+              : []
+            const heroAttachment = revImages.find((img) => img.isHero)
+            if (heroAttachment) {
+              return (
+                <div className="max-w-5xl mx-auto mb-16">
+                  <EditorialMediaFigure attachment={heroAttachment} />
+                </div>
+              )
+            }
+            if (revision.hero_image_url) {
+              return (
+                <figure className="max-w-5xl mx-auto mb-16 bg-white border border-[#E3DBD4] p-3 sm:p-4">
+                  <div className="relative aspect-[16/9] overflow-hidden bg-[#F6F4F2]">
+                    <img
+                      src={revision.hero_image_url}
+                      alt={revision.hero_image_alt || revision.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {(revision.hero_image_caption || revision.hero_image_rights) && (
+                    <figcaption className="pt-3 px-1 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[11px] text-[#69727D] font-light">
+                      <span>{revision.hero_image_caption}</span>
+                      {revision.hero_image_rights && (
+                        <span className="text-[10px] uppercase tracking-wider font-mono text-stone-400">
+                          Provenance: {revision.hero_image_rights}
+                        </span>
+                      )}
+                    </figcaption>
                   )}
-                </figcaption>
-              )}
-            </figure>
-          )}
+                </figure>
+              )
+            }
+            return null
+          })()}
 
           {/* Article Body Content */}
           <div className="max-w-3xl mx-auto bg-white border border-[#E3DBD4] p-8 sm:p-14 lg:p-16 space-y-8 shadow-sm">
-            <div className="prose prose-stone max-w-none text-[#051F34] font-sans leading-relaxed text-base sm:text-lg">
-              {/* Render article markdown safely formatted */}
-              {((revision.body_markdown || '').split('\n\n')).map((block: string, idx: number) => {
-                const trimmed = block.trim()
-                if (!trimmed) return null
-
-                // Headings
-                if (trimmed.startsWith('### ')) {
-                  return (
-                    <h3 key={idx} className="font-serif text-xl sm:text-2xl text-[#051F34] font-normal pt-6 pb-2">
-                      {trimmed.replace('### ', '')}
-                    </h3>
-                  )
-                }
-                if (trimmed.startsWith('## ')) {
-                  return (
-                    <h2 key={idx} className="font-serif text-2xl sm:text-3xl text-[#051F34] font-normal pt-8 pb-3 border-b border-[#E3DBD4]/60">
-                      {trimmed.replace('## ', '')}
-                    </h2>
-                  )
-                }
-                if (trimmed.startsWith('# ')) {
-                  return (
-                    <h2 key={idx} className="font-serif text-2xl sm:text-3xl text-[#051F34] font-normal pt-8 pb-3">
-                      {trimmed.replace('# ', '')}
-                    </h2>
-                  )
-                }
-
-                // Blockquotes
-                if (trimmed.startsWith('> ')) {
-                  return (
-                    <blockquote key={idx} className="pl-6 border-l-2 border-[#CB9274] my-6 font-serif italic text-lg sm:text-xl text-[#051F34]/90">
-                      {trimmed.replace('> ', '')}
-                    </blockquote>
-                  )
-                }
-
-                // Bullet lists
-                if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-                  const items = trimmed.split('\n').filter(Boolean)
-                  return (
-                    <ul key={idx} className="space-y-2 my-4 pl-5 list-disc text-stone-700">
-                      {items.map((it: string, i: number) => (
-                        <li key={i}>{it.replace(/^[-*]\s+/, '')}</li>
-                      ))}
-                    </ul>
-                  )
-                }
-
-                // Standard paragraph
-                return (
-                  <p key={idx} className="text-[#051F34]/90 font-light leading-relaxed mb-4">
-                    {trimmed}
-                  </p>
-                )
-              })}
-            </div>
+            <EditorialArticleBodyRenderer
+              bodyMarkdown={revision.body_markdown || ''}
+              images={
+                Array.isArray(revision.body_structured?.images) ? revision.body_structured.images : []
+              }
+            />
 
             {/* Atelier Trust Note */}
             <div className="mt-12 pt-8 border-t border-[#E3DBD4] bg-[#F6F4F2] p-6 sm:p-8 flex items-start gap-4">

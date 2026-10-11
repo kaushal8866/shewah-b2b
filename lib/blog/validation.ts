@@ -1,9 +1,15 @@
-import { SourceReference, HeroMedia, validateSlug } from './types'
+import {
+  SourceReference,
+  HeroMedia,
+  BlogMediaAttachment,
+  validateSlug,
+} from './types'
 
 export interface ValidationResult {
   valid: boolean
   blockers: string[]
   warnings: string[]
+  imagesPending?: boolean
 }
 
 const DISALLOWED_HTML_TAGS = [
@@ -51,6 +57,8 @@ export interface ArticleDraftInput {
   slug?: string
   excerpt?: string | null
   bodyMarkdown: string
+  bodyStructured?: Record<string, any> | null
+  images?: BlogMediaAttachment[]
   category: string
   tags?: string[]
   authorDisplayName?: string
@@ -67,6 +75,7 @@ export interface ArticleDraftInput {
 /**
  * Validate draft creation or update payload.
  * Returns blockers that prevent saving a draft at all.
+ * Note: Editorial text drafts remain saveable when images are pending (marked imagesPending: true).
  */
 export function validateDraftPayload(
   payload: Partial<ArticleDraftInput>,
@@ -94,18 +103,35 @@ export function validateDraftPayload(
     blockers.push('Article body exceeds maximum allowed size (150,000 characters).')
   }
 
-  // Comprehensive safety and policy inspection (SSRF, prompt injection, hidden text, British spelling, trade separation, claims)
+  const attachedImages = Array.isArray(payload.images)
+    ? payload.images
+    : Array.isArray(payload.bodyStructured?.images)
+      ? (payload.bodyStructured?.images as BlogMediaAttachment[])
+      : undefined
+
+  // Derive hero fields from attached images if heroImageUrl is not explicitly set
+  const heroFromAttachments = Array.isArray(attachedImages)
+    ? attachedImages.find((img) => img?.isHero) || attachedImages[0]
+    : undefined
+
+  const effectiveHeroUrl = payload.heroImageUrl || heroFromAttachments?.url || null
+  const effectiveHeroAlt = payload.heroImageAlt || heroFromAttachments?.altText || null
+  const effectiveHeroCaption = payload.heroImageCaption || heroFromAttachments?.caption || null
+  const effectiveHeroRights = payload.heroImageRights || heroFromAttachments?.rightsNote || null
+
+  // Comprehensive safety and policy inspection (SSRF, prompt injection, hidden text, British spelling, trade separation, claims, media attachments)
   const safetyResult = inspectSubmissionSafety(
     {
       title: payload.title || '',
       slug: payload.slug,
       bodyMarkdown: payload.bodyMarkdown || '',
       category: payload.category || '',
-      heroImageUrl: payload.heroImageUrl,
-      heroImageAlt: payload.heroImageAlt,
-      heroImageCaption: payload.heroImageCaption,
-      heroImageRights: payload.heroImageRights,
+      heroImageUrl: effectiveHeroUrl,
+      heroImageAlt: effectiveHeroAlt,
+      heroImageCaption: effectiveHeroCaption,
+      heroImageRights: effectiveHeroRights,
       sourceReferences: payload.sourceReferences,
+      images: attachedImages,
     },
     allowedCategories
   )
@@ -118,12 +144,25 @@ export function validateDraftPayload(
     }
   }
 
+  const imageCount = Array.isArray(attachedImages)
+    ? attachedImages.length
+    : effectiveHeroUrl
+      ? 1
+      : 0
+  const imagesPending = imageCount < 3
+
+  if (!effectiveHeroUrl && (!attachedImages || attachedImages.length === 0)) {
+    warnings.push(
+      'Images Pending: Draft has no images attached yet. Text draft can be saved, but 3–5 images and a hero image are required before publication.'
+    )
+  }
+
   // Editorial warnings (non-blocking for drafts, but surfaced for quality)
-  if (payload.heroImageUrl && (!payload.heroImageAlt || payload.heroImageAlt.trim().length < 5)) {
+  if (effectiveHeroUrl && (!effectiveHeroAlt || effectiveHeroAlt.trim().length < 5)) {
     warnings.push('Hero image is missing descriptive alt text for accessibility and SEO.')
   }
 
-  if (payload.heroImageUrl && !payload.heroImageRights) {
+  if (effectiveHeroUrl && !effectiveHeroRights) {
     warnings.push('Hero image is missing an editorial rights/attribution note.')
   }
 
@@ -135,6 +174,7 @@ export function validateDraftPayload(
     valid: blockers.length === 0,
     blockers,
     warnings,
+    imagesPending,
   }
 }
 
@@ -149,18 +189,38 @@ export function validateForPublication(
   const blockers = [...base.blockers]
   const warnings = [...base.warnings]
 
+  const attachedImages = Array.isArray(article.images)
+    ? article.images
+    : Array.isArray(article.bodyStructured?.images)
+      ? (article.bodyStructured?.images as BlogMediaAttachment[])
+      : undefined
+
+  const heroFromAttachments = Array.isArray(attachedImages)
+    ? attachedImages.find((img) => img?.isHero) || attachedImages[0]
+    : undefined
+
+  const effectiveHeroUrl = article.heroImageUrl || heroFromAttachments?.url || null
+  const effectiveHeroAlt = article.heroImageAlt || heroFromAttachments?.altText || null
+  const effectiveHeroRights = article.heroImageRights || heroFromAttachments?.rightsNote || null
+
   if (!article.slug) {
     blockers.push('Publication requires an approved URL slug.')
   }
 
-  if (!article.heroImageUrl) {
+  if (!effectiveHeroUrl) {
     blockers.push('Publication requires an approved hero image.')
-  } else if (!article.heroImageAlt || article.heroImageAlt.trim().length < 5) {
+  } else if (!effectiveHeroAlt || effectiveHeroAlt.trim().length < 5) {
     blockers.push('Publication requires descriptive hero image alt text.')
   }
 
-  if (article.heroImageUrl && (!article.heroImageRights || article.heroImageRights.trim().length < 5)) {
+  if (effectiveHeroUrl && (!effectiveHeroRights || effectiveHeroRights.trim().length < 5)) {
     blockers.push('Publication requires an editorial rights/attribution note for the hero image.')
+  }
+
+  if (Array.isArray(attachedImages) && attachedImages.length > 0 && attachedImages.length < 3) {
+    blockers.push(
+      `Publication requires 3 to 5 images when structured media is used (currently ${attachedImages.length} attached; images pending).`
+    )
   }
 
   if (!article.authorDisplayName || article.authorDisplayName.trim().length < 3) {
@@ -187,5 +247,7 @@ export function validateForPublication(
     valid: blockers.length === 0,
     blockers,
     warnings,
+    imagesPending: base.imagesPending,
   }
 }
+

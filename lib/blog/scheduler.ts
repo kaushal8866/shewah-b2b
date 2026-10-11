@@ -29,6 +29,7 @@ export function getKolkataTimeDetails(date: Date = new Date()): {
   timeStr: string // "HH:MM" in 24hr
   dateStr: string // "YYYY-MM-DD"
   startOfDayUTC: string
+  endOfDayUTC: string
 } {
   const timeFormatter = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Kolkata',
@@ -47,9 +48,11 @@ export function getKolkataTimeDetails(date: Date = new Date()): {
   const dateStr = dateFormatter.format(date)
 
   // 00:00:00 IST is 18:30:00 UTC previous day
-  const startOfDayIST = new Date(`${dateStr}T00:00:00+05:30`).toISOString()
+  const startMs = new Date(`${dateStr}T00:00:00+05:30`).getTime()
+  const startOfDayIST = new Date(startMs).toISOString()
+  const endOfDayIST = new Date(startMs + 24 * 60 * 60 * 1000).toISOString()
 
-  return { timeStr, dateStr, startOfDayUTC: startOfDayIST }
+  return { timeStr, dateStr, startOfDayUTC: startOfDayIST, endOfDayUTC: endOfDayIST }
 }
 
 /**

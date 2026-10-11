@@ -5,7 +5,12 @@
  * unverified certification claim checks, and strict D2C / Trade topic isolation.
  */
 
-import { SourceReference, HeroMedia } from './types'
+import {
+  SourceReference,
+  HeroMedia,
+  BlogMediaAttachment,
+  AI_ILLUSTRATION_DISCLAIMER,
+} from './types'
 
 export interface SafetyViolation {
   field: string
@@ -25,6 +30,43 @@ export interface SafetyCheckResult {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BLOCKED_SCHEMES = new Set(['javascript:', 'data:', 'file:', 'ftp:', 'blob:', 'vbscript:', 'ws:', 'wss:'])
+
+const FIRST_PARTY_MEDIA_PATH_REGEX = /^\/api\/blog\/v1\/media\/[a-f0-9-]{8,64}$/i
+const FIRST_PARTY_PRODUCT_PATH_REGEX = /^\/jewellery\/[a-z0-9]+(?:-[a-z0-9]+)*$/i
+
+/**
+ * Checks whether a URL string contains leaked bearer credentials or expiring signed storage URL parameters.
+ */
+export function containsCredentialOrSignedUrlLeak(urlString: string): {
+  leaked: boolean
+  reason?: string
+} {
+  if (!urlString || typeof urlString !== 'string') return { leaked: false }
+  const lower = urlString.toLowerCase()
+  if (
+    lower.includes('shw_blog_') ||
+    lower.includes('bearer ') ||
+    lower.includes('authorization=') ||
+    lower.includes('access_token=')
+  ) {
+    return {
+      leaked: true,
+      reason: 'Security violation: bearer tokens or credentials must never appear in URLs.',
+    }
+  }
+  if (
+    lower.includes('x-amz-signature=') ||
+    lower.includes('x-goog-signature=') ||
+    (lower.includes('/storage/v1/object/sign/') && lower.includes('token=')) ||
+    /[?&](signature|sig|expires|se|sp|sv)=/i.test(urlString)
+  ) {
+    return {
+      leaked: true,
+      reason: 'Expiring signed URLs must not be saved as permanent hero or body media URLs. Persist stable media IDs/keys instead.',
+    }
+  }
+  return { leaked: false }
+}
 
 /**
  * Checks if an IP or hostname falls into private, loopback, or cloud-metadata ranges.
@@ -115,15 +157,30 @@ const BLOCKED_INTERNAL_PORTS = new Set([
 
 /**
  * Validates a URL for SSRF hazards, dangerous schemes, and intranet leakage.
+ * Supports safe first-party relative media paths (/api/blog/v1/media/<id>) and product paths (/jewellery/<slug>).
  */
 export function validateUrlSafety(urlString: string): { safe: boolean; reason?: string } {
   if (!urlString || typeof urlString !== 'string') {
     return { safe: false, reason: 'URL string is required.' }
   }
 
+  const trimmed = urlString.trim()
+  const leakCheck = containsCredentialOrSignedUrlLeak(trimmed)
+  if (leakCheck.leaked) {
+    return { safe: false, reason: leakCheck.reason }
+  }
+
+  // Allow safe first-party relative paths for stable media IDs and storefront product links
+  if (
+    FIRST_PARTY_MEDIA_PATH_REGEX.test(trimmed) ||
+    FIRST_PARTY_PRODUCT_PATH_REGEX.test(trimmed)
+  ) {
+    return { safe: true }
+  }
+
   let parsed: URL
   try {
-    parsed = new URL(urlString)
+    parsed = new URL(trimmed)
   } catch {
     return { safe: false, reason: 'Malformed URL format.' }
   }
@@ -190,6 +247,16 @@ export function validateHeroMediaSafety(params: MediaSafetyParams): SafetyViolat
     return violations
   }
 
+  const leakCheck = containsCredentialOrSignedUrlLeak(params.url)
+  if (leakCheck.leaked) {
+    violations.push({
+      field: 'heroImageUrl',
+      rule: 'credential_or_signed_url_leak',
+      message: leakCheck.reason || 'Hero image URL must not contain bearer tokens or expiring signed parameters.',
+      severity: 'blocker',
+    })
+  }
+
   const urlCheck = validateUrlSafety(params.url)
   if (!urlCheck.safe) {
     violations.push({
@@ -200,25 +267,27 @@ export function validateHeroMediaSafety(params: MediaSafetyParams): SafetyViolat
     })
   }
 
-  // File extension check from URL path if extension is present
-  try {
-    const pathname = new URL(params.url).pathname.toLowerCase()
-    const lastSlash = pathname.lastIndexOf('/')
-    const filename = lastSlash !== -1 ? pathname.slice(lastSlash + 1) : pathname
-    const dotIndex = filename.lastIndexOf('.')
-    if (dotIndex !== -1) {
-      const ext = filename.slice(dotIndex + 1)
-      if (!ALLOWED_IMAGE_FORMATS.has(ext)) {
-        violations.push({
-          field: 'heroImageUrl',
-          rule: 'image_format',
-          message: `Image format .${ext} is not allowed. Supported formats: ${Array.from(ALLOWED_IMAGE_FORMATS).join(', ')}.`,
-          severity: 'blocker',
-        })
+  // File extension check from URL path if extension is present (skip for stable /api/blog/v1/media/<id> URIs)
+  if (!FIRST_PARTY_MEDIA_PATH_REGEX.test(params.url.trim())) {
+    try {
+      const pathname = new URL(params.url).pathname.toLowerCase()
+      const lastSlash = pathname.lastIndexOf('/')
+      const filename = lastSlash !== -1 ? pathname.slice(lastSlash + 1) : pathname
+      const dotIndex = filename.lastIndexOf('.')
+      if (dotIndex !== -1) {
+        const ext = filename.slice(dotIndex + 1)
+        if (!ALLOWED_IMAGE_FORMATS.has(ext)) {
+          violations.push({
+            field: 'heroImageUrl',
+            rule: 'image_format',
+            message: `Image format .${ext} is not allowed. Supported formats: ${Array.from(ALLOWED_IMAGE_FORMATS).join(', ')}.`,
+            severity: 'blocker',
+          })
+        }
       }
+    } catch {
+      // Malformed URL caught by urlCheck
     }
-  } catch {
-    // Malformed URL caught by urlCheck
   }
 
   // MIME check if provided
@@ -567,6 +636,252 @@ export function checkEditorialClaimsAndSeparation(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 5b. MULTI-IMAGE ATTACHMENTS & AI vs CATALOGUE SEPARATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ALLOWED_MEDIA_SOURCE_TYPES = new Set([
+  'ai_illustration',
+  'catalogue_product',
+  'studio_photography',
+])
+
+const ALLOWED_MEDIA_PLACEMENTS = new Set([
+  'hero_only',
+  'after_intro',
+  'after_section_1',
+  'after_section_2',
+  'after_section_3',
+  'after_section_4',
+  'before_conclusion',
+])
+
+const UNVERIFIED_PRODUCT_CLAIM_PATTERNS = [
+  /\b(in\s+stock|ready\s+to\s+ship\s+now|buy\s+now|add\s+to\s+bag|limited\s+stock)\b/i,
+  /(₹|\$|€|£)\s*\d[\d,]*/,
+  /\b(100%\s+guaranteed\s+investment|resale\s+value)\b/i,
+]
+
+export function validateMediaAttachmentsSafety(
+  images: BlogMediaAttachment[],
+  sources: SourceReference[] = []
+): SafetyViolation[] {
+  const violations: SafetyViolation[] = []
+  if (!Array.isArray(images)) return violations
+
+  if (images.length > 5) {
+    violations.push({
+      field: 'images',
+      rule: 'max_image_count',
+      message: `A draft may attach at most 5 images (received ${images.length}). Recommended range is 3–5 images.`,
+      severity: 'blocker',
+    })
+  } else if (images.length > 0 && images.length < 3) {
+    violations.push({
+      field: 'images',
+      rule: 'images_pending_count',
+      message: `Images Pending: ${images.length} image(s) attached. Attach 3–5 images before submitting for publication review.`,
+      severity: 'warning',
+    })
+  }
+
+  let heroCount = 0
+
+  images.forEach((img, idx) => {
+    const prefix = `images[${idx}]`
+    if (!img || typeof img !== 'object') {
+      violations.push({
+        field: prefix,
+        rule: 'invalid_attachment',
+        message: `Image #${idx + 1} must be a valid attachment object.`,
+        severity: 'blocker',
+      })
+      return
+    }
+
+    if (img.isHero) heroCount++
+
+    // Validate URL / mediaId safety and ensure no token or expiring signed URL is persisted
+    const urlStr = (img.url || '').trim()
+    if (!urlStr) {
+      violations.push({
+        field: `${prefix}.url`,
+        rule: 'required',
+        message: `Image #${idx + 1} requires a stable media URL or uploaded mediaId.`,
+        severity: 'blocker',
+      })
+    } else {
+      const leak = containsCredentialOrSignedUrlLeak(urlStr)
+      if (leak.leaked) {
+        violations.push({
+          field: `${prefix}.url`,
+          rule: 'credential_or_signed_url_leak',
+          message: `Image #${idx + 1}: ${leak.reason}`,
+          severity: 'blocker',
+        })
+      }
+      const safety = validateUrlSafety(urlStr)
+      if (!safety.safe) {
+        violations.push({
+          field: `${prefix}.url`,
+          rule: 'ssrf_protection',
+          message: `Image #${idx + 1} URL is unsafe: ${safety.reason}`,
+          severity: 'blocker',
+        })
+      }
+    }
+
+    // Validate alt text
+    const alt = (img.altText || '').trim()
+    if (!alt || alt.length < 10) {
+      violations.push({
+        field: `${prefix}.altText`,
+        rule: 'alt_length',
+        message: `Image #${idx + 1} alt text must be at least 10 characters and describe the visual subject.`,
+        severity: 'blocker',
+      })
+    } else if (GENERIC_ALT_STRINGS.has(alt.toLowerCase())) {
+      violations.push({
+        field: `${prefix}.altText`,
+        rule: 'alt_descriptive',
+        message: `Image #${idx + 1} alt text "${alt}" is too generic.`,
+        severity: 'blocker',
+      })
+    }
+
+    // Validate sourceType
+    if (!img.sourceType || !ALLOWED_MEDIA_SOURCE_TYPES.has(img.sourceType)) {
+      violations.push({
+        field: `${prefix}.sourceType`,
+        rule: 'source_type',
+        message: `Image #${idx + 1} sourceType must be one of: ai_illustration, catalogue_product, studio_photography.`,
+        severity: 'blocker',
+      })
+    }
+
+    // Validate placement position
+    if (img.position && !ALLOWED_MEDIA_PLACEMENTS.has(img.position)) {
+      violations.push({
+        field: `${prefix}.position`,
+        rule: 'placement_position',
+        message: `Image #${idx + 1} has an invalid body placement position "${img.position}".`,
+        severity: 'blocker',
+      })
+    }
+
+    // Strict AI Illustration vs Catalogue Product Separation
+    if (img.sourceType === 'ai_illustration') {
+      if (img.catalogueProduct) {
+        violations.push({
+          field: `${prefix}.catalogueProduct`,
+          rule: 'ai_catalogue_separation',
+          message: `Image #${idx + 1} is an AI illustration and must NOT be linked or presented as a saleable Shewah catalogue product.`,
+          severity: 'blocker',
+        })
+      }
+
+      const caption = (img.caption || '').trim()
+      if (!caption || !caption.toLowerCase().includes('ai-generated illustration')) {
+        violations.push({
+          field: `${prefix}.caption`,
+          rule: 'ai_disclaimer_required',
+          message: `Image #${idx + 1} is an AI illustration and must carry a visible disclaimer caption such as "${AI_ILLUSTRATION_DISCLAIMER}"`,
+          severity: 'blocker',
+        })
+      }
+
+      const combinedAiMeta = `${img.altText || ''} ${img.caption || ''}`
+      for (const pattern of UNVERIFIED_PRODUCT_CLAIM_PATTERNS) {
+        if (pattern.test(combinedAiMeta)) {
+          violations.push({
+            field: `${prefix}.caption`,
+            rule: 'ai_unverified_product_claim',
+            message: `Image #${idx + 1} (AI illustration) must not contain commercial pricing, availability, or product-for-sale claims.`,
+            severity: 'blocker',
+          })
+          break
+        }
+      }
+    }
+
+    if (img.sourceType === 'catalogue_product') {
+      const cp = img.catalogueProduct
+      if (
+        !cp ||
+        !cp.productName?.trim() ||
+        !cp.productCode?.trim() ||
+        !cp.productUrl?.trim() ||
+        !cp.productImageUrl?.trim()
+      ) {
+        violations.push({
+          field: `${prefix}.catalogueProduct`,
+          rule: 'catalogue_product_metadata',
+          message: `Image #${idx + 1} is marked as a catalogue product and requires verified productName, productCode, productImageUrl, and exact productUrl.`,
+          severity: 'blocker',
+        })
+      } else {
+        const prodUrl = cp.productUrl.trim()
+        const isValidShewahProductUrl =
+          FIRST_PARTY_PRODUCT_PATH_REGEX.test(prodUrl) ||
+          /^https:\/\/(www\.)?shewah\.co\/jewellery\/[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(prodUrl)
+        if (!isValidShewahProductUrl) {
+          violations.push({
+            field: `${prefix}.catalogueProduct.productUrl`,
+            rule: 'catalogue_product_url',
+            message: `Image #${idx + 1} catalogue productUrl "${prodUrl}" must point to an exact Shewah product path (/jewellery/<slug> or https://shewah.co/jewellery/<slug>).`,
+            severity: 'blocker',
+          })
+        }
+
+        const prodImgSafety = validateUrlSafety(cp.productImageUrl.trim())
+        if (!prodImgSafety.safe) {
+          violations.push({
+            field: `${prefix}.catalogueProduct.productImageUrl`,
+            rule: 'ssrf_protection',
+            message: `Image #${idx + 1} catalogue productImageUrl is unsafe: ${prodImgSafety.reason}`,
+            severity: 'blocker',
+          })
+        }
+      }
+    }
+
+    // Check caption & altText for unverified certification/price/trade claims
+    const captionClaims = checkEditorialClaimsAndSeparation(
+      `${img.altText || ''} ${img.caption || ''}`,
+      sources
+    )
+    for (const cv of captionClaims) {
+      violations.push({
+        ...cv,
+        field: `${prefix}.caption`,
+      })
+    }
+
+    for (const pattern of UNVERIFIED_PRODUCT_CLAIM_PATTERNS) {
+      if (pattern.test(img.caption || '')) {
+        violations.push({
+          field: `${prefix}.caption`,
+          rule: 'unverified_commercial_claim',
+          message: `Image #${idx + 1} caption must not inject blanket pricing, stock availability, or promotional claims.`,
+          severity: 'blocker',
+        })
+        break
+      }
+    }
+  })
+
+  if (heroCount > 1) {
+    violations.push({
+      field: 'images',
+      rule: 'multiple_hero_images',
+      message: 'Only one image attachment may be designated as the hero image.',
+      severity: 'blocker',
+    })
+  }
+
+  return violations
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 6. COMPREHENSIVE SUBMISSION SAFETY INSPECTOR
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -581,6 +896,7 @@ export interface FullArticleSubmission {
   heroImageCaption?: string | null
   heroImageRights?: string | null
   sourceReferences?: SourceReference[]
+  images?: BlogMediaAttachment[]
 }
 
 export function inspectSubmissionSafety(
@@ -613,6 +929,15 @@ export function inspectSubmissionSafety(
     violations.push(...mediaViolations)
   }
 
+  // Multi-image attachments safety check
+  if (Array.isArray(submission.images) && submission.images.length > 0) {
+    const attachmentViolations = validateMediaAttachmentsSafety(
+      submission.images,
+      submission.sourceReferences || []
+    )
+    violations.push(...attachmentViolations)
+  }
+
   // URL safety check for source references
   if (submission.sourceReferences && Array.isArray(submission.sourceReferences)) {
     submission.sourceReferences.forEach((source, index) => {
@@ -632,6 +957,16 @@ export function inspectSubmissionSafety(
 
   // Markdown sanitization
   const sanitized = sanitizeMarkdownContent(submission.bodyMarkdown || '')
+
+  // Check bodyMarkdown for leaked bearer tokens
+  if ((submission.bodyMarkdown || '').toLowerCase().includes('shw_blog_')) {
+    violations.push({
+      field: 'bodyMarkdown',
+      rule: 'credential_leak',
+      message: 'Security violation: bearer tokens must never appear in article content or image URLs.',
+      severity: 'blocker',
+    })
+  }
 
   // Prompt injection & hidden text check
   const injectionViolations = detectPromptInjectionAndHiddenText(submission.bodyMarkdown || '')
@@ -669,3 +1004,4 @@ export function inspectSubmissionSafety(
     sanitizedBody: sanitized,
   }
 }
+

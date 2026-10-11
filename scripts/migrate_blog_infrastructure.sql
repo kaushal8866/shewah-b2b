@@ -150,7 +150,7 @@ create table if not exists blog_settings (
   -- Owner gate: starts strictly in 'draft_only' mode!
   publication_mode            text not null default 'draft_only', -- 'draft_only' | 'review_first' | 'auto_publish'
   is_automation_paused        boolean not null default false,
-  max_daily_new_posts         integer not null default 1,
+  max_daily_new_posts         integer not null default 10,
   allowed_categories          text[] not null default array['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds', 'care-guide', 'buying-guide', 'styling'],
   publish_window_start_time   text not null default '09:00', -- Asia/Kolkata 24h
   publish_window_end_time     text not null default '20:00', -- Asia/Kolkata 24h
@@ -166,7 +166,7 @@ insert into blog_settings (
   id, is_blog_enabled, publication_mode, is_automation_paused, max_daily_new_posts, allowed_categories, timezone
 )
 values (
-  'default', true, 'draft_only', false, 1, array['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds', 'care-guide', 'buying-guide', 'styling'], 'Asia/Kolkata'
+  'default', true, 'draft_only', false, 10, array['education', 'craftsmanship', 'style-guides', 'materials', 'diamonds', 'care-guide', 'buying-guide', 'styling'], 'Asia/Kolkata'
 )
 on conflict (id) do nothing;
 

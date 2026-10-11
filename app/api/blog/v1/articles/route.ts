@@ -65,6 +65,20 @@ export async function GET(req: NextRequest) {
   })
 }
 
+const FORBIDDEN_ARTICLE_PAYLOAD_KEYS = new Set([
+  'status',
+  'published_at',
+  'scheduled_at',
+  'live_revision_id',
+  'is_published',
+  'publish',
+  'schedule',
+  'permissions',
+  'role',
+  'scopes',
+  'token',
+])
+
 export async function POST(req: NextRequest) {
   const access = await validateBlogApiAccess(req, { requiredScope: 'blog:draft:write', maxBytes: 512_000 })
   if (!access.authorized || !access.auth) {
@@ -76,7 +90,7 @@ export async function POST(req: NextRequest) {
   if (!idempotencyKey) {
     return NextResponse.json(
       { error: 'Bad Request: "Idempotency-Key" header is required for article creation.' },
-      { status: 400 }
+      { status: 400, headers: { 'Cache-Control': 'no-store' } }
     )
   }
 
@@ -84,21 +98,40 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: 'Bad Request: Invalid JSON body' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Bad Request: Invalid JSON body' },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } }
+    )
   }
 
-  // Idempotency check
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return NextResponse.json(
+      { error: 'Bad Request: Payload must be a JSON object.' },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } }
+    )
+  }
+
+  for (const key of Object.keys(body)) {
+    if (FORBIDDEN_ARTICLE_PAYLOAD_KEYS.has(key)) {
+      return NextResponse.json(
+        { error: `Forbidden field "${key}": draft creation cannot set publication status, scheduling, or permissions.` },
+        { status: 422, headers: { 'Cache-Control': 'no-store' } }
+      )
+    }
+  }
+
+  // Idempotency check (runs before createDraftArticle so retries with same Idempotency-Key never consume a second daily slot)
   const idemp = await checkIdempotency(idempotencyKey, auth.actorId, 'create_article', body)
   if (idemp.isDuplicate) {
     if (idemp.isConflict) {
       return NextResponse.json(
         { error: 'Conflict: Idempotency-Key has already been used with different request parameters.' },
-        { status: 409 }
+        { status: 409, headers: { 'Cache-Control': 'no-store' } }
       )
     }
     return NextResponse.json(idemp.cachedResponse?.body, {
       status: idemp.cachedResponse?.status || 200,
-      headers: { 'X-Idempotent-Replay': 'true' },
+      headers: { 'X-Idempotent-Replay': 'true', 'Cache-Control': 'no-store' },
     })
   }
 
@@ -109,6 +142,8 @@ export async function POST(req: NextRequest) {
     slug: body.slug,
     excerpt: body.excerpt,
     bodyMarkdown: body.bodyMarkdown,
+    bodyStructured: body.bodyStructured,
+    images: Array.isArray(body.images) ? body.images : undefined,
     category: body.category,
     tags: body.tags,
     authorDisplayName: body.authorDisplayName,
@@ -129,28 +164,48 @@ export async function POST(req: NextRequest) {
 
   if (!result.success || !result.data) {
     const status =
-      result.error?.code === 'CONFLICT'
-        ? 409
-        : result.error?.code === 'VALIDATION_FAILED'
-        ? 422
-        : result.error?.code === 'FORBIDDEN'
-        ? 403
-        : 500
+      result.error?.code === 'DAILY_QUOTA_EXCEEDED'
+        ? 429
+        : result.error?.code === 'CONFLICT'
+          ? 409
+          : result.error?.code === 'VALIDATION_FAILED'
+            ? 422
+            : result.error?.code === 'FORBIDDEN'
+              ? 403
+              : 500
 
-    return NextResponse.json({ error: result.error?.message, details: result.error?.details }, { status })
+    return NextResponse.json(
+      {
+        error: result.error?.message,
+        code: result.error?.code,
+        details: result.error?.details,
+      },
+      { status, headers: { 'Cache-Control': 'no-store' } }
+    )
   }
+
+  const structured = result.data.revision.body_structured as Record<string, any> | null
+  const attachedImages = Array.isArray(structured?.images) ? structured.images : []
 
   const responsePayload = {
     success: true,
     articleId: result.data.article.id,
     slug: result.data.article.slug,
+    externalContentId: result.data.article.external_content_id || null,
     revisionNumber: result.data.revision.revision_number,
     status: result.data.article.status,
+    liveRevisionId: result.data.article.live_revision_id ?? null,
     lockVersion: result.data.article.lock_version,
+    imagesCount: attachedImages.length,
+    imagesPending: Boolean(structured?.imagesPending ?? attachedImages.length < 3),
     requestId,
   }
 
   await saveIdempotencyRecord(idempotencyKey, auth.actorId, 'create_article', body, 201, responsePayload)
 
-  return NextResponse.json(responsePayload, { status: 201 })
+  return NextResponse.json(responsePayload, {
+    status: 201,
+    headers: { 'Cache-Control': 'no-store' },
+  })
 }
+

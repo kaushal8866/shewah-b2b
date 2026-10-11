@@ -1,28 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { validateBlogApiAccess } from '@/lib/blog/auth'
-import { validateUrlSafety, validateHeroMediaSafety } from '@/lib/blog/safety'
+import {
+  validateUrlSafety,
+  validateHeroMediaSafety,
+  containsCredentialOrSignedUrlLeak,
+} from '@/lib/blog/safety'
 import { recordBlogAudit } from '@/lib/blog/audit'
+import {
+  MAX_BLOG_IMAGE_BYTES,
+  uploadPrivateDraftMedia,
+} from '@/lib/blog/media'
+import { AI_ILLUSTRATION_DISCLAIMER, BlogMediaSourceType, BlogMediaPlacement } from '@/lib/blog/types'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5 MB
-const ALLOWED_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif'])
-const ALLOWED_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'avif'])
-
 export async function POST(req: NextRequest) {
+  // Validate token authenticity, expiry, revocation, rate limit, and global automation pause
   const access = await validateBlogApiAccess(req, {
-    requiredScope: 'blog:media:upload',
-    maxBytes: MAX_IMAGE_BYTES,
+    maxBytes: MAX_BLOG_IMAGE_BYTES + 256_000, // allow multipart headers around 5 MB binary
   })
   if (!access.authorized || !access.auth) {
     return access.response!
   }
   const auth = access.auth
 
+  // Enforce scope: requires blog:draft:write (which covers draft media in the documented draft model)
+  // or explicit blog:image:upload, or owner session.
+  const canUploadDraftMedia =
+    auth.isOwner ||
+    auth.scopes.includes('blog:draft:write') ||
+    auth.scopes.includes('blog:image:upload')
+
+  if (!canUploadDraftMedia) {
+    return NextResponse.json(
+      {
+        error: 'Forbidden: Missing required scope "blog:draft:write" or "blog:image:upload".',
+        currentScopes: auth.scopes,
+      },
+      { status: 403, headers: { 'Cache-Control': 'no-store' } }
+    )
+  }
+
   const contentType = req.headers.get('content-type') || ''
   const requestId = crypto.randomUUID()
+  const idempotencyKey = req.headers.get('idempotency-key')
 
   // ── Mode A: JSON Asset Registration & Pre-Flight Validation ────────────────
   if (contentType.includes('application/json')) {
@@ -30,13 +53,27 @@ export async function POST(req: NextRequest) {
     try {
       body = await req.json()
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON payload.' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Invalid JSON payload.' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      )
     }
 
-    const { url, altText, rightsNote, caption, width, height } = body
+    const { url, altText, rightsNote, caption, sourceType, width, height } = body
 
-    if (!url) {
-      return NextResponse.json({ error: 'Asset "url" is required.' }, { status: 400 })
+    if (!url || typeof url !== 'string') {
+      return NextResponse.json(
+        { error: 'Asset "url" is required.' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      )
+    }
+
+    const leakCheck = containsCredentialOrSignedUrlLeak(url)
+    if (leakCheck.leaked) {
+      return NextResponse.json(
+        { error: leakCheck.reason },
+        { status: 422, headers: { 'Cache-Control': 'no-store' } }
+      )
     }
 
     // SSRF & Protocol Safety Check
@@ -53,7 +90,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json(
         { error: 'Unsafe image URL destination', details: urlCheck.reason },
-        { status: 422 }
+        { status: 422, headers: { 'Cache-Control': 'no-store' } }
       )
     }
 
@@ -74,9 +111,11 @@ export async function POST(req: NextRequest) {
           error: 'Media validation failed',
           blockers: blockers.map((b) => b.message),
         },
-        { status: 422 }
+        { status: 422, headers: { 'Cache-Control': 'no-store' } }
       )
     }
+
+    const mediaId = `ext-${crypto.createHash('sha256').update(url).digest('hex').slice(0, 24)}`
 
     await recordBlogAudit({
       actorType: auth.actorType,
@@ -84,146 +123,131 @@ export async function POST(req: NextRequest) {
       operation: 'upload_media',
       outcome: 'success',
       requestId,
-      diffSummary: { action: 'registered_asset_url', url, altText },
+      diffSummary: { action: 'registered_asset_url', mediaId, url, altText, sourceType },
     })
 
-    return NextResponse.json({
-      success: true,
-      url,
-      altText: altText || null,
-      rightsNote: rightsNote || null,
-      caption: caption || null,
-      requestId,
-    })
+    return NextResponse.json(
+      {
+        success: true,
+        mediaId,
+        url,
+        stableUrl: url,
+        altText: altText || null,
+        rightsNote: rightsNote || null,
+        caption: caption || null,
+        sourceType: sourceType || 'studio_photography',
+        requestId,
+      },
+      { headers: { 'Cache-Control': 'no-store' } }
+    )
   }
 
-  // ── Mode B: Multipart Form Upload ──────────────────────────────────────────
+  // ── Mode B: Multipart First-Party Private Draft Media Upload ───────────────
   if (contentType.includes('multipart/form-data')) {
     let formData: FormData
     try {
       formData = await req.formData()
     } catch {
-      return NextResponse.json({ error: 'Invalid form data' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Invalid multipart form data.' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      )
     }
 
     const file = formData.get('file')
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: 'No image file provided.' }, { status: 400 })
-    }
-
-    const altText = (formData.get('alt_text') as string | null) || null
-    const rightsNote = (formData.get('rights_note') as string | null) || null
-    const caption = (formData.get('caption') as string | null) || null
-
-    // Check size limit
-    if (file.size > MAX_IMAGE_BYTES) {
+    if (!file || typeof (file as any).arrayBuffer !== 'function') {
       return NextResponse.json(
-        { error: `File size exceeds 5 MB limit (received ${(file.size / (1024 * 1024)).toFixed(1)} MB).` },
-        { status: 413 }
+        { error: 'No image file provided in "file" field.' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
       )
     }
 
-    // Check MIME type
-    if (!ALLOWED_MIMES.has(file.type.toLowerCase())) {
+    const fileObj = file as File
+    if (fileObj.size > MAX_BLOG_IMAGE_BYTES) {
       return NextResponse.json(
-        { error: `File type "${file.type}" is not an allowed image format (JPEG, PNG, WebP, AVIF).` },
-        { status: 415 }
+        {
+          error: `File size exceeds 5 MB limit (received ${(fileObj.size / (1024 * 1024)).toFixed(2)} MB).`,
+        },
+        { status: 413, headers: { 'Cache-Control': 'no-store' } }
       )
     }
 
-    // Check file extension
-    const ext = (file.name.split('.').pop() || '').toLowerCase()
-    if (!ALLOWED_EXTS.has(ext)) {
-      return NextResponse.json(
-        { error: `File extension .${ext} is not allowed.` },
-        { status: 415 }
-      )
-    }
+    const altText = ((formData.get('alt_text') || formData.get('altText')) as string | null)?.trim() || ''
+    const rawCaption = ((formData.get('caption') as string | null) || '').trim()
+    const rightsNote = ((formData.get('rights_note') || formData.get('rightsNote')) as string | null)?.trim() || ''
+    const rawSourceType = ((formData.get('source_type') || formData.get('sourceType')) as string | null)?.trim() || 'ai_illustration'
+    const sourceType: BlogMediaSourceType =
+      rawSourceType === 'catalogue_product' || rawSourceType === 'studio_photography'
+        ? rawSourceType
+        : 'ai_illustration'
 
-    // Cloudinary upload with isolated folder 'shewah_blog' and unique asset ID
-    const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-    const UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET || process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+    const rawPosition = ((formData.get('position') as string | null) || 'after_section_1').trim() as BlogMediaPlacement
+    const isHero = formData.get('is_hero') === 'true' || formData.get('isHero') === 'true'
+    const articleId = ((formData.get('article_id') || formData.get('articleId')) as string | null)?.trim() || null
 
-    if (!CLOUD_NAME || !UPLOAD_PRESET) {
-      return NextResponse.json(
-        { error: 'Media storage is not configured on this environment.' },
-        { status: 500 }
-      )
-    }
+    const caption =
+      sourceType === 'ai_illustration' && !rawCaption.toLowerCase().includes('ai-generated illustration')
+        ? rawCaption
+          ? `${rawCaption} — ${AI_ILLUSTRATION_DISCLAIMER}`
+          : AI_ILLUSTRATION_DISCLAIMER
+        : rawCaption
 
-    const isolatedPublicId = `shewah_blog/blog_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`
+    const arrayBuffer = await fileObj.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
 
-    const uploadData = new FormData()
-    uploadData.append('file', file)
-    uploadData.append('upload_preset', UPLOAD_PRESET)
-    uploadData.append('public_id', isolatedPublicId)
-    uploadData.append('folder', 'shewah_blog')
-    // Disallow overwriting existing assets
-    uploadData.append('overwrite', 'false')
-
-    let uploadRes: Response
-    try {
-      uploadRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-        { method: 'POST', body: uploadData }
-      )
-    } catch (e: any) {
-      await recordBlogAudit({
-        actorType: auth.actorType,
-        actorId: auth.actorId,
-        operation: 'upload_media',
-        outcome: 'failure',
-        requestId,
-        errorMessage: `Storage network error: ${e?.message || e}`,
-      })
-      return NextResponse.json({ error: 'Could not contact media storage server.' }, { status: 502 })
-    }
-
-    if (!uploadRes.ok) {
-      const errJson = await uploadRes.json().catch(() => ({}))
-      const msg = (errJson as any)?.error?.message || `Upload failed with status ${uploadRes.status}`
-      await recordBlogAudit({
-        actorType: auth.actorType,
-        actorId: auth.actorId,
-        operation: 'upload_media',
-        outcome: 'failure',
-        requestId,
-        errorMessage: msg,
-      })
-      return NextResponse.json({ error: msg }, { status: 502 })
-    }
-
-    const uploaded = await uploadRes.json()
-    const secureUrl = uploaded.secure_url
-
-    await recordBlogAudit({
+    const uploadResult = await uploadPrivateDraftMedia({
+      buffer,
+      declaredMime: fileObj.type || '',
+      originalFilename: fileObj.name || '',
       actorType: auth.actorType,
       actorId: auth.actorId,
-      operation: 'upload_media',
-      outcome: 'success',
-      requestId,
-      diffSummary: {
-        publicId: uploaded.public_id,
-        bytes: uploaded.bytes,
-        format: uploaded.format,
-        width: uploaded.width,
-        height: uploaded.height,
-      },
+      articleId,
+      idempotencyKey,
     })
 
-    return NextResponse.json({
-      success: true,
-      url: secureUrl,
-      publicId: uploaded.public_id,
-      format: uploaded.format,
-      width: uploaded.width,
-      height: uploaded.height,
-      altText: altText || null,
-      rightsNote: rightsNote || null,
-      caption: caption || null,
-      requestId,
-    }, { status: 201 })
+    if (!uploadResult.success || !uploadResult.media) {
+      return NextResponse.json(
+        { error: uploadResult.error || 'Media upload validation failed.' },
+        { status: uploadResult.status || 400, headers: { 'Cache-Control': 'no-store' } }
+      )
+    }
+
+    const m = uploadResult.media
+    return NextResponse.json(
+      {
+        success: true,
+        mediaId: m.mediaId,
+        storageKey: m.storageKey,
+        url: m.stableUrl,
+        stableUrl: m.stableUrl,
+        mimeType: m.mimeType,
+        sizeBytes: m.sizeBytes,
+        width: m.width || null,
+        height: m.height || null,
+        sha256: m.sha256,
+        reusedExisting: Boolean(m.reusedExisting),
+        altText: altText || null,
+        caption: caption || null,
+        rightsNote:
+          rightsNote ||
+          (sourceType === 'ai_illustration'
+            ? 'SHEWAH Editorial Concept Illustration (Non-Catalogue)'
+            : '© SHEWAH Atelier'),
+        sourceType,
+        position: rawPosition,
+        isHero,
+        isPrivateDraftMedia: true,
+        requestId,
+      },
+      {
+        status: m.reusedExisting ? 200 : 201,
+        headers: { 'Cache-Control': 'no-store' },
+      }
+    )
   }
 
-  return NextResponse.json({ error: 'Unsupported Content-Type.' }, { status: 415 })
+  return NextResponse.json(
+    { error: 'Unsupported Content-Type. Use multipart/form-data or application/json.' },
+    { status: 415, headers: { 'Cache-Control': 'no-store' } }
+  )
 }

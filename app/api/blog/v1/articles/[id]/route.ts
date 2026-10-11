@@ -43,12 +43,15 @@ export async function GET(req: NextRequest, { params }: Params) {
       .order('revision_number', { ascending: false }),
   ])
 
-  return NextResponse.json({
-    article,
-    currentRevision: currentRevRes.data,
-    liveRevision: liveRevRes.data,
-    revisionsHistory: revisionsList.data || [],
-  })
+  return NextResponse.json(
+    {
+      article,
+      currentRevision: currentRevRes.data,
+      liveRevision: liveRevRes.data,
+      revisionsHistory: revisionsList.data || [],
+    },
+    { headers: { 'Cache-Control': 'no-store' } }
+  )
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -89,7 +92,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
       return NextResponse.json(idemp.cachedResponse?.body, {
         status: idemp.cachedResponse?.status || 200,
-        headers: { 'X-Idempotent-Replay': 'true' },
+        headers: { 'X-Idempotent-Replay': 'true', 'Cache-Control': 'no-store' },
       })
     }
   }
@@ -103,6 +106,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     slug: body.slug,
     excerpt: body.excerpt,
     bodyMarkdown: body.bodyMarkdown,
+    bodyStructured: body.bodyStructured,
+    images: Array.isArray(body.images) ? body.images : undefined,
     category: body.category,
     tags: body.tags,
     authorDisplayName: body.authorDisplayName,
@@ -134,6 +139,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: result.error?.message, details: result.error?.details }, { status })
   }
 
+  const structured = result.data.revision.body_structured as Record<string, any> | null
+  const attachedImages = Array.isArray(structured?.images) ? structured.images : []
+
   const responsePayload = {
     success: true,
     articleId: result.data.article.id,
@@ -141,6 +149,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     revisionNumber: result.data.revision.revision_number,
     lockVersion: result.data.article.lock_version,
     status: result.data.article.status,
+    liveRevisionId: result.data.article.live_revision_id ?? null,
+    imagesCount: attachedImages.length,
+    imagesPending: Boolean(structured?.imagesPending ?? attachedImages.length < 3),
     requestId,
   }
 
@@ -148,5 +159,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     await saveIdempotencyRecord(idempotencyKey, auth.actorId, `update_article_${params.id}`, body, 200, responsePayload)
   }
 
-  return NextResponse.json(responsePayload, { status: 200 })
+  return NextResponse.json(responsePayload, { status: 200, headers: { 'Cache-Control': 'no-store' } })
 }
+
