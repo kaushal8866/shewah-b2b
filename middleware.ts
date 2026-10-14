@@ -210,7 +210,7 @@ export default withAuth(
     return NextResponse.next()
   },
   {
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET || 'shewah-nextauth-fallback-secret',
     pages: {
       signIn: '/login',
     },
