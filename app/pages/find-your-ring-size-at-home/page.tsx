@@ -1,5 +1,5 @@
-import RingSizeGuidePage from '@/app/ring-size-guide/page'
+import { permanentRedirect } from 'next/navigation'
 
 export default function FindYourRingSizeAtHomePage() {
-  return <RingSizeGuidePage />
+  permanentRedirect('/ring-size-guide')
 }

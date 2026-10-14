@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getBlogSettings } from '@/lib/blog/storage'
+import { isInternalTestBlogArtifact } from '@/lib/blog/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +38,7 @@ export async function GET() {
       author_display_name,
       hero_image_url,
       hero_image_rights,
+      live_revision_id,
       published_at,
       updated_at
     `)
@@ -45,11 +47,17 @@ export async function GET() {
     .order('published_at', { ascending: false })
     .limit(50)
 
-  const latestUpdated = articles && articles.length > 0 && articles[0].updated_at
-    ? new Date(articles[0].updated_at).toISOString()
+  const validArticles = (articles || []).filter(
+    (art: any) =>
+      (!('live_revision_id' in art) || Boolean(art.live_revision_id)) &&
+      !isInternalTestBlogArtifact(art)
+  )
+
+  const latestUpdated = validArticles.length > 0 && validArticles[0].updated_at
+    ? new Date(validArticles[0].updated_at).toISOString()
     : now
 
-  const entries = (articles || []).map((art) => {
+  const entries = validArticles.map((art) => {
     const articleUrl = `${baseUrl}/blog/${art.slug}`
     const publishedAt = art.published_at ? new Date(art.published_at).toISOString() : now
     const updatedAt = art.updated_at ? new Date(art.updated_at).toISOString() : publishedAt

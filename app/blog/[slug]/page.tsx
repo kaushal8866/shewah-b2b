@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { cache } from 'react'
 import { Metadata } from 'next'
 import { notFound, redirect, RedirectType } from 'next/navigation'
 import Link from 'next/link'
@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { EditorialArticleBodyRenderer, EditorialMediaFigure } from '@/lib/blog/renderer'
-import type { BlogMediaAttachment } from '@/lib/blog/types'
+import { isInternalTestBlogArtifact, type BlogMediaAttachment } from '@/lib/blog/types'
 
 export const revalidate = 60
 
@@ -30,55 +30,55 @@ interface BlogPostProps {
 
 /**
  * Helper to fetch public article + live revision.
+ * Wrapped in React.cache() so generateMetadata and BlogPostPage share one execution per request.
  * Enforces 301 redirect if old_slug exists.
- * Returns null if article is draft, scheduled, archived, or nonexistent.
+ * Returns null if article is draft, scheduled, archived, internal test fixture, or nonexistent.
  */
-async function fetchPublicArticle(slug: string) {
-  const settings = await getBlogSettings()
-  if (settings.is_blog_enabled === false) {
-    return null
-  }
-
+const fetchPublicArticle = cache(async function fetchPublicArticle(slug: string) {
   const cleanSlug = slug.toLowerCase().trim()
   const now = new Date().toISOString()
 
-  // 1. Check permanent 301 redirect map
-  const { data: redirectRow } = await supabaseAdmin
-    .from('blog_slug_redirects')
-    .select('new_slug')
-    .eq('old_slug', cleanSlug)
-    .maybeSingle()
+  const [settings, { data: redirectRow }, { data: article }] = await Promise.all([
+    getBlogSettings(),
+    supabaseAdmin
+      .from('blog_slug_redirects')
+      .select('new_slug')
+      .eq('old_slug', cleanSlug)
+      .maybeSingle(),
+    supabaseAdmin
+      .from('blog_articles')
+      .select('*')
+      .eq('slug', cleanSlug)
+      .eq('status', 'published')
+      .lte('published_at', now)
+      .maybeSingle(),
+  ])
+
+  if (settings.is_blog_enabled === false) {
+    return null
+  }
 
   if (redirectRow?.new_slug) {
     redirect(`/blog/${redirectRow.new_slug}`, RedirectType.replace)
   }
 
-  // 2. Fetch published article
-  const { data: article } = await supabaseAdmin
-    .from('blog_articles')
-    .select('*')
-    .eq('slug', cleanSlug)
-    .eq('status', 'published')
-    .lte('published_at', now)
-    .maybeSingle()
-
-  if (!article || !article.live_revision_id) {
+  if (!article || !article.live_revision_id || isInternalTestBlogArtifact(article)) {
     return null
   }
 
-  // 3. Fetch exact live revision snapshot
+  // Fetch exact live revision snapshot
   const { data: revision } = await supabaseAdmin
     .from('blog_revisions')
     .select('*')
     .eq('id', article.live_revision_id)
     .maybeSingle()
 
-  if (!revision) {
+  if (!revision || isInternalTestBlogArtifact(revision)) {
     return null
   }
 
   return { article, revision }
-}
+})
 
 export async function generateMetadata({ params }: BlogPostProps): Promise<Metadata> {
   const data = await fetchPublicArticle(params.slug)
@@ -145,15 +145,20 @@ export default async function BlogPostPage({ params }: BlogPostProps) {
   const now = new Date().toISOString()
 
   // Query related published articles in the same category
-  const { data: relatedArticles } = await supabaseAdmin
+  const { data: rawRelatedArticles } = await supabaseAdmin
     .from('blog_articles')
-    .select('id, slug, title, hero_image_url, hero_image_alt, reading_time_minutes, published_at')
+    .select('id, slug, title, hero_image_url, hero_image_alt, reading_time_minutes, published_at, live_revision_id')
     .eq('category', article.category)
     .eq('status', 'published')
+    .not('live_revision_id', 'is', null)
     .lte('published_at', now)
     .neq('id', article.id)
     .order('published_at', { ascending: false })
-    .limit(3)
+    .limit(5)
+
+  const relatedArticles = (rawRelatedArticles || [])
+    .filter((rel) => !isInternalTestBlogArtifact(rel))
+    .slice(0, 3)
 
   const canonicalUrl =
     article.canonical_url_policy === 'custom' && article.canonical_url_custom
@@ -320,6 +325,8 @@ export default async function BlogPostPage({ params }: BlogPostProps) {
                       src={revision.hero_image_url}
                       alt={revision.hero_image_alt || revision.title}
                       className="w-full h-full object-cover"
+                      loading="eager"
+                      fetchPriority="high"
                     />
                   </div>
                   {(revision.hero_image_caption || revision.hero_image_rights) && (
@@ -377,29 +384,36 @@ export default async function BlogPostPage({ params }: BlogPostProps) {
                   Research & Gemological References
                 </h3>
                 <ol className="space-y-2.5 text-xs text-[#69727D]">
-                  {revision.source_references.map((src: any, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="font-mono text-[#CB9274] font-medium">[{index + 1}]</span>
-                      <div className="flex-1">
-                        <span className="text-[#051F34] font-medium">{src.title}</span> —{' '}
-                        <span>{src.sourceName}</span>
-                        {src.checkedAt && (
-                          <span className="font-mono text-[10px] text-stone-400"> (Verified: {src.checkedAt})</span>
-                        )}
-                        {src.url && (
-                          <a
-                            href={src.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 ml-2 text-[#CB9274] hover:underline"
-                          >
-                            <span>Verify Source</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
-                      </div>
-                    </li>
-                  ))}
+                  {revision.source_references.map((src: any, index: number) => {
+                    const alreadyLinkedInBody =
+                      typeof src.url === 'string' &&
+                      src.url.length > 0 &&
+                      typeof revision.body_markdown === 'string' &&
+                      revision.body_markdown.includes(src.url)
+                    return (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="font-mono text-[#CB9274] font-medium">[{index + 1}]</span>
+                        <div className="flex-1">
+                          <span className="text-[#051F34] font-medium">{src.title}</span> —{' '}
+                          <span>{src.sourceName}</span>
+                          {src.checkedAt && (
+                            <span className="font-mono text-[10px] text-stone-400"> (Verified: {src.checkedAt})</span>
+                          )}
+                          {src.url && !alreadyLinkedInBody && (
+                            <a
+                              href={src.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 ml-2 text-[#CB9274] hover:underline"
+                            >
+                              <span>Verify Source</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      </li>
+                    )
+                  })}
                 </ol>
               </section>
             )}

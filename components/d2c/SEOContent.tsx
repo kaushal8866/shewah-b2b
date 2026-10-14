@@ -13,22 +13,22 @@ export default function SEOContent() {
     '@graph': [
       {
         '@type': 'Organization',
-        '@id': 'https://shewah.com/#organization',
+        '@id': 'https://shewah.co/#organization',
         name: 'SHEWAH High Jewellery',
-        url: 'https://shewah.com',
+        url: 'https://shewah.co',
         logo: {
           '@type': 'ImageObject',
-          url: 'https://shewah.com/logo.png',
+          url: 'https://shewah.co/logo.png',
           caption: 'SHEWAH High Jewellery',
         },
         sameAs: [
-          'https://instagram.com/shewahjewellery',
-          'https://wa.me/919909908866',
+          'https://www.instagram.com/shewahjewellery',
+          'https://wa.me/919662266360',
         ],
         contactPoint: [
           {
             '@type': 'ContactPoint',
-            telephone: '+91-9909908866',
+            telephone: '+91-9662266360',
             contactType: 'customer service',
             areaServed: ['IN', 'US', 'GB', 'AE', 'EU', 'SG', 'CA', 'AU'],
             availableLanguage: ['en', 'hi', 'gu'],
@@ -37,15 +37,15 @@ export default function SEOContent() {
       },
       {
         '@type': 'WebSite',
-        '@id': 'https://shewah.com/#website',
-        url: 'https://shewah.com',
+        '@id': 'https://shewah.co/#website',
+        url: 'https://shewah.co',
         name: 'SHEWAH High Jewellery',
         publisher: {
-          '@id': 'https://shewah.com/#organization',
+          '@id': 'https://shewah.co/#organization',
         },
         potentialAction: {
           '@type': 'SearchAction',
-          target: 'https://shewah.com/jewellery?q={search_term_string}',
+          target: 'https://shewah.co/jewellery?q={search_term_string}',
           'query-input': 'required name=search_term_string',
         },
       },

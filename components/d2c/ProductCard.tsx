@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Heart, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react'
 import { useWishlist } from '@/lib/wishlistStore'
 import { trackEvent } from '@/lib/analytics'
+import { optimizeCloudinaryUrl } from '@/lib/imageUrl'
 
 export interface ProductCardProps {
   id: string
@@ -78,8 +79,8 @@ export default function ProductCard({
   }
 
   const fallbackPhoto = 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80'
-  const displayPrimary = primaryPhotoUrl || fallbackPhoto
-  const displaySecondary = secondaryPhotoUrl || displayPrimary
+  const displayPrimary = optimizeCloudinaryUrl(primaryPhotoUrl, 800) || fallbackPhoto
+  const displaySecondary = optimizeCloudinaryUrl(secondaryPhotoUrl, 800) || displayPrimary
 
   return (
     <div className="group relative flex flex-col bg-white border border-[#E3DBD4] overflow-hidden transition-all duration-300 hover:border-[#051F34]">
@@ -93,6 +94,9 @@ export default function ProductCard({
         <img
           src={displayPrimary}
           alt={name}
+          width={800}
+          height={800}
+          decoding="async"
           className={`w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
             secondaryPhotoUrl ? 'group-hover:opacity-0 transition-opacity' : ''
           }`}
@@ -104,6 +108,9 @@ export default function ProductCard({
           <img
             src={displaySecondary}
             alt={`${name} detail`}
+            width={800}
+            height={800}
+            decoding="async"
             className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
             loading="lazy"
           />

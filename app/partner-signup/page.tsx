@@ -8,6 +8,9 @@ export const metadata = {
   description:
     'Apply to become a Shewah partner. Diamond jewellery wholesale and manufacturing for Indian retailers — no joining fee, no exclusivity.',
   robots: { index: true, follow: true },
+  alternates: {
+    canonical: 'https://shewah.co/partner-signup',
+  },
 }
 
 export default function PartnerSignupPage() {

@@ -288,3 +288,22 @@ export function computeContentHash(payload: {
   })
   return crypto.createHash('sha256').update(normalized, 'utf8').digest('hex')
 }
+
+/**
+ * Identifies synthetic / internal editorial test draft fixtures (such as
+ * `private-test-draft-*` or titles tagged `[PRIVATE TEST DRAFT`) so they
+ * are never exposed in public sitemaps, feeds, or public journal pages.
+ */
+export function isInternalTestBlogArtifact(article: {
+  slug?: string | null
+  title?: string | null
+}): boolean {
+  const slug = (article?.slug || '').toLowerCase().trim()
+  const title = (article?.title || '').toUpperCase().trim()
+  return (
+    slug.startsWith('private-test-draft-') ||
+    title.includes('[PRIVATE TEST DRAFT') ||
+    title.includes('DO NOT PUBLISH]')
+  )
+}
+

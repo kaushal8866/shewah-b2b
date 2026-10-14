@@ -4,6 +4,9 @@ import { Award, ShieldCheck } from 'lucide-react'
 export const metadata = {
   title: 'Lifetime Warranty & Servicing | Shewah',
   description: 'Our lifetime craftsmanship guarantee covering prong tightening, cleaning, and structural maintenance.',
+  alternates: {
+    canonical: 'https://shewah.co/warranty',
+  },
 }
 
 export default function WarrantyPage() {

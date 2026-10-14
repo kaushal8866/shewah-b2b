@@ -5,6 +5,9 @@ import { Hammer, Sparkles, ShieldCheck, Award, ArrowRight } from 'lucide-react'
 export const metadata = {
   title: 'Atelier Craftsmanship | Shewah',
   description: 'Inside the Shewah jewellery atelier: 3D CAD modeling, solid 18K gold casting, micro-pavé setting, and multi-point optical quality inspection.',
+  alternates: {
+    canonical: 'https://shewah.co/craftsmanship',
+  },
 }
 
 export default function CraftsmanshipPage() {

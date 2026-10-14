@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getBlogSettings } from '@/lib/blog/storage'
+import { isInternalTestBlogArtifact } from '@/lib/blog/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +38,7 @@ export async function GET() {
       author_display_name,
       hero_image_url,
       hero_image_rights,
+      live_revision_id,
       published_at,
       updated_at
     `)
@@ -45,11 +47,22 @@ export async function GET() {
     .order('published_at', { ascending: false })
     .limit(50)
 
-  const items = (articles || []).map((art) => {
+  const validArticles = (articles || []).filter(
+    (art: any) =>
+      (!('live_revision_id' in art) || Boolean(art.live_revision_id)) &&
+      !isInternalTestBlogArtifact(art)
+  )
+
+  const items = validArticles.map((art) => {
     const articleUrl = `${baseUrl}/blog/${art.slug}`
     const pubDate = art.published_at ? new Date(art.published_at).toUTCString() : new Date().toUTCString()
-    const mediaTag = art.hero_image_url
-      ? `<media:content url="${escapeXml(art.hero_image_url)}" medium="image" />`
+    const resolvedHeroUrl = art.hero_image_url
+      ? art.hero_image_url.startsWith('/')
+        ? `${baseUrl}${art.hero_image_url}`
+        : art.hero_image_url
+      : null
+    const mediaTag = resolvedHeroUrl
+      ? `<media:content url="${escapeXml(resolvedHeroUrl)}" medium="image" />`
       : ''
 
     return `

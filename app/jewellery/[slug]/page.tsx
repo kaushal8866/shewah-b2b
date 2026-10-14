@@ -788,24 +788,13 @@ export default function ProductDetailPage() {
                         <div><strong className="text-[#051F34] font-medium">Diamonds:</strong> ~{product.specifications.diamondWeightCarats}ct Total</div>
                       ) : null}
                       <div className="col-span-2 pt-2 border-t border-[#E3DBD4] flex flex-wrap items-center gap-3 text-[11px]">
-                        <span className="text-[#051F34] font-medium">Verify Laboratory Report:</span>
-                        <a
-                          href="https://www.igi.org/verify-your-report/"
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <span className="text-[#051F34] font-medium">Laboratory Grading &amp; Provenance:</span>
+                        <Link
+                          href="/diamonds"
                           className="text-[#051F34] hover:text-[#CB9274] underline font-medium inline-flex items-center gap-1"
                         >
-                          IGI Certificate Verification ↗
-                        </a>
-                        <span className="text-[#E3DBD4] select-none">•</span>
-                        <a
-                          href="https://www.gia.edu/report-check-landing"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#051F34] hover:text-[#CB9274] underline font-medium inline-flex items-center gap-1"
-                        >
-                          GIA Report Check ↗
-                        </a>
+                          IGI &amp; GIA Diamond Certification Guide &rarr;
+                        </Link>
                       </div>
                     </div>
                   </div>

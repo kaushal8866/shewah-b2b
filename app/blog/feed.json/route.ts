@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getBlogSettings } from '@/lib/blog/storage'
+import { isInternalTestBlogArtifact } from '@/lib/blog/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,7 @@ export async function GET() {
       tags,
       author_display_name,
       hero_image_url,
+      live_revision_id,
       published_at,
       updated_at
     `)
@@ -32,12 +34,22 @@ export async function GET() {
     .order('published_at', { ascending: false })
     .limit(50)
 
-  const items = (articles || []).map((art) => ({
+  const validArticles = (articles || []).filter(
+    (art: any) =>
+      (!('live_revision_id' in art) || Boolean(art.live_revision_id)) &&
+      !isInternalTestBlogArtifact(art)
+  )
+
+  const items = validArticles.map((art) => ({
     id: `${baseUrl}/blog/${art.slug}`,
     url: `${baseUrl}/blog/${art.slug}`,
     title: art.title,
     summary: art.excerpt || undefined,
-    image: art.hero_image_url || undefined,
+    image: art.hero_image_url
+      ? art.hero_image_url.startsWith('/')
+        ? `${baseUrl}${art.hero_image_url}`
+        : art.hero_image_url
+      : undefined,
     date_published: art.published_at ? new Date(art.published_at).toISOString() : now,
     date_modified: art.updated_at ? new Date(art.updated_at).toISOString() : undefined,
     tags: art.tags && art.tags.length > 0 ? art.tags : [art.category],

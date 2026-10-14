@@ -6,6 +6,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
     ],
   },
   // Type errors and lint errors MUST fail the build. These were previously
@@ -21,6 +29,15 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['pdfkit'],
   },
+  async redirects() {
+    return [
+      {
+        source: '/collections',
+        destination: '/jewellery',
+        permanent: true,
+      },
+    ]
+  },
   async headers() {
     return [
       {
@@ -29,6 +46,12 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
           { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
+        ],
+      },
+      {
+        source: '/login',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
         ],
       },
     ]

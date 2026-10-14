@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getMarket, computeDeliveryEstimate, type MarketCode } from '@/lib/markets'
 import { resolveProductMarketPrice } from '@/lib/d2cPricing'
+import { optimizeCloudinaryUrl } from '@/lib/imageUrl'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +50,7 @@ export async function GET(
     }
 
     // 3. Resolve active market pricing
-    const pricing = await resolveProductMarketPrice(product.id, market.code)
+    const pricing = await resolveProductMarketPrice(product.id, market.code, undefined, product)
 
     // 4. Determine product-specific configuration schema
     const isRing = (product.category || '').toLowerCase().includes('ring')
@@ -236,6 +237,7 @@ if (product.code === 'SH-003' || product.slug === 'the-tanmaniya-heritage-diamon
     'https://res.cloudinary.com/ddnlacdta/image/upload/v1782577185/ose19027_aepd7a.jpg'
   ]
 }
+sanitizedPhotos = sanitizedPhotos.map((u: string) => optimizeCloudinaryUrl(u, 1400) || u)
 
 // Compute reconciled gold weight
 let reconciledGoldWeight: number | null = null

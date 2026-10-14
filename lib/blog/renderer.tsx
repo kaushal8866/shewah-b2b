@@ -182,7 +182,8 @@ export function EditorialMediaFigure({
               src={src}
               alt={attachment.altText}
               className="w-full h-full object-cover"
-              loading="lazy"
+              loading={attachment.isHero ? 'eager' : 'lazy'}
+              fetchPriority={attachment.isHero ? 'high' : undefined}
             />
           ) : (
             <span className="text-xs text-[#69727D] px-4 text-center">
@@ -217,7 +218,8 @@ export function EditorialMediaFigure({
             src={src}
             alt={attachment.altText}
             className="w-full h-full object-cover"
-            loading="lazy"
+            loading={attachment.isHero ? 'eager' : 'lazy'}
+            fetchPriority={attachment.isHero ? 'high' : undefined}
           />
         ) : (
           <span className="text-xs text-[#69727D] px-4 text-center">

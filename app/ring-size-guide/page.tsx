@@ -1007,7 +1007,7 @@ export default function RingSizeGuidePage() {
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-xs font-medium">
               <a
-                href="mailto:concierge@shewah.com"
+                href="mailto:concierge@shewah.co"
                 className="px-5 py-2.5 bg-[#051F34] text-white rounded-none uppercase tracking-wider hover:bg-stone-800 transition-colors"
               >
                 Email Concierge

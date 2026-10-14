@@ -6,6 +6,9 @@ import { ArrowLeft, ShieldCheck, Factory, Diamond, Sparkles } from 'lucide-react
 export const metadata: Metadata = {
   title: 'Trade Enquiry | Shewah Business',
   description: 'Apply to become a verified Shewah retail partner or manufacturing client.',
+  alternates: {
+    canonical: 'https://shewah.co/business/enquiry',
+  },
 }
 
 export default function BusinessEnquiryPage() {

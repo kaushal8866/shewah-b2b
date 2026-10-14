@@ -6,9 +6,20 @@ vi.mock('@/lib/supabaseAdmin', () => ({
       if (table === 'products') {
         return {
           select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({
-              data: [{ id: '1', code: 'SH-001', updated_at: '2026-09-01T00:00:00Z' }],
-              error: null,
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({
+                data: [
+                  {
+                    id: '1',
+                    code: 'SH-001',
+                    slug: 'radiant-bloom-diamond-ring',
+                    d2c_status: 'published',
+                    is_active: true,
+                    updated_at: '2026-09-01T00:00:00Z',
+                  },
+                ],
+                error: null,
+              }),
             }),
           }),
         }
@@ -19,7 +30,24 @@ vi.mock('@/lib/supabaseAdmin', () => ({
             eq: vi.fn().mockReturnValue({
               lte: vi.fn().mockResolvedValue({
                 data: [
-                  { slug: 'the-solitaire-riviera', updated_at: '2026-10-02T12:00:00Z', published_at: '2026-10-01T10:00:00Z' },
+                  {
+                    slug: 'the-solitaire-riviera',
+                    title: 'The Solitaire Riviera',
+                    live_revision_id: 'rev-1',
+                    canonical_url_policy: 'self',
+                    canonical_url_custom: null,
+                    updated_at: '2026-10-02T12:00:00Z',
+                    published_at: '2026-10-01T10:00:00Z',
+                  },
+                  {
+                    slug: 'private-test-draft-ring-prong-setting-inspection-20261011',
+                    title: '[PRIVATE TEST DRAFT — DO NOT PUBLISH] Ring Prong Setting Inspection',
+                    live_revision_id: 'rev-test',
+                    canonical_url_policy: 'self',
+                    canonical_url_custom: null,
+                    updated_at: '2026-10-11T18:47:20Z',
+                    published_at: '2026-10-11T18:47:20Z',
+                  },
                 ],
                 error: null,
               }),
@@ -38,10 +66,11 @@ vi.mock('@/lib/supabaseAdmin', () => ({
 
 import sitemap from '@/app/sitemap'
 import robots from '@/app/robots'
+import { optimizeCloudinaryUrl } from '@/lib/imageUrl'
 
-describe('Blog Public Pages & Search Metadata (Phase 2)', () => {
+describe('Blog Public Pages & Search Metadata (Phase 2 & Semrush Audit Hardening)', () => {
   describe('Sitemap Integrity', () => {
-    it('includes core D2C routes and /blog with valid structure', async () => {
+    it('includes core D2C routes, /business, canonical product slugs, and valid published blog posts', async () => {
       const entries = await sitemap()
       expect(Array.isArray(entries)).toBe(true)
 
@@ -51,7 +80,22 @@ describe('Blog Public Pages & Search Metadata (Phase 2)', () => {
       expect(urls).toContain('https://shewah.co/bespoke')
       expect(urls).toContain('https://shewah.co/diamonds')
       expect(urls).toContain('https://shewah.co/craftsmanship')
+      expect(urls).toContain('https://shewah.co/business')
       expect(urls).toContain('https://shewah.co/blog')
+      expect(urls).toContain('https://shewah.co/jewellery/radiant-bloom-diamond-ring')
+      expect(urls).toContain('https://shewah.co/blog/the-solitaire-riviera')
+
+      // Must NOT include non-canonical SKU URL or removed /collections 404 route
+      expect(urls).not.toContain('https://shewah.co/jewellery/sh-001')
+      expect(urls).not.toContain('https://shewah.co/collections')
+
+      // Must NOT include synthetic test draft fixtures even if status was flipped in test runs
+      expect(
+        urls.some((u) => u.includes('private-test-draft-ring-prong-setting-inspection'))
+      ).toBe(false)
+
+      // Must have zero duplicate URLs
+      expect(new Set(urls).size).toBe(urls.length)
 
       for (const entry of entries) {
         expect(entry.url).toMatch(/^https:\/\/shewah\.co/)
@@ -66,24 +110,52 @@ describe('Blog Public Pages & Search Metadata (Phase 2)', () => {
       expect(urls.some((u) => u.includes('/admin'))).toBe(false)
       expect(urls.some((u) => u.includes('/portal'))).toBe(false)
       expect(urls.some((u) => u.includes('/dashboard'))).toBe(false)
+      expect(urls.some((u) => u.includes('/editorial'))).toBe(false)
       expect(urls.some((u) => u.includes('/api/'))).toBe(false)
       expect(urls.some((u) => u.includes('preview'))).toBe(false)
     })
   })
 
-  describe('Robots.txt Safety', () => {
-    it('disallows crawling of sensitive admin, portal, API, and preview query parameters', () => {
+  describe('Robots.txt Safety & Bot Access (Phase 4)', () => {
+    it('allows public storefront, blog media, and D2C API while disallowing private admin/portal/editorial routes', () => {
       const result = robots()
       expect(result.sitemap).toBe('https://shewah.co/sitemap.xml')
 
-      const rules = Array.isArray(result.rules) ? result.rules[0] : result.rules
-      expect(rules.allow).toBe('/')
-      expect(rules.disallow).toContain('/admin')
-      expect(rules.disallow).toContain('/admin/')
-      expect(rules.disallow).toContain('/portal')
-      expect(rules.disallow).toContain('/dashboard')
-      expect(rules.disallow).toContain('/api/')
-      expect(rules.disallow).toContain('/*?*preview=*')
+      const ruleGroups = Array.isArray(result.rules) ? result.rules : [result.rules]
+      expect(ruleGroups.length).toBeGreaterThanOrEqual(2)
+
+      for (const group of ruleGroups) {
+        const allowList = Array.isArray(group.allow) ? group.allow : [group.allow]
+        expect(allowList).toContain('/')
+        expect(allowList).toContain('/api/blog/v1/media/')
+        expect(allowList).toContain('/api/d2c/')
+
+        const disallowList = Array.isArray(group.disallow) ? group.disallow : [group.disallow]
+        expect(disallowList).toContain('/admin')
+        expect(disallowList).toContain('/admin/')
+        expect(disallowList).toContain('/portal')
+        expect(disallowList).toContain('/dashboard')
+        expect(disallowList).toContain('/editorial')
+        expect(disallowList).toContain('/api/')
+        expect(disallowList).toContain('/*?*preview=*')
+        // /login is controlled via X-Robots-Tag + <meta name="robots" content="noindex, nofollow">
+        expect(disallowList).not.toContain('/login')
+      }
+    })
+  })
+
+  describe('Cloudinary Image Optimization (Phase 6)', () => {
+    it('injects f_auto,q_auto,w_<width>,c_limit into raw Cloudinary upload URLs without double-transforming', () => {
+      const raw = 'https://res.cloudinary.com/ddnlacdta/image/upload/v1782577185/ose19027_aepd7a.jpg'
+      const optimized = optimizeCloudinaryUrl(raw, 800)
+      expect(optimized).toBe(
+        'https://res.cloudinary.com/ddnlacdta/image/upload/f_auto,q_auto,w_800,c_limit/v1782577185/ose19027_aepd7a.jpg'
+      )
+      // Idempotent when called again
+      expect(optimizeCloudinaryUrl(optimized, 800)).toBe(optimized)
+      // Non-Cloudinary URLs untouched
+      const unsplash = 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800'
+      expect(optimizeCloudinaryUrl(unsplash, 800)).toBe(unsplash)
     })
   })
 

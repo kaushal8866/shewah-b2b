@@ -13,9 +13,6 @@ export const metadata: Metadata = {
     template: '%s | SHEWAH',
   },
   description: 'Handcrafted fine jewellery made to order in solid 18K gold and certified diamonds.',
-  alternates: {
-    canonical: '/',
-  },
   openGraph: {
     title: 'SHEWAH | High Jewellery Atelier & Certified Diamonds',
     description: 'Handcrafted fine jewellery made to order in solid 18K gold and certified diamonds.',

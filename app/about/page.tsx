@@ -5,6 +5,9 @@ import { Diamond, ShieldCheck, Hammer, Award } from 'lucide-react'
 export const metadata = {
   title: 'Our Story & Heritage | Shewah Atelier',
   description: 'Learn about Shewah Atelier, our fine jewellery heritage, and our commitment to modern, ethically crafted diamond creations.',
+  alternates: {
+    canonical: 'https://shewah.co/about',
+  },
 }
 
 export default function AboutPage() {

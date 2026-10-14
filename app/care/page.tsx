@@ -4,6 +4,9 @@ import { Sparkles, ShieldCheck } from 'lucide-react'
 export const metadata = {
   title: 'Jewellery Care Guide | Shewah',
   description: 'Expert advice on cleaning, protecting, and storing solid gold and diamond jewellery.',
+  alternates: {
+    canonical: 'https://shewah.co/care',
+  },
 }
 
 export default function CareGuidePage() {

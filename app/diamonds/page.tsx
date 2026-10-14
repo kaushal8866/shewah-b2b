@@ -5,6 +5,9 @@ import { Diamond, Check, Award, ShieldCheck } from 'lucide-react'
 export const metadata = {
   title: 'Diamond Education & Certification | Shewah',
   description: 'Understand the 4Cs, cut standards, and certification. Shewah offers both conflict-free Natural diamonds and IGI certified Lab-Grown diamonds.',
+  alternates: {
+    canonical: 'https://shewah.co/diamonds',
+  },
 }
 
 export default function DiamondsPage() {

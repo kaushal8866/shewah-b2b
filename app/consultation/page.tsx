@@ -224,28 +224,57 @@ export default function ConsultationPage() {
       })
     }
 
-    const loadAllFrames = async () => {
-      // Priority 1: Load initial 10 frames sequentially for instant hero paint
-      for (let i = 0; i < 10; i++) {
-        await loadSingleFrame(i)
+    let fullSequenceStarted = false
+
+    const loadDenseFramesOnScroll = async () => {
+      if (fullSequenceStarted || !active) return
+      fullSequenceStarted = true
+      const BATCH_SIZE = 4
+      for (let i = 1; i < TOTAL_FRAMES; i += BATCH_SIZE) {
+        if (!active) break
+        const batch: Promise<void>[] = []
+        for (let j = i; j < Math.min(i + BATCH_SIZE, TOTAL_FRAMES); j++) {
+          if (!imagesRef.current[j]) {
+            batch.push(loadSingleFrame(j))
+          }
+        }
+        if (batch.length > 0) {
+          await Promise.all(batch)
+        }
       }
+    }
+
+    const onFirstScroll = () => {
+      if (window.scrollY > 10) {
+        window.removeEventListener('scroll', onFirstScroll)
+        loadDenseFramesOnScroll()
+      }
+    }
+
+    const loadAllFrames = async () => {
+      // Priority 1: Load Frame 0 immediately for instant hero paint
+      await loadSingleFrame(0)
       if (active) {
         setIsLoaded(true)
         renderFrame(0)
       }
 
-      // Priority 2: Load the rest asynchronously in a non-blocking parallel queue
-      // This lets the browser handle standard HTTP request pipelining without blocking
-      for (let i = 10; i < TOTAL_FRAMES; i++) {
+      // Priority 2: Load sparse keyframes (every 20th frame) sequentially so nearest-frame fallback covers the timeline cleanly
+      for (let i = 20; i < TOTAL_FRAMES; i += 20) {
         if (!active) break
-        loadSingleFrame(i)
+        await loadSingleFrame(i)
+      }
+      if (active) {
+        await loadSingleFrame(TOTAL_FRAMES - 1)
       }
     }
 
     loadAllFrames()
+    window.addEventListener('scroll', onFirstScroll, { passive: true })
 
     return () => {
       active = false
+      window.removeEventListener('scroll', onFirstScroll)
     }
   }, [renderFrame])
 
@@ -469,7 +498,7 @@ export default function ConsultationPage() {
 
       {/* Floating WhatsApp Quick Action */}
       <a
-        href="https://wa.me/919662266360?text=Hi%20Shewah,%20I'd%20like%20to%20know%20more%20about%20your%20custom%20jewellery%20design%20consultations."
+        href="https://wa.me/919662266360?text=Hi%20Shewah%2C%20I%27d%20like%20to%20know%20more%20about%20your%20custom%20jewellery%20design%20consultations."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 bg-stone-900/90 backdrop-blur-lg border border-accent/40 p-3 sm:p-3.5 rounded-full text-accent hover:text-white hover:bg-accent active:scale-90 transition-all duration-300 shadow-2xl flex items-center justify-center group"

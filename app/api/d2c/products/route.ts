@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getMarket, type MarketCode } from '@/lib/markets'
 import { resolveProductMarketPrice } from '@/lib/d2cPricing'
 import { fetchNonEmptyD2CCategories } from '@/lib/categories'
+import { optimizeCloudinaryUrl } from '@/lib/imageUrl'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('products')
-      .select('id, code, name, slug, category, photo_urls, d2c_status, d2c_featured, d2c_title, d2c_subtitle, d2c_description, d2c_crafting_lead_days, return_policy_type, return_window_days, return_eligible, diamond_shape, diamond_type, gold_karat, metal_type, d2c_details, is_active')
+      .select('id, code, name, slug, category, photo_urls, d2c_status, d2c_featured, d2c_title, d2c_subtitle, d2c_description, d2c_crafting_lead_days, return_policy_type, return_window_days, return_eligible, diamond_shape, diamond_type, gold_karat, metal_type, d2c_details, is_active, is_configurable, karat_pricing, mrp_suggested, trade_price')
       .eq('is_active', true)
       .eq('d2c_status', 'published')
 
@@ -62,8 +63,11 @@ export async function GET(req: NextRequest) {
     // Resolve market-specific prices concurrently
     const sanitizedProducts = await Promise.all(
       visibleProducts.map(async (p) => {
-        const pricing = await resolveProductMarketPrice(p.id, market.code)
+        const pricing = await resolveProductMarketPrice(p.id, market.code, undefined, p)
         const details = (p.d2c_details || {}) as Record<string, any>
+        const optimizedPhotos = (p.photo_urls || [])
+          .map((u: string) => optimizeCloudinaryUrl(u, 800))
+          .filter((u: string | null): u is string => Boolean(u))
         return {
           id: p.id,
           code: p.code,
@@ -72,9 +76,9 @@ export async function GET(req: NextRequest) {
           subtitle: p.d2c_subtitle || '',
           description: p.d2c_description || '',
           category: p.category,
-          photoUrls: p.photo_urls || [],
-          primaryPhotoUrl: p.photo_urls?.[0] || null,
-          secondaryPhotoUrl: p.photo_urls?.[1] || p.photo_urls?.[0] || null,
+          photoUrls: optimizedPhotos,
+          primaryPhotoUrl: optimizedPhotos[0] || null,
+          secondaryPhotoUrl: optimizedPhotos[1] || optimizedPhotos[0] || null,
           isFeatured: p.d2c_featured || false,
           isSet: Boolean(details.is_set),
           isSetComponent: Boolean(details.is_component_of_set),

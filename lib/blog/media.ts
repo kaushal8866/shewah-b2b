@@ -539,17 +539,24 @@ export async function lookupBlogMediaRecord(mediaId: string): Promise<{
     return { found: false, isPublishedLive: false }
   }
 
-  // 1. Find storageKey from audit log or revision records
+  // 1. Find storageKey from audit log and published articles in parallel
   let storageKey: string | undefined
   let mimeType: string | undefined
 
-  const { data: logs } = await supabaseAdmin
-    .from('blog_audit_logs')
-    .select('diff_summary')
-    .eq('operation', 'upload_media')
-    .eq('outcome', 'success')
-    .order('created_at', { ascending: false })
-    .limit(200)
+  const [{ data: logs }, { data: publishedArticles }] = await Promise.all([
+    supabaseAdmin
+      .from('blog_audit_logs')
+      .select('diff_summary')
+      .eq('operation', 'upload_media')
+      .eq('outcome', 'success')
+      .order('created_at', { ascending: false })
+      .limit(200),
+    supabaseAdmin
+      .from('blog_articles')
+      .select('id, status, live_revision_id, hero_image_url')
+      .eq('status', 'published')
+      .not('live_revision_id', 'is', null),
+  ])
 
   if (Array.isArray(logs)) {
     for (const row of logs) {
@@ -564,11 +571,6 @@ export async function lookupBlogMediaRecord(mediaId: string): Promise<{
 
   // 2. Check if this mediaId is referenced by any published article's live revision
   let isPublishedLive = false
-  const { data: publishedArticles } = await supabaseAdmin
-    .from('blog_articles')
-    .select('id, status, live_revision_id, hero_image_url')
-    .eq('status', 'published')
-    .not('live_revision_id', 'is', null)
 
   if (Array.isArray(publishedArticles) && publishedArticles.length > 0) {
     const liveRevIds = publishedArticles

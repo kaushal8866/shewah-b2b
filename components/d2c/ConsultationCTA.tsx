@@ -75,7 +75,7 @@ export default function ConsultationCTA() {
           </Link>
 
           <a
-            href="https://wa.me/919909908866?text=Hello%20SHEWAH%20Atelier%2C%20I%20would%20like%20to%20inquire%20about%20a%20private%20commission."
+            href="https://wa.me/919662266360?text=Hello%20SHEWAH%20Atelier%2C%20I%20would%20like%20to%20inquire%20about%20a%20private%20commission."
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-transparent border border-white/30 hover:border-white text-white hover:bg-white hover:text-[#051F34] px-8 py-4 rounded-none text-xs uppercase tracking-[0.2em] font-semibold transition-all duration-300 text-center"

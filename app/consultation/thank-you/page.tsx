@@ -248,7 +248,7 @@ export default function ThankYouPage() {
             </h2>
           </div>
           <Link
-            href="/catalog"
+            href="/jewellery"
             className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline font-mono tracking-wider"
           >
             <span>Explore Full Catalog</span>

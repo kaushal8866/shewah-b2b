@@ -2,6 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Diamond, Hammer, ShieldCheck, Award, ArrowRight } from 'lucide-react'
 import { trackEvent } from '@/lib/analytics'
 
@@ -20,7 +21,7 @@ export default function HeroSection({
   eyebrow = 'Maison Shewah • Fine Jewellery',
   title = 'Modern Heirlooms,\nConsciously Crafted.',
   subtitle = 'Every piece is individually handcrafted in solid 18K gold and set with certified diamonds. Crafted to order with uncompromising attention to detail.',
-  imageDesktop = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1920&q=85',
+  imageDesktop = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1600&q=80',
   primaryCtaText = 'Explore The Collection',
   primaryCtaHref = '/jewellery',
   secondaryCtaText = 'Private Consultation',
@@ -37,10 +38,14 @@ export default function HeroSection({
     <div className="relative overflow-hidden bg-[#F6F4F2] text-[#051F34]">
       {/* 1. Cinematic Hero Viewport */}
       <section className="relative min-h-[75vh] sm:min-h-[82vh] flex items-center justify-center overflow-hidden">
-        {/* Ambient atmospheric backdrop */}
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-30 scale-105 transition-transform duration-1000"
-          style={{ backgroundImage: `url('${imageDesktop}')` }}
+        {/* Ambient atmospheric backdrop — priority preloaded for LCP */}
+        <Image
+          src={imageDesktop}
+          alt="Shewah Atelier fine diamond jewellery"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center opacity-30 scale-105 transition-transform duration-1000"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#F6F4F2] via-[#F6F4F2]/60 to-transparent" />
 

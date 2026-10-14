@@ -8,6 +8,7 @@ import StoreHeader from '@/components/d2c/StoreHeader'
 import StoreFooter from '@/components/d2c/StoreFooter'
 import { ArrowRight, BookOpen, Clock, Calendar, Sparkles } from 'lucide-react'
 import { format } from 'date-fns'
+import { isInternalTestBlogArtifact } from '@/lib/blog/types'
 
 export const revalidate = 60 // Revalidate every minute
 
@@ -56,13 +57,7 @@ export default async function BlogIndexPage({ searchParams }: BlogIndexProps) {
   const offset = (page - 1) * pageSize
   const now = new Date().toISOString()
 
-  // Base query: strictly published articles with arrival time <= now
-  let countQuery = supabaseAdmin
-    .from('blog_articles')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'published')
-    .lte('published_at', now)
-
+  // Base query: strictly published articles with arrival time <= now and live_revision_id
   let dataQuery = supabaseAdmin
     .from('blog_articles')
     .select(`
@@ -76,21 +71,25 @@ export default async function BlogIndexPage({ searchParams }: BlogIndexProps) {
       hero_image_url,
       hero_image_alt,
       reading_time_minutes,
-      published_at
+      published_at,
+      live_revision_id
     `)
     .eq('status', 'published')
+    .not('live_revision_id', 'is', null)
     .lte('published_at', now)
     .order('published_at', { ascending: false })
-    .range(offset, offset + pageSize - 1)
 
   if (selectedCategory && selectedCategory !== 'all') {
-    countQuery = countQuery.eq('category', selectedCategory)
     dataQuery = dataQuery.eq('category', selectedCategory)
   }
 
-  const [{ count }, { data: articles, error }] = await Promise.all([countQuery, dataQuery])
-  const totalArticles = count ?? 0
+  const { data: rawArticles } = await dataQuery
+  const allValidArticles = (rawArticles || []).filter(
+    (art) => !isInternalTestBlogArtifact(art)
+  )
+  const totalArticles = allValidArticles.length
   const totalPages = Math.ceil(totalArticles / pageSize)
+  const articles = allValidArticles.slice(offset, offset + pageSize)
 
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -196,7 +195,7 @@ export default async function BlogIndexPage({ searchParams }: BlogIndexProps) {
             ) : (
               <div className="space-y-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
-                  {articles.map((item) => (
+                  {articles.map((item, idx) => (
                     <article
                       key={item.id}
                       className="group bg-white border border-[#E3DBD4] flex flex-col justify-between overflow-hidden hover:border-[#051F34] transition-all"
@@ -209,7 +208,8 @@ export default async function BlogIndexPage({ searchParams }: BlogIndexProps) {
                               src={item.hero_image_url}
                               alt={item.hero_image_alt || item.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                              loading="lazy"
+                              loading={idx < 3 ? 'eager' : 'lazy'}
+                              fetchPriority={idx === 0 ? 'high' : undefined}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-stone-300">

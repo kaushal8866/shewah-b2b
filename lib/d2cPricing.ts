@@ -35,19 +35,32 @@ export interface ConfigurationDelta {
   customEngraving?: string
 }
 
+export interface PreloadedPricingProduct {
+  id: string
+  code?: string
+  name?: string
+  d2c_status?: string | null
+  is_active?: boolean | null
+  is_configurable?: boolean | null
+  karat_pricing?: any
+  mrp_suggested?: number | string | null
+  trade_price?: number | string | null
+  d2c_details?: any
+}
+
 /**
  * Resolve authoritatively priced line item for a product in a specified market.
  */
 export async function resolveProductMarketPrice(
   productId: string,
   marketCode: MarketCode,
-  config?: ConfigurationDelta
+  config?: ConfigurationDelta,
+  preloadedProduct?: PreloadedPricingProduct | null
 ): Promise<ResolvedD2CPrice> {
   const market = getMarket(marketCode)
   const nowIso = new Date().toISOString()
 
-  // 1. Query active price from normalized d2c_market_prices table with open or future effective_to
-  const { data: priceRows, error: priceErr } = await supabaseAdmin
+  const priceQuery = supabaseAdmin
     .from('d2c_market_prices')
     .select('*')
     .eq('product_id', productId)
@@ -58,12 +71,23 @@ export async function resolveProductMarketPrice(
     .order('effective_from', { ascending: false })
     .limit(1)
 
-  // 2. Query product publishing status and basic specs
-  const { data: product, error: prodErr } = await supabaseAdmin
-    .from('products')
-    .select('id, code, name, d2c_status, is_active, is_configurable, karat_pricing, mrp_suggested, trade_price, d2c_details')
-    .eq('id', productId)
-    .maybeSingle()
+  const productPromise =
+    preloadedProduct &&
+    preloadedProduct.id === productId &&
+    preloadedProduct.d2c_status !== undefined &&
+    preloadedProduct.is_active !== undefined &&
+    (preloadedProduct.mrp_suggested !== undefined || preloadedProduct.trade_price !== undefined)
+      ? Promise.resolve({ data: preloadedProduct, error: null })
+      : supabaseAdmin
+          .from('products')
+          .select('id, code, name, d2c_status, is_active, is_configurable, karat_pricing, mrp_suggested, trade_price, d2c_details')
+          .eq('id', productId)
+          .maybeSingle()
+
+  const [{ data: priceRows }, { data: product, error: prodErr }] = await Promise.all([
+    priceQuery,
+    productPromise,
+  ])
 
   if (prodErr || !product || !product.is_active || product.d2c_status !== 'published') {
     return {

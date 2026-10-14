@@ -20,37 +20,44 @@ import SEOContent from '@/components/d2c/SEOContent'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { resolveProductMarketPrice } from '@/lib/d2cPricing'
 import { fetchNonEmptyD2CCategories } from '@/lib/categories'
+import { optimizeCloudinaryUrl } from '@/lib/imageUrl'
 import { type ProductCardProps } from '@/components/d2c/ProductCard'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 export const metadata = {
   title: 'SHEWAH | Fine Jewellery Atelier & Certified Diamonds',
   description:
     'Handcrafted fine jewellery individually made to order in solid 18K gold. Certified natural and lab-grown diamonds, bespoke commissions, and fine jewellery suites with worldwide insured delivery.',
+  alternates: {
+    canonical: 'https://shewah.co',
+  },
   openGraph: {
     title: 'SHEWAH | Fine Jewellery Atelier & Certified Diamonds',
     description:
       'Handcrafted fine diamond jewellery individually made to order in solid 18K gold and set with certified diamonds.',
+    url: 'https://shewah.co',
     type: 'website',
   },
 }
 
 export default async function HomePage() {
-  // 1. Fetch live non-empty categories (never show 0-count categories)
-  const activeCategories = await fetchNonEmptyD2CCategories()
-
-  // 2. Fetch active published products for signature merchandising
+  // Fetch live non-empty categories and active published products in parallel
+  let activeCategories: Awaited<ReturnType<typeof fetchNonEmptyD2CCategories>> = []
   let productsForRail: ProductCardProps[] = []
   try {
-    const { data: rawProducts, error } = await supabaseAdmin
-      .from('products')
-      .select(
-        'id, code, name, slug, category, photo_urls, d2c_status, d2c_featured, d2c_title, d2c_subtitle, d2c_crafting_lead_days, return_policy_type, return_window_days, return_eligible, diamond_shape, diamond_type, gold_karat, metal_type, d2c_details, is_active'
-      )
-      .eq('is_active', true)
-      .eq('d2c_status', 'published')
-      .order('name', { ascending: true })
+    const [cats, { data: rawProducts, error }] = await Promise.all([
+      fetchNonEmptyD2CCategories(),
+      supabaseAdmin
+        .from('products')
+        .select(
+          'id, code, name, slug, category, photo_urls, d2c_status, d2c_featured, d2c_title, d2c_subtitle, d2c_crafting_lead_days, return_policy_type, return_window_days, return_eligible, diamond_shape, diamond_type, gold_karat, metal_type, d2c_details, is_active, is_configurable, karat_pricing, mrp_suggested, trade_price'
+        )
+        .eq('is_active', true)
+        .eq('d2c_status', 'published')
+        .order('name', { ascending: true }),
+    ])
+    activeCategories = cats
 
     if (!error && rawProducts) {
       // Show standalone creations and top-level suites (avoid duplicates from components of sets)
@@ -60,7 +67,7 @@ export default async function HomePage() {
 
       productsForRail = await Promise.all(
         visible.map(async (p) => {
-          const pricing = await resolveProductMarketPrice(p.id, 'US')
+          const pricing = await resolveProductMarketPrice(p.id, 'US', undefined, p)
           const details = (p.d2c_details || {}) as Record<string, any>
           return {
             id: p.id,
@@ -69,8 +76,11 @@ export default async function HomePage() {
             slug: p.slug || p.code.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
             subtitle: p.d2c_subtitle || '',
             category: p.category,
-            primaryPhotoUrl: p.photo_urls?.[0] || null,
-            secondaryPhotoUrl: p.photo_urls?.[1] || p.photo_urls?.[0] || null,
+            primaryPhotoUrl: optimizeCloudinaryUrl(p.photo_urls?.[0] || null, 800),
+            secondaryPhotoUrl: optimizeCloudinaryUrl(
+              p.photo_urls?.[1] || p.photo_urls?.[0] || null,
+              800
+            ),
             craftingLeadDays: p.d2c_crafting_lead_days || 14,
             isFeatured: p.d2c_featured || false,
             isSet: Boolean(details.is_set),
