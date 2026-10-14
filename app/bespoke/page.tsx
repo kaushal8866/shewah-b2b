@@ -294,29 +294,51 @@ const OCCASIONS = [
 export default function BespokePage() {
   const { market } = useCart()
 
-  // Make India match Indian visitors (country IN or en-IN locale).
-  // Make the fallback for unknown or undetected countries safe: show INR at rate 1, never silently use the US rate.
-  // Keep US, GB, EU/DE/FR and AU unchanged.
-  const isExplicitOverseas =
-    market?.code && ['US', 'GB', 'EU', 'DE', 'FR', 'AU'].includes(market.code)
+  // 1. Manual user choice from currency switcher always takes precedence:
+  const isManual =
+    typeof window !== 'undefined' &&
+    localStorage.getItem('shewah_market_manual_v1') === 'true'
 
+  // 2. Detect Indian visitor from country code or browser environment
   const isIndianLocale =
     typeof navigator !== 'undefined' &&
     (navigator.languages?.some((l) => /[\b_-]IN\b/i.test(l)) ||
-      /[\b_-]IN\b/i.test(navigator.language || ''))
+      /[\b_-]IN\b/i.test(navigator.language || '') ||
+      Intl.DateTimeFormat().resolvedOptions().timeZone?.includes('Kolkata') ||
+      Intl.DateTimeFormat().resolvedOptions().timeZone?.includes('Calcutta') ||
+      Intl.DateTimeFormat().resolvedOptions().timeZone === 'IST')
 
-  const isIndia =
-    market?.code === 'IN' ||
-    isIndianLocale ||
-    !isExplicitOverseas // Safe fallback for unknown or undetected country
+  // If user explicitly chose a market from header, honor it.
+  // Otherwise, if country is IN or Indian locale or undetected, safely use IN.
+  let activeMarketCode = 'IN'
+  if (isManual && market?.code && ['US', 'GB', 'EU', 'DE', 'FR', 'AU', 'IN'].includes(market.code)) {
+    activeMarketCode = market.code
+  } else if (market?.code && ['GB', 'EU', 'DE', 'FR', 'AU'].includes(market.code)) {
+    activeMarketCode = isIndianLocale ? 'IN' : market.code
+  } else if (market?.code === 'US') {
+    const isGenuineUS =
+      typeof navigator !== 'undefined' &&
+      (/[\b_-]US\b/i.test(navigator.language || '') ||
+        navigator.languages?.some((l) => /[\b_-]US\b/i.test(l)) ||
+        /New_York|Los_Angeles|Chicago|Denver|Phoenix/i.test(
+          Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+        ))
+    activeMarketCode = isGenuineUS && !isIndianLocale ? 'US' : 'IN'
+  } else {
+    activeMarketCode = 'IN'
+  }
 
-  const activePricing = isIndia
-    ? MARKET_BESPOKE_RATES.IN
-    : (MARKET_BESPOKE_RATES[market.code] || DEFAULT_MARKET_RATE)
-
-  const currency: CurrencyCode = isIndia
-    ? 'INR'
-    : (market?.currency || 'USD')
+  const activePricing = MARKET_BESPOKE_RATES[activeMarketCode] || MARKET_BESPOKE_RATES.IN
+  const currency: CurrencyCode =
+    activeMarketCode === 'IN'
+      ? 'INR'
+      : (activeMarketCode === 'GB'
+          ? 'GBP'
+          : ['EU', 'DE', 'FR'].includes(activeMarketCode)
+            ? 'EUR'
+            : activeMarketCode === 'AU'
+              ? 'AUD'
+              : 'USD')
 
   const [f, setF] = useState(empty)
   const [submitting, setSubmitting] = useState(false)
