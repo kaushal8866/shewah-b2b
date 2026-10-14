@@ -24,8 +24,8 @@ interface BespokeMarketPricing {
  * The owner has not chosen these yet. Do not invent numbers and do not publish placeholders.
  * Left as null so the current hero remains as is until the owner supplies approved figures.
  */
-export const PLACEHOLDER_ENTRY_INR: string | null = null
-export const PLACEHOLDER_PREMIUM_INR: string | null = null
+const PLACEHOLDER_ENTRY_INR: string | null = null
+const PLACEHOLDER_PREMIUM_INR: string | null = null
 
 const MARKET_BESPOKE_RATES: Record<string, BespokeMarketPricing> = {
   US: { lgdFrom: 1200, naturalFrom: 2200, lgdFormatted: '$1,200', naturalFormatted: '$2,200', fxRateToInr: 87.0 },
