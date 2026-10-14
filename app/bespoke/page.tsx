@@ -19,6 +19,14 @@ interface BespokeMarketPricing {
   fxRateToInr: number
 }
 
+/**
+ * Configurable hero "from" figures for India.
+ * The owner has not chosen these yet. Do not invent numbers and do not publish placeholders.
+ * Left as null so the current hero remains as is until the owner supplies approved figures.
+ */
+export const PLACEHOLDER_ENTRY_INR: string | null = null
+export const PLACEHOLDER_PREMIUM_INR: string | null = null
+
 const MARKET_BESPOKE_RATES: Record<string, BespokeMarketPricing> = {
   US: { lgdFrom: 1200, naturalFrom: 2200, lgdFormatted: '$1,200', naturalFormatted: '$2,200', fxRateToInr: 87.0 },
   GB: { lgdFrom: 950, naturalFrom: 1750, lgdFormatted: '£950', naturalFormatted: '£1,750', fxRateToInr: 110.0 },
@@ -26,9 +34,17 @@ const MARKET_BESPOKE_RATES: Record<string, BespokeMarketPricing> = {
   DE: { lgdFrom: 1100, naturalFrom: 2000, lgdFormatted: '€1,100', naturalFormatted: '€2,000', fxRateToInr: 94.0 },
   FR: { lgdFrom: 1100, naturalFrom: 2000, lgdFormatted: '€1,100', naturalFormatted: '€2,000', fxRateToInr: 94.0 },
   AU: { lgdFrom: 1850, naturalFrom: 3400, lgdFormatted: 'A$1,850', naturalFormatted: 'A$3,400', fxRateToInr: 56.0 },
+  IN: {
+    lgdFrom: 0,
+    naturalFrom: 0,
+    lgdFormatted: PLACEHOLDER_ENTRY_INR ?? '$1,200',
+    naturalFormatted: PLACEHOLDER_PREMIUM_INR ?? '$2,200',
+    fxRateToInr: 1.0,
+  },
 }
 
-const DEFAULT_MARKET_RATE = MARKET_BESPOKE_RATES.US
+// Fallback for unknown or undetected countries is safe: show INR at rate 1, never silently use US rate.
+const DEFAULT_MARKET_RATE = MARKET_BESPOKE_RATES.IN
 
 const WHATSAPP_E164 = '919662266360'
 const WHATSAPP_INTRO = 'Hi Shewah Atelier — I would like an indicative price for a bespoke commission.'
@@ -163,8 +179,11 @@ function PriceCalculator({ activePricing, currency }: { activePricing: BespokeMa
     return () => { cancelled = true }
   }, [carat, karat, setting])
 
-  const fxRate = activePricing.fxRateToInr || 87.0
+  const fxRate = currency === 'INR' ? 1.0 : (activePricing.fxRateToInr || 1.0)
   const convertAmount = (inrAmount: number) => {
+    if (currency === 'INR' || fxRate === 1.0) {
+      return formatCurrency(Math.round(inrAmount), 'INR')
+    }
     const localVal = Math.round(inrAmount / fxRate)
     return formatCurrency(localVal, currency)
   }
@@ -274,8 +293,30 @@ const OCCASIONS = [
 
 export default function BespokePage() {
   const { market } = useCart()
-  const activePricing = MARKET_BESPOKE_RATES[market?.code] || DEFAULT_MARKET_RATE
-  const currency = market?.currency || 'USD'
+
+  // Make India match Indian visitors (country IN or en-IN locale).
+  // Make the fallback for unknown or undetected countries safe: show INR at rate 1, never silently use the US rate.
+  // Keep US, GB, EU/DE/FR and AU unchanged.
+  const isExplicitOverseas =
+    market?.code && ['US', 'GB', 'EU', 'DE', 'FR', 'AU'].includes(market.code)
+
+  const isIndianLocale =
+    typeof navigator !== 'undefined' &&
+    (navigator.languages?.some((l) => /[\b_-]IN\b/i.test(l)) ||
+      /[\b_-]IN\b/i.test(navigator.language || ''))
+
+  const isIndia =
+    market?.code === 'IN' ||
+    isIndianLocale ||
+    !isExplicitOverseas // Safe fallback for unknown or undetected country
+
+  const activePricing = isIndia
+    ? MARKET_BESPOKE_RATES.IN
+    : (MARKET_BESPOKE_RATES[market.code] || DEFAULT_MARKET_RATE)
+
+  const currency: CurrencyCode = isIndia
+    ? 'INR'
+    : (market?.currency || 'USD')
 
   const [f, setF] = useState(empty)
   const [submitting, setSubmitting] = useState(false)
@@ -284,6 +325,13 @@ export default function BespokePage() {
 
   const budgetOptions = useMemo(() => {
     switch (currency) {
+      case 'INR':
+        return [
+          { label: 'Up to ₹1,00,000', value: '50000 - 100000' },
+          { label: '₹1,00,000 – ₹2,50,000', value: '100000 - 250000' },
+          { label: '₹2,50,000 – ₹5,00,000', value: '250000 - 500000' },
+          { label: '₹5,00,000+', value: '500000+' },
+        ]
       case 'GBP':
         return [
           { label: 'Up to £1,000', value: '400 - 1000' },
