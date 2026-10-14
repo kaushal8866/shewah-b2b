@@ -36,6 +36,12 @@ const nextConfig = {
         destination: '/jewellery',
         permanent: true,
       },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.shewah.co' }],
+        destination: 'https://shewah.co/:path*',
+        permanent: true,
+      },
     ]
   },
   async headers() {
