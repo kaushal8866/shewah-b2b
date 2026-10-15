@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import MetalWeightCalculator from '@/components/MetalWeightCalculator'
 import { DynamicField, validateAttributes } from '@/lib/catalogAttributes'
+import ProductPhotoUploader from '@/components/ProductPhotoUploader'
 
 type DiamondRow = {
   id: string
@@ -232,22 +233,6 @@ export default function NewProductPage() {
     } catch { /* silent */ }
   }
 
-  async function handleComponentImageUpload(compIdx: number, files: FileList | null) {
-    if (!files) return
-    setUploading(true)
-    for (const file of Array.from(files)) {
-      try {
-        const url = await uploadToCloudinary(file)
-        setComponents(prev => prev.map((c, i) => {
-          if (i !== compIdx) return c
-          return { ...c, photoUrls: [...c.photoUrls, url] }
-        }))
-      } catch (err) {
-        alert('Image upload failed: ' + (err instanceof Error ? err.message : String(err)))
-      }
-    }
-    setUploading(false)
-  }
 
   const [isReadyToShip, setIsReadyToShip] = useState(false)
   const [rtsGrossWeight, setRtsGrossWeight] = useState('')
@@ -547,20 +532,6 @@ export default function NewProductPage() {
     }
   }
 
-  async function handleImageUpload(files: FileList | null) {
-    if (!files) return
-    setUploading(true)
-    for (const file of Array.from(files)) {
-      try {
-        const url = await uploadToCloudinary(file)
-        setPhotoUrls(prev => [...prev, url])
-      } catch (err) {
-        alert('Image upload failed: ' + (err instanceof Error ? err.message : String(err)))
-      }
-    }
-    setUploading(false)
-  }
-
   function addDiamondRow() { setDiamonds(prev => [...prev, newDiamondRow()]) }
   function removeDiamondRow(id: string) { if (diamonds.length > 1) setDiamonds(prev => prev.filter(d => d.id !== id)) }
   function updateDiamond(id: string, key: keyof DiamondRow, val: string) {
@@ -644,6 +615,10 @@ export default function NewProductPage() {
   }
 
   async function handleSave() {
+    if (uploading) {
+      alert('Please wait for photos to finish uploading before saving.')
+      return
+    }
     if (isSet) {
       if (!form.code || !form.name) { alert('Product code and name are required'); return }
       if (components.length === 0) {
@@ -1123,32 +1098,12 @@ export default function NewProductPage() {
         })()}
 
         {/* PHOTOS */}
-        <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
-          <h2 className="font-medium text-stone-900 mb-1">Product photos</h2>
-          <p className="text-xs text-stone-400 mb-4">Upload multiple angles. First photo is the cover shown in catalog and jeweler portal.</p>
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
-            {photoUrls.map((url, i) => (
-              <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 group">
-                <img src={url} alt="" className="w-full h-full object-cover" />
-                {i === 0 && <div className="absolute bottom-1 left-1 bg-stone-800 text-white text-xs px-1.5 py-0.5 rounded-md">Cover</div>}
-                <button onClick={() => setPhotoUrls(prev => prev.filter((_, idx) => idx !== i))}
-                  className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-            <label className="aspect-square border-2 border-dashed border-stone-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-stone-800 hover:bg-yellow-50 transition-colors">
-              <input type="file" accept="image/*" multiple className="hidden" onChange={e => handleImageUpload(e.target.files)} disabled={uploading} />
-              <Upload className={`w-5 h-5 mb-1 ${uploading ? 'text-stone-200 animate-pulse' : 'text-stone-300'}`} />
-              <span className="text-xs text-stone-300">{uploading ? 'Uploading...' : 'Add photos'}</span>
-            </label>
-          </div>
-          {photoUrls.length === 0 && (
-            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              No photos — products without photos show a placeholder on the jeweler portal.
-            </p>
-          )}
-        </div>
+        <ProductPhotoUploader
+          photos={photoUrls}
+          onChange={setPhotoUrls}
+          onUploadingChange={setUploading}
+        />
+
 
         {/* COMPONENTS SECTION */}
         {isSet && (
@@ -1285,41 +1240,13 @@ export default function NewProductPage() {
                   )
                 })()}
 
-                <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
-                  <h3 className="font-medium text-stone-900 mb-1">Component photos</h3>
-                  <p className="text-xs text-stone-400 mb-4">Upload photo for this component. First photo is shown in component details.</p>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
-                    {components[activeCompIdx].photoUrls.map((url, i) => (
-                      <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 group">
-                        <img src={url} alt="" className="w-full h-full object-cover" />
-                        {i === 0 && <div className="absolute bottom-1 left-1 bg-stone-800 text-white text-xs px-1.5 py-0.5 rounded-md">Main</div>}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            updateComponent(activeCompIdx, {
-                              photoUrls: components[activeCompIdx].photoUrls.filter((_, idx) => idx !== i)
-                            })
-                          }}
-                          className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                    <label className="aspect-square border-2 border-dashed border-stone-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-stone-800 hover:bg-yellow-50 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => handleComponentImageUpload(activeCompIdx, e.target.files)}
-                        disabled={uploading}
-                      />
-                      <Upload className={`w-5 h-5 mb-1 ${uploading ? 'text-stone-200 animate-pulse' : 'text-stone-300'}`} />
-                      <span className="text-xs text-stone-300">{uploading ? 'Uploading...' : 'Add photos'}</span>
-                    </label>
-                  </div>
-                </div>
+                <ProductPhotoUploader
+                  label="Component photos"
+                  description="Upload photo for this component. First photo is shown in component details."
+                  photos={components[activeCompIdx]?.photoUrls || []}
+                  onChange={(newUrls) => updateComponent(activeCompIdx, { photoUrls: newUrls })}
+                  onUploadingChange={setUploading}
+                />
 
                 <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
                   <div className="flex items-center justify-between mb-1">
@@ -1973,10 +1900,10 @@ export default function NewProductPage() {
           <Link href="/catalog" className="px-5 py-2.5 text-sm text-stone-600 border border-stone-200 rounded-xl hover:bg-stone-50">
             Cancel
           </Link>
-          <button onClick={handleSave} disabled={saving}
+          <button onClick={handleSave} disabled={saving || uploading}
             className="flex items-center gap-2 bg-stone-800 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
-            {saving ? 'Saving...' : 'Save product'}
+            {uploading ? 'Uploading photos...' : saving ? 'Saving...' : 'Save product'}
           </button>
         </div>
       </div>

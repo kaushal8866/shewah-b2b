@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { uploadToCloudinary } from '@/lib/cloudinaryUpload'
 import { KARAT_FACTORS, SELLABLE_KARATS, pureMassByKarat, computeKaratPricing, getMetalWeight, pureGoldMass, computeAllMetalWeights } from '@/lib/karat'
 import { ArrowLeft, Save, Calculator, Plus, X, Upload, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
@@ -11,6 +10,7 @@ import Link from 'next/link'
 import MetalWeightCalculator from '@/components/MetalWeightCalculator'
 import { DynamicField, validateAttributes } from '@/lib/catalogAttributes'
 import ProductIntelligenceWidget from '@/components/aurora/ProductIntelligenceWidget'
+import { ProductPhotoUploader } from '@/components/ProductPhotoUploader'
 
 type DiamondRow = {
   id: string
@@ -285,20 +285,6 @@ export default function CatalogProductEditPage() {
     }
   }, [savedFloorPricePaise, cogs22, hasLoadedSavedPrice])
 
-  async function handleImageUpload(files: FileList | null) {
-    if (!files) return
-    setUploading(true)
-    for (const file of Array.from(files)) {
-      try {
-        const url = await uploadToCloudinary(file)
-        setPhotoUrls(prev => [...prev, url])
-      } catch (err) {
-        alert('Image upload failed: ' + (err instanceof Error ? err.message : String(err)))
-      }
-    }
-    setUploading(false)
-  }
-
   function addDiamondRow() { setDiamonds(prev => [...prev, newDiamondRow()]) }
   function removeDiamondRow(id2: string) { if (diamonds.length > 1) setDiamonds(prev => prev.filter(d => d.id !== id2)) }
   function updateDiamond(id2: string, key: keyof DiamondRow, val: string) {
@@ -509,6 +495,10 @@ export default function CatalogProductEditPage() {
   }
 
   async function handleSave() {
+    if (uploading) {
+      alert('Please wait for photos to finish uploading before saving.')
+      return
+    }
     if (!form.code || !form.name) { alert('Product code and name are required'); return }
     if (!weight22) { alert('Net weight is required'); return }
     
@@ -778,26 +768,11 @@ export default function CatalogProductEditPage() {
           )
         })()}
 
-        <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
-          <h2 className="font-medium text-stone-900 mb-1">Product photos</h2>
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
-            {photoUrls.map((url, i) => (
-              <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 group">
-                <img src={url} alt="" className="w-full h-full object-cover" />
-                {i === 0 && <div className="absolute bottom-1 left-1 bg-stone-800 text-white text-xs px-1.5 py-0.5 rounded-md">Cover</div>}
-                <button onClick={() => setPhotoUrls(prev => prev.filter((_, idx) => idx !== i))}
-                  className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-            <label className="aspect-square border-2 border-dashed border-stone-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-stone-800 hover:bg-yellow-50 transition-colors">
-              <input type="file" accept="image/*" multiple className="hidden" onChange={e => handleImageUpload(e.target.files)} disabled={uploading} />
-              <Upload className={`w-5 h-5 mb-1 ${uploading ? 'text-stone-200 animate-pulse' : 'text-stone-300'}`} />
-              <span className="text-xs text-stone-300">{uploading ? 'Uploading...' : 'Add photos'}</span>
-            </label>
-          </div>
-        </div>
+        <ProductPhotoUploader
+          photos={photoUrls}
+          onChange={setPhotoUrls}
+          onUploadingChange={setUploading}
+        />
 
         {!isSet && (
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
@@ -1202,8 +1177,8 @@ export default function CatalogProductEditPage() {
 
         <div className="flex justify-end gap-3 pt-2">
           <Link href="/catalog" className="px-5 py-2.5 text-sm text-stone-600 border border-stone-200 rounded-xl hover:bg-stone-50">Cancel</Link>
-          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-stone-800 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
-            <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save product'}
+          <button onClick={handleSave} disabled={saving || uploading} className="flex items-center gap-2 bg-stone-800 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-stone-900 disabled:opacity-50 transition-colors">
+            <Save className="w-4 h-4" /> {uploading ? 'Uploading photos...' : saving ? 'Saving...' : 'Save product'}
           </button>
         </div>
       </div>
