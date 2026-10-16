@@ -94,9 +94,23 @@ function JewelleryCatalogContent() {
   const filteredProducts = useMemo(() => {
     let list = [...products]
     if (sortBy === 'price_asc') {
-      list.sort((a, b) => a.price.amount - b.price.amount)
+      list.sort((a, b) => {
+        const aAvail = a.price?.isAvailable !== false && (a.price?.amount || 0) > 0
+        const bAvail = b.price?.isAvailable !== false && (b.price?.amount || 0) > 0
+        if (!aAvail && !bAvail) return a.name.localeCompare(b.name)
+        if (!aAvail) return 1
+        if (!bAvail) return -1
+        return a.price.amount - b.price.amount
+      })
     } else if (sortBy === 'price_desc') {
-      list.sort((a, b) => b.price.amount - a.price.amount)
+      list.sort((a, b) => {
+        const aAvail = a.price?.isAvailable !== false && (a.price?.amount || 0) > 0
+        const bAvail = b.price?.isAvailable !== false && (b.price?.amount || 0) > 0
+        if (!aAvail && !bAvail) return a.name.localeCompare(b.name)
+        if (!aAvail) return 1
+        if (!bAvail) return -1
+        return b.price.amount - a.price.amount
+      })
     } else if (sortBy === 'name') {
       list.sort((a, b) => a.name.localeCompare(b.name))
     }
@@ -143,7 +157,7 @@ function JewelleryCatalogContent() {
       {/* Filter and Sort Bar */}
       <div className="flex items-center justify-between py-4 border-y border-[#E3DBD4] text-xs text-[#69727D] mb-10">
         <div>
-          <span>{loading ? 'Curating creations...' : `Showing ${filteredProducts.length} pieces`}</span>
+          <span>{loading ? 'Curating creations...' : `Showing ${filteredProducts.length} ${filteredProducts.length === 1 ? 'piece' : 'pieces'}`}</span>
         </div>
 
         <div className="flex items-center gap-4">

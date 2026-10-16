@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
     const diamondType = searchParams.get('diamondType')
     const style = searchParams.get('style')
     const search = searchParams.get('q')
-    const limit = Math.min(Number(searchParams.get('limit')) || 24, 100)
+    const rawLimit = searchParams.get('limit')
+    const limit = rawLimit ? Math.max(1, Math.min(Number(rawLimit) || 1000, 2000)) : 2000
 
     let query = supabaseAdmin
       .from('products')
