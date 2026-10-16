@@ -126,7 +126,7 @@ export default function WishlistPage() {
                       </p>
                     )}
                     <p className="font-serif text-base text-[#2A241B] font-semibold mt-2">
-                      {item.priceFormatted}
+                      {item.priceFormatted || 'Price on request'}
                     </p>
                   </div>
 

@@ -19,7 +19,7 @@ export const KNOWN_CATEGORIES: Record<string, D2CCategoryConfig> = {
     label: 'Rings & Bands',
     shortLabel: 'Rings',
     href: '/jewellery?category=rings',
-    subtitle: 'Antwerp-Cut Solitaires in Solid 18K Gold',
+    subtitle: 'Antwerp-Cut Solitaires in Solid Gold',
     image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80',
   },
   necklaces: {

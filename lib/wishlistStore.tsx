@@ -7,7 +7,7 @@ export interface WishlistItem {
   slug: string
   name: string
   category: string
-  priceFormatted: string
+  priceFormatted?: string | null
   photoUrl?: string | null
   subtitle?: string
 }

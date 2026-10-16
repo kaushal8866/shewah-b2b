@@ -133,7 +133,7 @@ function JewelleryCatalogContent() {
           {activeCategoryLabel}
         </h1>
         <p className="text-sm text-[#69727D] font-light leading-relaxed">
-          Individually handcrafted in solid 18K gold and set with certified diamonds.
+          Individually handcrafted in precious metals and set with certified diamonds.
           Crafted to order.
         </p>
       </div>

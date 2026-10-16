@@ -2,6 +2,87 @@ import { supabaseAdmin } from './supabaseAdmin'
 import { getMarket, computeDeliveryEstimate, type MarketCode } from './markets'
 import { resolveProductMarketPrice } from './d2cPricing'
 import { optimizeCloudinaryUrl } from './imageUrl'
+import { normalizeCategoryKey } from './categories'
+
+export function parseKaratNumber(product: any): number {
+  const candidates = [
+    product?.ref_karat,
+    product?.gold_karat,
+    product?.karat,
+    product?.d2c_details?.karat,
+    product?.d2c_details?.gold_karat,
+  ]
+  for (const c of candidates) {
+    if (c !== undefined && c !== null) {
+      const parsed = parseInt(String(c).replace(/[^\d]/g, ''), 10)
+      if (parsed && !isNaN(parsed) && parsed > 0) return parsed
+    }
+  }
+  return 18
+}
+
+export function getHallmarkLabel(karat: number, isSilver: boolean, isPlatinum: boolean, marketCode: string): string {
+  if (isPlatinum) {
+    return 'Certified Assay Pt950 Hallmark'
+  }
+  if (isSilver) {
+    return marketCode === 'IN'
+      ? 'Certified Assay 925 / BIS Hallmark with HUID'
+      : 'Certified Assay 925 / 925 Sterling Silver'
+  }
+  switch (karat) {
+    case 9:
+      return marketCode === 'IN'
+        ? 'Certified Assay 375 / BIS 375 with HUID'
+        : 'Certified Assay 375 / Solid 9K Gold'
+    case 10:
+      return marketCode === 'IN'
+        ? 'Certified Assay 417 / BIS 417 with HUID'
+        : 'Certified Assay 417 / Solid 10K Gold'
+    case 14:
+      return marketCode === 'IN'
+        ? 'Certified Assay 585 / BIS 585 with HUID'
+        : 'Certified Assay 585 / Solid 14K Gold'
+    case 22:
+      return marketCode === 'IN'
+        ? 'Certified Assay 916 / BIS 916 with HUID'
+        : 'Certified Assay 916 / Solid 22K Gold'
+    case 18:
+    default:
+      return marketCode === 'IN'
+        ? 'Certified Assay 750 / BIS Hallmark with HUID'
+        : 'Certified Assay 750 / Solid 18K Gold'
+  }
+}
+
+export function resolveBaseProductWeight(product: any, karat: number, isSilver: boolean): number | null {
+  if (product?.code === 'SH-004' || product?.slug === 'the-royal-diamond-tennis-necklace') {
+    return 29.0
+  }
+  if (product?.code === 'SH-003' || product?.slug === 'the-tanmaniya-heritage-diamond-suite') {
+    return 8.6
+  }
+  if (isSilver) {
+    const w = product?.metal_weights?.silver_925_default || product?.silver_weight_g || product?.gold_weight_g
+    return w ? Number(Number(w).toFixed(1)) : null
+  }
+  let w: any = null
+  if (karat === 9) {
+    w = product?.gold_weight_9k || product?.metal_weights?.['9K_yellow'] || product?.metal_weights?.['9K_rose']
+  } else if (karat === 10) {
+    w = product?.gold_weight_10k || product?.metal_weights?.['10K_yellow'] || product?.metal_weights?.['10K_rose']
+  } else if (karat === 14) {
+    w = product?.gold_weight_14k || product?.metal_weights?.['14K_yellow'] || product?.metal_weights?.['14K_rose']
+  } else if (karat === 22) {
+    w = product?.gold_weight_22k || product?.metal_weights?.['22K_yellow'] || product?.gold_weight_g
+  } else if (karat === 18) {
+    w = product?.gold_weight_18k || product?.metal_weights?.['18K_yellow'] || product?.gold_weight_g
+  }
+  if (!w) {
+    w = product?.gold_weight_g || product?.gold_weight_18k
+  }
+  return w ? Number(Number(w).toFixed(1)) : null
+}
 
 export interface D2CProductDetail {
   id: string
@@ -28,6 +109,9 @@ export interface D2CProductDetail {
     diamondClarity: string
     hallmark: string
     certification: string
+    metalType?: string
+    karat?: number
+    karatLabel?: string
   }
   configurationSchema: {
     isConfigurable: boolean
@@ -147,29 +231,47 @@ export async function fetchProductDetail(
     const pricing = await resolveProductMarketPrice(product.id, market.code, undefined, product)
 
     // 4. Determine product-specific configuration schema
-    const isRing = (product.category || '').toLowerCase().includes('ring')
+    const canonicalCat = normalizeCategoryKey(product.category)
+    const isRing = canonicalCat === 'rings'
+    const isSilver = (product.metal_type || '').toLowerCase() === 'silver'
+    const baseKaratNum = isSilver ? 0 : parseKaratNumber(product)
+    const baseKaratLabel = isSilver ? '925' : `${baseKaratNum}K`
     const details = (product.d2c_details || {}) as Record<string, any>
 
-    const allMetals = [
-      { id: '18k_yellow', name: '18K Yellow Gold', tone: 'yellow', karat: 18, colorHex: '#E5C483' },
-      { id: '18k_white',  name: '18K White Gold',  tone: 'white',  karat: 18, colorHex: '#E8E8E8' },
-      { id: '18k_rose',   name: '18K Rose Gold',   tone: 'rose',   karat: 18, colorHex: '#E8B4B8' },
-      { id: 'platinum',   name: '950 Platinum',    tone: 'platinum', karat: 'Platinum', colorHex: '#D8D8D8' },
-    ]
+    const allMetals = isSilver
+      ? [
+          { id: 'silver', name: '925 Sterling Silver', tone: 'silver', karat: '925', colorHex: '#E0E0E0' },
+        ]
+      : [
+          { id: `${baseKaratLabel.toLowerCase()}_yellow`, name: `${baseKaratLabel} Yellow Gold`, tone: 'yellow', karat: baseKaratNum, colorHex: '#E5C483' },
+          { id: `${baseKaratLabel.toLowerCase()}_white`,  name: `${baseKaratLabel} White Gold`,  tone: 'white',  karat: baseKaratNum, colorHex: '#E8E8E8' },
+          { id: `${baseKaratLabel.toLowerCase()}_rose`,   name: `${baseKaratLabel} Rose Gold`,   tone: 'rose',   karat: baseKaratNum, colorHex: '#E8B4B8' },
+          { id: 'platinum',   name: '950 Platinum',    tone: 'platinum', karat: 'Platinum', colorHex: '#D8D8D8' },
+        ]
 
     const allStones = [
       { id: 'lgd',     name: 'Lab-Grown Diamond (IGI Certified)', type: 'lab_grown' },
       { id: 'natural', name: 'Natural Diamond (GIA Certified)',   type: 'natural' },
     ]
 
+    const prodDiamondType = (product.diamond_type || '').toLowerCase().trim()
+    let allowedStones: Array<{ id: string; name: string; type: string }> = []
+    if (Array.isArray(details.allowed_stones) && details.allowed_stones.length > 0) {
+      allowedStones = allStones.filter(s => details.allowed_stones.includes(s.id))
+    } else if (prodDiamondType === 'lgd' || prodDiamondType === 'lab_grown') {
+      allowedStones = [allStones[0]]
+    } else if (prodDiamondType === 'natural') {
+      allowedStones = [allStones[1]]
+    } else if (!prodDiamondType) {
+      allowedStones = []
+    } else {
+      allowedStones = allStones
+    }
+
     // Respect product-specific restrictions from d2c_details if defined
     const allowedMetals = Array.isArray(details.allowed_metals) && details.allowed_metals.length > 0
       ? allMetals.filter(m => details.allowed_metals.includes(m.id))
       : allMetals
-
-    const allowedStones = Array.isArray(details.allowed_stones) && details.allowed_stones.length > 0
-      ? allStones.filter(s => details.allowed_stones.includes(s.id))
-      : allStones
 
     const availableSizes = Array.isArray(details.sizes) && details.sizes.length > 0
       ? details.sizes
@@ -331,15 +433,8 @@ export async function fetchProductDetail(
     }
     sanitizedPhotos = sanitizedPhotos.map((u: string) => optimizeCloudinaryUrl(u, 1400) || u)
 
-    // Compute reconciled gold weight
-    let reconciledGoldWeight: number | null = null
-    if (product.code === 'SH-004' || product.slug === 'the-royal-diamond-tennis-necklace') {
-      reconciledGoldWeight = 29.0
-    } else if (product.code === 'SH-003' || product.slug === 'the-tanmaniya-heritage-diamond-suite') {
-      reconciledGoldWeight = 8.6
-    } else if (product.gold_weight_18k || product.gold_weight_g) {
-      reconciledGoldWeight = Number(Number(product.gold_weight_18k || product.gold_weight_g).toFixed(1))
-    }
+    // Compute reconciled metal weight
+    const reconciledGoldWeight = resolveBaseProductWeight(product, baseKaratNum, isSilver)
 
     // Compute reconciled diamond total weight
     let reconciledDiamondWeight: number | null = null
@@ -378,10 +473,15 @@ export async function fetchProductDetail(
         diamondShape: product.diamond_shape || 'Round Brilliant',
         diamondColor,
         diamondClarity,
-        hallmark: market.code === 'IN'
-          ? 'Certified Assay 750 / BIS Hallmark with HUID'
-          : 'Certified Assay 750 / Solid 18K Gold',
-        certification: 'IGI / GIA Certified Diamonds',
+        hallmark: getHallmarkLabel(baseKaratNum, isSilver, false, market.code),
+        certification: prodDiamondType === 'natural'
+          ? 'GIA Certified Natural Diamonds'
+          : prodDiamondType === 'lgd' || prodDiamondType === 'lab_grown'
+          ? 'IGI Certified Lab-Grown Diamonds'
+          : (prodDiamondType ? 'IGI / GIA Certified Diamonds' : 'Certified Fine Jewellery'),
+        metalType: product.metal_type || 'gold',
+        karat: baseKaratNum,
+        karatLabel: baseKaratLabel,
       },
       configurationSchema: {
         isConfigurable: product.is_configurable === true || product.d2c_status === 'published' || details.is_configurable !== false,

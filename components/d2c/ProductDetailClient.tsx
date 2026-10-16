@@ -32,8 +32,16 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   )
 
   // Configuration state
-  const [selectedMetalTone, setSelectedMetalTone] = useState<string>('yellow')
-  const [selectedDiamondType, setSelectedDiamondType] = useState<'lab_grown' | 'natural'>('lab_grown')
+  const defaultMetalTone =
+    initialProduct.configurationSchema?.metals?.[0]?.tone ||
+    initialProduct.configurationSchema?.metals?.[0]?.id ||
+    (initialProduct.specifications?.metalType === 'silver' ? 'silver' : 'yellow')
+
+  const defaultDiamondType =
+    initialProduct.configurationSchema?.stones?.[0]?.type === 'natural' ? 'natural' : 'lab_grown'
+
+  const [selectedMetalTone, setSelectedMetalTone] = useState<string>(defaultMetalTone)
+  const [selectedDiamondType, setSelectedDiamondType] = useState<'lab_grown' | 'natural'>(defaultDiamondType)
   const [selectedRingSize, setSelectedRingSize] = useState<string>(
     initialProduct.configurationSchema?.sizes?.[2] || 'US 6'
   )
@@ -96,6 +104,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   useEffect(() => {
     const isRing = Boolean(product.configurationSchema?.isRing)
     const targetProdId = activeComponent ? activeComponent.id : product.id
+    const karatVal = selectedMetalTone === 'platinum' ? 'Platinum' : (product.specifications?.karat || 18)
 
     let cancelled = false
     async function recomputePrice() {
@@ -115,7 +124,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
               metalTone: selectedMetalTone,
               diamondType: selectedDiamondType,
               ringSize: isRing && !activeComponent ? selectedRingSize : undefined,
-              karat: selectedMetalTone === 'platinum' ? 'Platinum' : 18,
+              karat: karatVal,
             },
           }),
         })
@@ -134,39 +143,89 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     }
     recomputePrice()
     return () => { cancelled = true }
-  }, [product.id, activeComponent, market.code, selectedMetalTone, selectedDiamondType, selectedRingSize, product.configurationSchema?.isRing])
+  }, [product.id, product.specifications?.karat, activeComponent, market.code, selectedMetalTone, selectedDiamondType, selectedRingSize, product.configurationSchema?.isRing])
 
   // Dynamic specs derived from live variant choices
   const dynamicSpecs = useMemo(() => {
     const baseSpecs = product.specifications
+    const isSilver = baseSpecs?.metalType === 'silver' || selectedMetalTone === 'silver'
     const isPlat = selectedMetalTone === 'platinum'
     const isNatural = selectedDiamondType === 'natural'
     const toneCap = selectedMetalTone.charAt(0).toUpperCase() + selectedMetalTone.slice(1)
+    const karatNum = baseSpecs?.karat || 18
+    const karatLabel = baseSpecs?.karatLabel || (isSilver ? '925' : `${karatNum}K`)
 
-    const metalLabel = isPlat ? '950 Platinum' : `Solid 18K ${toneCap} Gold`
+    let metalLabel: string
+    if (isSilver) {
+      metalLabel = '925 Sterling Silver'
+    } else if (isPlat) {
+      metalLabel = '950 Platinum'
+    } else {
+      metalLabel = `Solid ${karatLabel} ${toneCap} Gold`
+    }
 
-    const hallmarkLabel = isPlat
-      ? 'Certified Assay Pt950 Hallmark'
-      : (market.code === 'IN'
-          ? 'Certified Assay 750 / BIS Hallmark with HUID'
-          : 'Certified Assay 750 / Solid 18K Gold')
+    let hallmarkLabel: string
+    if (isSilver) {
+      hallmarkLabel = market.code === 'IN'
+        ? 'Certified Assay 925 / BIS Hallmark with HUID'
+        : 'Certified Assay 925 / 925 Sterling Silver'
+    } else if (isPlat) {
+      hallmarkLabel = 'Certified Assay Pt950 Hallmark'
+    } else if (karatNum === 9) {
+      hallmarkLabel = market.code === 'IN'
+        ? 'Certified Assay 375 / BIS 375 with HUID'
+        : 'Certified Assay 375 / Solid 9K Gold'
+    } else if (karatNum === 10) {
+      hallmarkLabel = market.code === 'IN'
+        ? 'Certified Assay 417 / BIS 417 with HUID'
+        : 'Certified Assay 417 / Solid 10K Gold'
+    } else if (karatNum === 14) {
+      hallmarkLabel = market.code === 'IN'
+        ? 'Certified Assay 585 / BIS 585 with HUID'
+        : 'Certified Assay 585 / Solid 14K Gold'
+    } else if (karatNum === 22) {
+      hallmarkLabel = market.code === 'IN'
+        ? 'Certified Assay 916 / BIS 916 with HUID'
+        : 'Certified Assay 916 / Solid 22K Gold'
+    } else {
+      hallmarkLabel = market.code === 'IN'
+        ? 'Certified Assay 750 / BIS Hallmark with HUID'
+        : 'Certified Assay 750 / Solid 18K Gold'
+    }
 
-    const certificationLabel = isNatural
-      ? 'GIA Certified Natural Diamonds (Geological Origin)'
-      : 'IGI Certified Lab-Grown Diamonds'
+    const stonesList = product.configurationSchema?.stones
+    const hasDiamonds = stonesList !== undefined
+      ? stonesList.length > 0
+      : Boolean(baseSpecs?.diamondWeightCarats)
 
-    const qualityLabel = isNatural
+    let certificationLabel: string
+    if (!hasDiamonds) {
+      certificationLabel = 'Certified Fine Jewellery'
+    } else if (isNatural) {
+      certificationLabel = 'GIA Certified Natural Diamonds (Geological Origin)'
+    } else {
+      certificationLabel = 'IGI Certified Lab-Grown Diamonds'
+    }
+
+    const qualityLabel = !hasDiamonds
+      ? null
+      : isNatural
       ? 'Color F-G, Clarity VS'
-      : (baseSpecs.diamondColor ? `Color ${baseSpecs.diamondColor}, Clarity ${baseSpecs.diamondClarity || 'VVS-VS'}` : 'Color EF, Clarity VVS-VS')
+      : (baseSpecs?.diamondColor ? `Color ${baseSpecs.diamondColor}, Clarity ${baseSpecs.diamondClarity || 'VVS-VS'}` : 'Color EF, Clarity VVS-VS')
 
-    const rawGold = activeComponent?.approxGoldWeight || baseSpecs.approxGoldWeight
-    const weightLabel = rawGold
-      ? (isPlat
-          ? `~${(rawGold * 1.3).toFixed(1)}g 950 Platinum`
-          : `~${rawGold}g Solid 18K Gold`)
-      : null
+    const rawGold = activeComponent?.approxGoldWeight || baseSpecs?.approxGoldWeight
+    let weightLabel: string | null = null
+    if (rawGold) {
+      if (isSilver) {
+        weightLabel = `~${rawGold}g 925 Sterling Silver`
+      } else if (isPlat) {
+        weightLabel = `~${(rawGold * 1.3).toFixed(1)}g 950 Platinum`
+      } else {
+        weightLabel = `~${rawGold}g Solid ${karatLabel} Gold`
+      }
+    }
 
-    const rawCarats = activeComponent?.diamondWeightCarats || baseSpecs.diamondWeightCarats
+    const rawCarats = activeComponent?.diamondWeightCarats || baseSpecs?.diamondWeightCarats
     const caratsLabel = rawCarats
       ? `~${rawCarats}ct Total (${isNatural ? 'Natural Mined' : 'Lab-Grown'})`
       : null
@@ -178,8 +237,9 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       quality: qualityLabel,
       weight: weightLabel,
       diamonds: caratsLabel,
+      hasDiamonds,
     }
-  }, [product.specifications, selectedMetalTone, selectedDiamondType, activeComponent, market.code])
+  }, [product.specifications, product.configurationSchema?.stones, selectedMetalTone, selectedDiamondType, activeComponent, market.code])
 
   const availableMetals = useMemo(() => {
     const schemaMetals = product.configurationSchema?.metals || []
@@ -190,17 +250,25 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
         hex: m.colorHex,
       }))
     }
+    const karatNum = product.specifications?.karat || 18
+    const karatLabel = product.specifications?.karatLabel || `${karatNum}K`
+    const isSilver = product.specifications?.metalType === 'silver'
+    if (isSilver) {
+      return [
+        { id: 'silver', name: '925 Sterling Silver', hex: '#E0E0E0' },
+      ]
+    }
     return [
-      { id: 'yellow', name: '18K Yellow Gold', hex: '#E5C483' },
-      { id: 'white',  name: '18K White Gold',  hex: '#E8E8E8' },
-      { id: 'rose',   name: '18K Rose Gold',   hex: '#E8B4B8' },
+      { id: 'yellow', name: `${karatLabel} Yellow Gold`, hex: '#E5C483' },
+      { id: 'white',  name: `${karatLabel} White Gold`,  hex: '#E8E8E8' },
+      { id: 'rose',   name: `${karatLabel} Rose Gold`,   hex: '#E8B4B8' },
       { id: 'platinum', name: '950 Platinum',  hex: '#D8D8D8' },
     ]
-  }, [product.configurationSchema?.metals])
+  }, [product.configurationSchema?.metals, product.specifications?.karat, product.specifications?.karatLabel, product.specifications?.metalType])
 
   const availableStones = useMemo(() => {
-    const schemaStones = product.configurationSchema?.stones || []
-    if (schemaStones.length > 0) {
+    const schemaStones = product.configurationSchema?.stones
+    if (schemaStones !== undefined) {
       return schemaStones.map((s) => ({
         type: (s.type === 'lgd' ? 'lab_grown' : s.type) as 'lab_grown' | 'natural',
         name: s.type === 'natural' ? 'Natural Mined Diamond' : 'Lab-Grown Diamond',
@@ -219,6 +287,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     if (isUnpricedProduct) return
     const isPlat = selectedMetalTone === 'platinum'
     const targetProduct = activeComponent || product
+    const karatVal = isPlat ? 'Platinum' : (product.specifications?.karat || 18)
     addItem(
       {
         id: targetProduct.id,
@@ -232,7 +301,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
           metalTone: selectedMetalTone,
           diamondType: selectedDiamondType,
           ringSize: product.configurationSchema?.isRing && !activeComponent ? selectedRingSize : undefined,
-          karat: isPlat ? 'Platinum' : 18,
+          karat: karatVal,
         },
       },
       1
@@ -546,7 +615,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                             {comp.roleLabel} Only
                           </div>
                           <div className="text-xs text-[#69727D] font-light mt-0.5">
-                            {comp.name} {comp.approxGoldWeight ? `• ~${comp.approxGoldWeight}g 18K Solid Gold` : ''}
+                            {comp.name} {comp.approxGoldWeight ? `• ~${comp.approxGoldWeight}g ${product.specifications?.karatLabel || '18K'} Solid Gold` : ''}
                           </div>
                         </div>
                       </div>
@@ -570,10 +639,14 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
               <label className="text-xs uppercase tracking-[0.2em] font-semibold text-[#051F34] flex items-center justify-between">
                 <span>Metal Purity &amp; Tone</span>
                 <span className="text-[#CB9274] capitalize">
-                  {selectedMetalTone === 'platinum' ? '950 Platinum' : `${selectedMetalTone} Gold`}
+                  {selectedMetalTone === 'platinum'
+                    ? '950 Platinum'
+                    : selectedMetalTone === 'silver'
+                    ? '925 Sterling Silver'
+                    : `${selectedMetalTone} Gold`}
                 </span>
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className={`grid ${availableMetals.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
                 {availableMetals.map((m) => (
                   <button
                     key={m.id}
@@ -592,27 +665,29 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
             </div>
 
             {/* Configurator: Diamond Choice */}
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-wider font-semibold text-[#2A241B] flex items-center justify-between">
-                <span>Diamond Origin &amp; Certification</span>
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {availableStones.map((s) => (
-                  <button
-                    key={s.type}
-                    onClick={() => setSelectedDiamondType(s.type)}
-                    className={`p-3 rounded-none border text-xs text-left transition-all ${
-                      selectedDiamondType === s.type
-                        ? 'border-[#051F34] bg-white shadow-sm'
-                        : 'border-[#E3DBD4] bg-[#F6F4F2] hover:border-[#051F34]'
-                    }`}
-                  >
-                    <div className="font-semibold text-[#051F34]">{s.name}</div>
-                    <div className="text-[10px] text-[#69727D] mt-0.5">{s.sub}</div>
-                  </button>
-                ))}
+            {availableStones.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-wider font-semibold text-[#2A241B] flex items-center justify-between">
+                  <span>Diamond Origin &amp; Certification</span>
+                </label>
+                <div className={`grid ${availableStones.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
+                  {availableStones.map((s) => (
+                    <button
+                      key={s.type}
+                      onClick={() => setSelectedDiamondType(s.type)}
+                      className={`p-3 rounded-none border text-xs text-left transition-all ${
+                        selectedDiamondType === s.type
+                          ? 'border-[#051F34] bg-white shadow-sm'
+                          : 'border-[#E3DBD4] bg-[#F6F4F2] hover:border-[#051F34]'
+                      }`}
+                    >
+                      <div className="font-semibold text-[#051F34]">{s.name}</div>
+                      <div className="text-[10px] text-[#69727D] mt-0.5">{s.sub}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Configurator: Ring Size */}
             {product.configurationSchema?.isRing && !activeComponent && product.configurationSchema?.sizes?.length > 0 && (
@@ -749,9 +824,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       <div>
                         <strong className="text-[#051F34] font-medium">Certification:</strong> {dynamicSpecs.certification}
                       </div>
-                      <div>
-                        <strong className="text-[#051F34] font-medium">Diamond Quality:</strong> {dynamicSpecs.quality}
-                      </div>
+                      {dynamicSpecs.quality && (
+                        <div>
+                          <strong className="text-[#051F34] font-medium">Diamond Quality:</strong> {dynamicSpecs.quality}
+                        </div>
+                      )}
                       {dynamicSpecs.weight && (
                         <div>
                           <strong className="text-[#051F34] font-medium">Weight:</strong> {dynamicSpecs.weight}
@@ -762,15 +839,17 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                           <strong className="text-[#051F34] font-medium">Diamonds:</strong> {dynamicSpecs.diamonds}
                         </div>
                       )}
-                      <div className="col-span-2 pt-2 border-t border-[#E3DBD4] flex flex-wrap items-center gap-3 text-[11px]">
-                        <span className="text-[#051F34] font-medium">Laboratory Grading &amp; Provenance:</span>
-                        <Link
-                          href="/diamonds"
-                          className="text-[#051F34] hover:text-[#CB9274] underline font-medium inline-flex items-center gap-1"
-                        >
-                          IGI &amp; GIA Diamond Certification Guide &rarr;
-                        </Link>
-                      </div>
+                      {dynamicSpecs.hasDiamonds && (
+                        <div className="col-span-2 pt-2 border-t border-[#E3DBD4] flex flex-wrap items-center gap-3 text-[11px]">
+                          <span className="text-[#051F34] font-medium">Laboratory Grading &amp; Provenance:</span>
+                          <Link
+                            href="/diamonds"
+                            className="text-[#051F34] hover:text-[#CB9274] underline font-medium inline-flex items-center gap-1"
+                          >
+                            IGI &amp; GIA Diamond Certification Guide &rarr;
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -943,7 +1022,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] text-[#69727D]">
                         {comp.approxGoldWeight && (
                           <div>
-                            <span>Gold:</span> <strong className="text-[#051F34]">~{comp.approxGoldWeight}g 18K</strong>
+                            <span>Gold:</span> <strong className="text-[#051F34]">~{comp.approxGoldWeight}g {product.specifications?.karatLabel || '18K'}</strong>
                           </div>
                         )}
                         {comp.diamondWeightCarats && (
@@ -955,7 +1034,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                           <span>Crafting:</span> <strong className="text-[#051F34]">Made to Order</strong>
                         </div>
                         <div>
-                          <span>Assay:</span> <strong className="text-[#051F34]">Solid 18K Gold</strong>
+                          <span>Assay:</span> <strong className="text-[#051F34]">Solid {product.specifications?.karatLabel || '18K'} Gold</strong>
                         </div>
                       </div>
 
