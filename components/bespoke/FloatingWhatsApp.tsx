@@ -36,11 +36,11 @@ export default function FloatingWhatsApp() {
         rel="noopener noreferrer"
         onClick={() => trackWhatsAppClick('floating_bubble')}
         aria-label="Chat on WhatsApp with Shewah Atelier"
-        className="group flex items-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-3 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 min-h-[48px]"
+        className="group flex items-center gap-2.5 bg-[#0E2233] hover:bg-[#132B40] text-[#F7F3EA] border border-[#C6A15B] px-4 py-3 rounded-none transition-all duration-200 active:scale-95 min-h-[48px]"
       >
-        <MessageCircle className="w-6 h-6 shrink-0 fill-current" />
-        <span className="text-xs font-semibold tracking-wide pr-1 hidden sm:inline-block">
-          Chat on WhatsApp
+        <MessageCircle className="w-5 h-5 text-[#25D366] fill-current shrink-0" />
+        <span className="font-jakarta text-xs uppercase tracking-widest text-[#F7F3EA] font-semibold pr-1 hidden sm:inline-block">
+          WhatsApp Concierge
         </span>
       </a>
     </aside>

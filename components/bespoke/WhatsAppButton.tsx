@@ -22,17 +22,17 @@ export default function WhatsAppButton({
   children,
 }: WhatsAppButtonProps) {
   const baseClass =
-    'inline-flex items-center justify-center gap-2 min-h-[44px] text-xs uppercase tracking-widest font-semibold rounded-lg transition-all active:scale-[0.98]'
+    'inline-flex items-center justify-center gap-2 min-h-[44px] font-jakarta text-xs uppercase tracking-[0.16em] font-semibold rounded-none transition-colors duration-200 active:scale-[0.98]'
 
   let variantClass = ''
   if (variant === 'primary') {
-    variantClass = 'bg-[#25D366] hover:bg-[#20ba59] text-white shadow-md'
+    variantClass = 'bg-[#C6A15B] text-[#0E2233] hover:bg-[#E9C178]'
   } else if (variant === 'card') {
     variantClass =
-      'w-full bg-[#051F34] hover:bg-[#A88A4F] text-white py-2.5 px-4 rounded-xl shadow-sm'
+      'w-full bg-transparent border border-[#C6A15B] text-[#C6A15B] hover:bg-[#C6A15B] hover:text-[#0E2233] py-3.5 px-4 text-center'
   } else {
     variantClass =
-      'border border-[#25D366]/50 hover:border-[#25D366] bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366]'
+      'bg-transparent border border-[#C6A15B] text-[#F7F3EA] hover:bg-[#C6A15B]/15 hover:border-[#E9C178]'
   }
 
   return (

@@ -60,6 +60,15 @@ html, body {
   font-family: var(--font-sans), 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* Quiet Atelier typography */
+.font-playfair {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-jakarta {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 /* ============================================================
    Emphasis comes from tracking, not weight
    ============================================================ */

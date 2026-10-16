@@ -124,25 +124,25 @@ export default function BespokeQuoteForm() {
 
   if (submitted) {
     return (
-      <div className="bg-white border border-[#E8DFC9] rounded-2xl p-8 sm:p-10 shadow-sm text-center max-w-lg mx-auto">
-        <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#D4AF37]/30">
-          <CheckCircle2 className="w-8 h-8 text-[#A88A4F]" />
+      <div id="quote-form" className="bg-white border-2 border-[#C6A15B] p-8 sm:p-12 shadow-none rounded-none text-center max-w-lg mx-auto scroll-mt-24">
+        <div className="w-14 h-14 bg-[#C6A15B]/15 rounded-none flex items-center justify-center mx-auto mb-4 border border-[#C6A15B]/40">
+          <CheckCircle2 className="w-8 h-8 text-[#C6A15B]" />
         </div>
-        <h3 className="font-serif text-2xl sm:text-3xl text-[#051F34] font-normal">
+        <h3 className="font-playfair text-2xl sm:text-3xl text-[#0E2233] font-normal">
           Thank You for Your Design Brief
         </h3>
-        <p className="mt-3 text-xs sm:text-sm text-[#5C5347] leading-relaxed font-light">
+        <p className="mt-3 font-jakarta text-xs sm:text-sm text-[#5A6570] leading-relaxed font-light">
           Our Surat atelier team will reply within 1 hour on WhatsApp with your custom design preview and itemised quote.
         </p>
 
-        <div className="mt-6 pt-6 border-t border-[#E8DFC9]/70 space-y-3">
-          <p className="text-xs text-[#8C8275]">Want to share reference photos immediately?</p>
+        <div className="mt-6 pt-6 border-t border-[#C6A15B]/20 space-y-3">
+          <p className="font-jakarta text-xs text-[#5A6570]">Want to share reference photos immediately?</p>
           <a
             href={WHATSAPP_DIRECT_URL}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackWhatsAppClick('thankyou_wa_cta')}
-            className="inline-flex items-center justify-center gap-2 min-h-[46px] w-full bg-[#25D366] hover:bg-[#20ba59] text-white text-xs uppercase tracking-widest font-semibold px-6 py-3 rounded-xl transition-all shadow-md active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-2 min-h-[46px] w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-jakarta text-xs uppercase tracking-widest font-semibold px-6 py-3 rounded-none transition-colors duration-200 active:scale-[0.98]"
           >
             <MessageCircle className="w-4 h-4 fill-current" />
             Send Photos on WhatsApp
@@ -153,19 +153,19 @@ export default function BespokeQuoteForm() {
   }
 
   const inputStyle =
-    'w-full min-h-[44px] border border-[#E8DFC9] bg-white px-3.5 py-2.5 text-xs sm:text-sm text-[#051F34] rounded-xl outline-none transition-all placeholder:text-stone-400 focus:border-[#A88A4F] focus:ring-1 focus:ring-[#A88A4F]'
+    'w-full min-h-[44px] border border-[#C6A15B]/40 bg-[#F7F3EA] px-3.5 py-2.5 font-jakarta text-xs sm:text-sm text-[#1A1A1A] rounded-none outline-none transition-colors placeholder:text-[#5A6570]/50 focus:border-[#C6A15B]'
 
   return (
-    <div id="quote-form" className="scroll-mt-24 bg-white border border-[#E8DFC9] rounded-2xl p-6 sm:p-10 shadow-sm max-w-xl mx-auto">
+    <div id="quote-form" className="scroll-mt-24 bg-white border-2 border-[#C6A15B] p-6 sm:p-12 shadow-none rounded-none max-w-xl mx-auto">
       <div className="text-center mb-6">
-        <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] text-[#A88A4F] font-semibold">
-          <Sparkles className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 font-jakarta text-[11px] uppercase tracking-[0.25em] text-[#C6A15B] font-semibold">
+          <Sparkles className="w-3.5 h-3.5 text-[#C6A15B]" />
           Direct Atelier Consultation
         </span>
-        <h2 className="font-serif text-2xl sm:text-3xl text-[#051F34] mt-1 font-normal">
+        <h2 className="font-playfair text-2xl sm:text-4xl text-[#0E2233] mt-2 mb-2 font-normal">
           Send Your Design Brief
         </h2>
-        <p className="text-xs sm:text-sm text-[#5C5347] mt-1.5 font-light leading-relaxed">
+        <p className="font-jakarta text-xs sm:text-sm text-[#5A6570] font-light leading-relaxed">
           Tell us what you want to create. Receive an itemised quote and 3D CAD design preview.
         </p>
       </div>
@@ -183,10 +183,11 @@ export default function BespokeQuoteForm() {
         />
 
         <div>
-          <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#8C8275] mb-1.5">
-            Full Name <span className="text-[#A88A4F]">*</span>
+          <label htmlFor="fullName" className="block font-jakarta text-[10px] sm:text-[11px] uppercase tracking-[0.15em] font-semibold text-[#5A6570] mb-1.5">
+            Full Name <span className="text-[#C6A15B]">*</span>
           </label>
           <input
+            id="fullName"
             type="text"
             required
             autoComplete="name"
@@ -199,10 +200,11 @@ export default function BespokeQuoteForm() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#8C8275] mb-1.5">
-              WhatsApp / Mobile Number <span className="text-[#A88A4F]">*</span>
+            <label htmlFor="phone" className="block font-jakarta text-[10px] sm:text-[11px] uppercase tracking-[0.15em] font-semibold text-[#5A6570] mb-1.5">
+              WhatsApp / Mobile Number <span className="text-[#C6A15B]">*</span>
             </label>
             <input
+              id="phone"
               type="tel"
               inputMode="tel"
               required
@@ -215,10 +217,11 @@ export default function BespokeQuoteForm() {
           </div>
 
           <div>
-            <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#8C8275] mb-1.5">
+            <label htmlFor="city" className="block font-jakarta text-[10px] sm:text-[11px] uppercase tracking-[0.15em] font-semibold text-[#5A6570] mb-1.5">
               City
             </label>
             <input
+              id="city"
               type="text"
               autoComplete="address-level2"
               value={city}
@@ -231,7 +234,7 @@ export default function BespokeQuoteForm() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#8C8275] mb-1.5">
+            <label className="block font-jakarta text-[10px] sm:text-[11px] uppercase tracking-[0.15em] font-semibold text-[#5A6570] mb-1.5">
               What do you want to create?
             </label>
             <select
@@ -246,8 +249,8 @@ export default function BespokeQuoteForm() {
           </div>
 
           <div>
-            <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#8C8275] mb-1.5">
-              Estimated Budget <span className="text-stone-400 lowercase font-normal">(optional)</span>
+            <label className="block font-jakarta text-[10px] sm:text-[11px] uppercase tracking-[0.15em] font-semibold text-[#5A6570] mb-1.5">
+              Estimated Budget <span className="text-[#5A6570]/70 lowercase font-normal">(optional)</span>
             </label>
             <select
               value={budget}
@@ -262,20 +265,28 @@ export default function BespokeQuoteForm() {
         </div>
 
         <div>
-          <label className="block text-[10px] uppercase tracking-wider font-semibold text-[#8C8275] mb-1.5">
-            Describe your idea or diamond preference <span className="text-stone-400 lowercase font-normal">(optional)</span>
+          <label className="block font-jakarta text-[10px] sm:text-[11px] uppercase tracking-[0.15em] font-semibold text-[#5A6570] mb-1.5">
+            Describe your idea or diamond preference <span className="text-[#5A6570]/70 lowercase font-normal">(optional)</span>
           </label>
           <textarea
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. 1.5ct oval solitaire, yellow gold band, minimalist setting..."
-            className="w-full border border-[#E8DFC9] bg-white px-3.5 py-2.5 text-xs sm:text-sm text-[#051F34] rounded-xl outline-none transition-all placeholder:text-stone-400 focus:border-[#A88A4F] focus:ring-1 focus:ring-[#A88A4F]"
+            className="w-full border border-[#C6A15B]/40 bg-[#F7F3EA] px-3.5 py-2.5 font-jakarta text-xs sm:text-sm text-[#1A1A1A] rounded-none outline-none transition-colors placeholder:text-[#5A6570]/50 focus:border-[#C6A15B]"
           />
         </div>
 
+        {/* Reference Image tip box */}
+        <div className="p-3.5 bg-[#F7F3EA] border border-dashed border-[#C6A15B]/60 flex items-center gap-3 rounded-none">
+          <Sparkles className="w-4 h-4 text-[#C6A15B] shrink-0" />
+          <p className="font-jakarta text-xs text-[#5A6570]">
+            <strong className="text-[#0E2233] font-semibold">Have a reference photo or link?</strong> You can describe it here or share it directly on WhatsApp after submitting.
+          </p>
+        </div>
+
         {error && (
-          <div role="alert" className="border border-red-200 bg-red-50 p-3 rounded-xl text-xs text-red-600">
+          <div role="alert" className="border border-red-300 bg-red-50 p-3 rounded-none text-xs text-red-700 font-jakarta">
             {error}
           </div>
         )}
@@ -283,13 +294,13 @@ export default function BespokeQuoteForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full min-h-[48px] bg-[#D4AF37] hover:bg-[#c49f2e] text-[#051F34] font-semibold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-[0.98] disabled:opacity-50 flex items-center justify-center cursor-pointer"
+          className="w-full min-h-[48px] bg-[#C6A15B] hover:bg-[#E9C178] text-[#0E2233] font-jakarta font-semibold text-xs uppercase tracking-[0.2em] rounded-none transition-colors duration-200 shadow-none active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           {submitting ? 'Submitting Your Brief…' : 'Get My Free Quote'}
         </button>
 
-        <p className="text-[11px] text-[#8C8275] text-center font-light leading-relaxed">
-          Direct atelier consultation. Your details remain confidential.
+        <p className="font-jakarta text-[11px] text-[#5A6570] text-center font-light leading-relaxed">
+          🔒 Direct atelier consultation. Your details remain confidential.
         </p>
       </form>
     </div>

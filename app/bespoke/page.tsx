@@ -13,6 +13,8 @@ import {
   Truck,
   Star,
   MessageCircle,
+  ArrowRight,
+  ArrowDown,
 } from 'lucide-react'
 import BespokeHeader from '@/components/bespoke/BespokeHeader'
 import BespokeQuoteForm from '@/components/bespoke/BespokeQuoteForm'
@@ -67,30 +69,35 @@ const PROCESS_STEPS = [
     title: 'Send your design or idea',
     desc: 'Share reference photos, sketches, or concepts with our atelier team on WhatsApp. We reply within 1 hour.',
     icon: Palette,
+    tag: 'Initial Concept',
   },
   {
     num: '02',
     title: 'CAD design preview & approval',
     desc: 'Review a photorealistic 3D CAD design render of your ring before any casting begins.',
     icon: Sparkles,
+    tag: '48hr 3D Render',
   },
   {
     num: '03',
     title: 'Choose metal and stones',
     desc: 'Select solid gold and your choice of certified lab-grown diamonds or natural mined diamonds.',
     icon: Gem,
+    tag: 'Material Curation',
   },
   {
     num: '04',
     title: 'Making & 50% advance',
     desc: 'Lock in your commission with a 50% advance upon CAD approval. Master Surat artisans cast, set, and finish.',
     icon: Hammer,
+    tag: 'Surat Craft',
   },
   {
     num: '05',
     title: 'Final check & 7-day delivery',
     desc: 'Rigorous quality inspection followed by express insured delivery via DHL and FedEx in 7 days.',
     icon: Truck,
+    tag: 'Insured Transit',
   },
 ]
 
@@ -160,154 +167,169 @@ const FAQS = [
 
 export default function BespokeLandingPage() {
   return (
-    <div className="min-h-screen bg-[#FBF7F0] text-[#051F34] font-sans antialiased selection:bg-[#D4AF37]/30 selection:text-[#051F34]">
-      {/* ── 1. Focused Landing Header ── */}
+    <div className="min-h-screen bg-[#0E2233] text-[#F7F3EA] font-jakarta antialiased selection:bg-[#C6A15B] selection:text-[#0E2233]">
+      {/* ── Focused Landing Header ── */}
       <BespokeHeader />
 
       <main>
-        {/* ── 2. Hero Section (Above the fold on 360px & 390px mobile screens) ── */}
-        <section className="relative bg-[#051F34] text-white overflow-hidden pt-6 pb-8 sm:pt-12 sm:pb-16 border-b border-[#E8DFC9]/20">
+        {/* ── 1. Hero Section (Deep Navy #0E2233) ── */}
+        <section className="relative bg-[#0E2233] text-[#F7F3EA] overflow-hidden pt-10 pb-12 sm:pt-16 sm:pb-20 border-b border-[#C6A15B]/25">
           {/* Subtle gold ambient glow */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -top-24 right-1/4 h-80 w-80 rounded-full bg-[#D4AF37]/15 blur-3xl"
+            className="pointer-events-none absolute -top-24 right-1/4 h-96 w-96 bg-[radial-gradient(circle,rgba(198,161,91,0.15)_0%,transparent_70%)]"
           />
 
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
-            {/* Atelier Eyebrow */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1 text-[10px] sm:text-xs font-mono uppercase tracking-[0.25em] text-[#D4AF37]">
-              <span>✦ Surat Atelier</span>
-              <span className="text-white/40">·</span>
-              <span>Direct Craftsmanship</span>
-            </div>
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-16 relative z-10">
+            <div className="max-w-3xl">
+              {/* Brand Label Badge */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#C6A15B]/10 border border-[#C6A15B]/30 mb-6 rounded-none">
+                <span className="w-1.5 h-1.5 bg-[#C6A15B]" />
+                <span className="font-jakarta text-[10px] sm:text-xs text-[#C6A15B] uppercase tracking-[0.25em] font-semibold">
+                  Bespoke Diamond Atelier • Surat, India
+                </span>
+              </div>
 
-            {/* Headline */}
-            <h1 className="mt-3 font-serif text-2xl sm:text-4xl lg:text-5xl font-normal leading-[1.15] tracking-tight text-white max-w-2xl">
-              Custom diamond rings, made for you in Surat
-            </h1>
+              {/* Headline */}
+              <h1 className="font-playfair text-3xl sm:text-5xl lg:text-6xl text-[#F7F3EA] leading-[1.12] mb-5 font-normal tracking-tight">
+                Custom diamond rings, <span className="italic text-[#C6A15B] font-normal">made for you</span> in Surat
+              </h1>
 
-            {/* One line under headline */}
-            <p className="mt-2.5 text-xs sm:text-sm text-stone-300 leading-relaxed max-w-xl font-light">
-              Work directly with master artisans in our Surat atelier. Handcrafted to order with your choice of certified lab-grown or natural mined diamonds in solid gold.
-            </p>
+              {/* One line under headline (Verbatim live copy) */}
+              <p className="font-jakarta text-sm sm:text-base lg:text-lg text-[#F7F3EA]/85 font-light mb-8 max-w-2xl leading-relaxed">
+                Work directly with master artisans in our Surat atelier. Handcrafted to order with your choice of certified lab-grown or natural mined diamonds in solid gold.
+              </p>
 
-            {/* Two Action Buttons (Both visible above fold on 390px screen) */}
-            <div className="mt-4 sm:mt-6 flex flex-col xs:flex-row gap-2.5 sm:gap-4 max-w-md">
-              <a
-                href="#quote-form"
-                className="inline-flex items-center justify-center min-h-[46px] px-6 py-2.5 text-xs uppercase tracking-widest font-semibold text-[#051F34] bg-[#D4AF37] hover:bg-[#c49f2e] rounded-lg transition-all shadow-md active:scale-[0.98] text-center"
-              >
-                Get a Free Quote
-              </a>
-              <WhatsAppButton
-                href={WHATSAPP_BASE_URL}
-                label="Quote on WhatsApp"
-                trackingLabel="hero_whatsapp_quote"
-                variant="outline"
-                className="min-h-[46px] px-5 py-2.5"
-              />
-            </div>
-
-            {/* Reply Time Promise (Confirmed: within 1 hour) */}
-            <div className="mt-2.5 flex items-center gap-1.5 text-xs text-[#D4AF37] font-light">
-              <Clock className="w-3.5 h-3.5 shrink-0" />
-              <span>We reply within 1 hour</span>
-            </div>
-
-            {/* Confirmed Trust Ticks */}
-            <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] sm:text-xs text-stone-300 font-light">
-              <span className="inline-flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
-                Direct from Surat atelier
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
-                Lab-grown & natural diamonds
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
-                50% advance payment
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
-                7-day insured delivery (DHL / FedEx)
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {/* ── 3. INR Price Strip ── */}
-        <section className="bg-[#FAF7F2] border-b border-[#E8DFC9] py-3.5 px-4 text-center">
-          <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-[#051F34]">
-            <Sparkles className="w-4 h-4 text-[#A88A4F] shrink-0" />
-            <span className="font-semibold text-base sm:text-lg text-[#051F34]">
-              Custom rings from ₹8,500
-            </span>
-            <span className="text-[#A88A4F] font-bold hidden sm:inline">·</span>
-            <span className="text-[#5C5347] font-light">
-              Transparent atelier pricing with zero hidden distributor markups
-            </span>
-          </div>
-        </section>
-
-        {/* ── 4. How It Works (5 Steps) ── */}
-        <section id="how-it-works" className="scroll-mt-20 py-12 sm:py-16 px-4 sm:px-6 max-w-5xl mx-auto">
-          <div className="text-center mb-10 sm:mb-12">
-            <span className="text-[10px] uppercase tracking-[0.25em] text-[#A88A4F] font-semibold">
-              The Atelier Process
-            </span>
-            <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-[#051F34] mt-1 font-normal">
-              How It Works
-            </h2>
-            <p className="text-xs sm:text-sm text-[#5C5347] mt-1.5 max-w-lg mx-auto font-light leading-relaxed">
-              From your initial idea to a master-crafted custom ring in 5 transparent steps.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {PROCESS_STEPS.map((step) => {
-              const IconComponent = step.icon
-              return (
-                <div
-                  key={step.num}
-                  className="bg-white border border-[#E8DFC9] rounded-2xl p-5 shadow-sm flex flex-col justify-between"
+              {/* Action Buttons (Visible above fold on 390px mobile screens) */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-4 mb-4 max-w-md">
+                <a
+                  href="#quote-form"
+                  className="inline-flex items-center justify-center bg-[#C6A15B] text-[#0E2233] hover:bg-[#E9C178] font-jakarta text-xs sm:text-sm uppercase tracking-[0.16em] font-semibold px-8 py-3.5 transition-colors duration-200 rounded-none text-center"
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-mono text-xs font-semibold text-[#A88A4F]">
-                        {step.num}
-                      </span>
-                      <IconComponent className="w-4 h-4 text-[#A88A4F]" />
-                    </div>
-                    <h3 className="font-serif text-base text-[#051F34] font-medium leading-snug">
-                      {step.title}
-                    </h3>
-                    <p className="mt-2 text-xs text-[#5C5347] leading-relaxed font-light">
-                      {step.desc}
-                    </p>
-                  </div>
+                  Get a Free Quote
+                  <ArrowDown className="w-4 h-4 ml-2" />
+                </a>
+                <WhatsAppButton
+                  href={WHATSAPP_BASE_URL}
+                  label="Quote on WhatsApp"
+                  trackingLabel="hero_whatsapp_quote"
+                  variant="outline"
+                  className="min-h-[46px] px-6 py-3.5"
+                />
+              </div>
+
+              {/* Reply Time Promise */}
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-[#C6A15B] font-light mb-8">
+                <Clock className="w-4 h-4 shrink-0 text-[#C6A15B]" />
+                <span>We reply within 1 hour</span>
+              </div>
+
+              {/* Confirmed Trust Ticks with Hairline Borders */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-[#C6A15B]/25">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-[#C6A15B] shrink-0" />
+                  <span className="font-jakarta text-xs text-[#F7F3EA]/90 font-light">Direct from Surat atelier</span>
                 </div>
-              )
-            })}
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-[#C6A15B] shrink-0" />
+                  <span className="font-jakarta text-xs text-[#F7F3EA]/90 font-light">Lab-grown & natural diamonds</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-[#C6A15B] shrink-0" />
+                  <span className="font-jakarta text-xs text-[#F7F3EA]/90 font-light">50% advance payment</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-[#C6A15B] shrink-0" />
+                  <span className="font-jakarta text-xs text-[#F7F3EA]/90 font-light">7-day insured delivery (DHL / FedEx)</span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ── 5. Finished Custom Rings (Real Shewah Pieces from Catalog) ── */}
-        <section id="custom-rings" className="scroll-mt-20 bg-white border-y border-[#E8DFC9] py-12 sm:py-16 px-4 sm:px-6">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-10">
-              <span className="text-[10px] uppercase tracking-[0.25em] text-[#A88A4F] font-semibold">
-                Surat Atelier Portfolio
+        {/* ── 2. Gold Price Strip ── */}
+        <section className="bg-gradient-to-r from-[#C6A15B] via-[#E9C178] to-[#C6A15B] text-[#0E2233] py-3.5 px-4 sm:px-8 border-y border-[#775a1a]/20">
+          <div className="max-w-[1440px] mx-auto flex items-center justify-center gap-2 sm:gap-3 text-center">
+            <Sparkles className="w-4 h-4 text-[#0E2233] shrink-0" />
+            <p className="font-jakarta text-xs sm:text-sm text-[#0E2233] tracking-wider font-semibold">
+              Custom rings from ₹8,500 <span className="mx-2 opacity-50">•</span> Transparent atelier pricing with zero hidden distributor markups <span className="mx-2 opacity-50">•</span> Free insured delivery across India
+            </p>
+          </div>
+        </section>
+
+        {/* ── 3. How It Works (Warm Cream #F7F3EA) ── */}
+        <section id="how-it-works" className="scroll-mt-20 bg-[#F7F3EA] text-[#1A1A1A] py-20 sm:py-28">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-16">
+            <div className="text-center max-w-2xl mx-auto mb-14 sm:mb-18">
+              <span className="font-jakarta text-[11px] text-[#775a1a] uppercase tracking-[0.25em] font-semibold block mb-2">
+                The Bespoke Journey
               </span>
-              <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-[#051F34] mt-1 font-normal">
-                Finished Custom Rings
+              <h2 className="font-playfair text-2xl sm:text-4xl lg:text-5xl text-[#0E2233] leading-tight font-normal">
+                How It Works
               </h2>
-              <p className="text-xs sm:text-sm text-[#5C5347] mt-1.5 max-w-lg mx-auto font-light leading-relaxed">
-                Handcrafted directly in our atelier. Every piece is made to order to your exact stone and design preferences.
+              <div className="w-12 h-0.5 bg-[#C6A15B] mx-auto mt-4 mb-3" />
+              <p className="font-jakarta text-xs sm:text-sm text-[#5A6570] font-light leading-relaxed">
+                From your initial idea to a master-crafted custom ring in 5 transparent steps.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              {PROCESS_STEPS.map((step) => {
+                const IconComponent = step.icon
+                return (
+                  <div
+                    key={step.num}
+                    className="bg-white border border-[#C6A15B]/30 hover:border-[#C6A15B] transition-colors duration-300 p-6 sm:p-7 rounded-none flex flex-col justify-between"
+                  >
+                    <div>
+                      <span className="font-playfair text-3xl sm:text-4xl text-[#C6A15B] italic block mb-3 font-normal">
+                        {step.num}
+                      </span>
+                      <div className="w-8 h-8 flex items-center justify-center bg-[#C6A15B]/10 mb-4 text-[#C6A15B] rounded-none">
+                        <IconComponent className="w-4 h-4 text-[#C6A15B]" />
+                      </div>
+                      <h3 className="font-playfair text-base sm:text-lg text-[#0E2233] font-medium mb-2 leading-snug">
+                        {step.title}
+                      </h3>
+                      <p className="font-jakarta text-xs text-[#5A6570] leading-relaxed font-light">
+                        {step.desc}
+                      </p>
+                    </div>
+                    <span className="font-jakarta text-[10px] tracking-widest text-[#775a1a] uppercase mt-6 pt-3 border-t border-[#C6A15B]/15 block font-semibold">
+                      {step.tag}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ── 4. Finished Custom Rings (Deep Navy #0E2233) ── */}
+        <section id="custom-rings" className="scroll-mt-20 bg-[#0E2233] text-[#F7F3EA] py-20 sm:py-28 border-y border-[#C6A15B]/25">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-16">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
+              <div>
+                <span className="font-jakarta text-[11px] text-[#C6A15B] uppercase tracking-[0.25em] font-semibold block mb-2">
+                  Curated Archive
+                </span>
+                <h2 className="font-playfair text-2xl sm:text-4xl lg:text-5xl text-[#F7F3EA] font-normal">
+                  Finished Custom Rings
+                </h2>
+                <p className="font-jakarta text-xs sm:text-sm text-[#F7F3EA]/70 mt-2 font-light max-w-xl">
+                  Handcrafted directly in our atelier. Every piece is made to order to your exact stone and design preferences.
+                </p>
+              </div>
+              <a
+                href="#quote-form"
+                className="inline-flex items-center font-jakarta text-xs uppercase tracking-[0.15em] text-[#C6A15B] hover:text-[#E9C178] transition-colors"
+              >
+                <span>Request Custom Design</span>
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </a>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {FINISHED_RINGS.map((ring) => {
                 const ringWaUrl = `https://wa.me/${WHATSAPP_E164}?text=${encodeURIComponent(
                   `Hi, I want a custom jewellery quote for ${ring.name}`
@@ -315,42 +337,42 @@ export default function BespokeLandingPage() {
                 return (
                   <div
                     key={ring.code}
-                    className="bg-[#FBF7F0] border border-[#E8DFC9] rounded-2xl overflow-hidden shadow-sm flex flex-col transition-all hover:shadow-md"
+                    className="group bg-[#091825] border border-[#C6A15B]/25 hover:border-[#C6A15B] transition-all duration-300 rounded-none flex flex-col justify-between overflow-hidden"
                   >
-                    <div className="relative aspect-square w-full bg-stone-100">
+                    <div className="relative aspect-square sm:aspect-[4/5] overflow-hidden bg-[#000a16]">
                       <Image
                         src={ring.photo}
                         alt={`${ring.name} - Handcrafted custom diamond ring by Shewah in Surat`}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-contain p-4 transition-transform duration-300 hover:scale-105"
+                        className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
                       />
+                      <div className="absolute top-3 right-3 bg-[#0E2233]/90 px-3 py-1 border border-[#C6A15B]/40 text-[#C6A15B] font-jakarta text-[10px] tracking-widest uppercase font-semibold rounded-none">
+                        MADE TO ORDER
+                      </div>
                     </div>
-                    <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div className="p-6 flex flex-col justify-between flex-grow">
                       <div>
-                        <span className="text-[10px] uppercase tracking-wider text-[#A88A4F] font-semibold">
+                        <span className="font-jakarta text-[10px] uppercase tracking-wider text-[#C6A15B] font-semibold block mb-1">
                           {ring.category}
                         </span>
-                        <h3 className="font-serif text-lg text-[#051F34] font-medium mt-0.5">
+                        <h3 className="font-playfair text-xl text-[#F7F3EA] font-medium mb-1">
                           {ring.name}
                         </h3>
-                        <p className="text-[11px] text-[#8C8275] mt-1 font-light">
+                        <p className="font-jakarta text-xs text-[#F7F3EA]/70 mb-5 font-light">
                           Crafted in Surat atelier · Made to order
                         </p>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-[#E8DFC9]/70">
-                        <WhatsAppButton
-                          href={ringWaUrl}
-                          label="Ask for this design"
-                          trackingLabel={`ring_wa_${ring.code}`}
-                          variant="card"
-                          className="min-h-[44px]"
-                        >
-                          Ask for this design
-                        </WhatsAppButton>
-                      </div>
+                      <WhatsAppButton
+                        href={ringWaUrl}
+                        label="Ask for this design"
+                        trackingLabel={`ring_wa_${ring.code}`}
+                        variant="card"
+                      >
+                        Ask for this design
+                      </WhatsAppButton>
                     </div>
                   </div>
                 )
@@ -359,136 +381,185 @@ export default function BespokeLandingPage() {
           </div>
         </section>
 
-        {/* ── 6. Client Reviews & Trust Section ── */}
-        <section className="py-12 sm:py-16 px-4 sm:px-6 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-1.5 text-amber-500 mb-2">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-              ))}
-              <span className="text-xs font-semibold text-[#051F34] ml-1">5.0 / 5.0</span>
-            </div>
-            <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-[#051F34] font-normal">
+        {/* ── 5. Client Stories / Reviews (Deep Navy #0E2233) ── */}
+        <section id="reviews" className="scroll-mt-20 py-20 sm:py-28 px-4 sm:px-8 lg:px-16 max-w-[1440px] mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-14 sm:mb-18">
+            <span className="font-jakarta text-[11px] text-[#C6A15B] uppercase tracking-[0.25em] font-semibold block mb-2">
+              Client Stories
+            </span>
+            <h2 className="font-playfair text-2xl sm:text-4xl lg:text-5xl text-[#F7F3EA] font-normal">
               Client Experiences
             </h2>
-            <p className="text-xs sm:text-sm text-[#5C5347] mt-1 max-w-md mx-auto font-light">
+            <div className="w-12 h-0.5 bg-[#C6A15B] mx-auto mt-4 mb-3" />
+            <p className="font-jakarta text-xs sm:text-sm text-[#F7F3EA]/70 font-light">
               Verified custom ring commissions crafted in our Surat atelier.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             {REVIEWS.map((rev, i) => (
               <div
                 key={i}
-                className="bg-white border border-[#E8DFC9] rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+                className="bg-[#091825] border border-[#C6A15B]/25 p-6 sm:p-8 flex flex-col justify-between rounded-none hover:border-[#C6A15B]/60 transition-colors duration-200"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-1 text-amber-400">
-                      {[...Array(5)].map((_, idx) => (
-                        <Star key={idx} className="w-3.5 h-3.5 fill-current" />
-                      ))}
-                    </div>
-                    <span className="text-[10px] uppercase tracking-wider text-[#A88A4F] font-mono font-semibold">
-                      Verified Client
-                    </span>
+                  <div className="flex items-center text-[#C6A15B] mb-3 text-sm tracking-wider gap-0.5">
+                    {[...Array(5)].map((_, idx) => (
+                      <Star key={idx} className="w-4 h-4 fill-current text-[#C6A15B]" />
+                    ))}
                   </div>
-                  <h3 className="font-serif text-base text-[#051F34] font-medium leading-snug">
+                  <h3 className="font-playfair text-base sm:text-lg text-[#F7F3EA] font-medium leading-snug mb-3">
                     "{rev.headline}"
                   </h3>
-                  <p className="mt-2 text-xs text-[#5C5347] leading-relaxed font-light">
-                    {rev.review}
+                  <p className="font-jakarta text-xs sm:text-sm text-[#F7F3EA]/85 font-light leading-relaxed mb-6 italic">
+                    "{rev.review}"
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#E8DFC9]/60 flex items-center justify-between text-xs text-[#8C8275]">
-                  <span className="font-semibold text-[#051F34]">{rev.author} · {rev.location}</span>
-                  <span className="text-[11px] text-[#A88A4F]">{rev.product}</span>
+                <div className="pt-4 border-t border-[#C6A15B]/20 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-jakarta text-xs text-[#F7F3EA] font-semibold block">
+                      {rev.author} · {rev.location}
+                    </span>
+                    <span className="font-jakarta text-[11px] text-[#C6A15B] font-light mt-0.5 block">
+                      {rev.product}
+                    </span>
+                  </div>
+                  <span className="px-2.5 py-1 bg-[#C6A15B]/10 text-[#C6A15B] font-jakarta text-[10px] tracking-wider uppercase border border-[#C6A15B]/30 rounded-none font-semibold">
+                    Verified Commission
+                  </span>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ── 7. Short Quote Form ── */}
-        <section className="py-12 sm:py-16 px-4 sm:px-6 bg-[#FAF7F2] border-t border-[#E8DFC9]">
+        {/* ── 6. Short Quote Form (Warm Cream #F7F3EA) ── */}
+        <section className="py-20 sm:py-28 px-4 sm:px-8 lg:px-16 bg-[#F7F3EA] border-t border-[#C6A15B]/30">
           <BespokeQuoteForm />
         </section>
 
-        {/* ── 8. FAQ Section (Grounded strictly in Confirmed Facts) ── */}
-        <section id="faq" className="scroll-mt-20 bg-white border-t border-[#E8DFC9] py-12 sm:py-16 px-4 sm:px-6">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-8">
-              <span className="text-[10px] uppercase tracking-[0.25em] text-[#A88A4F] font-semibold">
+        {/* ── 7. FAQ Section (Deep Navy #0E2233) ── */}
+        <section id="faq" className="scroll-mt-20 bg-[#0E2233] text-[#F7F3EA] py-20 sm:py-28 border-t border-[#C6A15B]/25">
+          <div className="max-w-[1000px] mx-auto px-4 sm:px-8">
+            <div className="text-center mb-12 sm:mb-16">
+              <span className="font-jakarta text-[11px] text-[#C6A15B] uppercase tracking-[0.25em] font-semibold block mb-2">
                 Clear Answers
               </span>
-              <h2 className="font-serif text-2xl sm:text-3xl text-[#051F34] mt-1 font-normal">
+              <h2 className="font-playfair text-2xl sm:text-4xl text-[#F7F3EA] font-normal">
                 Frequently Asked Questions
               </h2>
+              <div className="w-12 h-0.5 bg-[#C6A15B] mx-auto mt-4" />
             </div>
 
-            <div className="divide-y divide-[#E8DFC9] border-y border-[#E8DFC9]">
+            <div className="space-y-4">
               {FAQS.map((faq, idx) => (
-                <details key={idx} className="group py-4">
-                  <summary className="flex items-center justify-between cursor-pointer list-none font-serif text-base sm:text-lg text-[#051F34] font-medium pr-2 outline-none">
+                <details key={idx} className="group border border-[#C6A15B]/30 bg-[#091825] rounded-none">
+                  <summary className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 font-playfair text-base sm:text-lg text-[#F7F3EA] hover:text-[#C6A15B] transition-colors cursor-pointer list-none outline-none">
                     <span>{faq.q}</span>
-                    <ChevronDown className="w-4 h-4 text-[#A88A4F] transition-transform duration-200 group-open:rotate-180 shrink-0 ml-3" />
+                    <ChevronDown className="w-5 h-5 text-[#C6A15B] shrink-0 transform transition-transform duration-200 group-open:rotate-180" />
                   </summary>
-                  <p className="mt-2.5 text-xs sm:text-sm text-[#5C5347] leading-relaxed font-light">
+                  <div className="px-5 pb-5 sm:px-6 sm:pb-6 pt-1 text-[#F7F3EA]/80 font-jakarta text-xs sm:text-sm border-t border-[#C6A15B]/15 leading-relaxed font-light">
                     {faq.a}
-                  </p>
+                  </div>
                 </details>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── 9. Final Call to Action ── */}
-        <section className="bg-[#051F34] text-white py-12 sm:py-16 px-4 sm:px-6 border-t border-[#D4AF37]/20 text-center">
-          <div className="max-w-2xl mx-auto space-y-4">
-            <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-white font-normal">
+        {/* ── 8. Final Call to Action ── */}
+        <section className="bg-[#000a16] text-[#F7F3EA] py-20 sm:py-28 px-4 sm:px-8 border-t border-[#C6A15B]/30 text-center relative overflow-hidden">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 -right-24 w-96 h-96 bg-[#C6A15B]/5 blur-3xl rounded-none"
+          />
+          <div className="max-w-2xl mx-auto space-y-4 relative z-10">
+            <span className="font-jakarta text-[11px] text-[#C6A15B] uppercase tracking-[0.25em] font-semibold block mb-2">
+              Start Your Custom Piece
+            </span>
+            <h2 className="font-playfair text-2xl sm:text-4xl lg:text-5xl text-[#F7F3EA] font-normal leading-tight">
               Start your custom piece
             </h2>
-            <p className="text-xs sm:text-sm text-stone-300 font-light leading-relaxed">
+            <p className="font-jakarta text-xs sm:text-sm text-[#F7F3EA]/80 font-light leading-relaxed max-w-xl mx-auto">
               Work directly with our Surat atelier. Request an itemised quote online or message our master craftsmen directly on WhatsApp. We reply within 1 hour.
             </p>
-            <div className="pt-2 flex flex-col xs:flex-row items-center justify-center gap-3">
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
                 href="#quote-form"
-                className="w-full xs:w-auto inline-flex items-center justify-center min-h-[46px] px-7 py-2.5 text-xs uppercase tracking-widest font-semibold text-[#051F34] bg-[#D4AF37] hover:bg-[#c49f2e] rounded-lg transition-all shadow-md active:scale-[0.98]"
+                className="w-full sm:w-auto inline-flex items-center justify-center bg-[#C6A15B] text-[#0E2233] hover:bg-[#E9C178] font-jakarta text-xs sm:text-sm uppercase tracking-[0.16em] font-semibold px-8 py-3.5 transition-colors duration-200 rounded-none text-center"
               >
                 Get a Free Quote
+                <ArrowRight className="w-4 h-4 ml-2" />
               </a>
               <WhatsAppButton
                 href={WHATSAPP_BASE_URL}
                 label="Quote on WhatsApp"
                 trackingLabel="final_cta_whatsapp"
                 variant="outline"
-                className="w-full xs:w-auto min-h-[46px] px-6 py-2.5"
+                className="w-full sm:w-auto min-h-[46px] px-8 py-3.5"
               />
             </div>
           </div>
         </section>
       </main>
 
-      {/* ── Footer with verified site contact details ── */}
-      <footer className="bg-[#031524] text-stone-400 py-10 px-4 sm:px-6 border-t border-white/10 text-xs">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="space-y-1">
-            <p className="font-serif text-lg tracking-[0.2em] text-white font-normal">
-              SHEWAH
-            </p>
-            <p className="text-[11px] text-stone-400">
-              Atelier Shewah · Surat Diamond Bourse / Katargam, Surat, Gujarat 395004, India
-            </p>
-            <p className="text-[11px] text-stone-400">
-              Client Care: <a href="mailto:concierge@shewah.co" className="underline hover:text-white">concierge@shewah.co</a> · <a href={`https://wa.me/${WHATSAPP_E164}`} className="underline hover:text-white">+91 96622 66360</a>
-            </p>
+      {/* ── 9. Atelier Luxury Footer ── */}
+      <footer className="bg-[#0E2233] text-[#F7F3EA]/80 border-t border-[#C6A15B]/30 py-12 sm:py-16 px-4 sm:px-8 lg:px-16">
+        <div className="max-w-[1440px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10 pb-10 border-b border-[#C6A15B]/20">
+            {/* Column 1: Brand & Atelier */}
+            <div className="space-y-3">
+              <span className="font-playfair text-xl tracking-[0.25em] text-[#F7F3EA] uppercase font-medium block">
+                SHEWAH
+              </span>
+              <span className="font-jakarta text-[10px] uppercase tracking-[0.25em] text-[#C6A15B] font-semibold block">
+                Haute Joaillerie Atelier
+              </span>
+              <p className="font-jakarta text-xs text-[#F7F3EA]/70 leading-relaxed pt-1">
+                Atelier Shewah · Surat Diamond Bourse / Katargam, Surat, Gujarat 395004, India
+              </p>
+            </div>
+
+            {/* Column 2: Client Concierge */}
+            <div className="space-y-3">
+              <h4 className="font-jakarta text-xs uppercase tracking-widest text-[#C6A15B] font-semibold">
+                Client Concierge
+              </h4>
+              <p className="font-jakarta text-xs text-[#F7F3EA]/80 flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-[#C6A15B] shrink-0" />
+                <a href={`https://wa.me/${WHATSAPP_E164}`} className="underline hover:text-white">
+                  +91 96622 66360 (Direct WhatsApp)
+                </a>
+              </p>
+              <p className="font-jakarta text-xs text-[#F7F3EA]/80 flex items-center gap-2">
+                <span>✉</span>
+                <a href="mailto:concierge@shewah.co" className="underline hover:text-white">
+                  concierge@shewah.co
+                </a>
+              </p>
+              <p className="font-jakarta text-xs text-[#F7F3EA]/60 font-light">
+                Private consultations available in Surat or via worldwide high-definition video session.
+              </p>
+            </div>
+
+            {/* Column 3: Standards & Assurance */}
+            <div className="space-y-3">
+              <h4 className="font-jakarta text-xs uppercase tracking-widest text-[#C6A15B] font-semibold">
+                Atelier Standards
+              </h4>
+              <ul className="space-y-1.5 font-jakarta text-xs text-[#F7F3EA]/70 font-light">
+                <li>• 100% IGI & GIA Certified Diamonds</li>
+                <li>• Solid 14K / 18K Hallmarked Gold</li>
+                <li>• Direct Surat Atelier Pricing</li>
+                <li>• Fully Insured Doorstep Delivery (DHL / FedEx)</li>
+              </ul>
+            </div>
           </div>
 
-          <div className="text-[11px] text-stone-500 sm:text-right">
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between font-jakarta text-[11px] text-[#F7F3EA]/50 gap-2">
             <p>© {new Date().getFullYear()} SHEWAH High Jewellery. All rights reserved.</p>
-            <p className="mt-0.5">Handcrafted in Surat, India.</p>
+            <p className="tracking-wider">Handcrafted with devotion in Surat, India.</p>
           </div>
         </div>
       </footer>
