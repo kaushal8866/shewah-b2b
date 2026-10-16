@@ -1,24 +1,47 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Sparkles } from 'lucide-react'
 import ProductCard, { type ProductCardProps } from './ProductCard'
+import { useCart } from './CartContext'
 
 interface SignatureCollectionsProps {
   products: ProductCardProps[]
 }
 
 export default function SignatureCollections({ products }: SignatureCollectionsProps) {
+  const { market } = useCart()
+  const [marketProducts, setMarketProducts] = useState<ProductCardProps[]>(products)
   const [activeTab, setActiveTab] = useState<string>('all')
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadMarketPrices() {
+      try {
+        const res = await fetch(`/api/d2c/products?market=${market.code}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled && Array.isArray(data.products) && data.products.length > 0) {
+          // Filter to top-level standalone and suites
+          const topLevel = data.products.filter((p: any) => !p.isSetComponent)
+          setMarketProducts(topLevel)
+        }
+      } catch (err) {
+        console.warn('[SignatureCollections] Market update error:', err)
+      }
+    }
+    loadMarketPrices()
+    return () => { cancelled = true }
+  }, [market.code])
 
   const availableCategories = useMemo(() => {
     const cats = new Set<string>()
-    products.forEach((p) => {
+    marketProducts.forEach((p) => {
       if (p.category) cats.add(p.category)
     })
     return Array.from(cats)
-  }, [products])
+  }, [marketProducts])
 
   const tabs = useMemo(() => {
     const list = [{ key: 'all', label: 'All Creations' }]
@@ -36,12 +59,12 @@ export default function SignatureCollections({ products }: SignatureCollectionsP
 
   const displayedProducts = useMemo(() => {
     if (activeTab === 'all') {
-      return products.slice(0, 8)
+      return marketProducts.slice(0, 8)
     }
-    return products.filter((p) => p.category === activeTab).slice(0, 8)
-  }, [products, activeTab])
+    return marketProducts.filter((p) => p.category === activeTab).slice(0, 8)
+  }, [marketProducts, activeTab])
 
-  if (!products || products.length === 0) return null
+  if (!marketProducts || marketProducts.length === 0) return null
 
   return (
     <section className="py-20 sm:py-28 bg-white border-b border-[#E3DBD4]">

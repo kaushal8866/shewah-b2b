@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { getMarket, formatCurrency, type MarketCode, type CurrencyCode, type MarketConfig } from '@/lib/markets'
 
 export interface CartItemConfig {
@@ -9,6 +9,35 @@ export interface CartItemConfig {
   diamondType?: 'natural' | 'lab_grown' | 'lgd'
   ringSize?: string
   customEngraving?: string
+}
+
+export function formatVariantLabel(config?: CartItemConfig): string | null {
+  if (!config) return null
+  const parts: string[] = []
+
+  // Metal tone / karat
+  if (config.metalTone === 'platinum') {
+    parts.push('950 Platinum')
+  } else if (config.metalTone) {
+    const toneCap = config.metalTone.charAt(0).toUpperCase() + config.metalTone.slice(1)
+    parts.push(`18K ${toneCap} Gold`)
+  } else if (config.karat) {
+    parts.push(`${config.karat}K Gold`)
+  }
+
+  // Diamond type
+  if (config.diamondType === 'natural') {
+    parts.push('Natural Mined Diamond (GIA)')
+  } else if (config.diamondType === 'lab_grown' || config.diamondType === 'lgd') {
+    parts.push('Lab-Grown Diamond (IGI)')
+  }
+
+  // Ring size
+  if (config.ringSize) {
+    parts.push(`Size: ${config.ringSize}`)
+  }
+
+  return parts.length > 0 ? parts.join(' • ') : null
 }
 
 export interface CartItem {
@@ -53,7 +82,7 @@ interface CartContextType {
   openCart: () => void
   closeCart: () => void
   toggleCart: () => void
-  revalidateCart: () => Promise<void>
+  revalidateCart: (targetMarketCode?: MarketCode) => Promise<void>
   isValidating: boolean
 }
 
@@ -139,6 +168,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const itemsRef = useRef(items)
+  itemsRef.current = items
+
   // Persist cart items to localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -146,6 +178,60 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items])
 
   const market = getMarket(marketCode)
+
+  const revalidateCart = useCallback(async (targetMarketCode?: MarketCode) => {
+    const currentItems = itemsRef.current
+    if (currentItems.length === 0) return
+    const activeCode = targetMarketCode || marketCode
+    setIsValidating(true)
+    try {
+      const res = await fetch('/api/d2c/cart/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: currentItems.map(it => ({
+            productId: it.productId,
+            quantity: it.quantity,
+            config: it.config,
+          })),
+          marketCode: activeCode,
+        }),
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      if (data?.items && Array.isArray(data.items)) {
+        setItems(prev => {
+          return prev.map((it, idx) => {
+            const remote = data.items[idx]
+            if (!remote) return it
+            return {
+              ...it,
+              unitPrice: remote.unitPrice,
+              lineTotal: remote.lineTotal,
+              currency: remote.currency,
+              formattedUnitPrice: remote.formattedUnitPrice,
+              formattedLineTotal: remote.formattedLineTotal,
+            }
+          })
+        })
+      }
+    } catch (e) {
+      console.warn('[revalidateCart] Failed:', e)
+    } finally {
+      setIsValidating(false)
+    }
+  }, [marketCode])
+
+  // Automatically re-price and convert existing bag items whenever the user changes market
+  const prevMarketCodeRef = useRef(marketCode)
+  useEffect(() => {
+    if (prevMarketCodeRef.current !== marketCode) {
+      prevMarketCodeRef.current = marketCode
+      if (itemsRef.current.length > 0) {
+        revalidateCart(marketCode)
+      }
+    }
+  }, [marketCode, revalidateCart])
 
   const setMarketCode = (code: MarketCode) => {
     setMarketCodeState(code)
@@ -158,7 +244,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem: CartContextType['addItem'] = (prod, qty = 1) => {
     const configKey = JSON.stringify(prod.config || {})
-    const lineId = `${prod.id}_${Buffer.from(configKey).toString('base64').slice(0, 16)}`
+    const safeKey = typeof btoa !== 'undefined'
+      ? btoa(encodeURIComponent(configKey)).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16)
+      : Buffer.from(configKey).toString('base64').slice(0, 16)
+    const lineId = `${prod.id}_${safeKey}`
     
     setItems((prev) => {
       const existingIdx = prev.findIndex((it) => it.id === lineId)
@@ -224,47 +313,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem(CART_STORAGE_KEY)
     }
   }
-
-  const revalidateCart = useCallback(async () => {
-    if (items.length === 0) return
-    setIsValidating(true)
-    try {
-      const res = await fetch('/api/d2c/cart/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: items.map(it => ({
-            productId: it.productId,
-            quantity: it.quantity,
-            config: it.config,
-          })),
-          marketCode: market.code,
-        }),
-      })
-      if (!res.ok) return
-      const data = await res.json()
-      if (data?.items && Array.isArray(data.items)) {
-        setItems(prev => {
-          return prev.map((it, idx) => {
-            const remote = data.items[idx]
-            if (!remote) return it
-            return {
-              ...it,
-              unitPrice: remote.unitPrice,
-              lineTotal: remote.lineTotal,
-              currency: remote.currency,
-              formattedUnitPrice: remote.formattedUnitPrice,
-              formattedLineTotal: remote.formattedLineTotal,
-            }
-          })
-        })
-      }
-    } catch (e) {
-      console.warn('[revalidateCart] Failed:', e)
-    } finally {
-      setIsValidating(false)
-    }
-  }, [items, market.code])
 
   const itemCount = items.reduce((sum, it) => sum + it.quantity, 0)
   const subtotal = items.reduce((sum, it) => sum + it.lineTotal, 0)

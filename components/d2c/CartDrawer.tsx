@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useCart } from './CartContext'
+import { useCart, formatVariantLabel } from './CartContext'
 import { X, Trash2, Plus, Minus, ShoppingBag, ShieldCheck, ArrowRight } from 'lucide-react'
 
 export default function CartDrawer() {
@@ -128,20 +128,11 @@ export default function CartDrawer() {
                       </div>
                       
                       {/* Variant tags */}
-                      <div className="text-[11px] text-[#69727D] mt-1 space-y-0.5 font-sans">
-                        {it.config?.metalTone && (
-                          <span className="capitalize">{it.config.metalTone} Gold • </span>
-                        )}
-                        {it.config?.karat && <span>{it.config.karat}K • </span>}
-                        {it.config?.diamondType && (
-                          <span className="capitalize">
-                            {it.config.diamondType === 'natural' ? 'Natural Diamond' : 'Lab-Grown Diamond'}
-                          </span>
-                        )}
-                        {it.config?.ringSize && (
-                          <div className="text-[#69727D]">Size: {it.config.ringSize}</div>
-                        )}
-                      </div>
+                      {it.config && formatVariantLabel(it.config) && (
+                        <div className="text-[11px] text-[#69727D] mt-1 font-sans">
+                          {formatVariantLabel(it.config)}
+                        </div>
+                      )}
                     </div>
 
                     {/* Quantity controls */}

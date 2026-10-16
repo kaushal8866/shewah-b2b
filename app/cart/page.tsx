@@ -3,11 +3,15 @@
 import React from 'react'
 import Link from 'next/link'
 import StoreLayout from '@/components/d2c/StoreLayout'
-import { useCart } from '@/components/d2c/CartContext'
+import { useCart, formatVariantLabel } from '@/components/d2c/CartContext'
 import { ShoppingBag, Trash2, Plus, Minus, ShieldCheck, ArrowRight, ArrowLeft } from 'lucide-react'
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, clearCart, formattedSubtotal, market, itemCount } = useCart()
+  const { items, updateQuantity, removeItem, clearCart, formattedSubtotal, market, itemCount, revalidateCart } = useCart()
+
+  React.useEffect(() => {
+    revalidateCart()
+  }, [revalidateCart])
 
   return (
     <StoreLayout>
@@ -85,19 +89,11 @@ export default function CartPage() {
                         </div>
 
                         {/* Specs */}
-                        <div className="text-xs text-[#69727D] mt-1 space-y-0.5 font-sans">
-                          {it.config?.metalTone && (
-                            <span className="capitalize">{it.config.metalTone} Gold • </span>
-                          )}
-                          {it.config?.diamondType && (
-                            <span className="capitalize">
-                              {it.config.diamondType === 'natural' ? 'Natural Diamond' : 'Lab-Grown Diamond'} • 
-                            </span>
-                          )}
-                          {it.config?.ringSize && (
-                            <span> Size: {it.config.ringSize}</span>
-                          )}
-                        </div>
+                        {it.config && formatVariantLabel(it.config) && (
+                          <div className="text-xs text-[#69727D] mt-1 font-sans">
+                            {formatVariantLabel(it.config)}
+                          </div>
+                        )}
                       </div>
 
                       {/* Controls */}

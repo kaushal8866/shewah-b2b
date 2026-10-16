@@ -140,10 +140,30 @@ export async function resolveProductMarketPrice(
 
   // 3. If configurable, apply valid product-specific delta increments
   let finalUnitPrice = basePrice
-  if (config && product.is_configurable !== false) {
-    const details = (product.d2c_details || {}) as Record<string, any>
-    const allowedMetals = details.allowed_metals as string[] | undefined
-    const allowedStones = details.allowed_stones as string[] | undefined
+  let isAvailable = true
+  let unavailableReason: string | undefined = undefined
+
+  const details = (product.d2c_details || {}) as Record<string, any>
+  const allowedMetals = details.allowed_metals as string[] | undefined
+  const allowedStones = details.allowed_stones as string[] | undefined
+  const isConfigurable = details.is_configurable !== false && (product.is_configurable === true || product.d2c_status === 'published' || details.is_configurable === true)
+
+  if (config && isConfigurable) {
+    // Validate combination availability if restricted in product details
+    if (config.metalTone) {
+      const tone = config.metalTone.toLowerCase()
+      if (allowedMetals && allowedMetals.length > 0 && !allowedMetals.includes(tone) && !allowedMetals.includes(`18k_${tone}`)) {
+        isAvailable = false
+        unavailableReason = `The selected metal tone is not available for this creation.`
+      }
+    }
+    if (config.diamondType) {
+      const stoneType = config.diamondType.toLowerCase()
+      if (allowedStones && allowedStones.length > 0 && !allowedStones.includes(stoneType) && (stoneType !== 'lab_grown' || !allowedStones.includes('lgd'))) {
+        isAvailable = false
+        unavailableReason = `The selected diamond origin is not available for this creation.`
+      }
+    }
 
     // Platinum premium adjustment if selected and allowed for this piece
     if (config.metalTone === 'platinum') {
@@ -180,7 +200,8 @@ export async function resolveProductMarketPrice(
     compareAtPrice: compareAt ? Math.round(compareAt) : null,
     pricingMode,
     effectiveFrom,
-    isAvailable: true,
+    isAvailable,
+    unavailableReason,
     taxModel: market.taxModel,
     taxAmount,
     taxLabel: market.taxLabel,

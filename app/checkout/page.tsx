@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import StoreLayout from '@/components/d2c/StoreLayout'
-import { useCart } from '@/components/d2c/CartContext'
+import { useCart, formatVariantLabel } from '@/components/d2c/CartContext'
 import { MARKETS, type MarketCode } from '@/lib/markets'
 import {
   ShieldCheck,
@@ -474,11 +474,11 @@ export default function CheckoutPage() {
                     <div className="flex-1 font-sans">
                       <div className="font-medium text-[#051F34] line-clamp-1">{it.name}</div>
                       <div className="text-[10px] text-[#69727D]">Qty: {it.quantity}</div>
-                      <div className="text-[10px] text-[#69727D]">
-                        {it.config?.metalTone && `${it.config.metalTone} gold`}
-                        {it.config?.diamondType && ` • ${it.config.diamondType}`}
-                        {it.config?.ringSize && ` • Size ${it.config.ringSize}`}
-                      </div>
+                      {it.config && formatVariantLabel(it.config) && (
+                        <div className="text-[10px] text-[#69727D]">
+                          {formatVariantLabel(it.config)}
+                        </div>
+                      )}
                     </div>
                     <div className="font-semibold text-[#051F34] font-sans">{it.formattedLineTotal}</div>
                   </div>

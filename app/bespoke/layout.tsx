@@ -1,16 +1,16 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Bespoke Diamond Jewellery Commissions',
+  title: 'Custom Diamond Rings in Surat | Bespoke Jewellery by Shewah',
   description:
-    'Commission one-of-a-kind engagement rings, bridal suites, and fine diamond jewellery directly with Shewah master artisans in solid 18K gold.',
+    'Handcrafted custom diamond rings made to order in our Surat atelier. Design your bespoke ring with lab-grown, natural, or gemstone diamonds in solid gold with transparent Indian pricing.',
   alternates: {
     canonical: 'https://shewah.co/bespoke',
   },
   openGraph: {
-    title: 'Bespoke Diamond Jewellery Commissions | SHEWAH',
+    title: 'Custom Diamond Rings in Surat | Bespoke Jewellery by Shewah',
     description:
-      'Commission one-of-a-kind engagement rings, bridal suites, and fine diamond jewellery directly with Shewah master artisans in solid 18K gold.',
+      'Handcrafted custom diamond rings made to order in our Surat atelier. Design your bespoke ring with lab-grown, natural, or gemstone diamonds in solid gold.',
     url: 'https://shewah.co/bespoke',
     siteName: 'SHEWAH',
     type: 'website',
