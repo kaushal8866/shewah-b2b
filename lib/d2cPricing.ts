@@ -19,10 +19,11 @@ export interface ResolvedD2CPrice {
   effectiveFrom: string
   isAvailable: boolean
   unavailableReason?: string
+  label?: string | null
   taxModel: 'inclusive' | 'exclusive' | 'uncollected'
   taxAmount: number
   taxLabel: string
-  formattedPrice: string
+  formattedPrice: string | null
 }
 
 export interface ConfigurationDelta {
@@ -100,10 +101,11 @@ export async function resolveProductMarketPrice(
       effectiveFrom: nowIso,
       isAvailable: false,
       unavailableReason: 'This piece is currently not available for order in your region.',
+      label: 'Unavailable',
       taxModel: market.taxModel,
       taxAmount: 0,
       taxLabel: market.taxLabel,
-      formattedPrice: formatCurrency(0, market.currency),
+      formattedPrice: null,
     }
   }
 
@@ -111,6 +113,7 @@ export async function resolveProductMarketPrice(
   let compareAt: number | null = null
   let pricingMode: 'fixed' | 'formula_base' = 'fixed'
   let effectiveFrom = nowIso
+  let isUnpriced = false
 
   if (priceRows && priceRows.length > 0) {
     const row = priceRows[0]
@@ -119,29 +122,31 @@ export async function resolveProductMarketPrice(
     pricingMode = row.pricing_mode as 'fixed' | 'formula_base'
     effectiveFrom = row.effective_from || nowIso
   } else {
-    // Fallback if market price row is not yet provisioned:
-    // Derive from commercial baseline without leaking internal formula
-    // Default baseline anchor: mrp_suggested or trade_price converted to target currency
-    const inrBase = Number(product.mrp_suggested || product.trade_price) || 100000
-    // Market conversion baseline approximations
-    const rates: Record<CurrencyCode, number> = {
-      USD: 0.012,
-      GBP: 0.0095,
-      AUD: 0.018,
-      EUR: 0.011,
-      INR: 1.0,
+    // Derive from commercial baseline: mrp_suggested or trade_price converted to target currency
+    const inrBase = Number(product.mrp_suggested || product.trade_price) || 0
+    if (inrBase <= 0) {
+      isUnpriced = true
+    } else {
+      // Market conversion baseline approximations
+      const rates: Record<CurrencyCode, number> = {
+        USD: 0.012,
+        GBP: 0.0095,
+        AUD: 0.018,
+        EUR: 0.011,
+        INR: 1.0,
+      }
+      const rawConverted = inrBase * (rates[market.currency] ?? 0.012)
+      // Round to standard luxury price endings (e.g. $1,450 or ₹1,25,000)
+      basePrice = market.currency === 'INR'
+        ? Math.round(rawConverted / 500) * 500
+        : Math.round(rawConverted / 10) * 10
     }
-    const rawConverted = inrBase * (rates[market.currency] ?? 0.012)
-    // Round to standard luxury price endings (e.g. $1,450 or ₹1,25,000)
-    basePrice = market.currency === 'INR'
-      ? Math.round(rawConverted / 500) * 500
-      : Math.round(rawConverted / 10) * 10
   }
 
   // 3. If configurable, apply valid product-specific delta increments
   let finalUnitPrice = basePrice
-  let isAvailable = true
-  let unavailableReason: string | undefined = undefined
+  let isAvailable = !isUnpriced
+  let unavailableReason: string | undefined = isUnpriced ? 'Price on request' : undefined
 
   const details = (product.d2c_details || {}) as Record<string, any>
   const allowedMetals = details.allowed_metals as string[] | undefined
@@ -196,15 +201,16 @@ export async function resolveProductMarketPrice(
     productId,
     marketCode: market.code,
     currency: market.currency,
-    unitPrice: Math.round(finalUnitPrice),
-    compareAtPrice: compareAt ? Math.round(compareAt) : null,
+    unitPrice: isUnpriced ? 0 : Math.round(finalUnitPrice),
+    compareAtPrice: isUnpriced ? null : (compareAt ? Math.round(compareAt) : null),
     pricingMode,
     effectiveFrom,
     isAvailable,
     unavailableReason,
+    label: isUnpriced ? 'Price on request' : null,
     taxModel: market.taxModel,
-    taxAmount,
-    taxLabel: market.taxLabel,
-    formattedPrice: formatCurrency(finalUnitPrice, market.currency),
+    taxAmount: isUnpriced ? 0 : taxAmount,
+    taxLabel: isUnpriced ? '' : market.taxLabel,
+    formattedPrice: isUnpriced ? null : formatCurrency(finalUnitPrice, market.currency),
   }
 }

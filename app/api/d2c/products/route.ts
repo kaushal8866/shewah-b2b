@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('q')
     const rawLimit = searchParams.get('limit')
     const limit = rawLimit ? Math.max(1, Math.min(Number(rawLimit) || 1000, 2000)) : 2000
+    const hideUnpriced = searchParams.get('hideUnpriced') === 'true' || process.env.HIDE_UNPRICED_PRODUCTS === 'true'
 
     let query = supabaseAdmin
       .from('products')
@@ -62,9 +63,13 @@ export async function GET(req: NextRequest) {
 
     // When showing 'all' creations without search, show sets together as unified creations
     // rather than fragmenting individual components as duplicate cards
-    const visibleProducts = (!category || category === 'all') && !search
+    let visibleProducts = (!category || category === 'all') && !search
       ? (products || []).filter(p => !(p.d2c_details as any)?.is_component_of_set)
       : (products || [])
+
+    if (hideUnpriced) {
+      visibleProducts = visibleProducts.filter(p => Number(p.trade_price || p.mrp_suggested) > 0)
+    }
 
     // Resolve market-specific prices concurrently
     const sanitizedProducts = await Promise.all(
@@ -109,6 +114,7 @@ export async function GET(req: NextRequest) {
             formatted: pricing.formattedPrice,
             taxLabel: pricing.taxLabel,
             isAvailable: pricing.isAvailable,
+            label: pricing.label || (pricing.isAvailable ? null : 'Price on request'),
           },
         }
       })

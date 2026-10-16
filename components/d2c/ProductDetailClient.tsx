@@ -38,7 +38,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     initialProduct.configurationSchema?.sizes?.[2] || 'US 6'
   )
   const [selectedSuiteOption, setSelectedSuiteOption] = useState<'full_suite' | string>('full_suite')
-  const [dynamicPrice, setDynamicPrice] = useState<{ amount: number; formatted: string }>({
+  const [dynamicPrice, setDynamicPrice] = useState<{ amount: number; formatted: string | null }>({
     amount: initialProduct.price.amount,
     formatted: initialProduct.price.formatted,
   })
@@ -99,6 +99,10 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
     let cancelled = false
     async function recomputePrice() {
+      if (product.price.isAvailable === false && !product.price.formatted) {
+        setDynamicPrice({ amount: 0, formatted: null })
+        return
+      }
       setCalculatingPrice(true)
       try {
         const res = await fetch('/api/d2c/price', {
@@ -119,6 +123,8 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
         const data = await res.json()
         if (!cancelled && data.formattedPrice) {
           setDynamicPrice({ amount: data.unitPrice, formatted: data.formattedPrice })
+        } else if (!cancelled && (!data.formattedPrice || data.isAvailable === false)) {
+          setDynamicPrice({ amount: 0, formatted: null })
         }
       } catch (e) {
         console.warn('[recomputePrice] Error:', e)
@@ -207,7 +213,10 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     ]
   }, [product.configurationSchema?.stones])
 
+  const isUnpricedProduct = product.price.isAvailable === false || (!dynamicPrice.formatted && !product.price.formatted)
+
   const handleAddToBag = () => {
+    if (isUnpricedProduct) return
     const isPlat = selectedMetalTone === 'platinum'
     const targetProduct = activeComponent || product
     addItem(
@@ -426,7 +435,9 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
             <div className="py-4 border-y border-[#E3DBD4] flex items-baseline justify-between">
               <div>
                 <div className="text-3xl font-serif font-normal text-[#051F34] flex items-center gap-2">
-                  <span>{dynamicPrice.formatted}</span>
+                  <span>
+                    {dynamicPrice.formatted || product.price.formatted || product.price.label || 'Price on request'}
+                  </span>
                   {calculatingPrice && (
                     <span className="text-[10px] font-sans text-[#CB9274] animate-pulse">
                       Updating...
@@ -434,7 +445,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   )}
                 </div>
                 <div className="text-xs text-[#69727D] mt-1 font-light">
-                  {product.price.taxLabel} • Complimentary worldwide insured delivery
+                  {dynamicPrice.formatted || product.price.formatted ? (
+                    `${product.price.taxLabel} • Complimentary worldwide insured delivery`
+                  ) : (
+                    'Contact atelier for custom quote • Complimentary worldwide delivery'
+                  )}
                 </div>
               </div>
 
@@ -648,19 +663,31 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
             {/* Action Buttons */}
             <div className="space-y-2 pt-2">
               <div className="flex items-center gap-3">
-                <button
-                  onClick={handleAddToBag}
-                  className="flex-1 py-4 px-8 bg-[#051F34] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#CB9274] transition-all duration-300 flex items-center justify-center gap-2"
-                >
-                  <span>
-                    {activeComponent
-                      ? `Add ${activeComponent.roleLabel} to Bag`
-                      : product.setInfo
-                      ? 'Add Complete Suite to Bag'
-                      : 'Add to Shopping Bag'}
-                  </span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                {isUnpricedProduct ? (
+                  <a
+                    href={`https://wa.me/919662266360?text=${encodeURIComponent(`Hi, I want a quote for ${activeComponent ? activeComponent.name : product.name} (${activeComponent ? activeComponent.code : product.code})`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-4 px-8 bg-[#051F34] text-white hover:bg-[#CB9274] text-xs uppercase tracking-[0.2em] font-semibold rounded-none transition-all duration-300 flex items-center justify-center gap-2"
+                  >
+                    <span>Enquire via WhatsApp</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                ) : (
+                  <button
+                    onClick={handleAddToBag}
+                    className="flex-1 py-4 px-8 bg-[#051F34] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#CB9274] transition-all duration-300 flex items-center justify-center gap-2"
+                  >
+                    <span>
+                      {activeComponent
+                        ? `Add ${activeComponent.roleLabel} to Bag`
+                        : product.setInfo
+                        ? 'Add Complete Suite to Bag'
+                        : 'Add to Shopping Bag'}
+                    </span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
 
                 <button
                   type="button"

@@ -40,9 +40,10 @@ export interface D2CProductDetail {
     amount: number
     compareAt: number | null
     currency: string
-    formatted: string
+    formatted: string | null
     taxLabel: string
     isAvailable: boolean
+    label?: string | null
   }
   market: string
   setInfo?: {
@@ -396,6 +397,7 @@ export async function fetchProductDetail(
         formatted: pricing.formattedPrice,
         taxLabel: pricing.taxLabel,
         isAvailable: pricing.isAvailable,
+        label: pricing.label || (pricing.isAvailable ? null : 'Price on request'),
       },
       market: market.code,
       setInfo,

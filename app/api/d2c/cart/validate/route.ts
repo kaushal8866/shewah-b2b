@@ -68,10 +68,12 @@ export async function POST(req: NextRequest) {
         .eq('id', item.productId)
         .maybeSingle()
 
-      if (!product || !pricing.isAvailable) {
+      if (!product || !pricing.isAvailable || pricing.unitPrice <= 0) {
         return NextResponse.json({
           isValid: false,
-          error: `Item ${item.productId} is no longer available for purchase in this region.`,
+          error: product
+            ? `${product.d2c_title || product.name || 'This piece'} is price on request and cannot be added to the shopping bag.`
+            : `Item ${item.productId} is no longer available for purchase in this region.`,
         }, { status: 400 })
       }
 
