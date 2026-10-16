@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getMarket, type MarketCode } from '@/lib/markets'
 import { resolveProductMarketPrice } from '@/lib/d2cPricing'
-import { fetchNonEmptyD2CCategories } from '@/lib/categories'
+import { fetchNonEmptyD2CCategories, getDbCategoriesForQuery, normalizeCategoryKey } from '@/lib/categories'
 import { optimizeCloudinaryUrl } from '@/lib/imageUrl'
 
 export const dynamic = 'force-dynamic'
@@ -28,7 +28,12 @@ export async function GET(req: NextRequest) {
       .eq('d2c_status', 'published')
 
     if (category && category !== 'all') {
-      query = query.ilike('category', category)
+      const dbCategories = getDbCategoriesForQuery(category)
+      if (dbCategories.length > 0) {
+        query = query.in('category', dbCategories)
+      } else {
+        query = query.ilike('category', category)
+      }
     }
     if (featured === 'true') {
       query = query.eq('d2c_featured', true)
@@ -76,7 +81,7 @@ export async function GET(req: NextRequest) {
           slug: p.slug || p.code.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           subtitle: p.d2c_subtitle || '',
           description: p.d2c_description || '',
-          category: p.category,
+          category: normalizeCategoryKey(p.category),
           photoUrls: optimizedPhotos,
           primaryPhotoUrl: optimizedPhotos[0] || null,
           secondaryPhotoUrl: optimizedPhotos[1] || optimizedPhotos[0] || null,

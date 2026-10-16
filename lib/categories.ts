@@ -69,14 +69,77 @@ export const DEFAULT_NON_EMPTY_CATEGORIES: D2CCategoryItem[] = [
 ]
 
 /**
+ * Canonical D2C Category keys:
+ * 'rings' | 'necklaces' | 'earrings' | 'bracelets' | 'mens'
+ */
+export type CanonicalCategoryKey = 'rings' | 'necklaces' | 'earrings' | 'bracelets' | 'mens' | string
+
+/**
+ * Normalizes any category string (singular/plural, case-insensitive, or DB value like Pendant, Mangalsutra)
+ * to its canonical public key.
+ */
+export function normalizeCategoryKey(rawCategory: string | null | undefined): string {
+  if (!rawCategory) return ''
+  const raw = rawCategory.toLowerCase().trim()
+  if (['ring', 'rings'].includes(raw)) return 'rings'
+  if (['earring', 'earrings'].includes(raw)) return 'earrings'
+  if (['necklace', 'necklaces', 'pendant', 'pendants', 'mangalsutra', 'mangalsutras', 'set', 'sets'].includes(raw)) return 'necklaces'
+  if (['bracelet', 'bracelets', 'bangle', 'bangles'].includes(raw)) return 'bracelets'
+  if (['men', 'mens', "men's"].includes(raw)) return 'mens'
+  return raw
+}
+
+/**
+ * Returns all raw database category values that map to a given category query.
+ * For example:
+ * 'earrings' / 'earring' -> ['Earring', 'earring', 'Earrings', 'earrings']
+ * 'necklaces' / 'pendant' -> ['Necklace', 'necklace', 'Necklaces', 'necklaces', 'Pendant', 'pendant', 'Pendants', 'pendants', 'Mangalsutra', 'mangalsutra', 'Mangalsutras', 'mangalsutras', 'Set', 'set', 'Sets', 'sets']
+ * 'rings' / 'ring' -> ['Ring', 'ring', 'Rings', 'rings']
+ * 'bracelets' / 'bracelet' -> ['Bracelet', 'bracelet', 'Bracelets', 'bracelets', 'Bangle', 'bangle', 'Bangles', 'bangles']
+ */
+export function getDbCategoriesForQuery(queryCategory: string | null | undefined): string[] {
+  const canonical = normalizeCategoryKey(queryCategory)
+  if (!canonical) return []
+
+  switch (canonical) {
+    case 'rings':
+      return ['Ring', 'ring', 'Rings', 'rings']
+    case 'earrings':
+      return ['Earring', 'earring', 'Earrings', 'earrings']
+    case 'necklaces':
+      return [
+        'Necklace', 'necklace', 'Necklaces', 'necklaces',
+        'Pendant', 'pendant', 'Pendants', 'pendants',
+        'Mangalsutra', 'mangalsutra', 'Mangalsutras', 'mangalsutras',
+        'Set', 'set', 'Sets', 'sets'
+      ]
+    case 'bracelets':
+      return ['Bracelet', 'bracelet', 'Bracelets', 'bracelets', 'Bangle', 'bangle', 'Bangles', 'bangles']
+    case 'mens':
+      return ['Mens', 'mens', "Men's", "men's"]
+    default:
+      return [queryCategory!.trim()]
+  }
+}
+
+/**
  * Filter and format category records based on inventory counts.
  * Strictly omits any categories that have 0 items.
+ * Aggregates counts under their normalized canonical keys.
  */
 export function filterNonEmptyCategories(counts: Record<string, number>): D2CCategoryItem[] {
+  const normalizedCounts: Record<string, number> = {}
+  for (const [key, count] of Object.entries(counts)) {
+    const normKey = normalizeCategoryKey(key)
+    if (normKey && count > 0) {
+      normalizedCounts[normKey] = (normalizedCounts[normKey] || 0) + count
+    }
+  }
+
   const result: D2CCategoryItem[] = []
 
   for (const key of PREFERRED_CATEGORY_ORDER) {
-    const count = counts[key] || 0
+    const count = normalizedCounts[key] || 0
     if (count > 0) {
       result.push({
         ...KNOWN_CATEGORIES[key],
@@ -86,7 +149,7 @@ export function filterNonEmptyCategories(counts: Record<string, number>): D2CCat
   }
 
   // Include any other non-standard category with published products
-  for (const [key, count] of Object.entries(counts)) {
+  for (const [key, count] of Object.entries(normalizedCounts)) {
     if (!PREFERRED_CATEGORY_ORDER.includes(key) && count > 0) {
       result.push({
         key,
@@ -120,9 +183,9 @@ export async function fetchNonEmptyD2CCategories(): Promise<D2CCategoryItem[]> {
 
     const counts: Record<string, number> = {}
     for (const p of products) {
-      const cat = (p.category || '').toLowerCase().trim()
-      if (cat) {
-        counts[cat] = (counts[cat] || 0) + 1
+      const canonical = normalizeCategoryKey(p.category)
+      if (canonical) {
+        counts[canonical] = (counts[canonical] || 0) + 1
       }
     }
 

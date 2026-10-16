@@ -9,7 +9,7 @@ import { useWishlist } from '@/lib/wishlistStore'
 import { Diamond, Filter, ArrowUpDown, ShieldCheck, Heart, Sparkles, X } from 'lucide-react'
 import ProductCard from '@/components/d2c/ProductCard'
 
-import { DEFAULT_NON_EMPTY_CATEGORIES, KNOWN_CATEGORIES } from '@/lib/categories'
+import { DEFAULT_NON_EMPTY_CATEGORIES, KNOWN_CATEGORIES, normalizeCategoryKey } from '@/lib/categories'
 
 interface D2CProductItem {
   id: string
@@ -38,7 +38,8 @@ interface D2CProductItem {
 
 function JewelleryCatalogContent() {
   const searchParams = useSearchParams()
-  const categoryParam = searchParams.get('category') || 'all'
+  const rawCategoryParam = searchParams.get('category') || 'all'
+  const categoryParam = rawCategoryParam === 'all' ? 'all' : (normalizeCategoryKey(rawCategoryParam) || 'all')
   const shapeParam = searchParams.get('shape') || ''
   const diamondTypeParam = searchParams.get('diamondType') || ''
   const styleParam = searchParams.get('style') || ''
