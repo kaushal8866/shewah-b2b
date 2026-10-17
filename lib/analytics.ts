@@ -26,6 +26,7 @@ export type D2CAnalyticsEvent =
   | 'checkout_start'
   | 'purchase'
   | 'business_click'
+  | 'whatsapp_click'
 
 export type D2CEventName = D2CAnalyticsEvent
 
@@ -107,5 +108,30 @@ export function trackEvent(eventName: D2CAnalyticsEvent, properties: Record<stri
   } catch (err) {
     // Fail silently in customer browser without interrupting user actions
     console.debug('[Analytics] Dispatch skipped:', err)
+  }
+}
+
+export function trackWhatsAppClick(label: string = 'inquire_button', details?: Record<string, any>) {
+  if (typeof window !== 'undefined') {
+    try {
+      if ((window as any).dataLayer) {
+        ;(window as any).dataLayer.push({
+          event: 'whatsapp_click',
+          event_category: 'engagement',
+          event_label: label,
+          ...details,
+        })
+      }
+      if ((window as any).gtag) {
+        ;(window as any).gtag('event', 'whatsapp_click', {
+          event_category: 'engagement',
+          event_label: label,
+          ...details,
+        })
+      }
+      trackEvent('whatsapp_click', { label, ...details })
+    } catch {
+      // Best-effort tracking
+    }
   }
 }

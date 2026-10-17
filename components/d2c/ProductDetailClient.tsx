@@ -6,6 +6,7 @@ import StoreLayout from '@/components/d2c/StoreLayout'
 import { useCart } from '@/components/d2c/CartContext'
 import { useWishlist } from '@/lib/wishlistStore'
 import type { D2CProductDetail } from '@/lib/d2cProductDetail'
+import { trackWhatsAppClick } from '@/lib/analytics'
 import {
   Diamond,
   Truck,
@@ -13,7 +14,6 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowRight,
-  Check,
   Heart,
 } from 'lucide-react'
 
@@ -22,7 +22,7 @@ interface ProductDetailClientProps {
 }
 
 export default function ProductDetailClient({ initialProduct }: ProductDetailClientProps) {
-  const { market, addItem } = useCart()
+  const { market } = useCart()
   const { isInWishlist, toggleWishlist } = useWishlist()
 
   const [product, setProduct] = useState<D2CProductDetail>(initialProduct)
@@ -46,18 +46,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     initialProduct.configurationSchema?.sizes?.[2] || 'US 6'
   )
   const [selectedSuiteOption, setSelectedSuiteOption] = useState<'full_suite' | string>('full_suite')
-  const [dynamicPrice, setDynamicPrice] = useState<{ amount: number; formatted: string | null }>({
-    amount: initialProduct.price.amount,
-    formatted: initialProduct.price.formatted,
-  })
-  const [calculatingPrice, setCalculatingPrice] = useState(false)
-  const [addedNotice, setAddedNotice] = useState(false)
-  const [addedNoticeMsg, setAddedNoticeMsg] = useState('Added to shopping bag')
 
   // Accordion open states
   const [openSection, setOpenSection] = useState<'specs' | 'shipping' | 'warranty' | 'care' | null>('specs')
 
-  // When user market changes, reload market-specific pricing and delivery window
+  // When user market changes, reload market-specific product details and delivery window
   useEffect(() => {
     if (market.code === product.market) return
     let cancelled = false
@@ -69,7 +62,6 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
         const data = await res.json()
         if (!cancelled && data) {
           setProduct(data)
-          setDynamicPrice({ amount: data.price.amount, formatted: data.price.formatted })
         }
       } catch (err) {
         console.warn('[ProductDetailClient] Market reload error:', err)
@@ -90,60 +82,13 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     setSelectedSuiteOption(optionCode)
     if (optionCode === 'full_suite') {
       setSelectedPhoto(product.primaryPhotoUrl || product.photoUrls?.[0] || null)
-      setDynamicPrice({ amount: product.price.amount, formatted: product.price.formatted })
     } else {
       const comp = product.setInfo?.components.find((c) => c.code === optionCode)
       if (comp) {
         setSelectedPhoto(comp.primaryPhotoUrl || comp.photoUrls?.[0] || null)
-        setDynamicPrice({ amount: comp.price.amount, formatted: comp.price.formatted })
       }
     }
   }
-
-  // Recalculate server price when variant configuration changes
-  useEffect(() => {
-    const isRing = Boolean(product.configurationSchema?.isRing)
-    const targetProdId = activeComponent ? activeComponent.id : product.id
-    const karatVal = selectedMetalTone === 'platinum' ? 'Platinum' : (product.specifications?.karat || 18)
-
-    let cancelled = false
-    async function recomputePrice() {
-      if (product.price.isAvailable === false && !product.price.formatted) {
-        setDynamicPrice({ amount: 0, formatted: null })
-        return
-      }
-      setCalculatingPrice(true)
-      try {
-        const res = await fetch('/api/d2c/price', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            productId: targetProdId,
-            marketCode: market.code,
-            config: {
-              metalTone: selectedMetalTone,
-              diamondType: selectedDiamondType,
-              ringSize: isRing && !activeComponent ? selectedRingSize : undefined,
-              karat: karatVal,
-            },
-          }),
-        })
-        if (!res.ok) return
-        const data = await res.json()
-        if (!cancelled && data.formattedPrice) {
-          setDynamicPrice({ amount: data.unitPrice, formatted: data.formattedPrice })
-        } else if (!cancelled && (!data.formattedPrice || data.isAvailable === false)) {
-          setDynamicPrice({ amount: 0, formatted: null })
-        }
-      } catch (e) {
-        console.warn('[recomputePrice] Error:', e)
-      } finally {
-        if (!cancelled) setCalculatingPrice(false)
-      }
-    }
-    recomputePrice()
-    return () => { cancelled = true }
-  }, [product.id, product.specifications?.karat, activeComponent, market.code, selectedMetalTone, selectedDiamondType, selectedRingSize, product.configurationSchema?.isRing])
 
   // Dynamic specs derived from live variant choices
   const dynamicSpecs = useMemo(() => {
@@ -281,107 +226,32 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     ]
   }, [product.configurationSchema?.stones])
 
-  const isUnpricedProduct = product.price.isAvailable === false || (!dynamicPrice.formatted && !product.price.formatted)
-
-  const handleAddToBag = () => {
-    if (isUnpricedProduct) return
-    const isPlat = selectedMetalTone === 'platinum'
+  const whatsappUrl = useMemo(() => {
     const targetProduct = activeComponent || product
-    const karatVal = isPlat ? 'Platinum' : (product.specifications?.karat || 18)
-    addItem(
-      {
-        id: targetProduct.id,
-        code: targetProduct.code,
-        name: targetProduct.name,
-        category: targetProduct.category,
-        photoUrl: selectedPhoto || targetProduct.primaryPhotoUrl,
-        unitPrice: dynamicPrice?.amount || targetProduct.price.amount,
-        currency: market.currency as any,
-        config: {
-          metalTone: selectedMetalTone,
-          diamondType: selectedDiamondType,
-          ringSize: product.configurationSchema?.isRing && !activeComponent ? selectedRingSize : undefined,
-          karat: karatVal,
-        },
-      },
-      1
-    )
-    setAddedNoticeMsg(`Added ${targetProduct.name} to shopping bag`)
-    setAddedNotice(true)
-    setTimeout(() => setAddedNotice(false), 3500)
-  }
+    const targetName = targetProduct.name
+    const targetCode = targetProduct.code
+    const targetSlug = targetProduct.slug || product.slug
+    const pageUrl = `https://shewah.co/jewellery/${targetSlug}`
 
-  const handleAddIndividualComponent = (comp: NonNullable<NonNullable<D2CProductDetail['setInfo']>['components']>[number]) => {
-    const isPlat = selectedMetalTone === 'platinum'
-    addItem(
-      {
-        id: comp.id,
-        code: comp.code,
-        name: comp.name,
-        category: comp.category,
-        photoUrl: comp.primaryPhotoUrl,
-        unitPrice: comp.price.amount,
-        currency: market.currency as any,
-        config: {
-          metalTone: selectedMetalTone,
-          diamondType: selectedDiamondType,
-          karat: isPlat ? 'Platinum' : 18,
-        },
-      },
-      1
-    )
-    setAddedNoticeMsg(`Added ${comp.name} to shopping bag`)
-    setAddedNotice(true)
-    setTimeout(() => setAddedNotice(false), 3500)
-  }
+    const selectedMetalObj = availableMetals.find((m) => m.id === selectedMetalTone)
+    const metalName = selectedMetalObj?.name || (selectedMetalTone === 'platinum' ? '950 Platinum' : selectedMetalTone === 'silver' ? '925 Sterling Silver' : `${selectedMetalTone} Gold`)
 
-  const handleAddParentSuite = (parentSet: NonNullable<D2CProductDetail['parentSetInfo']>) => {
-    const isPlat = selectedMetalTone === 'platinum'
-    addItem(
-      {
-        id: parentSet.parentId || parentSet.parentCode,
-        code: parentSet.parentCode,
-        name: parentSet.parentName,
-        category: 'necklaces',
-        photoUrl: parentSet.parentPhotoUrl,
-        unitPrice: parentSet.parentPrice.amount,
-        currency: market.currency as any,
-        config: {
-          metalTone: selectedMetalTone,
-          diamondType: selectedDiamondType,
-          karat: isPlat ? 'Platinum' : 18,
-        },
-      },
-      1
-    )
-    setAddedNoticeMsg(`Added ${parentSet.parentName} to shopping bag`)
-    setAddedNotice(true)
-    setTimeout(() => setAddedNotice(false), 3500)
-  }
+    const variantParts: string[] = []
+    if (metalName) variantParts.push(metalName)
+    if (availableStones.length > 1) {
+      variantParts.push(selectedDiamondType === 'natural' ? 'Natural Diamond' : 'Lab-Grown Diamond')
+    }
+    if (product.configurationSchema?.isRing && !activeComponent && selectedRingSize) {
+      variantParts.push(`size ${selectedRingSize}`)
+    }
 
-  const handleAddSiblingComponent = (sibling: NonNullable<NonNullable<D2CProductDetail['parentSetInfo']>['siblings']>[number]) => {
-    const isPlat = selectedMetalTone === 'platinum'
-    addItem(
-      {
-        id: sibling.id,
-        code: sibling.code,
-        name: sibling.name,
-        category: 'earrings',
-        photoUrl: sibling.photoUrl,
-        unitPrice: sibling.price.amount,
-        currency: market.currency as any,
-        config: {
-          metalTone: selectedMetalTone,
-          diamondType: selectedDiamondType,
-          karat: isPlat ? 'Platinum' : 18,
-        },
-      },
-      1
-    )
-    setAddedNoticeMsg(`Added ${sibling.name} to shopping bag`)
-    setAddedNotice(true)
-    setTimeout(() => setAddedNotice(false), 3500)
-  }
+    const variantText = variantParts.length > 0 ? ` in ${variantParts.join(', ')}` : ''
+    const message = `Hi Shewah, I'm interested in the ${targetName} (${targetCode})${variantText}. Please share the price and details. ${pageUrl}`
+
+    return `https://wa.me/919662266360?text=${encodeURIComponent(message)}`
+  }, [activeComponent, product, availableMetals, selectedMetalTone, availableStones.length, selectedDiamondType, selectedRingSize])
+
+
 
   return (
     <StoreLayout>
@@ -503,22 +373,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
             {/* Price block */}
             <div className="py-4 border-y border-[#E3DBD4] flex items-baseline justify-between">
               <div>
-                <div className="text-3xl font-serif font-normal text-[#051F34] flex items-center gap-2">
-                  <span>
-                    {dynamicPrice.formatted || product.price.formatted || product.price.label || 'Price on request'}
-                  </span>
-                  {calculatingPrice && (
-                    <span className="text-[10px] font-sans text-[#CB9274] animate-pulse">
-                      Updating...
-                    </span>
-                  )}
+                <div className="text-2xl sm:text-3xl font-serif font-normal text-[#051F34]">
+                  Price on request
                 </div>
                 <div className="text-xs text-[#69727D] mt-1 font-light">
-                  {dynamicPrice.formatted || product.price.formatted ? (
-                    `${product.price.taxLabel} • Complimentary worldwide insured delivery`
-                  ) : (
-                    'Contact atelier for custom quote • Complimentary worldwide delivery'
-                  )}
+                  Contact atelier for quotation • Complimentary worldwide insured delivery
                 </div>
               </div>
 
@@ -539,11 +398,6 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       Order Together or Separately
                     </span>
                   </div>
-                  {product.setInfo.suiteSavingsAmount > 0 && (
-                    <span className="bg-[#051F34] text-[#CB9274] px-2.5 py-0.5 text-[10px] uppercase tracking-[0.2em] font-semibold">
-                      Save {product.setInfo.formattedSavings} on Suite
-                    </span>
-                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -580,13 +434,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
                     <div className="text-right">
                       <div className="text-xs font-serif font-medium text-[#051F34]">
-                        {product.price.formatted}
+                        Complete Ensemble
                       </div>
-                      {product.setInfo.formattedSavings && (
-                        <div className="text-[10px] text-[#CB9274] font-medium">
-                          Save {product.setInfo.formattedSavings}
-                        </div>
-                      )}
+                      <div className="text-[10px] text-[#CB9274] font-medium">
+                        Inquire for Suite
+                      </div>
                     </div>
                   </button>
 
@@ -622,7 +474,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
                       <div className="text-right">
                         <div className="text-xs font-serif font-medium text-[#051F34]">
-                          {comp.price.formatted}
+                          Price on request
                         </div>
                         <div className="text-[10px] text-[#69727D]">
                           Individual Piece
@@ -738,31 +590,24 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
             {/* Action Buttons */}
             <div className="space-y-2 pt-2">
               <div className="flex items-center gap-3">
-                {isUnpricedProduct ? (
-                  <a
-                    href={`https://wa.me/919662266360?text=${encodeURIComponent(`Hi, I want a quote for ${activeComponent ? activeComponent.name : product.name} (${activeComponent ? activeComponent.code : product.code})`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 py-4 px-8 bg-[#051F34] text-white hover:bg-[#CB9274] text-xs uppercase tracking-[0.2em] font-semibold rounded-none transition-all duration-300 flex items-center justify-center gap-2"
-                  >
-                    <span>Enquire via WhatsApp</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
-                ) : (
-                  <button
-                    onClick={handleAddToBag}
-                    className="flex-1 py-4 px-8 bg-[#051F34] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#CB9274] transition-all duration-300 flex items-center justify-center gap-2"
-                  >
-                    <span>
-                      {activeComponent
-                        ? `Add ${activeComponent.roleLabel} to Bag`
-                        : product.setInfo
-                        ? 'Add Complete Suite to Bag'
-                        : 'Add to Shopping Bag'}
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                )}
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                    trackWhatsAppClick('pdp_inquire_button', {
+                      product_code: (activeComponent || product).code,
+                      product_name: (activeComponent || product).name,
+                      metal: selectedMetalTone,
+                      diamond_type: selectedDiamondType,
+                      ring_size: selectedRingSize,
+                    })
+                  }
+                  className="flex-1 py-4 px-8 bg-[#051F34] text-white hover:bg-[#CB9274] text-xs uppercase tracking-[0.2em] font-semibold rounded-none transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  <span>INQUIRE ON WHATSAPP</span>
+                  <ArrowRight className="w-4 h-4" />
+                </a>
 
                 <button
                   type="button"
@@ -772,7 +617,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       slug: activeComponent ? activeComponent.slug : product.slug,
                       name: activeComponent ? activeComponent.name : product.name,
                       category: activeComponent ? activeComponent.category : product.category,
-                      priceFormatted: dynamicPrice.formatted,
+                      priceFormatted: 'Price on request',
                       photoUrl: selectedPhoto || product.primaryPhotoUrl,
                       subtitle: activeComponent ? activeComponent.subtitle : product.subtitle,
                     })
@@ -791,13 +636,6 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   />
                 </button>
               </div>
-
-              {addedNotice && (
-                <div className="text-center text-xs text-[#051F34] font-medium flex items-center justify-center gap-1.5 pt-1 animate-in fade-in">
-                  <Check className="w-4 h-4 text-[#CB9274]" />
-                  <span>{addedNoticeMsg}! Click the bag icon above to view bag.</span>
-                </div>
-              )}
             </div>
 
             {/* Accordions: Specifications, Shipping, Warranty */}
@@ -922,20 +760,28 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                     {product.parentSetInfo.parentName}
                   </h4>
                   <p className="text-xs text-[#69727D]">
-                    Available as a complete ensemble for{' '}
-                    <strong className="text-[#051F34] font-medium">{product.parentSetInfo.parentPrice.formatted}</strong>
+                    Available as a complete ensemble upon inquiry
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => handleAddParentSuite(product.parentSetInfo!)}
-                  className="flex-1 sm:flex-initial py-3.5 px-6 bg-[#051F34] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#CB9274] transition-all duration-300 whitespace-nowrap"
+                <a
+                  href={`https://wa.me/919662266360?text=${encodeURIComponent(
+                    `Hi Shewah, I'm interested in the ${product.parentSetInfo.parentName} (${product.parentSetInfo.parentCode}) Complete Suite. Please share the price and details. https://shewah.co/jewellery/${product.parentSetInfo.parentSlug}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                    trackWhatsAppClick('pdp_parent_suite_inquire', {
+                      product_code: product.parentSetInfo?.parentCode,
+                      product_name: product.parentSetInfo?.parentName,
+                    })
+                  }
+                  className="flex-1 sm:flex-initial py-3.5 px-6 bg-[#051F34] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#CB9274] transition-all duration-300 whitespace-nowrap text-center"
                 >
-                  Order Complete Suite
-                </button>
+                  Inquire for Suite on WhatsApp
+                </a>
                 <Link
                   href={`/jewellery/${product.parentSetInfo.parentSlug}`}
                   className="py-3.5 px-6 border border-[#051F34] text-[#051F34] text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#051F34] hover:text-white transition-all duration-300 whitespace-nowrap"
@@ -945,7 +791,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
               </div>
             </div>
 
-            {/* Sibling matching piece quick add */}
+            {/* Sibling matching piece */}
             {product.parentSetInfo.siblings.length > 0 && (
               <div className="pt-4 border-t border-[#E3DBD4] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-3">
@@ -959,18 +805,32 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   <div className="text-[#69727D]">
                     <span>Matching companion piece: </span>
                     <strong className="text-[#051F34] font-medium">{product.parentSetInfo.siblings[0].name}</strong>
-                    <span className="text-[#69727D] ml-1.5 font-medium">
-                      ({product.parentSetInfo.siblings[0].price.formatted})
-                    </span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleAddSiblingComponent(product.parentSetInfo!.siblings[0])}
-                  className="py-2.5 px-5 bg-white text-[#051F34] hover:bg-[#051F34] hover:text-white text-xs uppercase tracking-wider font-semibold rounded-none border border-[#E3DBD4] transition-all duration-300"
-                >
-                  + Add Matching Piece to Bag
-                </button>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`https://wa.me/919662266360?text=${encodeURIComponent(
+                      `Hi Shewah, I'm interested in the matching companion piece ${product.parentSetInfo.siblings[0].name} (${product.parentSetInfo.siblings[0].code}). Please share the price and details. https://shewah.co/jewellery/${product.parentSetInfo.siblings[0].slug}`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() =>
+                      trackWhatsAppClick('pdp_sibling_inquire', {
+                        product_code: product.parentSetInfo?.siblings[0]?.code,
+                        product_name: product.parentSetInfo?.siblings[0]?.name,
+                      })
+                    }
+                    className="py-2.5 px-5 bg-[#051F34] text-white hover:bg-[#CB9274] text-xs uppercase tracking-wider font-semibold rounded-none transition-all duration-300"
+                  >
+                    Inquire on WhatsApp
+                  </a>
+                  <Link
+                    href={`/jewellery/${product.parentSetInfo.siblings[0].slug}`}
+                    className="py-2.5 px-5 bg-white text-[#051F34] hover:bg-[#051F34] hover:text-white text-xs uppercase tracking-wider font-semibold rounded-none border border-[#E3DBD4] transition-all duration-300"
+                  >
+                    View Companion Piece &rarr;
+                  </Link>
+                </div>
               </div>
             )}
           </div>
@@ -1040,7 +900,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
                       <div className="pt-3 flex items-baseline gap-2">
                         <span className="text-xl font-serif font-medium text-[#051F34]">
-                          {comp.price.formatted}
+                          Price on request
                         </span>
                         <span className="text-[11px] text-[#69727D]">
                           Individual piece
@@ -1050,14 +910,23 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   </div>
 
                   <div className="pt-6 mt-6 border-t border-[#E3DBD4] flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleAddIndividualComponent(comp)}
+                    <a
+                      href={`https://wa.me/919662266360?text=${encodeURIComponent(
+                        `Hi Shewah, I'm interested in the ${comp.name} (${comp.code}). Please share the price and details. https://shewah.co/jewellery/${comp.slug}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() =>
+                        trackWhatsAppClick('pdp_suite_component_inquire', {
+                          product_code: comp.code,
+                          product_name: comp.name,
+                        })
+                      }
                       className="flex-1 py-3 px-4 bg-[#051F34] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-[#CB9274] transition-all duration-300 flex items-center justify-center gap-2"
                     >
-                      <span>Add {comp.roleLabel} Only</span>
+                      <span>Inquire on WhatsApp</span>
                       <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                    </a>
 
                     <Link
                       href={`/jewellery/${comp.slug}`}
@@ -1083,37 +952,36 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   Acquire the Complete {product.name}
                 </h3>
                 <p className="text-xs sm:text-sm text-stone-300 font-light max-w-xl">
-                  Order all pieces together in a custom presentation suite case.
-                  {product.setInfo.formattedSavings && (
-                    <span className="text-[#CB9274] font-medium ml-1">
-                      Enjoy {product.setInfo.formattedSavings} savings compared to individual pieces.
-                    </span>
-                  )}
+                  Order all pieces together in a custom presentation suite case. Handcrafted to order at our atelier.
                 </p>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0">
                 <div className="text-center sm:text-right">
-                  <div className="text-3xl font-serif font-normal text-white">
-                    {product.price.formatted}
+                  <div className="text-2xl sm:text-3xl font-serif font-normal text-white">
+                    Price on request
                   </div>
-                  {product.setInfo.formattedSavings && (
-                    <div className="text-[10px] uppercase tracking-wider text-[#CB9274] font-semibold">
-                      Saves {product.setInfo.formattedSavings}
-                    </div>
-                  )}
+                  <div className="text-[10px] uppercase tracking-wider text-[#CB9274] font-semibold">
+                    Complete Ensemble
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleSelectSuiteOption('full_suite')
-                    handleAddToBag()
-                  }}
-                  className="py-4 px-8 bg-[#CB9274] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-white hover:text-[#051F34] transition-all duration-300 whitespace-nowrap"
+                <a
+                  href={`https://wa.me/919662266360?text=${encodeURIComponent(
+                    `Hi Shewah, I'm interested in the Complete ${product.name} Suite (${product.code}). Please share the price and details. https://shewah.co/jewellery/${product.slug}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                    trackWhatsAppClick('pdp_full_suite_inquire', {
+                      product_code: product.code,
+                      product_name: product.name,
+                    })
+                  }
+                  className="py-4 px-8 bg-[#CB9274] text-white text-xs uppercase tracking-[0.2em] font-semibold rounded-none hover:bg-white hover:text-[#051F34] transition-all duration-300 whitespace-nowrap text-center"
                 >
-                  Add Complete Suite to Bag
-                </button>
+                  Inquire for Suite on WhatsApp
+                </a>
               </div>
             </div>
           </section>
