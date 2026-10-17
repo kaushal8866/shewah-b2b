@@ -3,7 +3,6 @@
 import React from 'react'
 import StoreHeader from './StoreHeader'
 import StoreFooter from './StoreFooter'
-import CartDrawer from './CartDrawer'
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,7 +12,6 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
         {children}
       </main>
       <StoreFooter />
-      <CartDrawer />
     </div>
   )
 }

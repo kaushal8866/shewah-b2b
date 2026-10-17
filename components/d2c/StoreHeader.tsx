@@ -11,7 +11,6 @@ import { DEFAULT_NON_EMPTY_CATEGORIES, type D2CCategoryItem } from '@/lib/catego
 import AnnouncementBar from './AnnouncementBar'
 import MegaMenu from './MegaMenu'
 import {
-  ShoppingBag,
   Search,
   Heart,
   Menu,
@@ -26,7 +25,7 @@ import {
 export default function StoreHeader() {
   const pathname = usePathname()
   const router = useRouter()
-  const { market, setMarketCode, itemCount, openCart } = useCart()
+  const { market, setMarketCode } = useCart()
   const { wishlistCount } = useWishlist()
   const [mounted, setMounted] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -249,19 +248,6 @@ export default function StoreHeader() {
                 </span>
               )}
             </Link>
-
-            <button
-              onClick={openCart}
-              className="p-1.5 hover:text-[#CB9274] transition-colors relative flex items-center gap-1.5"
-              aria-label="Open Shopping Bag"
-            >
-              <ShoppingBag className="w-4 h-4 sm:w-[18px] sm:h-[18px] stroke-[1.25]" />
-              {itemCount > 0 && (
-                <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#051F34] text-white text-[8px] sm:text-[10px] font-mono font-medium flex items-center justify-center">
-                  {itemCount}
-                </span>
-              )}
-            </button>
           </div>
         </div>
       </div>
@@ -527,10 +513,7 @@ export default function StoreHeader() {
             <div className="pt-6 border-t border-[#E3DBD4] space-y-4 shrink-0 font-sans">
               <div className="text-xs text-[#69727D]">
                 <div className="font-medium text-[#051F34] mb-1">Delivering to:</div>
-                <div className="flex items-center justify-between">
-                  <span>{market.name}</span>
-                  <span className="font-mono">{market.currency} ({market.currencySymbol})</span>
-                </div>
+                <div>{market.name} (Worldwide Insured Delivery)</div>
               </div>
 
               <Link

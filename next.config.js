@@ -37,6 +37,16 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/cart',
+        destination: '/jewellery',
+        permanent: false,
+      },
+      {
+        source: '/checkout',
+        destination: '/jewellery',
+        permanent: false,
+      },
+      {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.shewah.co' }],
         destination: 'https://shewah.co/:path*',
