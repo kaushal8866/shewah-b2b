@@ -53,7 +53,7 @@ function JewelleryCatalogContent() {
     { key: 'all', label: 'All Creations' },
     ...DEFAULT_NON_EMPTY_CATEGORIES,
   ])
-  const [sortBy, setSortBy] = useState<'featured' | 'price_asc' | 'price_desc' | 'name'>('featured')
+  const [sortBy, setSortBy] = useState<'featured' | 'name'>('featured')
 
   useEffect(() => {
     setActiveCategory(categoryParam)
@@ -94,25 +94,7 @@ function JewelleryCatalogContent() {
 
   const filteredProducts = useMemo(() => {
     let list = [...products]
-    if (sortBy === 'price_asc') {
-      list.sort((a, b) => {
-        const aAvail = a.price?.isAvailable !== false && (a.price?.amount || 0) > 0
-        const bAvail = b.price?.isAvailable !== false && (b.price?.amount || 0) > 0
-        if (!aAvail && !bAvail) return a.name.localeCompare(b.name)
-        if (!aAvail) return 1
-        if (!bAvail) return -1
-        return a.price.amount - b.price.amount
-      })
-    } else if (sortBy === 'price_desc') {
-      list.sort((a, b) => {
-        const aAvail = a.price?.isAvailable !== false && (a.price?.amount || 0) > 0
-        const bAvail = b.price?.isAvailable !== false && (b.price?.amount || 0) > 0
-        if (!aAvail && !bAvail) return a.name.localeCompare(b.name)
-        if (!aAvail) return 1
-        if (!bAvail) return -1
-        return b.price.amount - a.price.amount
-      })
-    } else if (sortBy === 'name') {
+    if (sortBy === 'name') {
       list.sort((a, b) => a.name.localeCompare(b.name))
     }
     return list
@@ -171,8 +153,6 @@ function JewelleryCatalogContent() {
               className="bg-transparent border-none text-xs text-[#051F34] font-semibold outline-none cursor-pointer uppercase tracking-wider"
             >
               <option value="featured">Featured</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
               <option value="name">Name</option>
             </select>
           </div>

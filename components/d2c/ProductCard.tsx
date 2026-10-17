@@ -57,7 +57,7 @@ export default function ProductCard({
       slug,
       name,
       category,
-      priceFormatted: price.formatted,
+      priceFormatted: 'Price on request',
       photoUrl: primaryPhotoUrl,
       subtitle,
     })
@@ -175,51 +175,19 @@ export default function ProductCard({
         {/* Price & Action */}
         <div className="pt-3 border-t border-[#E3DBD4] flex items-center justify-between gap-2">
           <div className="space-y-0.5">
-            {price.isAvailable === false || !price.formatted ? (
-              <span className="font-serif text-sm font-medium text-[#051F34]">
-                {price.label || 'Price on request'}
-              </span>
-            ) : (
-              <>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-serif text-base font-medium text-[#051F34]">
-                    {price.formatted}
-                  </span>
-                  {price.compareAt && price.compareAt > price.amount && (
-                    <span className="text-xs text-[#69727D] line-through font-mono">
-                      {price.currency} {price.compareAt.toLocaleString()}
-                    </span>
-                  )}
-                </div>
-                {price.taxLabel && (
-                  <span className="text-[10px] text-[#69727D] block font-light">
-                    {price.taxLabel}
-                  </span>
-                )}
-              </>
-            )}
+            <span className="font-serif text-sm font-medium text-[#051F34]">
+              Price on request
+            </span>
           </div>
 
-          {price.isAvailable === false || !price.formatted ? (
-            <a
-              href={`https://wa.me/919662266360?text=${encodeURIComponent(`Hi, I want a quote for ${name} (${code})`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="px-3 py-1.5 bg-[#051F34] hover:bg-[#CB9274] text-white border border-[#051F34] hover:border-[#CB9274] text-[10px] uppercase tracking-[0.18em] font-semibold transition-all duration-300 flex items-center gap-1 shrink-0"
-            >
-              <span>Enquire</span>
-            </a>
-          ) : (
-            <Link
-              href={`/jewellery/${slug}`}
-              onClick={handleCardClick}
-              className="px-3 py-1.5 bg-transparent hover:bg-[#051F34] text-[#051F34] hover:text-white border border-[#051F34] text-[10px] uppercase tracking-[0.18em] font-semibold transition-all duration-300 flex items-center gap-1 shrink-0"
-            >
-              <span>Explore</span>
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          )}
+          <Link
+            href={`/jewellery/${slug}`}
+            onClick={handleCardClick}
+            className="px-3 py-1.5 bg-transparent hover:bg-[#051F34] text-[#051F34] hover:text-white border border-[#051F34] text-[10px] uppercase tracking-[0.18em] font-semibold transition-all duration-300 flex items-center gap-1 shrink-0"
+          >
+            <span>Explore</span>
+            <ArrowRight className="w-3 h-3" />
+          </Link>
         </div>
       </div>
     </div>

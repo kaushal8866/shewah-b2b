@@ -357,8 +357,8 @@ export default function StoreHeader() {
                             <p className="text-xs font-normal text-[#051F34] truncate group-hover:text-[#CB9274] transition-colors font-serif">
                               {item.name}
                             </p>
-                            <p className="text-[11px] font-medium text-[#CB9274] font-sans">
-                              {item.price?.formatted}
+                            <p className="text-[11px] font-medium text-[#69727D] font-sans">
+                              Price on request
                             </p>
                           </div>
                         </Link>
