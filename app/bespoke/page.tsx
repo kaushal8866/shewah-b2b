@@ -252,7 +252,7 @@ export default function BespokeLandingPage() {
           <div className="max-w-[1440px] mx-auto flex items-center justify-center gap-2 sm:gap-3 text-center">
             <Sparkles className="w-4 h-4 text-[#0E2233] shrink-0" />
             <p className="font-jakarta text-xs sm:text-sm text-[#0E2233] tracking-wider font-semibold">
-              Custom rings from ₹8,500 <span className="mx-2 opacity-50">•</span> Transparent atelier pricing with zero hidden distributor markups <span className="mx-2 opacity-50">•</span> Free insured delivery across India
+              Custom handcrafted fine jewellery <span className="mx-2 opacity-50">•</span> Direct atelier craftsmanship with zero showroom markups <span className="mx-2 opacity-50">•</span> Free insured delivery across India
             </p>
           </div>
         </section>
