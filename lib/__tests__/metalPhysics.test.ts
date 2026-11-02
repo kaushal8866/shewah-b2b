@@ -142,4 +142,78 @@ describe('computeKaratPricing', () => {
     const rows = computeKaratPricing(base)
     for (const r of rows) expect(r.mrp).toBeGreaterThanOrEqual(r.trade)
   })
+
+  it('produces trade = mrp = cogs at every karat when zeroExtraMargin is enabled', () => {
+    const rows = computeKaratPricing({ ...base, diamondCost: 15000, zeroExtraMargin: true })
+    for (const r of rows) {
+      expect(r.marginFloorApplied).toBe(false)
+      expect(r.trade).toBe(r.cogs)
+      expect(r.mrp).toBe(r.cogs)
+    }
+  })
+
+  it('recomputeCatalogPrices dryRun correctly applies zero extra margin', async () => {
+    const originalFetch = global.fetch
+    try {
+      global.fetch = (async (url: any, opts: any) => {
+        const body = JSON.parse(opts?.body || '{}')
+        if (body.table === 'gold_rates') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              data: [{
+                retail_labour_22k: 1100,
+                retail_labour_18k: 1100,
+                retail_labour_14k: 1100,
+                retail_labour_10k: 1100,
+                retail_labour_9k: 1500,
+              }],
+              error: null,
+            })
+          } as any
+        }
+        if (body.table === 'products') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              data: [{
+                id: 'ac594b0a-5d0a-48b9-ac69-67e8db45ff30',
+                gold_weight_22k: 3.741,
+                diamond_cost: 15000,
+                making_charges: 0,
+                igi_cert_cost: 0,
+                trade_price: 75684,
+                mrp_suggested: 80684,
+                ref_karat: '18K',
+                ref_color: 'white',
+                metal_weights: {
+                  '18K_white': 3.2,
+                  '22K_white': 3.741,
+                },
+                d2c_details: { zero_extra_margin: true },
+              }],
+              error: null,
+            })
+          } as any
+        }
+        return { ok: false, status: 404, json: async () => ({}) } as any
+      }) as any
+
+      const { recomputeCatalogPrices } = await import('../supabase')
+      const res = await recomputeCatalogPrices(14500, { dryRun: true, targetProductId: 'ac594b0a-5d0a-48b9-ac69-67e8db45ff30' })
+      expect(res.updated).toBe(1)
+      expect(res.results).toHaveLength(1)
+      const r = res.results![0]
+      expect(r.isZeroMargin).toBe(true)
+      const p18 = r.pricing.find((k: any) => k.karat === 18)
+      expect(p18.cogs).toBe(53320)
+      expect(p18.trade).toBe(53320)
+      expect(p18.mrp).toBe(53320)
+      expect(p18.marginFloorApplied).toBe(false)
+    } finally {
+      global.fetch = originalFetch
+    }
+  })
 })

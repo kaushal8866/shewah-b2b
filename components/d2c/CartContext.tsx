@@ -27,9 +27,9 @@ export function formatVariantLabel(config?: CartItemConfig): string | null {
 
   // Diamond type
   if (config.diamondType === 'natural') {
-    parts.push('Natural Mined Diamond (GIA)')
+    parts.push('Natural Mined Diamond')
   } else if (config.diamondType === 'lab_grown' || config.diamondType === 'lgd') {
-    parts.push('Lab-Grown Diamond (IGI)')
+    parts.push('Lab-Grown Diamond')
   }
 
   // Ring size

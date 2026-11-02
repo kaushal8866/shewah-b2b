@@ -618,8 +618,12 @@ export function computeOrderCogs(opts: {
 // Returns { updated, skipped, failed, error } so callers can surface partial
 // failures instead of silently reporting success. Designed to be safe to
 // re-run; only writes when the new price differs.
-export async function recomputeCatalogPrices(rate24k: number): Promise<{
-  updated: number; skipped: number; failed: number; pricedAt?: string; error?: string
+// Supports options.dryRun and options.targetProductId for non-mutating verification.
+export async function recomputeCatalogPrices(
+  rate24k: number,
+  options?: { dryRun?: boolean; targetProductId?: string }
+): Promise<{
+  updated: number; skipped: number; failed: number; pricedAt?: string; error?: string; results?: any[]
 }> {
   if (!rate24k || rate24k <= 0) return { updated: 0, skipped: 0, failed: 0, error: 'Invalid gold rate' }
 
@@ -638,14 +642,22 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
     9:  Number(rateRow?.[0]?.retail_labour_9k)  || 0,
   }
 
-  const { data: products, error } = await supabase
+  let query = supabase
     .from('products')
-    .select('id, gold_karat, gold_weight_g, gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k, diamond_cost, diamond_specs, making_charges, igi_cert_cost, trade_price, mrp_suggested, karat_pricing, metal_type, metal_weights, ref_karat, ref_color')
+    .select('id, gold_karat, gold_weight_g, gold_weight_22k, gold_weight_18k, gold_weight_14k, gold_weight_10k, gold_weight_9k, diamond_cost, diamond_specs, making_charges, igi_cert_cost, trade_price, mrp_suggested, karat_pricing, metal_type, metal_weights, ref_karat, ref_color, d2c_details')
     .eq('is_active', true)
+
+  if (options?.targetProductId) {
+    query = query.eq('id', options.targetProductId)
+  }
+
+  const { data: products, error } = await query
   if (error) return { updated: 0, skipped: 0, failed: 0, error: error.message }
   if (!products) return { updated: 0, skipped: 0, failed: 0 }
 
   let updated = 0, skipped = 0, failed = 0
+  const dryRunResults: any[] = []
+
   for (const p of products) {
     if ((p as any).metal_type === 'silver') {
       skipped++
@@ -676,6 +688,8 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
       diamondCost = Number(p.diamond_cost) || 0
     }
 
+    const isZeroMargin = Boolean((p as any).zero_extra_margin ?? (p as any).d2c_details?.zero_extra_margin)
+
     const pricing = computeKaratPricing({
       netGoldWeight,
       rate24k,
@@ -684,7 +698,8 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
       makingCharges: Number(p.making_charges) || 0,
       igiCost: Number(p.igi_cert_cost) || 0,
       metalWeights: (p as any).metal_weights || undefined,
-      color: (p as any).ref_color || undefined
+      color: (p as any).ref_color || undefined,
+      zeroExtraMargin: isZeroMargin,
     })
 
     // Stash full breakdown as jsonb for the retailer portal to read directly.
@@ -695,7 +710,22 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
     // legacy code path that reads `trade_price` keeps working.
     const default22 = pricing.find(p => p.karat === 22)
     const newTrade = default22?.trade ?? Math.min(...pricing.map(p => p.trade).filter(t => t > 0)) ?? 0
-    const newMrp = default22?.mrp ?? Math.round(newTrade * 1.40)
+    const newMrp = isZeroMargin ? newTrade : (default22?.mrp ?? Math.round(newTrade * 1.40))
+
+    if (options?.dryRun) {
+      dryRunResults.push({
+        id: p.id,
+        isZeroMargin,
+        netGoldWeight,
+        rate24k,
+        newTrade,
+        newMrp,
+        pricing,
+        karat_pricing,
+      })
+      updated++
+      continue
+    }
 
     const prevPricing = (p as any).karat_pricing || null
     const same = newTrade === Number(p.trade_price)
@@ -745,7 +775,7 @@ export async function recomputeCatalogPrices(rate24k: number): Promise<{
       }
     } else { updated++ }
   }
-  return { updated, skipped, failed, pricedAt }
+  return { updated, skipped, failed, pricedAt, results: dryRunResults.length > 0 ? dryRunResults : undefined }
 }
 
 /**

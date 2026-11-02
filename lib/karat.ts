@@ -110,14 +110,16 @@ export type KaratPriceInputs = {
   color?: string                           // Reference alloy color
   minLabourGrams?: number                  // default 1 — see above
   minMarginPct?: number                    // default 10 — see above
+  zeroExtraMargin?: boolean                // When true, trade = mrp = cogs at every karat (zero extra markup)
 }
 
 export function computeKaratPricing(inp: KaratPriceInputs): KaratPrice[] {
-  const margin = inp.marginMult ?? 1.28
-  const mrpM = inp.mrpMult ?? 1.40
+  const isZeroMargin = Boolean(inp.zeroExtraMargin)
+  const margin = isZeroMargin ? 1 : (inp.marginMult ?? 1.28)
+  const mrpM = isZeroMargin ? 1 : (inp.mrpMult ?? 1.40)
   const color = inp.color || 'yellow'
   const minLabourG = inp.minLabourGrams ?? DEFAULT_MIN_LABOUR_GRAMS
-  const minMargin = Math.max(inp.minMarginPct ?? DEFAULT_MIN_MARGIN_PCT, 0) / 100
+  const minMargin = isZeroMargin ? 0 : (Math.max(inp.minMarginPct ?? DEFAULT_MIN_MARGIN_PCT, 0) / 100)
 
   return SELLABLE_KARATS.map(k => {
     let gross = 0
@@ -135,6 +137,20 @@ export function computeKaratPricing(inp: KaratPriceInputs): KaratPrice[] {
     // charge. Previously hardcoded as Math.max(gross, 1).
     const labourCost = Math.round(labourPerG * Math.max(gross, minLabourG))
     const cogs = goldCost + labourCost + (inp.diamondCost || 0) + (inp.makingCharges || 0) + (inp.igiCost || 0)
+
+    if (isZeroMargin) {
+      return {
+        karat: k,
+        weight: gross,
+        pureWeight,
+        goldCost,
+        labourCost,
+        cogs,
+        trade: cogs,
+        mrp: cogs,
+        marginFloorApplied: false,
+      }
+    }
 
     // Trade: metal cost, labour cost, making charges and igi cert charges are transparent. Only diamond cost is marked up.
     const rawTrade = Math.round(goldCost + labourCost + ((inp.diamondCost || 0) * margin) + (inp.makingCharges || 0) + (inp.igiCost || 0))

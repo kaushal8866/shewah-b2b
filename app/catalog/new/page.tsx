@@ -239,6 +239,8 @@ export default function NewProductPage() {
   const [rtsListPrice, setRtsListPrice] = useState('')
   const [rtsInternalNotes, setRtsInternalNotes] = useState('')
 
+  const [d2cStatus, setD2cStatus] = useState<string>('draft')
+  const [zeroExtraMargin, setZeroExtraMargin] = useState<boolean>(false)
 
   const [form, setForm] = useState({
     code: '', name: '', description: '', category: 'Ring',
@@ -312,8 +314,8 @@ export default function NewProductPage() {
   const silverB2B_cogs = silverB2BCost + totalDiamondCost + makingCharges + igiCost
   const silverD2C_cogs = silverD2CCost + totalDiamondCost + makingCharges + igiCost
   
-  const silverTrade = Math.round(silverB2BCost + (totalDiamondCost * 1.28) + makingCharges + igiCost)
-  const silverMrp = Math.round(silverB2BCost + (totalDiamondCost * 1.28 * 1.40) + makingCharges + igiCost)
+  const silverTrade = zeroExtraMargin ? silverB2B_cogs : Math.round(silverB2BCost + (totalDiamondCost * 1.28) + makingCharges + igiCost)
+  const silverMrp = zeroExtraMargin ? silverB2B_cogs : Math.round(silverB2BCost + (totalDiamondCost * 1.28 * 1.40) + makingCharges + igiCost)
 
   const pricing = isSilver ? [
     {
@@ -333,7 +335,8 @@ export default function NewProductPage() {
     makingCharges,
     igiCost,
     metalWeights: metalWeights && Object.keys(metalWeights).length > 0 ? metalWeights : undefined,
-    color: refColor
+    color: refColor,
+    zeroExtraMargin: zeroExtraMargin,
   })
 
   // HELPER FUNCTION FOR COMPONENT PRICING
@@ -350,8 +353,8 @@ export default function NewProductPage() {
     if (isCompSilver) {
       const compSilverB2BCost = compWeight22 * silverRateB2B
       const compSilverB2B_cogs = compSilverB2BCost + compTotalDiamondCost + compMakingCharges + compIgiCost
-      const compSilverTrade = Math.round(compSilverB2BCost + (compTotalDiamondCost * 1.28) + compMakingCharges + compIgiCost)
-      const compSilverMrp = Math.round(compSilverB2BCost + (compTotalDiamondCost * 1.28 * 1.40) + compMakingCharges + compIgiCost)
+      const compSilverTrade = zeroExtraMargin ? compSilverB2B_cogs : Math.round(compSilverB2BCost + (compTotalDiamondCost * 1.28) + compMakingCharges + compIgiCost)
+      const compSilverMrp = zeroExtraMargin ? compSilverB2B_cogs : Math.round(compSilverB2BCost + (compTotalDiamondCost * 1.28 * 1.40) + compMakingCharges + compIgiCost)
       return [
         {
           karat: 'Silver',
@@ -372,7 +375,8 @@ export default function NewProductPage() {
         makingCharges: compMakingCharges,
         igiCost: compIgiCost,
         metalWeights: comp.metalWeights && Object.keys(comp.metalWeights).length > 0 ? comp.metalWeights : undefined,
-        color: comp.refColor
+        color: comp.refColor,
+        zeroExtraMargin: zeroExtraMargin,
       })
     }
   }
@@ -714,6 +718,8 @@ export default function NewProductPage() {
         attributes: {},
         sell_mode: sellMode,
         set_discount_pct: setDiscountPct,
+        d2c_status: d2cStatus,
+        d2c_details: { zero_extra_margin: zeroExtraMargin },
       }
 
       let { data: insertedParent, error: parentError } = await supabase
@@ -830,6 +836,8 @@ export default function NewProductPage() {
           component_label: comp.component_label,
           component_sort_order: idx,
           sell_mode: 'single',
+          d2c_status: d2cStatus,
+          d2c_details: { zero_extra_margin: zeroExtraMargin },
         }
 
         let { error: childError } = await supabase.from('products').insert([childPayload])
@@ -929,6 +937,8 @@ export default function NewProductPage() {
         detailed_pricing: isSilver ? { karat_pricing, silver_rate_b2b_used: silverRateB2B, silver_rate_d2c_used: silverRateD2C } : { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
         is_active: true,
         attributes,
+        d2c_status: d2cStatus,
+        d2c_details: { zero_extra_margin: zeroExtraMargin },
       }
       let { data: insertedProduct, error } = await supabase.from('products').insert([insertPayload]).select('id').single()
       if (error && /priced_at|column .* does not exist|metal_weights|attributes/i.test(error.message || '')) {
@@ -1008,7 +1018,24 @@ export default function NewProductPage() {
 
         {/* BASIC INFO */}
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
-          <h2 className="font-medium text-stone-900 mb-4">Basic information</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-stone-100">
+            <h2 className="font-medium text-stone-900">Basic information</h2>
+            <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 px-3 py-1.5 rounded-lg">
+              <span className="text-xs font-medium text-stone-700">Show on public shop</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={d2cStatus === 'published'}
+                  onChange={e => setD2cStatus(e.target.checked ? 'published' : 'draft')}
+                />
+                <div className="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+              <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${d2cStatus === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-200 text-stone-600'}`}>
+                {d2cStatus === 'published' ? 'Published' : d2cStatus}
+              </span>
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className={lbl}>Product code * (e.g. SH-007)</label>
@@ -1647,14 +1674,28 @@ export default function NewProductPage() {
 
         {/* PRICING */}
         <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-5">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
             <h2 className="font-medium text-stone-900 flex items-center gap-2">
               <Calculator className="w-4 h-4 text-stone-800" />
               {isSilver ? 'Silver pricing' : 'Per-karat pricing'}
             </h2>
-            <div>
-              <label className={lbl + ' inline-block mr-2'}>Delivery (days)</label>
-              <input type="number" inputMode="decimal" className={`${inp} inline-block w-20`} value={form.delivery_days} onChange={e => set('delivery_days', e.target.value)} />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 px-3 py-1.5 rounded-lg">
+                <span className="text-xs font-medium text-stone-700">Zero extra margin</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={zeroExtraMargin}
+                    onChange={e => setZeroExtraMargin(e.target.checked)}
+                  />
+                  <div className="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                </label>
+              </div>
+              <div>
+                <label className={lbl + ' inline-block mr-2'}>Delivery (days)</label>
+                <input type="number" inputMode="decimal" className={`${inp} inline-block w-20`} value={form.delivery_days} onChange={e => set('delivery_days', e.target.value)} />
+              </div>
             </div>
           </div>
 

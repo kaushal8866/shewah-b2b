@@ -144,9 +144,8 @@ export default function ProductCard({
         </button>
 
         {/* Quick Made-to-Order Lead Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm px-3 py-1.5 text-[9px] uppercase tracking-wider text-[#30373E] border-t border-[#E3DBD4]">
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm px-3 py-1.5 text-[9px] uppercase tracking-wider text-[#30373E] border-t border-[#E3DBD4]">
           <span>Made to order</span>
-          <span className="font-mono text-[#051F34] font-medium">{craftingLeadDays}d craft</span>
         </div>
       </Link>
 

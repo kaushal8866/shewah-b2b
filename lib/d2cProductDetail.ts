@@ -250,8 +250,8 @@ export async function fetchProductDetail(
         ]
 
     const allStones = [
-      { id: 'lgd',     name: 'Lab-Grown Diamond (IGI Certified)', type: 'lab_grown' },
-      { id: 'natural', name: 'Natural Diamond (GIA Certified)',   type: 'natural' },
+      { id: 'lgd',     name: 'Lab-Grown Diamond (Certified)', type: 'lab_grown' },
+      { id: 'natural', name: 'Natural Diamond (Certified)',   type: 'natural' },
     ]
 
     const prodDiamondType = (product.diamond_type || '').toLowerCase().trim()
@@ -474,11 +474,13 @@ export async function fetchProductDetail(
         diamondColor,
         diamondClarity,
         hallmark: getHallmarkLabel(baseKaratNum, isSilver, false, market.code),
-        certification: prodDiamondType === 'natural'
-          ? 'GIA Certified Natural Diamonds'
+        certification: !(reconciledDiamondWeight != null && reconciledDiamondWeight > 0 || allowedStones.length > 0 || Boolean(prodDiamondType))
+          ? '—'
+          : prodDiamondType === 'natural'
+          ? 'Certified Natural Diamonds'
           : prodDiamondType === 'lgd' || prodDiamondType === 'lab_grown'
-          ? 'IGI Certified Lab-Grown Diamonds'
-          : (prodDiamondType ? 'IGI / GIA Certified Diamonds' : 'Certified Fine Jewellery'),
+          ? 'Certified Lab-Grown Diamonds'
+          : 'Certified Diamonds',
         metalType: product.metal_type || 'gold',
         karat: baseKaratNum,
         karatLabel: baseKaratLabel,

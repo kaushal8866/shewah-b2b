@@ -145,11 +145,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
     let certificationLabel: string
     if (!hasDiamonds) {
-      certificationLabel = 'Certified Fine Jewellery'
+      certificationLabel = '—'
     } else if (isNatural) {
-      certificationLabel = 'GIA Certified Natural Diamonds (Geological Origin)'
+      certificationLabel = 'Certified Natural Diamonds'
     } else {
-      certificationLabel = 'IGI Certified Lab-Grown Diamonds'
+      certificationLabel = 'Certified Lab-Grown Diamonds'
     }
 
     const qualityLabel = !hasDiamonds
@@ -217,12 +217,12 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       return schemaStones.map((s) => ({
         type: (s.type === 'lgd' ? 'lab_grown' : s.type) as 'lab_grown' | 'natural',
         name: s.type === 'natural' ? 'Natural Mined Diamond' : 'Lab-Grown Diamond',
-        sub: s.type === 'natural' ? 'GIA Certified • Geological Origin' : 'IGI Certified • D-F / VS+',
+        sub: s.type === 'natural' ? 'Certified • Geological Origin' : 'Certified • D-F / VS+',
       }))
     }
     return [
-      { type: 'lab_grown' as const, name: 'Lab-Grown Diamond', sub: 'IGI Certified • D-F / VS+' },
-      { type: 'natural' as const, name: 'Natural Mined Diamond', sub: 'GIA Certified • Geological Origin' },
+      { type: 'lab_grown' as const, name: 'Lab-Grown Diamond', sub: 'Certified • D-F / VS+' },
+      { type: 'natural' as const, name: 'Natural Mined Diamond', sub: 'Certified • Geological Origin' },
     ]
   }, [product.configurationSchema?.stones])
 
@@ -575,15 +575,14 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
               </div>
             )}
 
-            {/* Made-to-Order Timeline Box */}
+            {/* Made-to-Order Box */}
             <div className="bg-[#F6F4F2] p-4 rounded-none border border-[#E3DBD4] text-xs text-[#69727D] space-y-1.5">
               <div className="flex items-center gap-2 font-medium text-[#051F34]">
                 <Truck className="w-4 h-4 text-[#CB9274]" />
-                <span className="uppercase tracking-wider text-[11px]">Made to Order Delivery Window:</span>
+                <span className="uppercase tracking-wider text-[11px]">Made to Order</span>
               </div>
               <p className="text-[11px] font-light">
-                Crafted especially for you in approximately {product.craftingLeadDays} business days.{' '}
-                Estimated arrival in {market.name}: <strong className="text-[#051F34] font-medium">{product.estimatedDeliveryWindow}</strong>.
+                Each piece is made to order by our master artisans.
               </p>
             </div>
 
@@ -684,7 +683,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                             href="/diamonds"
                             className="text-[#051F34] hover:text-[#CB9274] underline font-medium inline-flex items-center gap-1"
                           >
-                            IGI &amp; GIA Diamond Certification Guide &rarr;
+                            Diamond Certification &amp; Quality Guide &rarr;
                           </Link>
                         </div>
                       )}
