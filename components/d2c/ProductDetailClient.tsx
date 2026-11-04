@@ -40,11 +40,15 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   const defaultDiamondType =
     initialProduct.configurationSchema?.stones?.[0]?.type === 'natural' ? 'natural' : 'lab_grown'
 
+  const defaultRingSize =
+    initialProduct.configurationSchema?.defaultSize ||
+    (initialProduct.configurationSchema?.sizes?.includes('US 7.5')
+      ? 'US 7.5'
+      : initialProduct.configurationSchema?.sizes?.[0] || 'US 7')
+
   const [selectedMetalTone, setSelectedMetalTone] = useState<string>(defaultMetalTone)
   const [selectedDiamondType, setSelectedDiamondType] = useState<'lab_grown' | 'natural'>(defaultDiamondType)
-  const [selectedRingSize, setSelectedRingSize] = useState<string>(
-    initialProduct.configurationSchema?.sizes?.[2] || 'US 6'
-  )
+  const [selectedRingSize, setSelectedRingSize] = useState<string>(defaultRingSize)
   const [selectedSuiteOption, setSelectedSuiteOption] = useState<'full_suite' | string>('full_suite')
 
   // Accordion open states
@@ -173,7 +177,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
     const rawCarats = activeComponent?.diamondWeightCarats || baseSpecs?.diamondWeightCarats
     const caratsLabel = rawCarats
-      ? `~${rawCarats}ct Total (${isNatural ? 'Natural Mined' : 'Lab-Grown'})`
+      ? `~${Number(rawCarats).toFixed(2)}ct Total (${isNatural ? 'Natural Mined' : 'Lab-Grown'})`
       : null
 
     return {
@@ -550,9 +554,14 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
             {product.configurationSchema?.isRing && !activeComponent && product.configurationSchema?.sizes?.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="uppercase tracking-[0.2em] font-semibold text-[#051F34]">
-                    Ring Size (US)
-                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="uppercase tracking-[0.2em] font-semibold text-[#051F34]">
+                      Ring Size (US)
+                    </span>
+                    <span className="text-xs text-[#CB9274] font-medium">
+                      {selectedRingSize}
+                    </span>
+                  </div>
                   <Link
                     href="/ring-size-guide"
                     target="_blank"
@@ -577,6 +586,10 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                     </button>
                   ))}
                 </div>
+                <p className="text-[11px] text-[#69727D] font-light pt-0.5">
+                  Hand-crafted to order in your selected size
+                  {product.configurationSchema.manufacturingSizeLabel ? ` (workshop sample: ${product.configurationSchema.manufacturingSizeLabel})` : ''}.
+                </p>
               </div>
             )}
 
@@ -679,6 +692,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       {dynamicSpecs.diamonds && (
                         <div>
                           <strong className="text-[#051F34] font-medium">Diamonds:</strong> {dynamicSpecs.diamonds}
+                        </div>
+                      )}
+                      {product.specifications?.ringSize && (
+                        <div>
+                          <strong className="text-[#051F34] font-medium">Sample Size:</strong> {product.specifications.ringSize}
                         </div>
                       )}
                       {dynamicSpecs.hasDiamonds && (

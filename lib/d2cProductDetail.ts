@@ -3,6 +3,7 @@ import { getMarket, computeDeliveryEstimate, type MarketCode } from './markets'
 import { resolveProductMarketPrice } from './d2cPricing'
 import { optimizeCloudinaryUrl } from './imageUrl'
 import { normalizeCategoryKey } from './categories'
+import { RING_SIZE_DATA } from './ringSizeData'
 
 export function formatDiamondGrade(color?: string | null, clarity?: string | null): string | null {
   const c = (color || '').trim().toUpperCase()
@@ -100,6 +101,154 @@ export function resolveBaseProductWeight(product: any, karat: number, isSilver: 
   return w ? Number(Number(w).toFixed(1)) : null
 }
 
+export function computeRowDiamondWeight(row: any): number {
+  const pieces = Number(row?.pieces) || 1
+  const weight = Number(row?.weight) || 0
+  if (pieces <= 1 || weight === 0) return weight
+
+  // Physical threshold: 0.003 ct is ~0.8mm (the absolute smallest diamond used in jewellery).
+  // If weight / pieces < 0.003, 'weight' cannot possibly be the row's combined total.
+  // For example:
+  // - SH-003: weight 0.005, pieces 260 -> 0.005 / 260 = 0.000019 ct (impossible) -> per-stone weight: 260 * 0.005 = 1.30 ct
+  // - SH-511: weight 0.008, pieces 26 -> 0.008 / 26 = 0.0003 ct (impossible) -> per-stone weight: 26 * 0.008 = 0.208 ct
+  if (weight / pieces < 0.003) {
+    return weight * pieces
+  }
+
+  // In older/draft database records with explicit size_label (e.g. '1.2mm', '1.3mm', '1.4mm', '1.6mm')
+  // and small single-stone melee weight (<= 0.03 ct):
+  // the stored 'weight' is per-stone weight.
+  if (row?.size_label && weight <= 0.03) {
+    return weight * pieces
+  }
+
+  // Otherwise, in modern catalogue entries (like SH-590 series) and multi-stone rows without per-stone size labels,
+  // 'weight' is the combined total carat weight of all stones in that row.
+  // For example:
+  // - SH-591 side row: weight 0.20, pieces 12 -> 0.20 ct total
+  // - SH-592 side row: weight 0.70, pieces 2 -> 0.70 ct total
+  // - SH-593 center row: weight 1.50, pieces 6 -> 1.50 ct total
+  // - SH-594 side row: weight 0.51, pieces 24 -> 0.51 ct total
+  // - SH-595 side row: weight 0.12, pieces 6 -> 0.12 ct total
+  // - SH-596 side row: weight 0.08, pieces 6 -> 0.08 ct total
+  // - SH-598 side row: weight 0.30, pieces 47 -> 0.30 ct total
+  // - SH-599 side row: weight 0.40, pieces 2 -> 0.40 ct total
+  // - SH-600 side row: weight 0.25, pieces 22 -> 0.25 ct total
+  // - SH-102 center row: weight 0.24, pieces 24 -> 0.24 ct total
+  return weight
+}
+
+export function computeTotalDiamondCarats(product: any): number | null {
+  if (product?.code === 'SH-004' || product?.slug === 'the-royal-diamond-tennis-necklace') {
+    return 5.50
+  }
+  if (product?.code === 'SH-003' || product?.slug === 'the-tanmaniya-heritage-diamond-suite') {
+    return 2.41
+  }
+
+  if (Array.isArray(product?.diamond_specs) && product.diamond_specs.length > 0) {
+    let total = 0
+    let hasValidRow = false
+    for (const row of product.diamond_specs) {
+      const rw = computeRowDiamondWeight(row)
+      if (rw > 0) {
+        total += rw
+        hasValidRow = true
+      }
+    }
+    if (hasValidRow && total > 0) {
+      return Number(total.toFixed(2))
+    }
+  }
+
+  if (product?.diamond_weight) {
+    return Number(Number(product.diamond_weight).toFixed(2))
+  }
+
+  return null
+}
+
+export function resolveDefaultRingSize(
+  storedSize: number | string | undefined | null,
+  availableSizes: string[] = ['US 4', 'US 4.5', 'US 5', 'US 5.5', 'US 6', 'US 6.5', 'US 7', 'US 7.5', 'US 8', 'US 8.5', 'US 9']
+): { defaultSize: string; manufacturingSizeLabel: string | null } {
+  if (!storedSize) {
+    const fallback = availableSizes.includes('US 7.5')
+      ? 'US 7.5'
+      : availableSizes.includes('US 7')
+      ? 'US 7'
+      : availableSizes[0] || 'US 7'
+    return { defaultSize: fallback, manufacturingSizeLabel: null }
+  }
+
+  if (typeof storedSize === 'string' && storedSize.trim().toUpperCase().startsWith('US')) {
+    const match = availableSizes.find(s => s.toLowerCase() === storedSize.trim().toLowerCase())
+    if (match) {
+      return { defaultSize: match, manufacturingSizeLabel: match }
+    }
+  }
+
+  const numVal = typeof storedSize === 'number' ? storedSize : parseFloat(String(storedSize))
+
+  if (!isNaN(numVal) && numVal > 0) {
+    if (numVal >= 13 && numVal <= 26) {
+      let closestEntry = RING_SIZE_DATA[0]
+      let minDiff = Math.abs(RING_SIZE_DATA[0].diameterMm - numVal)
+      for (const entry of RING_SIZE_DATA) {
+        const diff = Math.abs(entry.diameterMm - numVal)
+        if (diff < minDiff) {
+          minDiff = diff
+          closestEntry = entry
+        }
+      }
+
+      const targetUsNum = parseFloat(closestEntry.us)
+      let bestUsSize = availableSizes[0]
+      let bestUsDiff = Infinity
+      for (const sz of availableSizes) {
+        const szNum = parseFloat(sz.replace(/[^\d.]/g, ''))
+        const diff = Math.abs(szNum - targetUsNum)
+        if (diff < bestUsDiff) {
+          bestUsDiff = diff
+          bestUsSize = sz
+        }
+      }
+
+      const indianSizeStr = numVal === 17.9 ? 'Indian 16' : (closestEntry.asia ? `Indian ${closestEntry.asia}` : null)
+      const label = indianSizeStr
+        ? `${numVal} mm (${indianSizeStr} / ${bestUsSize})`
+        : `${numVal} mm (${bestUsSize})`
+
+      return {
+        defaultSize: bestUsSize,
+        manufacturingSizeLabel: label,
+      }
+    }
+
+    const entryByAsia = RING_SIZE_DATA.find(r => parseFloat(r.asia) === numVal)
+    if (entryByAsia) {
+      const targetUs = parseFloat(entryByAsia.us)
+      let bestUsSize = availableSizes[0]
+      let bestUsDiff = Infinity
+      for (const sz of availableSizes) {
+        const szNum = parseFloat(sz.replace(/[^\d.]/g, ''))
+        const diff = Math.abs(szNum - targetUs)
+        if (diff < bestUsDiff) {
+          bestUsDiff = diff
+          bestUsSize = sz
+        }
+      }
+      return {
+        defaultSize: bestUsSize,
+        manufacturingSizeLabel: `Indian ${numVal} (${entryByAsia.diameterMm} mm / ${bestUsSize})`,
+      }
+    }
+  }
+
+  const fallback = availableSizes.includes('US 7.5') ? 'US 7.5' : availableSizes[0] || 'US 7'
+  return { defaultSize: fallback, manufacturingSizeLabel: String(storedSize) }
+}
+
 export interface D2CProductDetail {
   id: string
   code: string
@@ -128,12 +277,16 @@ export interface D2CProductDetail {
     metalType?: string
     karat?: number
     karatLabel?: string
+    ringSize?: string | null
   }
   configurationSchema: {
     isConfigurable: boolean
     metals: Array<{ id: string; name: string; tone: string; karat: any; colorHex: string }>
     stones: Array<{ id: string; name: string; type: string }>
     sizes: string[]
+    defaultSize?: string | null
+    manufacturingSize?: string | null
+    manufacturingSizeLabel?: string | null
     isRing: boolean
   }
   price: {
@@ -322,7 +475,7 @@ export async function fetchProductDetail(
             )
             const rawCompGold = c.gold_weight_18k || c.gold_weight_g
             const compGold = rawCompGold ? Number(Number(rawCompGold).toFixed(1)) : (c.code.includes('PEND') ? 4.5 : 4.1)
-            const compDiamond = c.code.includes('PEND') ? 1.31 : c.code.includes('EARR') ? 1.10 : (c.diamond_weight || null)
+            const compDiamond = computeTotalDiamondCarats(c) ?? (c.code.includes('PEND') ? 1.31 : c.code.includes('EARR') ? 1.10 : (c.diamond_weight || null))
 
             return {
               id: c.id,
@@ -453,14 +606,7 @@ export async function fetchProductDetail(
     const reconciledGoldWeight = resolveBaseProductWeight(product, baseKaratNum, isSilver)
 
     // Compute reconciled diamond total weight
-    let reconciledDiamondWeight: number | null = null
-    if (product.code === 'SH-003' || product.slug === 'the-tanmaniya-heritage-diamond-suite') {
-      reconciledDiamondWeight = 2.41
-    } else if (product.code === 'SH-004' || product.slug === 'the-royal-diamond-tennis-necklace') {
-      reconciledDiamondWeight = 5.50
-    } else {
-      reconciledDiamondWeight = product.diamond_weight ? Number(Number(product.diamond_weight).toFixed(2)) : null
-    }
+    const reconciledDiamondWeight = computeTotalDiamondCarats(product)
 
     // Reconciled diamond color and clarity strictly from stored specifications
     const rawColor = product.diamond_color || product.diamond_specs?.[0]?.color || (product.code === 'SH-003' ? 'EF' : product.code === 'SH-004' ? 'GH' : null)
@@ -472,6 +618,11 @@ export async function fetchProductDetail(
           : String(rawColor).trim().toUpperCase())
       : ''
     const diamondClarity = rawClarity ? String(rawClarity).trim().toUpperCase() : ''
+
+    const storedRingSize = isRing ? (product.attributes?.ring_size ?? details.ring_size ?? null) : null
+    const { defaultSize: resolvedDefaultSize, manufacturingSizeLabel } = isRing
+      ? resolveDefaultRingSize(storedRingSize, availableSizes)
+      : { defaultSize: null, manufacturingSizeLabel: null }
 
     return {
       id: product.id,
@@ -507,12 +658,16 @@ export async function fetchProductDetail(
         metalType: product.metal_type || 'gold',
         karat: baseKaratNum,
         karatLabel: baseKaratLabel,
+        ringSize: manufacturingSizeLabel,
       },
       configurationSchema: {
         isConfigurable: product.is_configurable === true || product.d2c_status === 'published' || details.is_configurable !== false,
         metals: allowedMetals,
         stones: allowedStones,
         sizes: availableSizes,
+        defaultSize: resolvedDefaultSize,
+        manufacturingSize: storedRingSize ? `${storedRingSize} mm` : null,
+        manufacturingSizeLabel,
         isRing,
       },
       price: {
