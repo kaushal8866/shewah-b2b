@@ -152,6 +152,36 @@ vi.mock('@/lib/supabaseAdmin', () => {
         filters.push((r) => vals.includes(r[col]))
         return chain
       },
+      ilike(col: string, val: string) {
+        const pattern = val.replace(/%/g, '.*')
+        const re = new RegExp(pattern, 'i')
+        filters.push((r) => re.test(String(r[col] ?? '')))
+        return chain
+      },
+      filter(col: string, op: string, val: any) {
+        if (col.includes('->>')) {
+          const [field, key] = col.split('->>')
+          filters.push((r) => r[field]?.[key] === val)
+        } else if (op === 'eq') {
+          filters.push((r) => r[col] === val)
+        }
+        return chain
+      },
+      or(clause: string) {
+        const parts = clause.split(',')
+        filters.push((r) => {
+          return parts.some((p) => {
+            const [col, op, val] = p.split('.')
+            if (op === 'ilike') {
+              const pattern = (val || '').replace(/%/g, '.*')
+              const re = new RegExp(pattern, 'i')
+              return re.test(String(r[col] ?? ''))
+            }
+            return false
+          })
+        })
+        return chain
+      },
       order(col: string, opts?: { ascending?: boolean }) {
         orderSpec = { col, ascending: opts?.ascending !== false }
         return chain

@@ -528,6 +528,7 @@ export async function uploadPrivateDraftMedia(params: {
 
 /**
  * Resolves a mediaId to its private storageKey and checks whether it is attached to a live published article.
+ * Scalable and direct: avoids hardcoded table-scan limits (e.g. 100 or 200) that previously truncated older published media.
  */
 export async function lookupBlogMediaRecord(mediaId: string): Promise<{
   found: boolean
@@ -539,80 +540,131 @@ export async function lookupBlogMediaRecord(mediaId: string): Promise<{
     return { found: false, isPublishedLive: false }
   }
 
-  // 1. Find storageKey from audit log and published articles in parallel
   let storageKey: string | undefined
   let mimeType: string | undefined
+  let isPublishedLive = false
 
-  const [{ data: logs }, { data: publishedArticles }] = await Promise.all([
+  // 1. Direct query in blog_audit_logs by mediaId and published article hero in parallel
+  const [auditRes, pubHeroArtRes] = await Promise.all([
     supabaseAdmin
       .from('blog_audit_logs')
       .select('diff_summary')
       .eq('operation', 'upload_media')
       .eq('outcome', 'success')
+      .filter('diff_summary->>mediaId', 'eq', mediaId)
       .order('created_at', { ascending: false })
-      .limit(200),
+      .limit(1)
+      .maybeSingle(),
     supabaseAdmin
       .from('blog_articles')
-      .select('id, status, live_revision_id, hero_image_url')
+      .select('id, live_revision_id')
       .eq('status', 'published')
-      .not('live_revision_id', 'is', null),
+      .ilike('hero_image_url', `%${mediaId}%`)
+      .limit(1)
+      .maybeSingle(),
   ])
 
-  if (Array.isArray(logs)) {
-    for (const row of logs) {
-      const summary = row?.diff_summary as Record<string, any> | undefined
-      if (summary?.mediaId === mediaId && isSafeMediaStorageKey(summary.storageKey)) {
-        storageKey = summary.storageKey
-        mimeType = summary.mimeType
-        break
-      }
+  if (auditRes?.data?.diff_summary) {
+    const s = auditRes.data.diff_summary as any
+    if (s.storageKey && isSafeMediaStorageKey(s.storageKey)) {
+      storageKey = s.storageKey
+      mimeType = s.mimeType
     }
   }
 
-  // 2. Check if this mediaId is referenced by any published article's live revision
-  let isPublishedLive = false
-
-  if (Array.isArray(publishedArticles) && publishedArticles.length > 0) {
-    const liveRevIds = publishedArticles
-      .map((a) => a.live_revision_id)
-      .filter((id): id is string => Boolean(id))
-
-    for (const art of publishedArticles) {
-      if (typeof art.hero_image_url === 'string' && art.hero_image_url.includes(mediaId)) {
-        isPublishedLive = true
-        break
-      }
-    }
-
-    if (!isPublishedLive && liveRevIds.length > 0) {
-      const { data: liveRevs } = await supabaseAdmin
+  if (pubHeroArtRes?.data) {
+    isPublishedLive = true
+    // If storageKey wasn't found in audit logs, recover directly from this live revision
+    if (!storageKey && pubHeroArtRes.data.live_revision_id) {
+      const { data: rev } = await supabaseAdmin
         .from('blog_revisions')
-        .select('id, hero_image_url, body_markdown, body_structured')
-        .in('id', liveRevIds)
+        .select('body_structured')
+        .eq('id', pubHeroArtRes.data.live_revision_id)
+        .maybeSingle()
 
-      if (Array.isArray(liveRevs)) {
-        for (const rev of liveRevs) {
-          const serialized = JSON.stringify({
-            h: rev.hero_image_url,
-            b: rev.body_markdown,
-            s: rev.body_structured,
-          })
-          if (serialized.includes(mediaId)) {
-            isPublishedLive = true
-            if (!storageKey && Array.isArray(rev.body_structured?.images)) {
-              const foundImg = rev.body_structured.images.find((img: any) => img?.mediaId === mediaId)
-              if (foundImg?.storageKey && isSafeMediaStorageKey(foundImg.storageKey)) {
-                storageKey = foundImg.storageKey
-              }
-            }
-            break
-          }
+      const imgs = rev?.body_structured?.images
+      if (Array.isArray(imgs)) {
+        const found = imgs.find((img: any) => img?.mediaId === mediaId)
+        if (found?.storageKey && isSafeMediaStorageKey(found.storageKey)) {
+          storageKey = found.storageKey
+          mimeType = found.mimeType
         }
       }
     }
   }
 
-  // Also check draft revisions if storageKey wasn't in the last 200 audit logs
+  // 2. If not confirmed live or storageKey is missing, check revisions referencing this mediaId
+  if (!isPublishedLive || !storageKey) {
+    const { data: revMatch } = await supabaseAdmin
+      .from('blog_revisions')
+      .select('id, article_id, body_structured')
+      .or(`hero_image_url.ilike.%${mediaId}%,body_markdown.ilike.%${mediaId}%`)
+      .limit(1)
+      .maybeSingle()
+
+    if (revMatch) {
+      if (!isPublishedLive && revMatch.article_id) {
+        const { data: liveArt } = await supabaseAdmin
+          .from('blog_articles')
+          .select('id')
+          .eq('id', revMatch.article_id)
+          .eq('status', 'published')
+          .eq('live_revision_id', revMatch.id)
+          .maybeSingle()
+
+        if (liveArt) {
+          isPublishedLive = true
+        }
+      }
+
+      if (!storageKey && Array.isArray(revMatch.body_structured?.images)) {
+        const found = revMatch.body_structured.images.find((img: any) => img?.mediaId === mediaId)
+        if (found?.storageKey && isSafeMediaStorageKey(found.storageKey)) {
+          storageKey = found.storageKey
+          mimeType = found.mimeType
+        }
+      }
+    }
+  }
+
+  // 3. Fallback: if isPublishedLive is still false, check body_structured.images across all live revisions
+  if (!isPublishedLive) {
+    const { data: pubArticles } = await supabaseAdmin
+      .from('blog_articles')
+      .select('live_revision_id')
+      .eq('status', 'published')
+      .not('live_revision_id', 'is', null)
+
+    const liveRevIds = (pubArticles || [])
+      .map((a) => a.live_revision_id)
+      .filter((id): id is string => Boolean(id))
+
+    for (let i = 0; i < liveRevIds.length; i += 50) {
+      const chunk = liveRevIds.slice(i, i + 50)
+      const { data: revs } = await supabaseAdmin
+        .from('blog_revisions')
+        .select('id, body_structured')
+        .in('id', chunk)
+
+      for (const rev of revs || []) {
+        const imgs = rev.body_structured?.images
+        if (Array.isArray(imgs)) {
+          const found = imgs.find((img: any) => img?.mediaId === mediaId)
+          if (found) {
+            isPublishedLive = true
+            if (!storageKey && found?.storageKey && isSafeMediaStorageKey(found.storageKey)) {
+              storageKey = found.storageKey
+              mimeType = found.mimeType
+            }
+            break
+          }
+        }
+      }
+      if (isPublishedLive) break
+    }
+  }
+
+  // 4. Fallback for draft revisions if storageKey was not in audit logs
   if (!storageKey) {
     const { data: revs } = await supabaseAdmin
       .from('blog_revisions')
