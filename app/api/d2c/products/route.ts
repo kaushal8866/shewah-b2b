@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getMarket, type MarketCode } from '@/lib/markets'
 import { resolveProductMarketPrice } from '@/lib/d2cPricing'
@@ -19,6 +21,9 @@ function isExplicitSetComponent(p: any): boolean {
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions).catch(() => null)
+    const isTradeSession = Boolean(session?.user)
+
     const { searchParams } = new URL(req.url)
     const marketParam = (searchParams.get('market') || 'US').toUpperCase() as MarketCode
     const market = getMarket(marketParam)
@@ -125,7 +130,9 @@ export async function GET(req: NextRequest) {
           isSetComponent: Boolean(details.is_component_of_set),
           setParentCode: details.parent_set_code || null,
           setLabel: details.is_set ? 'Complete Suite • Available Together or Separately' : null,
-          craftingLeadDays: p.d2c_crafting_lead_days || 14,
+          craftingLeadDays: typeof p.d2c_crafting_lead_days === 'number' && p.d2c_crafting_lead_days > 0
+            ? p.d2c_crafting_lead_days
+            : null,
           returnPolicy: {
             type: p.return_policy_type || 'made_to_order',
             windowDays: p.return_window_days ?? 30,
@@ -137,15 +144,22 @@ export async function GET(req: NextRequest) {
             metalType: p.metal_type || 'gold',
             karat: p.gold_karat || 18,
           },
-          price: {
-            amount: pricing.unitPrice,
-            compareAt: pricing.compareAtPrice,
-            currency: pricing.currency,
-            formatted: pricing.formattedPrice,
-            taxLabel: pricing.taxLabel,
-            isAvailable: pricing.isAvailable,
-            label: pricing.label || (pricing.isAvailable ? null : 'Price on request'),
-          },
+          price: isTradeSession
+            ? {
+                amount: pricing.unitPrice,
+                compareAt: pricing.compareAtPrice,
+                currency: pricing.currency,
+                formatted: pricing.formattedPrice,
+                taxLabel: pricing.taxLabel,
+                isAvailable: pricing.isAvailable,
+                label: pricing.label || (pricing.isAvailable ? null : 'Price on request'),
+              }
+            : {
+                currency: pricing.currency,
+                taxLabel: pricing.taxLabel,
+                isAvailable: false,
+                label: 'Price on request',
+              },
         }
       })
     )

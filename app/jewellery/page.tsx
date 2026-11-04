@@ -20,19 +20,20 @@ interface D2CProductItem {
   category: string
   primaryPhotoUrl: string | null
   secondaryPhotoUrl: string | null
-  craftingLeadDays: number
+  craftingLeadDays: number | null
   isFeatured?: boolean
   isSet?: boolean
   isSetComponent?: boolean
   setParentCode?: string | null
   setLabel?: string | null
   price: {
-    amount: number
-    compareAt: number | null
+    amount?: number | null
+    compareAt?: number | null
     currency: string
-    formatted: string
-    taxLabel: string
-    isAvailable: boolean
+    formatted?: string | null
+    taxLabel?: string
+    isAvailable?: boolean
+    label?: string | null
   }
 }
 

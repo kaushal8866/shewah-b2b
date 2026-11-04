@@ -103,7 +103,7 @@ export default function CatalogProductEditPage() {
     gold_weight_22k: '',
     gross_weight: '',
     making_charges: '2500', igi_cert_cost: '1500',
-    delivery_days: '14',
+    delivery_days: '',
     models_available: ['wholesale', 'design_make'],
   })
 
@@ -188,7 +188,9 @@ export default function CatalogProductEditPage() {
           gross_weight: data.gross_weight ? String(data.gross_weight) : '',
           making_charges: String(data.making_charges ?? '0'),
           igi_cert_cost: String(data.igi_cert_cost ?? '1500'),
-          delivery_days: String(data.delivery_days || '14'),
+          delivery_days: data.d2c_crafting_lead_days != null
+            ? String(data.d2c_crafting_lead_days)
+            : (data.delivery_days != null ? String(data.delivery_days) : ''),
           models_available: data.models_available || ['wholesale', 'design_make'],
         })
         setAttributes(data.attributes || {})
@@ -559,7 +561,8 @@ export default function CatalogProductEditPage() {
       trade_price: tradePrice, mrp_suggested: mrp,
       priced_at_rate: isSilver ? null : (goldRate || null),
       priced_at: new Date().toISOString(),
-      delivery_days: parseInt(form.delivery_days) || 14,
+      delivery_days: form.delivery_days && !isNaN(parseInt(form.delivery_days, 10)) ? parseInt(form.delivery_days, 10) : null,
+      d2c_crafting_lead_days: form.delivery_days && !isNaN(parseInt(form.delivery_days, 10)) ? parseInt(form.delivery_days, 10) : null,
       models_available: form.models_available, photo_urls: photoUrls,
       diamond_weight: parseFloat(primary.weight) || null, diamond_shape: primary.shape,
       diamond_quality: primary.quality, diamond_color: primary.color,
@@ -581,7 +584,7 @@ export default function CatalogProductEditPage() {
       },
     }
     let { error } = await supabase.from('products').update(updatePayload).eq('id', id)
-    if (error && /priced_at|column .* does not exist|metal_weights|attributes/i.test(error.message || '')) {
+    if (error && /priced_at|column .* does not exist|metal_weights|attributes|d2c_crafting_lead_days/i.test(error.message || '')) {
       // Migration not yet applied — drop the new columns and retry so
       // editing keeps working until the operator runs task-72 SQL.
       delete updatePayload.priced_at_rate
@@ -590,6 +593,7 @@ export default function CatalogProductEditPage() {
       delete updatePayload.ref_karat
       delete updatePayload.ref_color
       delete updatePayload.attributes
+      delete updatePayload.d2c_crafting_lead_days
       ;({ error } = await supabase.from('products').update(updatePayload).eq('id', id))
     }
     setSaving(false)

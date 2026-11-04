@@ -16,15 +16,15 @@ export interface ProductCardProps {
   category: string
   primaryPhotoUrl: string | null
   secondaryPhotoUrl?: string | null
-  craftingLeadDays?: number
+  craftingLeadDays?: number | null
   isFeatured?: boolean
   isSet?: boolean
   setLabel?: string | null
   price: {
-    amount: number
-    compareAt: number | null
+    amount?: number | null
+    compareAt?: number | null
     currency: string
-    formatted: string | null
+    formatted?: string | null
     taxLabel?: string
     isAvailable?: boolean
     label?: string | null
@@ -40,7 +40,7 @@ export default function ProductCard({
   category,
   primaryPhotoUrl,
   secondaryPhotoUrl,
-  craftingLeadDays = 14,
+  craftingLeadDays,
   isFeatured,
   isSet,
   setLabel,
@@ -64,7 +64,7 @@ export default function ProductCard({
     trackEvent('wishlist_add', {
       productId: id,
       productName: name,
-      price: price.amount,
+      price: price.amount ?? 0,
       currency: price.currency,
     })
   }
@@ -73,7 +73,7 @@ export default function ProductCard({
     trackEvent('product_click', {
       productId: id,
       productName: name,
-      price: price.amount,
+      price: price.amount ?? 0,
       currency: price.currency,
       category,
     })

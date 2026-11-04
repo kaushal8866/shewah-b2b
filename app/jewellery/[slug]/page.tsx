@@ -1,6 +1,8 @@
 import React from 'react'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { fetchProductDetail } from '@/lib/d2cProductDetail'
 import ProductDetailClient from '@/components/d2c/ProductDetailClient'
 import type { MarketCode } from '@/lib/markets'
@@ -16,7 +18,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const cookieStore = cookies()
   const marketCookie = (cookieStore.get('shewah_market')?.value || 'US').toUpperCase() as MarketCode
 
-  const product = await fetchProductDetail(rawSlug, marketCookie)
+  const session = await getServerSession(authOptions).catch(() => null)
+  const isTradeSession = Boolean(session?.user)
+
+  const product = await fetchProductDetail(rawSlug, marketCookie, isTradeSession)
 
   if (!product) {
     notFound()

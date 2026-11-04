@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { fetchProductDetail } from '@/lib/d2cProductDetail'
 
 export const dynamic = 'force-dynamic'
@@ -10,10 +12,13 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions).catch(() => null)
+    const isTradeSession = Boolean(session?.user)
+
     const { searchParams } = new URL(req.url)
     const marketParam = searchParams.get('market') || 'US'
 
-    const data = await fetchProductDetail(params.slug, marketParam)
+    const data = await fetchProductDetail(params.slug, marketParam, isTradeSession)
     if (!data) {
       return NextResponse.json({ error: 'Product not found or unavailable in D2C' }, { status: 404 })
     }

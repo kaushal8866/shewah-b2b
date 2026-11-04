@@ -22,6 +22,8 @@ import { resolveProductMarketPrice } from '@/lib/d2cPricing'
 import { fetchNonEmptyD2CCategories } from '@/lib/categories'
 import { optimizeCloudinaryUrl } from '@/lib/imageUrl'
 import { type ProductCardProps } from '@/components/d2c/ProductCard'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export const revalidate = 300
 
@@ -42,6 +44,9 @@ export const metadata = {
 }
 
 export default async function HomePage() {
+  const session = await getServerSession(authOptions).catch(() => null)
+  const isTradeSession = Boolean(session?.user)
+
   // Fetch live non-empty categories and active published products in parallel
   let activeCategories: Awaited<ReturnType<typeof fetchNonEmptyD2CCategories>> = []
   let productsForRail: ProductCardProps[] = []
@@ -81,20 +86,30 @@ export default async function HomePage() {
               p.photo_urls?.[1] || p.photo_urls?.[0] || null,
               800
             ),
-            craftingLeadDays: p.d2c_crafting_lead_days || 14,
+            craftingLeadDays: typeof p.d2c_crafting_lead_days === 'number' && p.d2c_crafting_lead_days > 0
+              ? p.d2c_crafting_lead_days
+              : null,
             isFeatured: p.d2c_featured || false,
             isSet: Boolean(details.is_set),
             setLabel: details.is_set
               ? 'Complete Suite • Available Together or Separately'
               : null,
-            price: {
-              amount: pricing.unitPrice,
-              compareAt: pricing.compareAtPrice,
-              currency: pricing.currency,
-              formatted: pricing.formattedPrice,
-              taxLabel: pricing.taxLabel,
-              isAvailable: pricing.isAvailable,
-            },
+            price: isTradeSession
+              ? {
+                  amount: pricing.unitPrice,
+                  compareAt: pricing.compareAtPrice,
+                  currency: pricing.currency,
+                  formatted: pricing.formattedPrice,
+                  taxLabel: pricing.taxLabel,
+                  isAvailable: pricing.isAvailable,
+                  label: pricing.label || (pricing.isAvailable ? null : 'Price on request'),
+                }
+              : {
+                  currency: pricing.currency,
+                  taxLabel: pricing.taxLabel,
+                  isAvailable: false,
+                  label: 'Price on request',
+                },
           }
         })
       )

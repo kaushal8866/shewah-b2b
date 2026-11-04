@@ -259,8 +259,8 @@ export interface D2CProductDetail {
   category: string
   photoUrls: string[]
   primaryPhotoUrl: string | null
-  craftingLeadDays: number
-  estimatedDeliveryWindow: string
+  craftingLeadDays: number | null
+  estimatedDeliveryWindow?: string
   returnPolicy: {
     type: string
     windowDays: number
@@ -290,11 +290,11 @@ export interface D2CProductDetail {
     isRing: boolean
   }
   price: {
-    amount: number
-    compareAt: number | null
+    amount?: number | null
+    compareAt?: number | null
     currency: string
-    formatted: string | null
-    taxLabel: string
+    formatted?: string | null
+    taxLabel?: string
     isAvailable: boolean
     label?: string | null
   }
@@ -303,9 +303,9 @@ export interface D2CProductDetail {
     isSet: boolean
     setName: string
     savingsLabel?: string
-    sumComponentPrices: number
-    suiteSavingsAmount: number
-    formattedSavings: string | null
+    sumComponentPrices?: number
+    suiteSavingsAmount?: number
+    formattedSavings?: string | null
     components: Array<{
       id: string
       code: string
@@ -320,10 +320,12 @@ export interface D2CProductDetail {
       approxGoldWeight: number | null
       diamondWeightCarats: number | null
       price: {
-        amount: number
-        compareAt: number | null
+        amount?: number | null
+        compareAt?: number | null
         currency: string
-        formatted: string
+        formatted?: string | null
+        isAvailable?: boolean
+        label?: string | null
       }
     }>
   } | null
@@ -334,8 +336,10 @@ export interface D2CProductDetail {
     parentSlug: string
     parentPhotoUrl: string | null
     parentPrice: {
-      amount: number
-      formatted: string
+      amount?: number | null
+      formatted?: string | null
+      currency?: string
+      label?: string | null
     }
     siblings: Array<{
       id: string
@@ -346,8 +350,10 @@ export interface D2CProductDetail {
       photoUrl: string | null
       approxGoldWeight: number | null
       price: {
-        amount: number
-        formatted: string
+        amount?: number | null
+        formatted?: string | null
+        currency?: string
+        label?: string | null
       }
     }>
   } | null
@@ -355,7 +361,8 @@ export interface D2CProductDetail {
 
 export async function fetchProductDetail(
   rawSlugInput: string,
-  marketCodeInput: string = 'US'
+  marketCodeInput: string = 'US',
+  isTradeSession: boolean = false
 ): Promise<D2CProductDetail | null> {
   const rawSlug = (rawSlugInput || '').toLowerCase().trim()
   if (!rawSlug) return null
@@ -447,8 +454,10 @@ export async function fetchProductDetail(
       : (isRing ? ['US 4', 'US 4.5', 'US 5', 'US 5.5', 'US 6', 'US 6.5', 'US 7', 'US 7.5', 'US 8', 'US 8.5', 'US 9'] : [])
 
     // 5. Compute delivery window estimate
-    const leadDays = product.d2c_crafting_lead_days || 14
-    const deliveryEstimate = computeDeliveryEstimate(leadDays, market.code)
+    const leadDays = typeof product.d2c_crafting_lead_days === 'number' && product.d2c_crafting_lead_days > 0
+      ? product.d2c_crafting_lead_days
+      : null
+    const deliveryEstimate = leadDays ? computeDeliveryEstimate(leadDays, market.code) : null
     const isStandardReturn = product.return_policy_type === 'standard'
 
     // 6. Resolve Set / Suite hierarchy if applicable
@@ -490,26 +499,37 @@ export async function fetchProductDetail(
               primaryPhotoUrl: cleanComponentPhotos[0] || 'https://res.cloudinary.com/ddnlacdta/image/upload/v1782577185/ose19027_aepd7a.jpg',
               approxGoldWeight: compGold,
               diamondWeightCarats: compDiamond,
-              price: {
-                amount: cPricing.unitPrice,
-                compareAt: cPricing.compareAtPrice,
-                currency: cPricing.currency,
-                formatted: cPricing.formattedPrice,
-              },
+              price: isTradeSession
+                ? {
+                    amount: cPricing.unitPrice,
+                    compareAt: cPricing.compareAtPrice,
+                    currency: cPricing.currency,
+                    formatted: cPricing.formattedPrice,
+                    isAvailable: cPricing.isAvailable,
+                  }
+                : {
+                    currency: cPricing.currency,
+                    isAvailable: false,
+                    label: 'Price on request',
+                  },
             }
           })
         )
 
-        const sumComponentPrices = componentsWithPricing.reduce((sum, c) => sum + c.price.amount, 0)
+        const sumComponentPrices = componentsWithPricing.reduce((sum, c) => sum + (c.price.amount || 0), 0)
         const suiteSavingsAmount = Math.max(0, sumComponentPrices - pricing.unitPrice)
 
         setInfo = {
           isSet: true,
           setName: product.d2c_title || product.name,
           savingsLabel: details.suite_savings_label || 'Save on Complete Suite',
-          sumComponentPrices,
-          suiteSavingsAmount,
-          formattedSavings: suiteSavingsAmount > 0 ? `${market.currencySymbol}${suiteSavingsAmount.toLocaleString('en-US')}` : null,
+          ...(isTradeSession
+            ? {
+                sumComponentPrices,
+                suiteSavingsAmount,
+                formattedSavings: suiteSavingsAmount > 0 ? `${market.currencySymbol}${suiteSavingsAmount.toLocaleString('en-US')}` : null,
+              }
+            : {}),
           components: componentsWithPricing,
         }
       }
@@ -555,10 +575,16 @@ export async function fetchProductDetail(
                   roleLabel: sDetails.component_label || s.name,
                   photoUrl: sPhotos[0] || 'https://res.cloudinary.com/ddnlacdta/image/upload/v1782577185/ose19027_aepd7a.jpg',
                   approxGoldWeight: sRawGold ? Number(Number(sRawGold).toFixed(1)) : null,
-                  price: {
-                    amount: sPricing.unitPrice,
-                    formatted: sPricing.formattedPrice,
-                  },
+                  price: isTradeSession
+                    ? {
+                        amount: sPricing.unitPrice,
+                        formatted: sPricing.formattedPrice,
+                        currency: sPricing.currency,
+                      }
+                    : {
+                        currency: market.currency,
+                        label: 'Price on request',
+                      },
                 }
               })
             )
@@ -577,10 +603,16 @@ export async function fetchProductDetail(
           parentName: parentProd.d2c_title || parentProd.name,
           parentSlug: parentProd.slug,
           parentPhotoUrl: parentPhotos[0] || 'https://res.cloudinary.com/ddnlacdta/image/upload/v1783844231/NCK61.1_q8hiom.webp',
-          parentPrice: {
-            amount: parentPricing.unitPrice,
-            formatted: parentPricing.formattedPrice,
-          },
+          parentPrice: isTradeSession
+            ? {
+                amount: parentPricing.unitPrice,
+                formatted: parentPricing.formattedPrice,
+                currency: parentPricing.currency,
+              }
+            : {
+                currency: market.currency,
+                label: 'Price on request',
+              },
           siblings,
         }
       }
@@ -635,7 +667,7 @@ export async function fetchProductDetail(
       photoUrls: sanitizedPhotos,
       primaryPhotoUrl: sanitizedPhotos[0] || null,
       craftingLeadDays: leadDays,
-      estimatedDeliveryWindow: deliveryEstimate.formattedRange,
+      ...(deliveryEstimate ? { estimatedDeliveryWindow: deliveryEstimate.formattedRange } : {}),
       returnPolicy: {
         type: product.return_policy_type || 'made_to_order',
         windowDays: product.return_window_days ?? (isStandardReturn ? 14 : 0),
@@ -670,15 +702,22 @@ export async function fetchProductDetail(
         manufacturingSizeLabel,
         isRing,
       },
-      price: {
-        amount: pricing.unitPrice,
-        compareAt: pricing.compareAtPrice,
-        currency: pricing.currency,
-        formatted: pricing.formattedPrice,
-        taxLabel: pricing.taxLabel,
-        isAvailable: pricing.isAvailable,
-        label: pricing.label || (pricing.isAvailable ? null : 'Price on request'),
-      },
+      price: isTradeSession
+        ? {
+            amount: pricing.unitPrice,
+            compareAt: pricing.compareAtPrice,
+            currency: pricing.currency,
+            formatted: pricing.formattedPrice,
+            taxLabel: pricing.taxLabel,
+            isAvailable: pricing.isAvailable,
+            label: pricing.label || (pricing.isAvailable ? null : 'Price on request'),
+          }
+        : {
+            currency: pricing.currency,
+            taxLabel: pricing.taxLabel,
+            isAvailable: false,
+            label: 'Price on request',
+          },
       market: market.code,
       setInfo,
       parentSetInfo,
