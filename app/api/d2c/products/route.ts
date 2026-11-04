@@ -6,6 +6,16 @@ import { fetchNonEmptyD2CCategories, getDbCategoriesForQuery, normalizeCategoryK
 import { optimizeCloudinaryUrl } from '@/lib/imageUrl'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+
+function isExplicitSetComponent(p: any): boolean {
+  if (!p) return false
+  const details = typeof p.d2c_details === 'string'
+    ? (() => { try { return JSON.parse(p.d2c_details) } catch { return {} } })()
+    : (p.d2c_details || {})
+  return details?.is_component_of_set === true
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +29,6 @@ export async function GET(req: NextRequest) {
     const style = searchParams.get('style')
     const search = searchParams.get('q')
     const rawLimit = searchParams.get('limit')
-    const limit = rawLimit ? Math.max(1, Math.min(Number(rawLimit) || 1000, 2000)) : 2000
     const hideUnpriced = searchParams.get('hideUnpriced') === 'true' || process.env.HIDE_UNPRICED_PRODUCTS === 'true'
 
     let query = supabaseAdmin
@@ -29,11 +38,24 @@ export async function GET(req: NextRequest) {
       .eq('d2c_status', 'published')
 
     if (category && category !== 'all') {
-      const dbCategories = getDbCategoriesForQuery(category)
-      if (dbCategories.length > 0) {
-        query = query.in('category', dbCategories)
+      const canonical = normalizeCategoryKey(category)
+      if (canonical === 'rings') {
+        query = query.or('category.ilike.ring,category.ilike.rings')
+      } else if (canonical === 'earrings') {
+        query = query.or('category.ilike.earring,category.ilike.earrings')
+      } else if (canonical === 'necklaces') {
+        query = query.or('category.ilike.necklace,category.ilike.necklaces,category.ilike.pendant,category.ilike.pendants,category.ilike.mangalsutra,category.ilike.mangalsutras,category.ilike.set,category.ilike.sets')
+      } else if (canonical === 'bracelets') {
+        query = query.or('category.ilike.bracelet,category.ilike.bracelets,category.ilike.bangle,category.ilike.bangles')
+      } else if (canonical === 'mens') {
+        query = query.or('category.ilike.men,category.ilike.mens,category.ilike.%men%')
       } else {
-        query = query.ilike('category', category)
+        const dbCategories = getDbCategoriesForQuery(category)
+        if (dbCategories.length > 0) {
+          query = query.in('category', dbCategories)
+        } else {
+          query = query.ilike('category', category)
+        }
       }
     }
     if (featured === 'true') {
@@ -56,15 +78,23 @@ export async function GET(req: NextRequest) {
       query = query.or(`name.ilike.${term},d2c_title.ilike.${term},code.ilike.${term}`)
     }
 
-    query = query.order('name', { ascending: true }).limit(limit)
+    query = query.order('name', { ascending: true })
+
+    if (rawLimit) {
+      const parsedLimit = parseInt(rawLimit, 10)
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        query = query.limit(Math.min(parsedLimit, 2000))
+      }
+    }
 
     const { data: products, error } = await query
     if (error) throw error
 
     // When showing 'all' creations without search, show sets together as unified creations
-    // rather than fragmenting individual components as duplicate cards
+    // rather than fragmenting individual components as duplicate cards.
+    // Set components stay hidden ONLY when d2c_details.is_component_of_set is explicitly true.
     let visibleProducts = (!category || category === 'all') && !search
-      ? (products || []).filter(p => !(p.d2c_details as any)?.is_component_of_set)
+      ? (products || []).filter(p => !isExplicitSetComponent(p))
       : (products || [])
 
     if (hideUnpriced) {
@@ -127,13 +157,20 @@ export async function GET(req: NextRequest) {
       ...activeCategories,
     ]
 
-    return NextResponse.json({
-      market: market.code,
-      currency: market.currency,
-      count: sanitizedProducts.length,
-      categories: categoryOptions,
-      products: sanitizedProducts,
-    })
+    return NextResponse.json(
+      {
+        market: market.code,
+        currency: market.currency,
+        count: sanitizedProducts.length,
+        categories: categoryOptions,
+        products: sanitizedProducts,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        },
+      }
+    )
   } catch (err: any) {
     console.error('[GET /api/d2c/products] Error:', err)
     return NextResponse.json({ error: 'Failed to fetch catalog' }, { status: 500 })

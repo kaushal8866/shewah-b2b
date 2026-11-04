@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { fetchProductDetail } from '@/lib/d2cProductDetail'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 export async function GET(
   req: NextRequest,
@@ -16,7 +18,11 @@ export async function GET(
       return NextResponse.json({ error: 'Product not found or unavailable in D2C' }, { status: 404 })
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      },
+    })
   } catch (err: any) {
     console.error('[GET /api/d2c/products/[slug]] Error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

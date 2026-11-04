@@ -5,7 +5,7 @@ import Link from 'next/link'
 import StoreLayout from '@/components/d2c/StoreLayout'
 import { useCart } from '@/components/d2c/CartContext'
 import { useWishlist } from '@/lib/wishlistStore'
-import type { D2CProductDetail } from '@/lib/d2cProductDetail'
+import { type D2CProductDetail, formatDiamondGrade } from '@/lib/d2cProductDetail'
 import { trackWhatsAppClick } from '@/lib/analytics'
 import {
   Diamond,
@@ -152,11 +152,12 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       certificationLabel = 'Certified Lab-Grown Diamonds'
     }
 
-    const qualityLabel = !hasDiamonds
+    const qualityParts: string[] = []
+    if (baseSpecs?.diamondColor) qualityParts.push(`Color ${baseSpecs.diamondColor}`)
+    if (baseSpecs?.diamondClarity) qualityParts.push(`Clarity ${baseSpecs.diamondClarity}`)
+    const qualityLabel = !hasDiamonds || qualityParts.length === 0
       ? null
-      : isNatural
-      ? 'Color F-G, Clarity VS'
-      : (baseSpecs?.diamondColor ? `Color ${baseSpecs.diamondColor}, Clarity ${baseSpecs.diamondClarity || 'VVS-VS'}` : 'Color EF, Clarity VVS-VS')
+      : qualityParts.join(', ')
 
     const rawGold = activeComponent?.approxGoldWeight || baseSpecs?.approxGoldWeight
     let weightLabel: string | null = null
@@ -212,19 +213,23 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   }, [product.configurationSchema?.metals, product.specifications?.karat, product.specifications?.karatLabel, product.specifications?.metalType])
 
   const availableStones = useMemo(() => {
+    const baseSpecs = product.specifications
+    const gradeText = formatDiamondGrade(baseSpecs?.diamondColor, baseSpecs?.diamondClarity)
+    const labGrownSub = gradeText ? `Certified • ${gradeText}` : 'Certified'
+
     const schemaStones = product.configurationSchema?.stones
     if (schemaStones !== undefined) {
       return schemaStones.map((s) => ({
         type: (s.type === 'lgd' ? 'lab_grown' : s.type) as 'lab_grown' | 'natural',
         name: s.type === 'natural' ? 'Natural Mined Diamond' : 'Lab-Grown Diamond',
-        sub: s.type === 'natural' ? 'Certified • Geological Origin' : 'Certified • D-F / VS+',
+        sub: s.type === 'natural' ? 'Certified • Geological Origin' : labGrownSub,
       }))
     }
     return [
-      { type: 'lab_grown' as const, name: 'Lab-Grown Diamond', sub: 'Certified • D-F / VS+' },
+      { type: 'lab_grown' as const, name: 'Lab-Grown Diamond', sub: labGrownSub },
       { type: 'natural' as const, name: 'Natural Mined Diamond', sub: 'Certified • Geological Origin' },
     ]
-  }, [product.configurationSchema?.stones])
+  }, [product.configurationSchema?.stones, product.specifications])
 
   const whatsappUrl = useMemo(() => {
     const targetProduct = activeComponent || product

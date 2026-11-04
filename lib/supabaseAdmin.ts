@@ -5,5 +5,20 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeho
 
 export const supabaseAdmin = createClient(
   supabaseUrl,
-  supabaseServiceRoleKey
+  supabaseServiceRoleKey,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    global: {
+      fetch: (url, options = {}) => {
+        return fetch(url, {
+          ...options,
+          cache: 'no-store',
+          next: { revalidate: 0 },
+        })
+      },
+    },
+  }
 )

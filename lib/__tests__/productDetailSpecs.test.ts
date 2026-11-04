@@ -3,6 +3,7 @@ import {
   parseKaratNumber,
   getHallmarkLabel,
   resolveBaseProductWeight,
+  formatDiamondGrade,
 } from '../d2cProductDetail'
 
 describe('D2C Product Detail Specs & Karat Resolution', () => {
@@ -73,5 +74,24 @@ describe('D2C Product Detail Specs & Karat Resolution', () => {
 
     // Canary SH-003 Tanmaniya preserved at 8.6g
     expect(resolveBaseProductWeight({ code: 'SH-003' }, 18, false)).toBe(8.6)
+  })
+
+  it('formats diamond grade text strictly from stored attributes without inventing defaults', () => {
+    // SH-590: stored color 'EF', quality 'VVS'
+    expect(formatDiamondGrade('EF', 'VVS')).toBe('E-F / VVS')
+    expect(formatDiamondGrade('E-F', 'VVS')).toBe('E-F / VVS')
+    expect(formatDiamondGrade('ef', 'vvs')).toBe('E-F / VVS')
+
+    // Only color stored
+    expect(formatDiamondGrade('EF', null)).toBe('E-F')
+    expect(formatDiamondGrade('D-F', undefined)).toBe('D-F')
+
+    // Only clarity stored
+    expect(formatDiamondGrade(null, 'VS1')).toBe('VS1')
+    expect(formatDiamondGrade('', 'VVS-VS')).toBe('VVS-VS')
+
+    // Neither stored: returns null (does NOT invent D-F / VS+)
+    expect(formatDiamondGrade(null, null)).toBeNull()
+    expect(formatDiamondGrade('', '')).toBeNull()
   })
 })

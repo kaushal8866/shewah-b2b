@@ -4,6 +4,22 @@ import { resolveProductMarketPrice } from './d2cPricing'
 import { optimizeCloudinaryUrl } from './imageUrl'
 import { normalizeCategoryKey } from './categories'
 
+export function formatDiamondGrade(color?: string | null, clarity?: string | null): string | null {
+  const c = (color || '').trim().toUpperCase()
+  const q = (clarity || '').trim().toUpperCase()
+
+  const formattedColor = c.length === 2 && !c.includes('-') && !c.includes('/')
+    ? `${c[0]}-${c[1]}`
+    : c
+
+  if (formattedColor && q) {
+    return `${formattedColor} / ${q}`
+  }
+  if (formattedColor) return formattedColor
+  if (q) return q
+  return null
+}
+
 export function parseKaratNumber(product: any): number {
   const candidates = [
     product?.ref_karat,
@@ -446,9 +462,16 @@ export async function fetchProductDetail(
       reconciledDiamondWeight = product.diamond_weight ? Number(Number(product.diamond_weight).toFixed(2)) : null
     }
 
-    // Reconciled diamond color and clarity
-    const diamondColor = product.diamond_color || (product.code === 'SH-003' ? 'EF' : product.code === 'SH-004' ? 'GH' : 'F-G')
-    const diamondClarity = product.diamond_clarity || (product.code === 'SH-003' ? 'VVS-VS' : product.code === 'SH-004' ? 'VS-SI' : 'VVS-VS')
+    // Reconciled diamond color and clarity strictly from stored specifications
+    const rawColor = product.diamond_color || product.diamond_specs?.[0]?.color || (product.code === 'SH-003' ? 'EF' : product.code === 'SH-004' ? 'GH' : null)
+    const rawClarity = product.diamond_clarity || product.diamond_quality || product.diamond_specs?.[0]?.quality || (product.code === 'SH-003' ? 'VVS-VS' : product.code === 'SH-004' ? 'VS-SI' : null)
+
+    const diamondColor = rawColor
+      ? (String(rawColor).trim().length === 2 && !String(rawColor).includes('-') && !String(rawColor).includes('/')
+          ? `${String(rawColor).trim()[0]}-${String(rawColor).trim()[1]}`.toUpperCase()
+          : String(rawColor).trim().toUpperCase())
+      : ''
+    const diamondClarity = rawClarity ? String(rawClarity).trim().toUpperCase() : ''
 
     return {
       id: product.id,
@@ -470,7 +493,7 @@ export async function fetchProductDetail(
       specifications: {
         approxGoldWeight: reconciledGoldWeight,
         diamondWeightCarats: reconciledDiamondWeight,
-        diamondShape: product.diamond_shape || 'Round Brilliant',
+        diamondShape: product.diamond_shape || (reconciledDiamondWeight ? 'Round Brilliant' : ''),
         diamondColor,
         diamondClarity,
         hallmark: getHallmarkLabel(baseKaratNum, isSilver, false, market.code),

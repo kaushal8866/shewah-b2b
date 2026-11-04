@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { fetchNonEmptyD2CCategories } from '@/lib/categories'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 export async function GET() {
   try {
@@ -27,7 +29,7 @@ export async function GET() {
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         },
       }
     )

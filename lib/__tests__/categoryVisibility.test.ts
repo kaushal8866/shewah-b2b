@@ -119,4 +119,32 @@ describe('D2C Category Visibility & Empty Category Exclusion', () => {
     expect(visible.find((c) => c.key === 'rings')?.count).toBe(3)
     expect(visible.find((c) => c.key === 'necklaces')?.count).toBe(7)
   })
+
+  it('keeps products visible unless is_component_of_set is explicitly true', () => {
+    function isExplicitSetComponent(p: any): boolean {
+      if (!p) return false
+      const details = typeof p.d2c_details === 'string'
+        ? (() => { try { return JSON.parse(p.d2c_details) } catch { return {} } })()
+        : (p.d2c_details || {})
+      return details?.is_component_of_set === true
+    }
+
+    // Missing d2c_details
+    expect(isExplicitSetComponent({})).toBe(false)
+    expect(isExplicitSetComponent({ d2c_details: null })).toBe(false)
+    expect(isExplicitSetComponent({ d2c_details: undefined })).toBe(false)
+
+    // Unrelated keys in d2c_details (e.g. SH-590 with zero_extra_margin)
+    expect(isExplicitSetComponent({ d2c_details: { zero_extra_margin: true } })).toBe(false)
+
+    // False or falsy is_component_of_set
+    expect(isExplicitSetComponent({ d2c_details: { is_component_of_set: false } })).toBe(false)
+    expect(isExplicitSetComponent({ d2c_details: { is_component_of_set: 0 } })).toBe(false)
+    expect(isExplicitSetComponent({ d2c_details: { is_component_of_set: null } })).toBe(false)
+
+    // Explicitly true
+    expect(isExplicitSetComponent({ d2c_details: { is_component_of_set: true } })).toBe(true)
+    expect(isExplicitSetComponent({ d2c_details: '{"is_component_of_set": true}' })).toBe(true)
+    expect(isExplicitSetComponent({ d2c_details: '{"is_component_of_set": false}' })).toBe(false)
+  })
 })
