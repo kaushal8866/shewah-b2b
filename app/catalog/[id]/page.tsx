@@ -11,6 +11,7 @@ import MetalWeightCalculator from '@/components/MetalWeightCalculator'
 import { DynamicField, validateAttributes } from '@/lib/catalogAttributes'
 import ProductIntelligenceWidget from '@/components/aurora/ProductIntelligenceWidget'
 import { ProductPhotoUploader } from '@/components/ProductPhotoUploader'
+import { formatRowTotalCarats, computeProductDiamondCarats } from '@/lib/diamondSpecs'
 
 type DiamondRow = {
   id: string
@@ -26,6 +27,7 @@ type DiamondRow = {
   shape_id: string
   size_id: string
   size_label: string
+  weight_basis?: 'group' | 'per_stone' | ''
   // True when this row was loaded from a product saved before the shared
   // catalog existed. Such rows render read-only with a "Legacy" badge
   // + "Upgrade" affordance — clicking Upgrade unlocks editing and
@@ -42,6 +44,7 @@ function newDiamondRow(): DiamondRow {
     role: 'center', shape: 'round', weight: '', quality: 'VS',
     color: 'GH', type: 'lgd', pieces: '1', cost: '',
     shape_id: '', size_id: '', size_label: '',
+    weight_basis: '',
     legacy_locked: false,
   }
 }
@@ -213,6 +216,7 @@ export default function CatalogProductEditPage() {
             shape_id: d.shape_id || '',
             size_id: d.size_id || '',
             size_label: d.size_label || '',
+            weight_basis: d.weight_basis || '',
             // Lock pre-catalog rows so a master can't unintentionally
             // mutate an old free-text spec — they have to "Upgrade" first.
             legacy_locked: !(d.shape_id && d.size_id),
@@ -521,6 +525,16 @@ export default function CatalogProductEditPage() {
       return
     }
 
+    // Weight basis validation: non-legacy / edited multi-piece rows require explicit basis selection
+    for (let i = 0; i < diamonds.length; i++) {
+      const d = diamonds[i]
+      const pieces = parseInt(d.pieces) || 1
+      if (pieces > 1 && !d.weight_basis && !d.legacy_locked) {
+        alert(`Please select the Weight Basis (Combined Total vs Per Stone) for diamond row ${i + 1} (${d.role} ${d.shape}).`)
+        return
+      }
+    }
+
     setSaving(true)
 
     // Save/upsert Reseller floor price using markup percentage over cogs
@@ -574,6 +588,7 @@ export default function CatalogProductEditPage() {
         shape_id: d.shape_id || null,
         size_id: d.size_id || null,
         size_label: d.size_label || null,
+        weight_basis: d.weight_basis || null,
       })),
       detailed_pricing: isSilver ? { karat_pricing, silver_rate_b2b_used: silverRateB2B, silver_rate_d2c_used: silverRateD2C } : { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
       attributes,
@@ -727,9 +742,8 @@ export default function CatalogProductEditPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {components.map((comp) => {
-                  const compTotalCt = Array.isArray(comp.diamond_specs)
-                    ? comp.diamond_specs.reduce((acc: number, d: any) => acc + (parseFloat(d.weight) || 0) * (parseInt(d.pieces) || 1), 0)
-                    : comp.diamond_weight || 0
+                  const compSummary = computeProductDiamondCarats(comp)
+                  const compDiamondsStr = compSummary.totalCarats ? compSummary.displayTotal : 'N/A'
                   
                   return (
                     <div key={comp.id} className="border border-stone-200 rounded-xl p-3.5 flex flex-col justify-between hover:shadow-sm transition-all bg-stone-50">
@@ -747,7 +761,7 @@ export default function CatalogProductEditPage() {
                           Metal: {comp.metal_type} ({comp.gold_weight_22k ? `${comp.gold_weight_22k}g` : 'N/A'})
                         </p>
                         <p className="text-xs text-stone-600 mb-2">
-                          Diamonds: {compTotalCt > 0 ? `${compTotalCt.toFixed(3)}ct` : 'N/A'}
+                          Diamonds: {compDiamondsStr}
                         </p>
                       </div>
                       <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-stone-200/60">
@@ -877,6 +891,33 @@ export default function CatalogProductEditPage() {
                   <div><label className={lbl}>Color</label><select disabled={locked} className={roInp} value={d.color} onChange={e => updateDiamond(d.id, 'color', e.target.value)}>{colorBuckets.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}{colorBuckets.length === 0 && <option value={d.color}>{d.color}</option>}</select></div>
                   <div><label className={lbl}>Type</label><select disabled={locked} className={roInp} value={d.type} onChange={e => updateDiamond(d.id, 'type', e.target.value)}><option value="lgd">LGD</option><option value="natural">Natural</option></select></div>
                   <div><label className={lbl}>Cost/pc (₹)</label><input readOnly={locked} type="number" inputMode="decimal" className={roInp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} /></div>
+                </div>
+
+                {/* Weight basis selection and live row total */}
+                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 p-2 bg-stone-100/70 rounded-lg text-xs">
+                  {(parseInt(d.pieces) || 1) > 1 ? (
+                    <div className="flex items-center gap-2">
+                      <label className="font-medium text-stone-700">Weight Basis <span className="text-amber-600">*</span>:</label>
+                      <select
+                        disabled={locked}
+                        className={`bg-white border ${!d.weight_basis && !locked ? 'border-amber-400 ring-1 ring-amber-300' : 'border-stone-200'} rounded px-2 py-1 text-xs text-stone-800 font-medium`}
+                        value={d.weight_basis || ''}
+                        onChange={e => updateDiamond(d.id, 'weight_basis', e.target.value)}
+                      >
+                        <option value="">Select basis...</option>
+                        <option value="group">Group Total (Combined Carats)</option>
+                        <option value="per_stone">Per-Stone (Weight × Pieces)</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="text-stone-500">
+                      Single stone (weight = total)
+                    </div>
+                  )}
+                  <div className="text-stone-600 font-mono text-xs">
+                    <span className="text-stone-400 mr-1.5">Row Total:</span>
+                    <span className="font-semibold text-stone-800">{formatRowTotalCarats(d)}</span>
+                  </div>
                 </div>
                 {!locked && (() => {
                   const sug = costSuggestions[d.id]

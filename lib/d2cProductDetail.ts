@@ -101,40 +101,26 @@ export function resolveBaseProductWeight(product: any, karat: number, isSilver: 
   return w ? Number(Number(w).toFixed(1)) : null
 }
 
+import {
+  computeProductDiamondCarats,
+  computeRowDiamondWeight as computeRowDiamondWeightCore,
+} from './diamondSpecs'
+
 export function computeRowDiamondWeight(row: any): number {
+  if (!row) return 0
+  const coreResult = computeRowDiamondWeightCore(row)
+  if (coreResult !== null) return coreResult
+
+  // For unverified legacy rows (pieces > 1, no weight_basis), preserve current display (stored weight)
   const pieces = Number(row?.pieces) || 1
   const weight = Number(row?.weight) || 0
   if (pieces <= 1 || weight === 0) return weight
 
-  // Physical threshold: 0.003 ct is ~0.8mm (the absolute smallest diamond used in jewellery).
-  // If weight / pieces < 0.003, 'weight' cannot possibly be the row's combined total.
-  // For example:
-  // - SH-003: weight 0.005, pieces 260 -> 0.005 / 260 = 0.000019 ct (impossible) -> per-stone weight: 260 * 0.005 = 1.30 ct
-  // - SH-511: weight 0.008, pieces 26 -> 0.008 / 26 = 0.0003 ct (impossible) -> per-stone weight: 26 * 0.008 = 0.208 ct
-  if (weight / pieces < 0.003) {
+  // Fallback heuristic for legacy pre-catalog rows
+  if (weight / pieces < 0.003 || (row?.size_label && weight <= 0.03)) {
     return weight * pieces
   }
 
-  // In older/draft database records with explicit size_label (e.g. '1.2mm', '1.3mm', '1.4mm', '1.6mm')
-  // and small single-stone melee weight (<= 0.03 ct):
-  // the stored 'weight' is per-stone weight.
-  if (row?.size_label && weight <= 0.03) {
-    return weight * pieces
-  }
-
-  // Otherwise, in modern catalogue entries (like SH-590 series) and multi-stone rows without per-stone size labels,
-  // 'weight' is the combined total carat weight of all stones in that row.
-  // For example:
-  // - SH-591 side row: weight 0.20, pieces 12 -> 0.20 ct total
-  // - SH-592 side row: weight 0.70, pieces 2 -> 0.70 ct total
-  // - SH-593 center row: weight 1.50, pieces 6 -> 1.50 ct total
-  // - SH-594 side row: weight 0.51, pieces 24 -> 0.51 ct total
-  // - SH-595 side row: weight 0.12, pieces 6 -> 0.12 ct total
-  // - SH-596 side row: weight 0.08, pieces 6 -> 0.08 ct total
-  // - SH-598 side row: weight 0.30, pieces 47 -> 0.30 ct total
-  // - SH-599 side row: weight 0.40, pieces 2 -> 0.40 ct total
-  // - SH-600 side row: weight 0.25, pieces 22 -> 0.25 ct total
-  // - SH-102 center row: weight 0.24, pieces 24 -> 0.24 ct total
   return weight
 }
 
@@ -147,17 +133,9 @@ export function computeTotalDiamondCarats(product: any): number | null {
   }
 
   if (Array.isArray(product?.diamond_specs) && product.diamond_specs.length > 0) {
-    let total = 0
-    let hasValidRow = false
-    for (const row of product.diamond_specs) {
-      const rw = computeRowDiamondWeight(row)
-      if (rw > 0) {
-        total += rw
-        hasValidRow = true
-      }
-    }
-    if (hasValidRow && total > 0) {
-      return Number(total.toFixed(2))
+    const summary = computeProductDiamondCarats(product)
+    if (summary.totalCarats !== null && summary.totalCarats > 0) {
+      return summary.totalCarats
     }
   }
 

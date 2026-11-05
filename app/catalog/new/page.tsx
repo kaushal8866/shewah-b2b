@@ -11,6 +11,7 @@ import { DiamondCatalogPicker } from '@/components/DiamondCatalogPicker'
 import MetalWeightCalculator from '@/components/MetalWeightCalculator'
 import { DynamicField, validateAttributes } from '@/lib/catalogAttributes'
 import ProductPhotoUploader from '@/components/ProductPhotoUploader'
+import { formatRowTotalCarats, computeProductDiamondCarats } from '@/lib/diamondSpecs'
 
 type DiamondRow = {
   id: string
@@ -28,6 +29,7 @@ type DiamondRow = {
   shape_id: string
   size_id: string
   size_label: string
+  weight_basis?: 'group' | 'per_stone' | ''
   // True when the row came from an older product save that predates the
   // shared diamond catalog. Such rows render read-only with a "Legacy"
   // badge and an explicit "Upgrade" affordance, so a master can safely
@@ -53,6 +55,7 @@ function newDiamondRow(): DiamondRow {
     role: 'center', shape: 'round', weight: '', quality: 'VS',
     color: 'GH', type: 'lgd', pieces: '1', cost: '',
     shape_id: '', size_id: '', size_label: '',
+    weight_basis: '',
     legacy_locked: false,
   }
 }
@@ -636,6 +639,14 @@ export default function NewProductPage() {
           alert('Component label is required for all components')
           return
         }
+        for (let i = 0; i < comp.diamonds.length; i++) {
+          const d = comp.diamonds[i]
+          const pieces = parseInt(d.pieces) || 1
+          if (pieces > 1 && !d.weight_basis) {
+            alert(`Please select the Weight Basis (Combined Total vs Per Stone) for diamond row ${i + 1} in component "${comp.component_label}".`)
+            return
+          }
+        }
         const compCategory = categories.find(c => c.name.toLowerCase() === comp.category.toLowerCase())
         const schema = compCategory?.attribute_schema || []
         const errors = validateAttributes(comp.attributes, schema)
@@ -665,6 +676,7 @@ export default function NewProductPage() {
         shape_id: d.shape_id || null,
         size_id: d.size_id || null,
         size_label: d.size_label || null,
+        weight_basis: d.weight_basis || null,
       })))
 
       const totalParentDiamondCost = combinedDiamondSpecs.reduce((sum, d) => sum + (d.cost * d.pieces), 0)
@@ -828,6 +840,7 @@ export default function NewProductPage() {
             shape_id: d.shape_id || null,
             size_id: d.size_id || null,
             size_label: d.size_label || null,
+            weight_basis: d.weight_basis || null,
           })),
           detailed_pricing: comp.metal_type === 'silver'
             ? { karat_pricing: compKaratPricing, silver_rate_b2b_used: silverRateB2B, silver_rate_d2c_used: silverRateD2C }
@@ -901,6 +914,16 @@ export default function NewProductPage() {
         return
       }
 
+      // Weight basis validation: all multi-piece rows require explicit basis selection
+      for (let i = 0; i < diamonds.length; i++) {
+        const d = diamonds[i]
+        const pieces = parseInt(d.pieces) || 1
+        if (pieces > 1 && !d.weight_basis) {
+          alert(`Please select the Weight Basis (Combined Total vs Per Stone) for diamond row ${i + 1} (${d.role} ${d.shape}).`)
+          return
+        }
+      }
+
       setSaving(true)
       const primary = diamonds[0]
       const karat_pricing: Record<string, any> = {}
@@ -936,6 +959,7 @@ export default function NewProductPage() {
           shape_id: d.shape_id || null,
           size_id: d.size_id || null,
           size_label: d.size_label || null,
+          weight_basis: d.weight_basis || null,
         })),
         detailed_pricing: isSilver ? { karat_pricing, silver_rate_b2b_used: silverRateB2B, silver_rate_d2c_used: silverRateD2C } : { karat_pricing, gold_rate_used: goldRate, retail_labour_used: retailLabour },
         is_active: true,
@@ -1410,6 +1434,32 @@ export default function NewProductPage() {
                           </div>
                         </div>
 
+                        {/* Weight basis selection and live row total */}
+                        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 p-2 bg-stone-100/70 rounded-lg text-xs">
+                          {(parseInt(d.pieces) || 1) > 1 ? (
+                            <div className="flex items-center gap-2">
+                              <label className="font-medium text-stone-700">Weight Basis <span className="text-amber-600">*</span>:</label>
+                              <select
+                                className={`bg-white border ${!d.weight_basis ? 'border-amber-400 ring-1 ring-amber-300' : 'border-stone-200'} rounded px-2 py-1 text-xs text-stone-800 font-medium`}
+                                value={d.weight_basis || ''}
+                                onChange={e => updateComponentDiamond(activeCompIdx, d.id, 'weight_basis', e.target.value)}
+                              >
+                                <option value="">Select basis...</option>
+                                <option value="group">Group Total (Combined Carats)</option>
+                                <option value="per_stone">Per-Stone (Weight × Pieces)</option>
+                              </select>
+                            </div>
+                          ) : (
+                            <div className="text-stone-500">
+                              Single stone (weight = total)
+                            </div>
+                          )}
+                          <div className="text-stone-600 font-mono text-xs">
+                            <span className="text-stone-400 mr-1.5">Row Total:</span>
+                            <span className="font-semibold text-stone-800">{formatRowTotalCarats(d)}</span>
+                          </div>
+                        </div>
+
                         {/* Cost suggestions */}
                         {(() => {
                           const sug = costSuggestions[d.id]
@@ -1575,6 +1625,32 @@ export default function NewProductPage() {
                     <div>
                       <label className={lbl}>Cost/pc (₹)</label>
                       <input type="number" inputMode="decimal" className={inp} value={d.cost} onChange={e => updateDiamond(d.id, 'cost', e.target.value)} placeholder="8000" />
+                    </div>
+                  </div>
+
+                  {/* Weight basis selection and live row total */}
+                  <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 p-2 bg-stone-100/70 rounded-lg text-xs">
+                    {(parseInt(d.pieces) || 1) > 1 ? (
+                      <div className="flex items-center gap-2">
+                        <label className="font-medium text-stone-700">Weight Basis <span className="text-amber-600">*</span>:</label>
+                        <select
+                          className={`bg-white border ${!d.weight_basis ? 'border-amber-400 ring-1 ring-amber-300' : 'border-stone-200'} rounded px-2 py-1 text-xs text-stone-800 font-medium`}
+                          value={d.weight_basis || ''}
+                          onChange={e => updateDiamond(d.id, 'weight_basis', e.target.value)}
+                        >
+                          <option value="">Select basis...</option>
+                          <option value="group">Group Total (Combined Carats)</option>
+                          <option value="per_stone">Per-Stone (Weight × Pieces)</option>
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="text-stone-500">
+                        Single stone (weight = total)
+                      </div>
+                    )}
+                    <div className="text-stone-600 font-mono text-xs">
+                      <span className="text-stone-400 mr-1.5">Row Total:</span>
+                      <span className="font-semibold text-stone-800">{formatRowTotalCarats(d)}</span>
                     </div>
                   </div>
                   {(() => {

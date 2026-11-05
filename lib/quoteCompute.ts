@@ -277,9 +277,13 @@ export function buildItemBreakdown(
 
   const diamonds = Array.isArray(item.diamonds) ? item.diamonds : []
   const dia_count = diamonds.reduce((sum, d) => sum + (parseInt(d.pieces) || 0), 0) * qty
-  const dia_weight = diamonds.reduce(
-    (sum, d) => sum + (parseInt(d.pieces) || 1) * (parseFloat(d.approx_carats || d.weight) || 0), 0,
-  ) * qty
+  const dia_weight = diamonds.reduce((sum, d) => {
+    const pcs = parseInt(d.pieces) || 1
+    const wt = parseFloat(d.approx_carats || d.weight) || 0
+    const basis = d.weight_basis || d.basis
+    const rowWeight = basis === 'group' ? wt : (pcs * wt)
+    return sum + rowWeight
+  }, 0) * qty
   const dia_val = diamonds.reduce((sum, d) => {
     const wt = parseFloat(d.approx_carats || d.weight) || 0
     const rate = parseFloat(d.rate_per_pc || d.cost) || 0

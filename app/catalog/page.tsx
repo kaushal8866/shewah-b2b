@@ -7,6 +7,7 @@ import { Plus, Search, Package, Edit2, Eye, EyeOff, Library, Heart, Trash2, Copy
 import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import { getMetalWeight } from '@/lib/karat'
+import { computeProductDiamondCarats } from '@/lib/diamondSpecs'
 
 type Collection = {
   id: string
@@ -338,10 +339,8 @@ function ProductsTab() {
               : pct >= 25 ? 'bg-green-100 text-green-700'
               : pct >= 10 ? 'bg-amber-100 text-amber-700'
               : 'bg-red-100 text-red-700'
-            const totalCt = Array.isArray((p as any).diamond_specs)
-              ? (p as any).diamond_specs.reduce((acc: number, d: any) => acc + (parseFloat(d.weight) || 0) * (parseInt(d.pieces) || 1), 0)
-              : p.diamond_weight || 0
-            const totalCtStr = totalCt > 0 ? (parseFloat(totalCt.toFixed(3)) + 'ct') : '0ct'
+            const diamondSummary = computeProductDiamondCarats(p as any)
+            const totalCtStr = diamondSummary.displayTotal
 
             return (
             <div key={p.id} className={`bg-white rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-md ${p.is_active ? 'border-stone-200' : 'border-stone-100 opacity-60'} flex flex-row sm:flex-col`}>
@@ -373,7 +372,9 @@ function ProductsTab() {
                       {p.ref_karat || (p.gold_karat ? `${p.gold_karat}K` : '22K')}
                     </span>
                   </div>
-                  <p className="text-[10px] sm:text-xs text-stone-400 mb-2 truncate">{totalCtStr} {p.diamond_shape} · {p.diamond_quality}/{p.diamond_color}</p>
+                  <p className="text-[10px] sm:text-xs text-stone-400 mb-2 truncate">
+                    {totalCtStr}{diamondSummary.hasUnverifiedRows ? <span className="text-amber-500 font-bold ml-0.5" title="Contains multi-piece rows pending weight basis verification">*</span> : null} {p.diamond_shape} · {p.diamond_quality}/{p.diamond_color}
+                  </p>
                   <div className="grid grid-cols-3 gap-1 mb-2.5">
                     <div className="bg-stone-50 rounded-lg py-1 px-1.5 text-center">
                       <p className="text-[9px] sm:text-xs text-stone-400">Trade</p>

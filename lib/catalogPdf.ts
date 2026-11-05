@@ -1,5 +1,7 @@
 import PDFDocument from 'pdfkit'
 import { fetchImage } from './pdfHelpers'
+import { optimizeCloudinaryUrl } from './imageUrl'
+import { computeProductDiamondCarats } from './diamondSpecs'
 
 export interface CatalogPDFProduct {
   id: string
@@ -20,17 +22,47 @@ export interface CatalogPDFConfig {
   priceType: 'trade' | 'mrp' | 'both'
 }
 
+/**
+ * Concurrency-bounded image fetching helper.
+ * Optimizes Cloudinary URLs to 400px width thumbnails to prevent memory exhaustion (OOM)
+ * and server freezing from decoding dozens of full-resolution multi-megapixel PNGs.
+ */
+async function fetchImagesWithLimit(
+  urls: (string | null | undefined)[],
+  concurrency = 4
+): Promise<(Buffer | null)[]> {
+  const results: (Buffer | null)[] = new Array(urls.length).fill(null)
+  let currentIndex = 0
+
+  async function worker() {
+    while (currentIndex < urls.length) {
+      const idx = currentIndex++
+      const rawUrl = urls[idx]
+      if (!rawUrl) continue
+
+      // Request 400px width thumbnail from Cloudinary: reduces memory by ~98%
+      const optimizedUrl = optimizeCloudinaryUrl(rawUrl, 400) || rawUrl
+      try {
+        results[idx] = await fetchImage(optimizedUrl)
+      } catch {
+        results[idx] = null
+      }
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, urls.length) }, () => worker())
+  await Promise.all(workers)
+  return results
+}
+
 export async function renderCatalogPdf(
   products: CatalogPDFProduct[],
   config: CatalogPDFConfig
 ): Promise<Buffer> {
-  // 1. Fetch first cover image for all products in parallel
-  const productImages = await Promise.all(
-    products.map(async (p) => {
-      const url = p.photo_urls?.[0]
-      if (!url) return null
-      return await fetchImage(url)
-    })
+  // 1. Fetch first cover image for all products with bounded concurrency and optimized dimensions
+  const productImages = await fetchImagesWithLimit(
+    products.map((p) => p.photo_urls?.[0]),
+    4
   )
 
   return new Promise<Buffer>((resolve, reject) => {
@@ -158,12 +190,13 @@ export async function renderCatalogPdf(
         // Diamond specs summary
         let diamondText = 'None'
         if (p.diamond_specs && p.diamond_specs.length > 0) {
+          const summary = computeProductDiamondCarats(p)
+          const weightStr = summary.totalCarats ? `${summary.totalCarats}ct` : ''
           const main = p.diamond_specs[0]
-          const weight = main.weight ? `${main.weight}ct` : ''
-          const quality = main.quality || ''
-          const color = main.color || ''
-          const dType = main.type === 'natural' ? 'Nat' : 'Lgd'
-          diamondText = [weight, [quality, color].filter(Boolean).join('/'), dType].filter(Boolean).join(' ')
+          const quality = main?.quality || ''
+          const color = main?.color || ''
+          const dType = main?.type === 'natural' ? 'Nat' : 'Lgd'
+          diamondText = [weightStr, [quality, color].filter(Boolean).join('/'), dType].filter(Boolean).join(' ')
           if (p.diamond_specs.length > 1) {
             diamondText += ` (+${p.diamond_specs.length - 1} rows)`
           }
