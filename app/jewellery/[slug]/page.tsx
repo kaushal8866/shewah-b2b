@@ -28,9 +28,15 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   const productSlug = product.slug || rawSlug
-  const metals = (product.configurationSchema?.metals || [])
-    .map((metal) => metal?.name)
-    .filter((name): name is string => Boolean(name))
+  // Emit only the metal recorded on this product. configurationSchema.metals falls back to
+  // generic UI defaults (incl. 950 Platinum) when a record is thin, so it is not used here.
+  const specMetalType = (product.specifications?.metalType || '').toLowerCase()
+  const specKaratLabel = product.specifications?.karatLabel || null
+  const recordedMetal = specMetalType === 'silver'
+    ? '925 Sterling Silver'
+    : specMetalType === 'gold' && specKaratLabel
+      ? specKaratLabel + ' Gold'
+      : null
   const productJsonLd: Record<string, any> = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -45,8 +51,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   if (Array.isArray(product.photoUrls) && product.photoUrls.length > 0) {
     productJsonLd.image = product.photoUrls
   }
-  if (metals.length > 0) {
-    productJsonLd.material = metals
+  if (recordedMetal) {
+    productJsonLd.material = recordedMetal
   }
   if (product.category) {
     productJsonLd.category = product.category
