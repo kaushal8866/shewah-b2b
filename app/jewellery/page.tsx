@@ -11,7 +11,7 @@ import type { MarketCode } from '@/lib/markets'
 export const dynamic = 'force-dynamic'
 
 interface JewelleryPageProps {
-  searchParams: {
+  searchParams?: {
     [key: string]: string | string[] | undefined
   }
 }
@@ -21,7 +21,7 @@ function firstParam(value: string | string[] | undefined): string | null {
   return value ?? null
 }
 
-export default async function JewelleryCatalogPage({ searchParams }: JewelleryPageProps) {
+export default async function JewelleryCatalogPage({ searchParams = {} }: JewelleryPageProps) {
   const cookieStore = cookies()
   const marketCookie = (cookieStore.get('shewah_market')?.value || 'US').toUpperCase() as MarketCode
 
