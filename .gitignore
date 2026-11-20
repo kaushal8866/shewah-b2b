@@ -2,16 +2,21 @@
 .next/
 tsconfig.tsbuildinfo
 
+
 # Dependencies
 node_modules/
+
 
 # Local env files
 .env.local
 .env.*.local
 .env
+.replit
+
 
 # Agent local logs
 .local/
+
 
 # Temporary scratch folder and scripts
 scratch/
@@ -22,5 +27,6 @@ scripts/test-catalog-pdf.js
 scripts/test-pdf-response.out
 .claude/
 scripts/backups/
+
 
 .vercel
