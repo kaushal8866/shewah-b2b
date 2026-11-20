@@ -1,0 +1,17 @@
+# Shewah environment configuration template.
+# Copy this file to .replit and fill in real values locally.
+# Never commit real secrets to the repository.
+
+# Admin session signing secret
+NEXTAUTH_SECRET=replace-with-a-long-random-string
+
+# App URL used for auth callbacks
+NEXTAUTH_URL=http://localhost:5000
+
+# Cloudinary image uploads
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your-upload-preset
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
