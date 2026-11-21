@@ -687,10 +687,10 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F4F2] text-[#051F34] font-sans flex flex-col">
+    <div className="min-h-screen bg-[#F6F4F2] text-[#051F34] font-sans flex flex-col overflow-x-hidden">
       {/* Top Header */}
-      <header className="bg-[#051F34] text-white border-b border-stone-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <header className="bg-[#051F34] text-white border-b border-stone-800 px-4 sm:px-6 py-4 flex items-center justify-between flex-wrap gap-x-4 gap-y-2">
+        <div className="flex items-center gap-4 flex-wrap min-w-0">
           <Link href="/dashboard" className="p-2 text-stone-400 hover:text-white transition-colors" title="Back to Main Dashboard">
             <ArrowLeft className="w-5 h-5" />
           </Link>
@@ -708,7 +708,7 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
         </div>
 
         {/* Emergency Pause Indicator */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap min-w-0">
           <button
             onClick={handleTogglePause}
             className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition-colors ${
@@ -733,42 +733,42 @@ export default function BlogAdminClient({ currentUser }: { currentUser: CurrentU
       </header>
 
       {/* Navigation Tabs */}
-      <nav className="bg-white border-b border-[#E3DBD4] px-6 flex items-center gap-8 text-xs uppercase tracking-[0.18em] font-medium">
+      <nav className="bg-white border-b border-[#E3DBD4] px-4 sm:px-6 flex items-center gap-4 sm:gap-8 text-xs uppercase tracking-[0.18em] font-medium overflow-x-auto">
         <button
           onClick={() => setActiveTab('articles')}
-          className={`py-3.5 border-b-2 transition-colors ${activeTab === 'articles' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
+          className={`py-3.5 shrink-0 whitespace-nowrap border-b-2 transition-colors ${activeTab === 'articles' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
         >
           Articles Archive
         </button>
         <button
           onClick={() => setActiveTab('editor')}
-          className={`py-3.5 border-b-2 transition-colors ${activeTab === 'editor' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
+          className={`py-3.5 shrink-0 whitespace-nowrap border-b-2 transition-colors ${activeTab === 'editor' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
         >
           {selectedArticleId ? 'Edit Article' : 'Draft Editor'}
         </button>
         <button
           onClick={() => setActiveTab('settings')}
-          className={`py-3.5 border-b-2 transition-colors ${activeTab === 'settings' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
+          className={`py-3.5 shrink-0 whitespace-nowrap border-b-2 transition-colors ${activeTab === 'settings' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
         >
           Policies & Controls
         </button>
         {currentUser.isMaster && (
           <button
             onClick={() => setActiveTab('tokens')}
-            className={`py-3.5 border-b-2 transition-colors ${activeTab === 'tokens' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
+            className={`py-3.5 shrink-0 whitespace-nowrap border-b-2 transition-colors ${activeTab === 'tokens' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
           >
             Assistant Credentials
           </button>
         )}
         <button
           onClick={() => setActiveTab('audit')}
-          className={`py-3.5 border-b-2 transition-colors ${activeTab === 'audit' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
+          className={`py-3.5 shrink-0 whitespace-nowrap border-b-2 transition-colors ${activeTab === 'audit' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
         >
           Audit History
         </button>
         <button
           onClick={() => setActiveTab('guide')}
-          className={`py-3.5 border-b-2 transition-colors ${activeTab === 'guide' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
+          className={`py-3.5 shrink-0 whitespace-nowrap border-b-2 transition-colors ${activeTab === 'guide' ? 'border-[#051F34] text-[#051F34]' : 'border-transparent text-[#69727D] hover:text-[#051F34]'}`}
         >
           Assistant Guide
         </button>
@@ -2249,3 +2249,4 @@ Idempotency-Key: 11111111-2222-3333-4444-555555555555
     </div>
   )
 }
+
