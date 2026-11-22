@@ -2,11 +2,9 @@
 
 import { useState } from 'react'
 import { signIn, getSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { Diamond, Eye, EyeOff, Lock, User } from 'lucide-react'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -36,8 +34,13 @@ export default function LoginPage() {
     let dest = '/dashboard'
     if (role === 'manufacturer') dest = '/portal/manufacturer'
     else if (role === 'retailer') dest = '/portal/retailer'
-    router.replace(dest)
-    router.refresh()
+    // Full-document navigation on purpose, not router.replace(): /login is
+    // tracked by Microsoft Clarity while /dashboard (and other back-office
+    // destinations) must not be recorded. A client-side transition would
+    // carry the running recorder across the boundary and capture the admin
+    // screen until a reload; a full navigation starts the destination with
+    // a fresh document and no recorder. Destinations are unchanged.
+    window.location.assign(dest)
   }
 
   return (
