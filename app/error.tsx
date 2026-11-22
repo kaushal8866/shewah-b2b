@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { AlertTriangle, RefreshCw, Home, Copy, Check } from 'lucide-react'
 
 /**
@@ -105,12 +104,17 @@ export default function RouteError({
               >
                 <RefreshCw className="w-4 h-4" /> {isStaleDeploy ? 'Reload' : 'Try again'}
               </button>
-              <Link
+              {/* Plain anchor, not next/link: this boundary can render on a
+                  public tracked page, and /dashboard must never be recorded
+                  by Microsoft Clarity. A full-document navigation crosses
+                  that boundary without carrying a running recorder into the
+                  admin screen (a client-side Link transition would). */}
+              <a
                 href="/dashboard"
                 className="inline-flex items-center gap-2 bg-white border border-stone-200 hover:border-stone-300 text-stone-700 text-sm font-medium px-4 py-2 rounded-lg min-h-[44px]"
               >
                 <Home className="w-4 h-4" /> Go to dashboard
-              </Link>
+              </a>
             </div>
           </div>
         </div>
