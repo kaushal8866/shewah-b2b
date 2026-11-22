@@ -4,6 +4,7 @@ import SessionProvider from '@/components/SessionProvider'
 import { CartProvider } from '@/components/d2c/CartContext'
 import { WishlistProvider } from '@/lib/wishlistStore'
 import AppShell from '@/components/AppShell'
+import ClarityTag from '@/components/ClarityTag'
 import Script from 'next/script'
 import { headers } from 'next/headers'
 export const metadata: Metadata = {
@@ -104,20 +105,8 @@ pintrk('page');
             src="https://ct.pinterest.com/v3/?event=init&tid=2612734305070&noscript=1"
           />
         </noscript>
-        {/* Microsoft Clarity Tag */}
-        <Script
-          id="ms-clarity-init"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "xr0qwz63wd");
-`,
-          }}
-        />
+        {/* Microsoft Clarity Tag: public pages only, see components/ClarityTag.tsx */}
+        <ClarityTag />
         {/* Meta Pixel Base Code */}
         <Script
           id="meta-pixel-init"
