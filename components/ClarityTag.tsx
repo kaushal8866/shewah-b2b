@@ -52,23 +52,34 @@ export default function ClarityTag() {
   const pathname = usePathname()
   const excluded = isExcluded(pathname)
 
+  // Hard navigation boundary, deliberately in the render phase.
+  //
+  // Clarity has no supported client-side "stop recording" API. If the
+  // recorder is already running because the visitor reached this excluded
+  // route through a client-side (SPA) navigation from a tracked page, the
+  // only way to keep admin DOM out of the recording is a full document
+  // reload that serves this page without the tag at all.
+  //
+  // This runs during render, not in an effect: effects fire after React has
+  // committed the new route's DOM, and Clarity records DOM mutations, so an
+  // effect-based reload would already have leaked the admin screen. Running
+  // here fires the reload before the protected tree commits and paints.
+  // Known client-side entries (post-login redirect, error-boundary link)
+  // already use full-document navigation, so this is the fallback for any
+  // unknown future entry. The session flag guarantees a single reload.
+  if (excluded && typeof window !== 'undefined') {
+    const recorderLoaded =
+      typeof (window as any).clarity === 'function' ||
+      !!document.querySelector('script[src*="clarity.ms"]')
+    if (recorderLoaded && !sessionStorage.getItem(RELOAD_FLAG)) {
+      sessionStorage.setItem(RELOAD_FLAG, '1')
+      window.location.reload()
+    }
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (excluded) {
-      // Clarity has no supported client-side "stop recording" API. If the
-      // recorder is already running because the visitor navigated here from
-      // a public page without a full page load, reload once so this page is
-      // served without the tag at all.
-      const recorderLoaded =
-        typeof (window as any).clarity === 'function' ||
-        !!document.querySelector('script[src*="clarity.ms"]')
-      if (recorderLoaded && !sessionStorage.getItem(RELOAD_FLAG)) {
-        sessionStorage.setItem(RELOAD_FLAG, '1')
-        window.location.reload()
-      }
-    } else {
-      sessionStorage.removeItem(RELOAD_FLAG)
-    }
+    if (!excluded) sessionStorage.removeItem(RELOAD_FLAG)
   }, [excluded])
 
   if (excluded) return null
