@@ -32,6 +32,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/blog/navratna-jewellery-guide',
+        destination: '/blog/navaratna-jewellery-meaning',
+        permanent: true,
+      },
+      {
         source: '/collections',
         destination: '/jewellery',
         permanent: true,
@@ -75,3 +80,4 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
+
